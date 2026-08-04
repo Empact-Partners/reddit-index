@@ -1,0 +1,132 @@
+category,subreddit,subscribers,category_signal_verdict,rule_posture,is_vendor_owned_sub
+CRM,r/CRM,55258,rich,not_assessed,no
+CRM,r/sales,594293,rich,not_assessed,no
+CRM,r/salesforce,113701,rich,not_assessed,yes
+CRM,r/techsales,61611,rich,not_assessed,no
+CRM,r/SaaS,771351,rich,restrictive_1_mention_per_60d,no
+CRM,r/smallbusiness,2515668,rich,hostile_removes_product_mentions_since_2026_06,no
+CRM,r/Entrepreneur,5248886,rich,hostile_no_selling_no_urls,no
+CRM,r/EntrepreneurRideAlong,717181,rich,not_assessed,no
+CRM,r/hubspot,22276,rich,not_assessed,yes
+CRM,r/gohighlevel,22997,rich,not_assessed,yes
+CRM,r/Dynamics365,15274,rich,not_assessed,yes
+CRM,r/Zoho,12656,rich,not_assessed,yes
+CRM,r/Netsuite,26757,rich,not_assessed,yes
+Project Management,r/projectmanagement,235409,rich,not_assessed,no
+Project Management,r/pmp,127324,rich,not_assessed,no
+Project Management,r/agile,86940,rich,not_assessed,no
+Project Management,r/scrum,45282,rich,not_assessed,no
+Project Management,r/Notion,466660,rich,not_assessed,yes
+Project Management,r/jira,16789,rich,not_assessed,yes
+Project Management,r/clickup,20100,rich,not_assessed,yes
+Project Management,r/trello,13038,rich,not_assessed,yes
+Project Management,r/Asana,7610,rich,not_assessed,yes
+Project Management,r/productivity,4231779,rich,hostile_no_self_promo_any_form,no
+Project Management,r/devops,505306,rich,not_assessed,no
+Project Management,r/ExperiencedDevs,408343,rich,not_assessed,no
+Marketing Automation,r/marketing,1958653,rich_rule_suppressed,hostile_zero_tolerance_promo_permaban,no
+Marketing Automation,r/DigitalMarketing,444279,rich_rule_suppressed,not_assessed,no
+Marketing Automation,r/PPC,276512,rich_rule_suppressed,not_assessed,no
+Marketing Automation,r/SEO,501557,rich_rule_suppressed,not_assessed,no
+Marketing Automation,r/Emailmarketing,121644,rich_rule_suppressed,not_assessed,no
+Marketing Automation,r/ecommerce,664181,rich_rule_suppressed,restrictive_no_external_links,no
+Marketing Automation,r/shopify,368664,rich_rule_suppressed,not_assessed,no
+Marketing Automation,r/copywriting,259811,rich_rule_suppressed,not_assessed,no
+Marketing Automation,r/hubspot,22276,rich_rule_suppressed,not_assessed,yes
+Marketing Automation,r/gohighlevel,22997,rich_rule_suppressed,not_assessed,yes
+Marketing Automation,r/salesforce,113701,rich_rule_suppressed,not_assessed,yes
+Marketing Automation,r/Klaviyo,7906,rich_rule_suppressed,not_assessed,yes
+Accounting,r/Accounting,1272842,rich,not_assessed,no
+Accounting,r/tax,471648,rich,not_assessed,no
+Accounting,r/BusinessIntelligence,239162,rich,not_assessed,no
+Accounting,r/CPA,125475,rich,not_assessed,no
+Accounting,r/Bookkeeping,82702,rich,not_assessed,no
+Accounting,r/QuickBooks,40925,rich,not_assessed,yes
+Accounting,r/Payroll,34153,rich,not_assessed,no
+Accounting,r/Netsuite,26757,rich,not_assessed,yes
+Accounting,r/ERP,18180,rich,not_assessed,no
+Accounting,r/smallbusiness,2515668,rich,hostile_removes_product_mentions_since_2026_06,no
+Accounting,r/Entrepreneur,5248886,rich,hostile_no_selling_no_urls,no
+HR / HRIS,r/AskHR,1845104,rich,not_assessed,no
+HR / HRIS,r/humanresources,234776,rich,not_assessed,no
+HR / HRIS,r/recruiting,210024,rich,not_assessed,no
+HR / HRIS,r/Payroll,34153,rich,not_assessed,no
+HR / HRIS,r/smallbusiness,2515668,rich,hostile_removes_product_mentions_since_2026_06,no
+HR / HRIS,r/Entrepreneur,5248886,rich,hostile_no_selling_no_urls,no
+HR / HRIS,r/Accounting,1272842,rich,not_assessed,no
+Help Desk / Support,r/sysadmin,1307063,thin,permissive_organic_vendor_talk_ok,no
+Help Desk / Support,r/msp,245249,thin,restricted_promo_thread_only_50_karma_gate,no
+Help Desk / Support,r/ITManagers,77186,thin,not_assessed,no
+Help Desk / Support,r/CustomerService,56709,thin,not_assessed,no
+Help Desk / Support,r/CustomerSuccess,53226,thin,not_assessed,no
+Help Desk / Support,r/servicenow,37616,thin,not_assessed,yes
+Help Desk / Support,r/helpdesk,17828,thin,not_assessed,no
+Help Desk / Support,r/Zendesk,5995,thin,not_assessed,yes
+Help Desk / Support,r/SaaS,771351,thin,restrictive_1_mention_per_60d,no
+Help Desk / Support,r/shopify,368664,thin,not_assessed,no
+Help Desk / Support,r/smallbusiness,2515668,thin,hostile_removes_product_mentions_since_2026_06,no
+Email Marketing,r/ecommerce,664181,rich_dtc_skewed,restrictive_no_external_links,no
+Email Marketing,r/SEO,501557,rich_dtc_skewed,not_assessed,no
+Email Marketing,r/DigitalMarketing,444279,rich_dtc_skewed,not_assessed,no
+Email Marketing,r/shopify,368664,rich_dtc_skewed,not_assessed,no
+Email Marketing,r/copywriting,259811,rich_dtc_skewed,not_assessed,no
+Email Marketing,r/Emailmarketing,121644,rich_dtc_skewed,not_assessed,no
+Email Marketing,r/marketing,1958653,rich_dtc_skewed,hostile_zero_tolerance_promo_permaban,no
+Email Marketing,r/MailChimp,11411,rich_dtc_skewed,not_assessed,yes
+Email Marketing,r/Klaviyo,7906,rich_dtc_skewed,not_assessed,yes
+Email Marketing,r/SaaS,771351,rich_dtc_skewed,restrictive_1_mention_per_60d,no
+Email Marketing,r/smallbusiness,2515668,rich_dtc_skewed,hostile_removes_product_mentions_since_2026_06,no
+Design / Prototyping,r/webdev,3291845,rich_monoculture,restrictive_project_sharing_saturdays_only,no
+Design / Prototyping,r/graphic_design,2915697,rich_monoculture,not_assessed,no
+Design / Prototyping,r/web_design,974146,rich_monoculture,not_assessed,no
+Design / Prototyping,r/UXDesign,245262,rich_monoculture,not_assessed,no
+Design / Prototyping,r/UI_Design,236904,rich_monoculture,not_assessed,no
+Design / Prototyping,r/FigmaDesign,154567,rich_monoculture,not_assessed,yes
+Design / Prototyping,r/userexperience,147493,rich_monoculture,not_assessed,no
+Design / Prototyping,r/canva,97460,rich_monoculture,not_assessed,yes
+Design / Prototyping,r/webflow,42290,rich_monoculture,not_assessed,yes
+Design / Prototyping,r/Adobe,41119,rich_monoculture,not_assessed,yes
+Video Editing,r/NewTubers,713161,rich_nle_thin_saas,not_assessed,no
+Video Editing,r/VideoEditing,521861,rich_nle_thin_saas,not_assessed,no
+Video Editing,r/videography,451620,rich_nle_thin_saas,not_assessed,no
+Video Editing,r/AfterEffects,344668,rich_nle_thin_saas,not_assessed,yes
+Video Editing,r/davinciresolve,224963,rich_nle_thin_saas,not_assessed,yes
+Video Editing,r/editors,193209,rich_nle_thin_saas,not_assessed,no
+Video Editing,r/premiere,184965,rich_nle_thin_saas,not_assessed,yes
+Video Editing,r/CapCut,98513,rich_nle_thin_saas,not_assessed,yes
+Video Editing,r/finalcutpro,41381,rich_nle_thin_saas,not_assessed,yes
+Video Editing,r/Adobe,41119,rich_nle_thin_saas,not_assessed,yes
+Password Managers / Security,r/privacy,1652252,richest,not_assessed,no
+Password Managers / Security,r/cybersecurity,1499209,richest,not_assessed,no
+Password Managers / Security,r/selfhosted,812909,richest,not_assessed,no
+Password Managers / Security,r/netsec,568416,richest,not_assessed,no
+Password Managers / Security,r/sysadmin,1307063,richest,permissive_organic_vendor_talk_ok,no
+Password Managers / Security,r/msp,245249,richest,restricted_promo_thread_only_50_karma_gate,no
+Password Managers / Security,r/Bitwarden,119758,richest,not_assessed,yes
+Password Managers / Security,r/ITManagers,77186,richest,not_assessed,no
+Password Managers / Security,r/1Password,56814,richest,not_assessed,yes
+Password Managers / Security,r/PasswordManagers,54639,richest,not_assessed,no
+Password Managers / Security,r/ProtonPass,35219,richest,not_assessed,yes
+Password Managers / Security,r/KeePass,23021,richest,not_assessed,yes
+ERP,r/BusinessIntelligence,239162,thin,not_assessed,no
+ERP,r/supplychain,112776,thin,not_assessed,no
+ERP,r/manufacturing,100336,thin,not_assessed,no
+ERP,r/SAP,60630,thin,not_assessed,yes
+ERP,r/Netsuite,26757,thin,not_assessed,yes
+ERP,r/Odoo,19483,thin,not_assessed,yes
+ERP,r/ERP,18180,thin,not_assessed,no
+ERP,r/Dynamics365,15274,thin,not_assessed,yes
+ERP,r/Accounting,1272842,thin,not_assessed,no
+ERP,r/smallbusiness,2515668,thin,hostile_removes_product_mentions_since_2026_06,no
+ERP,r/projectmanagement,235409,thin,not_assessed,no
+Note-taking / Knowledge Mgmt,r/productivity,4231779,rich,hostile_no_self_promo_any_form,no
+Note-taking / Knowledge Mgmt,r/Notion,466660,rich,not_assessed,yes
+Note-taking / Knowledge Mgmt,r/ObsidianMD,350650,rich,not_assessed,yes
+Note-taking / Knowledge Mgmt,r/PKMS,76430,rich,not_assessed,no
+Note-taking / Knowledge Mgmt,r/OneNote,75635,rich,not_assessed,yes
+Note-taking / Knowledge Mgmt,r/NoteTaking,63318,rich,not_assessed,no
+Note-taking / Knowledge Mgmt,r/Zettelkasten,39054,rich,not_assessed,no
+Note-taking / Knowledge Mgmt,r/Evernote,27159,rich,not_assessed,yes
+Note-taking / Knowledge Mgmt,r/logseq,19678,rich,not_assessed,yes
+Note-taking / Knowledge Mgmt,r/Anytype,14127,rich,not_assessed,yes
+Note-taking / Knowledge Mgmt,r/selfhosted,812909,rich,not_assessed,no

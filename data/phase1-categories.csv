@@ -1,0 +1,51 @@
+rank,category,size_tier,reddit_signal_verdict,subreddit_map_status,phase
+1,CRM,XL,rich,mapped,1
+2,Compliance,XL,not_assessed,pending,1
+3,Human Resources,XL,rich,mapped,1
+4,Billing and Invoicing,XL,not_assessed,pending,1
+5,Artificial Intelligence,XL,not_assessed,pending,1
+6,ERP,XL,thin,mapped,1
+7,Document Management,XL,not_assessed,pending,1
+8,Project Management,XL,rich,mapped,1
+9,Collaboration,XL,not_assessed,pending,1
+10,Marketing Automation,XL,rich_rule_suppressed,mapped,1
+11,Learning Management System,L,not_assessed,pending,1
+12,Field Service Management,L,not_assessed,pending,1
+13,Workflow Management,L,not_assessed,pending,1
+14,Data Analysis,L,not_assessed,pending,1
+15,eCommerce,L,not_assessed,pending,1
+16,Scheduling,L,not_assessed,pending,1
+17,Accounting,L,rich,mapped,1
+18,Business Intelligence,L,not_assessed,pending,1
+19,Time Tracking,L,not_assessed,pending,1
+20,Inventory Management,L,not_assessed,pending,1
+21,Training,L,not_assessed,pending,1
+22,Payment Processing,L,not_assessed,pending,1
+23,Recruiting,L,not_assessed,pending,1
+24,Risk Management,L,not_assessed,pending,1
+25,Appointment Scheduling,L,not_assessed,pending,1
+26,Task Management,L,not_assessed,pending,1
+27,Employee Engagement,L,not_assessed,pending,1
+28,Workforce Management,L,not_assessed,pending,1
+29,Construction Management,L,not_assessed,pending,1
+30,Point of Sale,L,not_assessed,pending,1
+31,Email Marketing,L,rich_dtc_skewed,mapped,1
+32,Customer Experience,M,not_assessed,pending,1
+33,Lead Generation,M,not_assessed,pending,1
+34,Customer Engagement,M,not_assessed,pending,1
+35,Order Management,M,not_assessed,pending,1
+36,Event Management,M,not_assessed,pending,1
+37,Productivity,M,not_assessed,pending,1
+38,Applicant Tracking,M,not_assessed,pending,1
+39,Cybersecurity,M,richest,mapped,1
+40,Supply Chain Management,M,not_assessed,pending,1
+41,Content Management,M,not_assessed,pending,1
+42,Chatbot,M,not_assessed,pending,1
+43,Maintenance Management,M,not_assessed,pending,1
+44,Payroll,M,not_assessed,pending,1
+45,Time Clock,M,not_assessed,pending,1
+46,Application Development,M,not_assessed,pending,1
+47,Warehouse Management,M,not_assessed,pending,1
+48,Remote Work,M,not_assessed,pending,1
+49,Employee Scheduling,M,not_assessed,pending,1
+50,Talent Management,M,not_assessed,pending,1

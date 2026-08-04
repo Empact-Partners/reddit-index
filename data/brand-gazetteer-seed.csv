@@ -1,0 +1,114 @@
+brand,category,aliases,ambiguity_class,ambiguity_note
+Salesforce,CRM,SFDC;Sales Cloud,low,
+HubSpot,CRM,HubSpot CRM,low,
+Zoho CRM,CRM,Zoho,medium,'Zoho' spans a large product suite; must resolve to product
+monday CRM,CRM,monday.com;monday,high,'monday' is a common English weekday noun
+Pipedrive,CRM,,low,
+Bitrix24,CRM,Bitrix,low,
+NetSuite,CRM,Oracle NetSuite,low,
+Close,CRM,Close.com;Close CRM,high,'close' is an extremely common English verb and adjective
+Freshsales,CRM,Freshworks CRM,medium,Freshworks family collides across products
+monday.com,Project Management,monday;monday work management,high,weekday noun
+Asana,Project Management,,medium,also a yoga posture term; collides in wellness subs
+Jira,Project Management,Atlassian Jira,low,
+Wrike,Project Management,,low,
+Smartsheet,Project Management,,low,
+ClickUp,Project Management,,low,
+Trello,Project Management,,low,
+Basecamp,Project Management,,medium,common noun in outdoor/climbing contexts
+Notion,Project Management,Notion.so,high,'notion' is a common English noun
+Linear,Project Management,Linear.app,high,'linear' is a common adjective; Wikidata has no entry for the issue tracker
+Slack,Collaboration,Slack.com,high,'slack' is a common English noun and adjective
+Microsoft Teams,Collaboration,MS Teams;Teams,high,'Teams' collides with the plural noun
+Confluence,Collaboration,Atlassian Confluence,high,'confluence' is a common English noun
+Miro,Collaboration,,medium,also a painter surname
+Google Workspace,Collaboration,GSuite;G Suite,medium,renamed product; legacy alias still dominant on Reddit
+BambooHR,Human Resources,Bamboo HR,low,
+Rippling,Human Resources,,high,'rippling' is a common English present participle
+Gusto,Human Resources,,high,'gusto' is a common English noun
+Workday,Human Resources,,high,'workday' is a common English noun
+HiBob,Human Resources,Bob,high,alias 'Bob' is a given name
+Paylocity,Human Resources,,low,
+Paycom,Human Resources,,low,
+Deel,Human Resources,,medium,near-homophone of 'deal'; frequent misspelling collisions
+ADP,Human Resources,,medium,also an abbreviation in biochemistry (adenosine diphosphate)
+QuickBooks,Accounting,QBO;QB,low,
+Xero,Accounting,,medium,collides with 'Xerox' truncations and 'zero' misspellings
+FreshBooks,Accounting,,low,
+Chargebee,Accounting,,low,
+Stripe,Accounting,Stripe Billing,high,'stripe' is a common English noun
+Bill.com,Accounting,BILL,high,'bill' is an extremely common English noun
+Melio,Accounting,,low,
+Ramp,Accounting,,high,'ramp' is a common English noun
+Brex,Accounting,,low,
+HubSpot Marketing Hub,Marketing Automation,HubSpot,medium,company vs product ambiguity
+Marketo Engage,Marketing Automation,Marketo,low,
+ActiveCampaign,Marketing Automation,AC,medium,alias 'AC' collides with air conditioning
+Klaviyo,Marketing Automation,,low,
+Mailchimp,Email Marketing,MailChimp,low,
+Braze,Email Marketing,,medium,near-homophone of 'braise'/'brace'
+Constant Contact,Email Marketing,,low,
+Beehiiv,Email Marketing,,low,
+Figma,Design / Prototyping,,medium,r/figma is a Japanese action-figure sub; the design sub is r/FigmaDesign
+Sketch,Design / Prototyping,,high,'sketch' is a common English noun and verb
+Adobe XD,Design / Prototyping,XD,high,'XD' is a common emoticon
+Canva,Design / Prototyping,,low,
+Framer,Design / Prototyping,,high,'framer' is a common English occupational noun
+Webflow,Design / Prototyping,,low,
+Bitwarden,Password Managers / Security,,low,
+1Password,Password Managers / Security,1PW;OnePassword,low,
+LastPass,Password Managers / Security,,low,
+Dashlane,Password Managers / Security,,low,
+Proton Pass,Password Managers / Security,ProtonPass,low,
+KeePass,Password Managers / Security,KeePassXC,low,
+NordPass,Password Managers / Security,,low,
+Notion,Note-taking / Knowledge Mgmt,Notion.so,high,common English noun
+Obsidian,Note-taking / Knowledge Mgmt,ObsidianMD,high,'obsidian' is a volcanic glass; frequent in geology and gaming subs
+Evernote,Note-taking / Knowledge Mgmt,,low,
+OneNote,Note-taking / Knowledge Mgmt,MS OneNote,low,
+Logseq,Note-taking / Knowledge Mgmt,,low,
+Anytype,Note-taking / Knowledge Mgmt,,low,
+Roam Research,Note-taking / Knowledge Mgmt,Roam,high,'roam' is a common English verb
+Craft,Note-taking / Knowledge Mgmt,Craft.do,high,'craft' is an extremely common English noun and verb
+Zendesk,Help Desk / Support,,low,
+Freshdesk,Help Desk / Support,,low,
+Intercom,Help Desk / Support,,high,'intercom' is a common English noun for the hardware device
+Front,Help Desk / Support,Frontapp,high,'front' is an extremely common English noun
+Help Scout,Help Desk / Support,HelpScout,medium,alias collides with the generic phrase
+ServiceNow,Help Desk / Support,SNOW,medium,alias 'SNOW' collides with weather
+NetSuite,ERP,Oracle NetSuite,low,
+SAP,ERP,,medium,also a common English noun (tree sap) and slang
+Odoo,ERP,,low,
+Sage Intacct,ERP,Intacct;Sage,high,"'Sage' is a herb, a colour and a given name"
+Microsoft Dynamics 365,ERP,Dynamics;D365,medium,
+Acumatica,ERP,,low,
+Shopify,eCommerce,,low,
+WooCommerce,eCommerce,Woo,medium,alias 'Woo' is an interjection
+BigCommerce,eCommerce,,low,
+Squarespace,eCommerce,,low,
+Wix,eCommerce,,low,
+Zapier,Workflow Management,,low,
+Make,Workflow Management,Integromat;Make.com,high,'make' is one of the most common English verbs; renamed from Integromat
+n8n,Workflow Management,,low,
+Airtable,Workflow Management,,low,
+Retool,Workflow Management,,low,
+Tableau,Data Analysis,,medium,"French loanword, appears in art contexts"
+Power BI,Data Analysis,PowerBI,low,
+Looker,Data Analysis,Looker Studio,high,'looker' is English slang for an attractive person
+Qlik,Data Analysis,QlikView;Qlik Sense,low,
+Amplitude,Data Analysis,,high,'amplitude' is a common physics and maths term
+Mixpanel,Data Analysis,,low,
+Segment,Data Analysis,Twilio Segment,high,'segment' is a common English noun and verb
+Vercel,Application Development,,low,Wikidata entry exists but carries no aliases
+Netlify,Application Development,,low,
+Heroku,Application Development,,low,
+Render,Application Development,,high,'render' is a common English verb
+Railway,Application Development,Railway.app,high,'railway' is a common English noun
+Supabase,Application Development,,low,
+Loom,Video Editing,,high,'loom' is a weaving device and a common verb
+Descript,Video Editing,,high,stem-matches 'description' in Reddit search
+CapCut,Video Editing,,low,
+DaVinci Resolve,Video Editing,Resolve;DaVinci,high,alias 'Resolve' is a common English verb
+Final Cut Pro,Video Editing,FCP;FCPX,low,
+Premiere Pro,Video Editing,Premiere;PPro,medium,'premiere' is a common English noun
+Motion,Video Editing,Apple Motion,high,'motion' is an extremely common English noun
