@@ -18,7 +18,7 @@ Built and operated by **Empact Partners**. Next.js on Vercel, Supabase for data.
 
 **Nobody owns this.** No live property ranks software brands by Reddit sentiment as a public leaderboard. GummySearch, the Reddit-native category leader, shut down 2025-11-30. The adjacent per-brand-audit seat is taken — [redditbrands.com](https://redditbrands.com/) and [whatredditthinks.com](https://whatredditthinks.com/) are both live — but the cross-brand board is open.
 
-**It is buildable, and it is cheap.** The corpus for ~1,000 subreddits is 200-400M items, roughly 0.5-1.5 TB. One machine. **About $74/month** at Phase 1 scale. See [08-architecture.md](08-architecture.md).
+**It is buildable, and it is cheap.** The corpus for ~1,000 subreddits is 200-400M items, roughly 0.5-1.5 TB. One machine. **About $74/month** at Phase 1 scale, updating **daily**. See [08-architecture.md](08-architecture.md).
 
 **The one number that reshapes the build: Reddit's API reaches roughly 3 to 8 days of history**, not years. So the API is a maintenance tool, and history comes from archive dumps. Everything downstream follows from that.
 
@@ -51,7 +51,10 @@ Two risks are priced and accepted rather than avoided — the Reddit-containing 
 | High-ambiguity brand names | **35 of 113 (31%)** | 🟢 Classified |
 | Capterra categories | 1,000 rendered, truncated mid-W | 🟢 Scraped |
 | G2 categories | 2,237 enumerable | 🟢 Scraped |
-| Categories that cannot be ranked | **ERP, Help Desk** | 🟢 Signal-tested |
+| Subreddits hostile to brand talk | **48 of 131 (37%)** | 🟢 Read from their own rules |
+| Single-product communities (unscoreable) | **48 of 132 (36%)** | 🟢 Classified |
+| Categories reaching the 5-subreddit floor | **6 of 20** | 🟢 Measured live |
+| Candidate slots → unique subreddits | **187 → 132** (~29% ingest saving) | 🟢 Measured |
 | Live adjacent competitors | **2**, both per-brand audits | 🟢 Fetched live |
 
 **On reachable history.** r/SaaS was measured twice on 2026-08-04 by two methods: **122 posts/day** from the span of the last 100 posts in `/new`, and **~350/day** extrapolated from the 10 newest. The second runs high because the newest posts have not yet cleared moderation removal. Quote the range, never "8 days" as a fact ([02-data-acquisition.md](02-data-acquisition.md)).
@@ -77,6 +80,8 @@ The gate is therefore `n_eff = n / DEFF ≥ 400`, where `DEFF = 1 + (m̄ − 1)�
 | "Upvoted comments should count more" | ❌ **Wrong.** Reddit fuzzes vote counts, and one seeded upvote inflated scores 25% via herding. |
 | "This space is crowded" | 🟡 **Half right.** Monitoring is crowded and private. The per-brand audit lane now has live entrants. No public cross-brand Reddit-derived software leaderboard exists. |
 | "Nobody else is building anything like this" | ❌ **Wrong.** [redditbrands.com](https://redditbrands.com/) (registered 2026-06-07) grades one brand at a time A-to-F with a four-engine AI probe and PDF export. [whatredditthinks.com](https://whatredditthinks.com/) (2026-05-25) publishes per-question consensus pages. Both live 2026-08-04. See [00-concept.md](00-concept.md). |
+| "We just need enough Reddit discussion" | 🟡 **Half right.** Volume is not the binding constraint — subreddit COUNT is. Only 6 of 20 categories reach the 5-scorable-subreddit floor, because hostile and single-product communities eat the candidate lists. See [14-category-tests.md](14-category-tests.md). |
+| "A product's own subreddit is the best source" | ❌ **Wrong.** It is the densest and the least usable. r/Bitwarden measured 37% brand-bearing, r/paypal 50% — and every one is disqualified, because a product's subreddit is people who already chose it. |
 | "The one Reddit-native player is gone, so the field is clear" | 🟡 **Half right.** GummySearch did shut down on 2025-11-30 ([gummysearch.com](https://gummysearch.com/)), but two adjacent properties launched inside the following seven months. The seat is open, not open indefinitely. |
 
 ---
@@ -112,7 +117,8 @@ Empact Partners operates it openly. The footer reads "Created by Empact Partners
 | [05-entity-resolution.md](05-entity-resolution.md) | The "is this *monday* the vendor" problem |
 | [06-sentiment.md](06-sentiment.md) | Targeted ABSA, the cascade, validation protocol |
 | **[07-index-methodology.md](07-index-methodology.md)** | The formulas. What a hostile CMO attacks first. |
-| [08-architecture.md](08-architecture.md) | Stack, schema, weekly refresh, cost table |
+| [08-architecture.md](08-architecture.md) | Next.js on Vercel, Supabase, schema, daily refresh, cost table |
+| **[14-category-tests.md](14-category-tests.md)** | **20 categories measured live.** 132 subreddits, what the data says and what it cannot say |
 | [09-design.md](09-design.md) | Empact brand applied — Syne, Public Sans, the palette |
 | [10-seo-aeo.md](10-seo-aeo.md) | Indexation, schema, AI citation, what gets it killed |
 | [11-outreach-play.md](11-outreach-play.md) | The GTM motion and the email angles, ranked |

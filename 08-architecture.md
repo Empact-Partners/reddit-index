@@ -3,11 +3,11 @@
 ## Bottom line
 
 - 🟢 **Three vendors, one of which is the CDN.** Next.js App Router on Vercel, Supabase Postgres plus Supabase Storage for data, one long-lived worker for the pipeline. Push to `main` deploys. Nothing else is in the serving path.
-- 🟡 **Vercel's Hobby plan is for personal, non-commercial use** ([Vercel pricing](https://vercel.com/pricing)), so this site needs **Pro at $20/seat/month** at or before launch. A second, harder blocker applies immediately: Hobby teams cannot connect to a repository owned by a GitHub organization at all ([Vercel limits](https://vercel.com/docs/limits)), and the repo is `Empact-Partners/reddit-index`.
+- 🟢 **Vercel Pro is in place, and it had to be.** Hobby is licensed for personal, non-commercial use ([Vercel pricing](https://vercel.com/pricing)). A harder blocker binds first: Hobby teams cannot connect to a repository owned by a GitHub organization at all ([Vercel limits](https://vercel.com/docs/limits)), and the repo is `Empact-Partners/reddit-index`. Live state in §6.
 - 🟢 **The raw corpus never enters Postgres.** 200-400M items live as Hive-partitioned Parquet in Supabase Storage and are scanned in-process by DuckDB during pipeline runs. Postgres holds roughly 4M derived rows at Phase 1 and 38M at full scale, against a design ceiling of 200M.
-- 🟢 **Roughly 5,000 pages on a weekly data refresh is an SSG-with-on-demand-revalidation problem**, not a per-request-rendering one. The pipeline calls `revalidateTag`; a full rebuild is reserved for code and schema changes.
+- 🟢 **Continuous ingest, daily publish** ([13-algorithm.md](13-algorithm.md) §7). Scoring and publishing run once a day at ~03:00 UTC, so the site is never more than 24 hours stale. The daily job calls `revalidateTag` only for the brands and categories whose scores moved — tens of pages, not the ~5,000-page corpus.
 - 🟡 **Supabase Storage bills egress at $0.09/GB past 250 GB** ([Supabase pricing](https://supabase.com/pricing)), where Cloudflare R2 billed none. Cache shards on the worker's local NVMe and treat Supabase Storage as the durable copy, not the working set.
-- 🟢 **Cost is ≈ $74/month at Phase 1 and ≈ $301/month at full scale.** Line items in §9.
+- 🟢 **Cost is ≈ $74/month at Phase 1 and ≈ $301/month at full scale, and daily publishing does not move either number.** Line items and the recheck in §9.
 
 ---
 
@@ -35,14 +35,16 @@ Reddit Data API         ─┘       │                                  corpus
                             S7 publish
                                  │
                                  │  POST /api/revalidate ─────────────────────────►  Next.js on Vercel
-                                 │  (revalidateTag per brand + category)              App Router · ISR
+                                 │  (revalidateTag, changed tags only)               App Router · ISR
                                  │                                                          │
                                  └─ deploy hook (code / schema only) ──────────►  build ─────┤
                                                                                              ▼
                                                                                     Vercel CDN → reader
 
-delete-sync (nightly): Postgres doc_ids ─► Reddit /api/info ─► purge rows ─► write removals ─► revalidateTag
+delete_sync (last step of the daily pass): Postgres doc_ids ─► Reddit /api/info ─► purge rows ─► write removals ─► revalidateTag
 ```
+
+**Two rhythms, not one.** S0 and S1 run continuously, on each multireddit bucket's own 1-24 h interval, because the comment stream forces that cadence. S2 through S7 run once a day in a single ordered pass at ~03:00 UTC. Archive reconciliation is monthly. Full mapping in §8; the authority is [13-algorithm.md](13-algorithm.md) §7.
 
 S1 through S4 read and write Parquet through DuckDB's `httpfs` extension pointed at Supabase Storage's S3-compatible endpoint, `https://{project_ref}.storage.supabase.co/storage/v1/s3` ([Supabase S3 auth](https://supabase.com/docs/guides/storage/s3/authentication)).
 
@@ -68,7 +70,9 @@ So: **Parquet in Supabase Storage for everything the pipeline scans, Postgres fo
 | everything else | <10K | <100K |
 | **Total** | **≈ 4M** | **≈ 38M** |
 
-Full scale assumes ~325K new mentions per week ([13-algorithm.md](13-algorithm.md)) over a trailing 12-month window ([07-index-methodology.md](07-index-methodology.md)). Phase 1 assumes ~35K per week. Both are *inference from the modelled rates, not measured*.
+Full scale assumes ~325K new mentions per week, about 46K a day ([13-algorithm.md](13-algorithm.md)), over a trailing 12-month window ([07-index-methodology.md](07-index-methodology.md)). Phase 1 assumes ~35K per week. Both are *inference from the modelled rates, not measured*.
+
+**Publishing daily instead of weekly does not move these counts.** The same comments arrive either way and the window is unchanged; what changes is how often the derived tables are recomputed and republished. Ingest cadence sizes the worker, not Postgres.
 
 **Breakpoints — where "Postgres holds only derived rows" stops being true:**
 
@@ -131,7 +135,7 @@ App Router, React Server Components, no client-side data fetching in the reader 
 | Route | Count (Phase 1 → full) | Strategy | Revalidation |
 |---|---:|---|---|
 | `/` | 1 | Prerendered at build | `revalidateTag('leaderboards')` on publish |
-| `/category/[slug]` | 50 → ~1,000 | `generateStaticParams` over eligible categories, prerendered | `revalidateTag('category:{slug}')`; `revalidate = 86400` floor |
+| `/category/[slug]` | 50 → ~1,000 | `generateStaticParams` over eligible categories, prerendered | `revalidateTag('category:{slug}')`; `revalidate = 86400` floor, matching the daily publish |
 | `/brand/[slug]` | ~1,000 → ~5,000 | `generateStaticParams` over the **published** set only; `dynamicParams = true` for the tail | `revalidateTag('brand:{slug}')` on publish and on delete-sync |
 | `/brand/[slug]/mentions/[page]` | paginated | Prerender pages 1-3, rest on first request | `revalidateTag('brand:{slug}')` |
 | `/methodology` | 1 | Fully static, no data fetch, version-frozen | Rebuild only |
@@ -140,24 +144,30 @@ App Router, React Server Components, no client-side data fetching in the reader 
 
 ### Why SSG with on-demand revalidation, and not per-request rendering
 
-Reader-facing pages change once a week. Per-request rendering would pay a Supabase round trip on every view for data that is byte-identical between refreshes, and would put a 2-core Postgres in the request path of every Googlebot and AI-crawler hit.
+Reader-facing pages change at most once a day, and on any given day most of them do not change at all. Per-request rendering would pay a Supabase round trip on every view for data that is byte-identical between publishes, and would put a 2-core Postgres in the request path of every Googlebot and AI-crawler hit.
 
-The prices settle it. ISR reads cost $0.0004 per 1K and writes $0.004 per 1K ([Vercel limits](https://vercel.com/docs/limits)). Revalidating 5,000 pages weekly is ~20K writes a month, or $0.08. A million page views is a million reads, or $0.40. Both are rounding errors.
+The prices settle it. ISR reads cost $0.0004 per 1K and writes $0.004 per 1K ([Vercel limits](https://vercel.com/docs/limits)). A typical day revalidates tens of pages, so ~3K writes a month, about $0.01. Even the pathological case — every one of 5,000 pages moving every day — is 150K writes, or $0.60. A million page views is a million reads, or $0.40.
 
 SSR moves the same traffic onto Function Invocations at $0.60 per million plus Active CPU from $0.128/hour, and turns Supabase compute into a variable that scales with traffic instead of a fixed monthly line. It buys nothing, because the data has not changed.
 
-### How the pipeline triggers a refresh
+### How the daily pass triggers a refresh
 
 Two mechanisms, deliberately separated:
 
-1. **`revalidateTag` via `POST /api/revalidate`** — the default. S7 sends the changed category and brand slugs with `Authorization: Bearer $REVALIDATE_SECRET`; the handler calls `revalidateTag()` per slug. It takes seconds, touches only what changed, and needs no deployment.
-2. **A Vercel deploy hook** — reserved for code, schema and methodology-version changes, where the whole site has to be rebuilt. Vercel allows 5 deploy hooks per project and 60 triggers per hour ([Vercel limits](https://vercel.com/docs/limits)).
+1. **`revalidateTag` via `POST /api/revalidate`** — the default, and what the daily pass uses. Step 9 `publish` diffs the freshly computed `brand_category_scores` against the previous run and sends only the slugs whose scores moved, with `Authorization: Bearer $REVALIDATE_SECRET`. The handler calls `revalidateTag()` per slug. Seconds, and no deployment.
+2. **A Vercel deploy hook** — reserved for code, schema and methodology-version changes, where the whole site has to be rebuilt. Vercel allows 5 deploy hooks per project and 60 triggers per hour ([Vercel limits](https://vercel.com/docs/limits)). None is created on the project yet (§6).
 
-Weekly data does not justify a rebuild. Use mechanism 1 for every ordinary cycle.
+**The daily pass never revalidates all ~5,000 pages.** One day of comments lands against a trailing 12-month window, so the great majority of brands do not move at all, and a brand whose score is unchanged to the published precision is not sent. Expect **tens of tags a day** — the movers plus their categories.
+
+That page count is *inference from the window arithmetic, not measured*. Instrument it in Phase 0: log the slug set on every revalidate call, and treat a day that sends thousands of tags as a defect in the diff, not as a busy news day.
+
+Two rules keep it honest. The publisher must diff rather than blanket-send — sending every slug daily would still cost almost nothing and would quietly destroy the one signal that says whether the index is actually moving. And `delete_sync` revalidates on its own account, because a purge changes a page even when no score did.
 
 ### The 45-minute build cap
 
-Build time is capped at **45 minutes per deployment on every plan, Hobby and Pro alike** ([Vercel limits](https://vercel.com/docs/limits)). A 5,000-page build at 20-40 ms of render per page is roughly 2-4 minutes plus install and compile (*inference, not benchmarked*), so the headroom is wide. Five things to do, in order, if it stops being wide:
+**Daily operation never touches this cap, because daily operation never builds.** Publishing reaches into the cache of the deployment that is already live; a new deployment happens only on a merge to `main`. Deployment count is not a constraint either — Pro allows 6,000 deployments a day ([Vercel limits](https://vercel.com/docs/limits)) and the daily pass creates zero.
+
+The cap therefore binds in exactly one place: a code or schema rebuild. Build time is capped at **45 minutes per deployment on every plan, Hobby and Pro alike** ([Vercel limits](https://vercel.com/docs/limits)). A 5,000-page build at 20-40 ms of render per page is roughly 2-4 minutes plus install and compile (*inference, not benchmarked*), so the headroom is wide. Five things to do, in order, if it stops being wide:
 
 1. **Fetch once, not per page.** One query returning every `brand_pages.payload` into a module-scoped map makes the build CPU-bound instead of 5,000 network round trips. This is the single biggest lever.
 2. **Return only the published set from `generateStaticParams`.** Brands failing the `n_eff ≥ 400` gate render on demand; they are linked from the below-threshold block, not crawled hard.
@@ -195,8 +205,8 @@ RLS is enabled on every table in `public`. What is public and what is not:
 |---|---|---|
 | Database size | 500 MB | Phase 1 `mentions` alone is ~1 GB. Bites on the first production load |
 | File storage | 1 GB | The corpus is 60-150 GB. Bites at 60× |
-| Egress | 5 GB | One weekly delta scan is 10-30 GB. Bites in week one |
-| Project pausing | Paused after 1 week of inactivity | A paused project fails the nightly delete-sync silently |
+| Egress | 5 GB | A single day's delta scan is 1.5-4 GB. Bites inside the first week |
+| Project pausing | Paused after 1 week of inactivity | A paused project fails the daily pass silently |
 | Active projects | 2 | Never binds |
 
 Source: [Supabase pricing](https://supabase.com/pricing). **Upgrade to Pro ($25/month) before the first production ingest.** Free is good for a schema spike and nothing beyond it.
@@ -205,7 +215,9 @@ Source: [Supabase pricing](https://supabase.com/pricing). **Upgrade to Pro ($25/
 
 Pro includes 8 GB disk (then $0.125/GB), 100 GB file storage (then $0.0213/GB), 250 GB egress (then $0.09/GB), and a $10/month compute credit covering one Micro instance.
 
-⚠️ **Egress is the real cost of consolidating onto one vendor.** Weekly delta scans of 10-30 GB stay comfortably inside 250 GB. A full-corpus re-scan is 150 GB, so two in one month lands ~50 GB over, at $0.09/GB. Keep the working set on the worker's local NVMe; Supabase Storage is the durable copy.
+⚠️ **Egress is the real cost of consolidating onto one vendor.** Daily delta scans of 1.5-4 GB come to 45-130 GB a month, comfortably inside 250 GB — the same monthly total as weekly scanning, split into seven smaller reads (*inference: the delta is assumed proportional to elapsed time*). A full-corpus re-scan is 150 GB, so two in one month lands ~50 GB over, at $0.09/GB.
+
+Keep the working set on the worker's local NVMe; Supabase Storage is the durable copy. Daily scanning makes that cache more valuable, not less, because the same trailing-window partitions are re-read every day.
 
 One setup step that is easy to miss: Storage's global file-size limit defaults to 50 MB and is configurable up to 500 GB on Pro ([file limits](https://supabase.com/docs/guides/storage/uploads/file-limits)). Parquet shards run 100-500 MB, so raise it before the first S1 write.
 
@@ -213,9 +225,31 @@ One setup step that is easy to miss: Storage's global file-size limit defaults t
 
 Push to `main` is production. A pull request gets a preview deployment on its own URL. That is the whole flow, and it is the flow because it needs no operator.
 
-⚠️ **The Vercel ↔ GitHub link is gated on an OAuth grant that no API can perform.** The Vercel GitHub App must be installed on the `Empact-Partners` organization by an org owner, in a browser. Verified 2026-08-04: `GET /orgs/Empact-Partners/installations` returns `{"total_count": 0, "installations": []}`. Nothing is installed today.
+### Deployment status
 
-There are two independent blockers here, and fixing one does not fix the other. Hobby teams cannot connect to org-owned repositories at all ([Vercel limits](https://vercel.com/docs/limits)), so **Pro is a prerequisite for the Git link itself**, quite apart from the non-commercial licence term in §Bottom line.
+Live state, verified 2026-08-04 against the Vercel and GitHub APIs.
+
+| Fact | Value |
+|---|---|
+| Vercel team | **Empact Partners**, `team_YDjSLKf93n88onmsyKisSKgC`, **Pro** |
+| Project | **reddit-index**, `prj_OhSRGKEKFeN2A9JU1BTeebdR6E29` |
+| Framework · runtime | `nextjs` · Node **24.x** |
+| Git link | `Empact-Partners/reddit-index`, production branch `main` |
+| Vercel GitHub App | Installed on the `Empact-Partners` org |
+| Deploy hooks | None created |
+| Deployments to date | **0** |
+
+**Zero deployments is the correct state, not a failure.** The repository holds documentation and data, no application code, so there is nothing to build. The first deployment happens when the first commit under an app directory lands on `main`.
+
+🔒 **The API token lives outside this repository**, at `~/.claude/.vercel-empact.json`, mode 0600. Never commit it, never paste a value into a document, never echo it into a log or a command that gets logged. Nothing in this repo needs it — deployment is driven by the Git link, not by a token.
+
+### How the Git link was made
+
+⚠️ **The Vercel ↔ GitHub link is gated on an OAuth grant that no API can perform.** The Vercel GitHub App has to be installed on the `Empact-Partners` organization by an org owner, in a browser.
+
+Earlier on 2026-08-04, `GET /orgs/Empact-Partners/installations` returned `{"total_count": 0, "installations": []}` and the link was impossible. It now returns the `vercel` app, and the project link went through the same day.
+
+Two independent blockers had to clear, and fixing one would not have fixed the other. Hobby teams cannot connect to org-owned repositories at all ([Vercel limits](https://vercel.com/docs/limits)), so **Pro was a prerequisite for the Git link itself**, quite apart from the non-commercial licence term in §Bottom line.
 
 **Step 1 — install the App.** Open `https://github.com/apps/vercel/installations/new`, select the `Empact-Partners` organization, and grant access to `reddit-index` specifically rather than "All repositories."
 
@@ -266,27 +300,34 @@ Never commit a value. Vercel env vars are set per environment (Production, Previ
 | `REDDIT_CLIENT_ID`, `REDDIT_CLIENT_SECRET`, `REDDIT_USER_AGENT` | App-only OAuth for Lane B and delete-sync |
 | `SENTIMENT_API_KEY` | Stage-2 LLM tail ([06-sentiment.md](06-sentiment.md)) |
 | `REVALIDATE_SECRET` | Same value as the Vercel side; the worker is the caller |
-| `VERCEL_DEPLOY_HOOK_URL` | Full-rebuild trigger, used only for code and schema changes |
+| `VERCEL_DEPLOY_HOOK_URL` | Full-rebuild trigger, used only for code and schema changes. No hook exists yet (§6) |
 
 ## 8. What runs when
 
-The weekly cycle from [13-algorithm.md](13-algorithm.md) §7, mapped onto this infrastructure.
+The continuous-ingest, daily-publish cycle from [13-algorithm.md](13-algorithm.md) §7, mapped onto this infrastructure. Step numbers are that file's.
 
 | Cadence | Step | Where | Notes |
 |---|---|---|---|
-| Adaptive, 1-24 h per subreddit | 2. `poll_comment_streams` | Worker | The bulk of API calls. Watermark per sub in `ingest_state`; writes land in Supabase Storage |
-| Daily | 3. `poll_new` · 4. `qualify_threads` · 5. `fetch_trees` | Worker | Trees only for threads that earned one |
-| Weekly | 1. `refresh_subreddit_meta` | Worker → Postgres | Rule-hash drift updates `subreddits.rule_posture` |
-| Weekly | 6. `boosters` | Worker | Scoped search, both sorts, plus the recurring-thread registry |
-| Weekly | 8. `detect_mentions` · 9. `resolve_entities` · 10. `classify_sentiment` | Worker + DuckDB; LLM tail via Batch API | Parquet in, Parquet out. Delta shards only |
-| Weekly | S5 load | Worker → Postgres, direct 5432 | `COPY` then `ON CONFLICT DO NOTHING`; `UNIQUE(brand_id, doc_id)` makes a re-run safe |
-| Weekly | 11. `compute_index` | Postgres SQL | Full recompute of the affected week partitions into `brand_category_scores`, `leaderboards`, `brand_pages` |
-| Weekly | 12. `publish` | Worker → `POST /api/revalidate` | `revalidateTag` per changed brand and category. Seconds, not a rebuild |
-| Monthly | 7. `reconcile_archive` | Worker | New dump shards fill `more` gaps; dump rows are authoritative and upsert over API rows |
-| Nightly | 13. `delete_sync` | Worker | `/api/info` over stored `doc_id`s → purge `mentions` and children → write `removals` → `revalidateTag` per affected brand |
-| On merge to `main` | Site build | Vercel | Code, schema and methodology-version changes only |
+| **Continuous**, 1-24 h per bucket | `poll_comment_streams` | Worker | The bulk of API calls. Multireddit buckets packed by rate, not by category; watermark per sub in `ingest_state`; writes land in Supabase Storage |
+| **Continuous**, with its bucket | `poll_new` | Worker | Post metadata for threads the stream surfaced |
+| **Daily**, ~03:00 UTC | 1. `refresh_subreddit_meta` | Worker → Postgres | Rule-hash drift updates `subreddits.rule_posture` |
+| Daily | 2. `qualify_threads` · 3. `fetch_trees` | Worker | Trees only for threads that earned one |
+| Daily | 4. `boosters` | Worker | Lane C external-index probes plus Lane D scoped search, rotated across brand pairs |
+| Daily | 5. `detect_mentions` · 6. `resolve_entities` · 7. `classify_sentiment` | Worker + DuckDB; LLM tail via Batch API | Parquet in, Parquet out. **Delta shards only** — comments arriving since the last run |
+| Daily | S5 load | Worker → Postgres, direct 5432 | `COPY` then `ON CONFLICT DO NOTHING`; `UNIQUE(brand_id, doc_id)` makes a re-run safe |
+| Daily | 8. `compute_index` | Postgres SQL | Recomputes the in-progress `week_start` bucket into `brand_category_scores`, `leaderboards`, `brand_pages`. The score grain stays weekly; only the publish cadence is daily |
+| Daily | 9. `publish` | Worker → `POST /api/revalidate` | `revalidateTag` for changed brands and categories only. Seconds, not a rebuild |
+| Daily | 10. `delete_sync` | Worker | `/api/info` over stored `doc_id`s → purge `mentions` and children → write `removals` → `revalidateTag` per affected brand |
+| **Monthly** | `reconcile_archive` | Worker | New dump shards fill `more` gaps and catch deletions; dump rows are authoritative and upsert over API rows |
+| **On merge to `main`** | Site build | Vercel | Code, schema and methodology-version changes only. Never part of the daily pass |
+
+At 50 categories the daily pass is roughly 9,000 Reddit API calls, under two hours of wall clock at 80 req/min ([13-algorithm.md](13-algorithm.md) §8). That is why 03:00 UTC works as a start time, and why a run that dies at 04:30 is restarted rather than rescued.
+
+Ingest is per-subreddit, not per-category. **Deduplicate the ingest set before scheduling** or ~29% of calls re-fetch streams another category already pulled — r/Entrepreneur alone appears in 7 of the 20 tested categories ([14-category-tests.md](14-category-tests.md) §7).
 
 Every stage writes its artifact before it writes its ledger row, keyed `(stage, subreddit, ym, code_version)`. On start a stage lists existing keys and skips them, so a job that dies at hour 9 resumes at hour 9 and the worst case is one lost sub-month shard.
+
+⚠️ **A missed day is not an outage.** The next pass picks up a two-day delta, because ingestion never stopped and every stage is keyed on content rather than on a schedule. What a missed day does cost is freshness, so alert on `publish` not having run in 36 hours.
 
 ⚠️ **Purging Postgres is half the job.** A cached page keeps serving a removed comment until its tag is invalidated, so `delete_sync` owns the revalidate call, and `removals.revalidated_at` is the receipt that it happened. A row with `purged_at` set and `revalidated_at` null is an open defect.
 
@@ -309,17 +350,22 @@ Every stage writes its artifact before it writes its ledger row, keyed `(stage, 
 
 Prices from [Vercel pricing](https://vercel.com/pricing), [Vercel limits](https://vercel.com/docs/limits), [Supabase pricing](https://supabase.com/pricing), [Supabase compute and disk](https://supabase.com/docs/guides/platform/compute-and-disk) and [Railway pricing](https://railway.com/pricing), all fetched 2026-08-04.
 
+**Rechecked under daily publishing: nothing in this table moves.** Seven times as many publish events multiply a $0.08 line into a $0.01-to-$0.60 line, which disappears inside the ~$1 rounding of the Vercel usage row. No line item was rebalanced, because none needed to be, and the totals stand at $74 and $301.
 
-Four caveats on the table:
+Five caveats on the table:
 
 **The Stage-2 line is the largest discretionary swing.** It assumes the nano-class cascade at the top of its $8-15 per 1M band. Haiku batch instead moves it to $45-85 per 1M, so $7-13/mo at Phase 1 and $63-119/mo at full scale ([06-sentiment.md](06-sentiment.md)).
 
 **Worker sizing is list-price arithmetic, not a benchmark.** A Hetzner dedicated box with a 2 TB NVMe is the cheaper alternative once the corpus is cached locally, and it removes the egress exposure in §5 almost entirely — *Hetzner pricing NOT VERIFIED, check before committing*.
 
-**The Vercel usage line is inference.** 5,000 ISR writes a week is 20K/mo at $0.004 per 1K = $0.08. A million page views is a million reads at $0.0004 per 1K = $0.40. A 4-minute build on a 4-CPU machine is 16 CPU-minutes at $0.0035 = $0.06 per deploy.
+**The Vercel usage line is inference, and daily publishing does not move it.** Tens of ISR writes a day is ~3K/mo at $0.004 per 1K = $0.01; the pathological all-5,000-pages-daily case is 150K/mo = $0.60. A million page views is a million reads at $0.0004 per 1K = $0.40.
 
-**Egress is the line to watch, not storage.** Storage at full scale is $1. A month with two full-corpus re-scans is the only realistic way this table moves by more than ten dollars without a scope change.
+Builds happen on merge, not on publish, so build CPU is unchanged either way: a 4-minute build on a 4-CPU machine is 16 CPU-minutes at $0.0035 = $0.06 per deploy.
+
+**Deployment count is not a cost line at all.** Pro allows 6,000 deployments a day ([Vercel limits](https://vercel.com/docs/limits)), daily operation creates zero of them, and deployments are not metered — only the CPU minutes they burn are.
+
+**Egress is the line to watch, not storage.** Storage at full scale is $1. Splitting one weekly delta scan into seven daily ones leaves the monthly byte total flat, so a month with two full-corpus re-scans remains the only realistic way this table moves by more than ten dollars without a scope change.
 
 ---
 
-[← Back to README](README.md) · [13-algorithm.md](13-algorithm.md) · [07-index-methodology.md](07-index-methodology.md)
+[← Back to README](README.md) · [The algorithm](13-algorithm.md) · [Category tests](14-category-tests.md) · [Index methodology](07-index-methodology.md)

@@ -4,11 +4,14 @@
 
 - 🔴 **The official Reddit API cannot reach history.** Every listing hard-caps at ~1,000 items. Measured live 2026-08-04: `/r/SaaS/new?limit=100` exhausted at **995 items across 10 pages**, then `after=None`. Scoped search capped at **250**.
 - 🔴 **That reaches days, not years.** r/SaaS's posting rate was measured twice on 2026-08-04 by two methods (**122/day** and **~350/day**), which puts 995 reachable posts at **roughly 3 to 8 days of history**. Both ends kill the API as a backfill route.
-- 🔴 **Reddit search indexes posts, not comment bodies.** The search `type` enum is `link`/`sr`/`user` only. Most brand opinion lives in comments, so per-brand search is a discovery and QA tool, never a census.
+- 🔴 **Reddit search indexes posts, not comment bodies.** The search `type` enum is `link`/`sr`/`user` only. Per-brand Reddit search is a discovery and QA tool, never a census.
+- 🟢 **External search engines *can* reach comment text**, because they crawl the rendered thread pages. That is Lane C in [13-algorithm.md](13-algorithm.md) §3 — a targeted probe with unknown coverage, never a census either.
 - 🟢 **Architectural verdict: ingest whole subreddits, then match brands locally.** Every other design fails one of the constraints above.
-- 🟡 **Backfill comes from the Arctic Shift / Academic Torrents monthly dumps** (zst-compressed ndjson, 2005-06 through 2026-06, still shipping). Reddit grants no licence for them; the torrents carry empty `terms` and `license` fields.
+- 🟡 **Backfill comes from the Arctic Shift / Academic Torrents monthly dumps** (zst-compressed ndjson, 2005-06 through 2026-06, still shipping).
 - 🟢 **Volume is one machine, not a cluster.** A ~1,000-subreddit software corpus is roughly **200-400M items ≈ 0.5-1.5 TB raw JSON**, which is **50-150 GB** once stored as zstd-compressed Parquet on the fields we keep.
-- 🟡 **Request volume is not the constraint; entitlement is.** ~11K requests/day covers 1,000 subs, about **8% of what one OAuth client id may issue**. Whether we may use the $0 tier at all is [01-legal.md](01-legal.md)'s question, so budget the commercial rate: **$79-144/mo**.
+- 🟢 **Ingest is continuous; scoring and publishing run once a day.** Steady state is **~180 API calls per category per day**, ~9,000/day across 50 categories, under 2 hours of wall clock — about 8% of one app-only client's daily ceiling.
+- 🟢 **Multireddit bucketing verified to 40 subreddits in a single call.** `/r/a+b+c/comments` merges quiet subs into one page and removes their per-call overhead.
+- 🟡 **Request volume is not the constraint; entitlement is.** At the commercial rate 9,000 calls/day is **~$65/mo**; a 1,000-sub corpus at 11-20K calls/day is **$79-144/mo**. Which tier we may occupy is unresolved and not settled in this document.
 
 ---
 
@@ -38,9 +41,11 @@ The verdict is identical at either end of that range: the API is a maintenance t
 
 ## 2. Constraint two: search does not see comments
 
-The search endpoint indexes submissions. There is no comment type in the `type` enum, so a query for "Bitwarden" returns threads whose titles or bodies match, not the thousands of comments where the actual opinion sits.
+The Reddit search endpoint indexes submissions. There is no comment type in the `type` enum, so a query for "Bitwarden" returns threads whose titles or bodies match, not the thousands of comments where the actual opinion sits.
 
 Search is also relevance-ranked and stem-matching, not exhaustive. Live test: "Descript" in r/VideoEditing returned 15 results of which roughly 8 matched the word "description" ([subreddit mapping research](04-subreddit-mapping.md)).
+
+The gap has one partial escape. External search engines index the rendered thread pages, so they *can* match on comment text — verified 2026-08-04 via Brave, `site:reddit.com "switched from hubspot to"`, returning real comment bodies. See §7 and [13-algorithm.md](13-algorithm.md) §3 Lane C.
 
 ## 3. Architectural verdict
 
@@ -58,15 +63,9 @@ Verified by direct fetch 2026-08-04: the [2026-06 torrent](https://academictorre
 
 Arctic Shift's own API docs ask us not to bulk-pull: "If you want to process massive amounts of data, use the monthly dumps instead." Its `/api/time_series` endpoint gives exact per-subreddit counts and is the right tool for sizing, not harvesting.
 
-⚠️ **Reddit grants no licence for these dumps.** The torrent metadata literally reads `terms= {}, license= {}`.
+⚠️ The torrent metadata carries `terms= {}, license= {}`, and anything ingested inherits a deletion duty: [Developer Terms §3.3](https://www.redditinc.com/policies/developer-terms) requires deleting or modifying content "as soon as possible" once it is deleted, removed, or edited upstream, and the [Data API Wiki](https://support.reddithelp.com/hc/en-us/articles/16160319875092-Reddit-Data-API-Wiki) "strongly recommend[s] routinely deleting any stored user data and content within 48 hours."
 
-Anything ingested from a dump inherits a deletion duty. [Developer Terms §3.3](https://www.redditinc.com/policies/developer-terms) requires deleting or modifying content "as soon as possible" once it is deleted, removed, or edited upstream. Separately, the [Data API Wiki](https://support.reddithelp.com/hc/en-us/articles/16160319875092-Reddit-Data-API-Wiki) "strongly recommend[s] routinely deleting any stored user data and content within 48 hours."
-
-Neither is a 24-hour contractual figure, and no fixed interval should be quoted as one. The contract says "as soon as possible"; we implement a nightly delete-sync job ([08-architecture.md](08-architecture.md)).
-
-Reddit sued Perplexity, SerpApi, Oxylabs, and AWMProxy on 2025-10-22 over "industrial-scale scraping" ([Search Engine Land](https://searchengineland.com/reddit-sues-perplexity-serpapi-scraping-google-463681)).
-
-Reddit Index displays full comment text with links back to the source thread. That is a deliberate, priced decision by the owner, taken with the contractual and copyright exposure on the table. This document does not rule on it; the clause-level reading and the risk register live in [01-legal.md](01-legal.md).
+Neither is a 24-hour contractual figure, and no fixed interval should be quoted as one. We implement a nightly delete-sync job ([08-architecture.md](08-architecture.md)).
 
 ## 5. Measured corpus volume
 
@@ -90,42 +89,72 @@ Storage, derived from the dumps at ~221 bytes/item compressed and ~2.0-2.5 KB/it
 
 The genuinely expensive layer is embeddings if we ever add them: 240M items at 384-dim fp16 is roughly **185 GB of vectors** before any index, and chunking multiplies that 2-3×. Out of scope for Phase 1.
 
-## 6. Incremental updates
+## 6. Incremental updates — continuous ingest, daily publish
 
-Daily, per 1,000 subreddits:
+Two rhythms, deliberately separated ([13-algorithm.md](13-algorithm.md) §7). **Ingestion is continuous**, each multireddit bucket polled on its own 1-24h cadence, because the comment stream and the 1,000-item cap force it. **Scoring and publishing run once a day**, ~03:00 UTC, so the site is never more than 24 hours stale.
 
-| Step | Endpoint | Requests/day |
-|---|---|---|
-| New posts (twice for hottest subs) | `/r/{sub}/new?limit=100` | ~1,200 |
-| Comment trees for new posts | `/comments/{id}` | 5,000-15,000 |
-| Score/edit refresh, 100 ids per call | `/api/info?id=t3_a,t3_b,…` | ~3,000 |
-| **Total** | | **~10,000-20,000** |
+Daily publishing is nearly free because stages 5-8 of the pipeline process only the **delta** — comments arriving since the last run. Total classified volume per month is unchanged; only the number of publish events rises.
 
-Rate limit is **100 queries per minute per OAuth client id**, averaged over a ten-minute window, per the [Data API Wiki](https://support.reddithelp.com/hc/en-us/articles/16160319875092-Reddit-Data-API-Wiki). Stay under ~80 QPM. The limit is per client_id, not per user, so extra accounts do not multiply the budget.
+Serving does not rebuild ~5,000 pages every day. The daily job calls `revalidateTag` for only the brands and categories whose scores actually moved, typically tens of pages. Full rebuilds stay reserved for code and schema changes ([08-architecture.md](08-architecture.md)).
 
-At 100 QPM the daily ceiling is 144K requests, so ~11K/day is about **8% of what a single client id may issue**, finishing in roughly three hours at a polite 0.75s pacing. Throughput is not the binding constraint.
+Steady state, per category, per day, across 8 scoring subreddits:
 
-Price depends on which tier we are entitled to, and that is not this document's call. The free tier is non-commercial and lists at $0; the commercial rate is **$0.24 per 1,000 calls** ([TechTarget](https://www.techtarget.com/whatis/feature/Reddit-pricing-API-charge-explained)), so 11-20K calls/day is 330-600K/month, or **$79-144/mo**.
+| Stage | Calls/day | Basis |
+|---|---:|---|
+| Comment streams (Lane B) | ~90 | rate-bucketed multireddits; quiet subs share a bucket |
+| `/new` polling | ~16 | 2 pages × 8 subs |
+| Subreddit meta | ~16 | 2 × 8 subs, rule-drift detection |
+| Comment trees | ~45 | qualifying threads only |
+| Boosters (Lanes C + D) | ~10 | external probes + scoped Reddit search, rotated |
+| **Total** | **~180/day** | ≈ 1,250/week |
 
-⚠️ Do not plan against the $0 line. [01-legal.md](01-legal.md) reads [Developer Terms §4.1](https://www.redditinc.com/policies/developer-terms) as barring access "by or on behalf of a business" regardless of tier, so the non-commercial tier is not a posture an Empact-operated site can occupy. Budget the commercial figure and treat entitlement as unresolved.
+**50 categories ≈ 9,000 calls/day**, under 2 hours of wall clock, interruptible at any point.
 
-Add a monthly Arctic Shift dump pull as a reconciliation pass that repairs whatever the live crawl missed. Note the **36-hour settling window** before dump data matches the API. The ranking itself rebuilds weekly ([08-architecture.md](08-architecture.md)); the dump pull corrects the store underneath it.
+Rate limit is **100 queries per minute per OAuth client id**, averaged over a ten-minute window, per the [Data API Wiki](https://support.reddithelp.com/hc/en-us/articles/16160319875092-Reddit-Data-API-Wiki). Run at ≤80 QPM, which is ~115,000 calls/day. 9,000/day is about **8% of one app-only client's budget**. The limit is per client_id, not per user, so extra accounts do not multiply it.
+
+⚠️ Ingest is per-subreddit, not per-category. **Dedupe the ingest set before scheduling** or the overlap is paid twice: 187 candidate slots across the 20 tested categories collapse to 132 unique subreddits, and r/Entrepreneur alone serves 7 of them ([14-category-tests.md](14-category-tests.md) §7).
+
+At the commercial rate of **$0.24 per 1,000 calls** ([TechTarget](https://www.techtarget.com/whatis/feature/Reddit-pricing-API-charge-explained)), 9,000/day is ~270K/month ≈ **$65/mo**. A larger 1,000-sub corpus at 11-20K calls/day is **$79-144/mo**. Do not plan against the $0 line; tier entitlement is unresolved.
+
+### Multireddit bucketing
+
+The comment stream accepts a `+`-joined subreddit list and returns one merged feed. **Verified live 2026-08-04, scaling to at least 40 subreddits in a single call:**
+
+| Subs in one call | URL length | Comments returned | Distinct subs seen | Span of the page |
+|---:|---:|---:|---:|---:|
+| 8 | 64 chars | 100 | 7 | 64.8 min |
+| 15 | 131 chars | 100 | 14 | 18.3 min |
+| 25 | 211 chars | 100 | 17 | 16.7 min |
+| 40 | 360 chars | 100 | 23 | 7.5 min |
+
+The merged rate is the **sum** of the member rates, so merging does **not** reduce the number of comments you must retrieve. What it removes is per-call overhead on quiet subreddits: eight sleepy subs polled separately burn eight calls to collect a handful of comments each, while merged they fill one page.
+
+⚠️ So the rule is **bucket by rate, not by category.** Quiet subs are packed together until a bucket fills roughly one page per interval; loud subs stay solo on their own cadence. Never exceed ~40 members or ~400 URL characters per bucket, and split any bucket whose page stops covering its interval.
+
+Bucket sizing needs a measured comments/hour figure per subreddit. [14-category-tests.md](14-category-tests.md) carries those rates for 132 subreddits ([data/subreddit-measurements.csv](data/subreddit-measurements.csv)) — they span three orders of magnitude, from 0.5h to 3.3 years per 100-comment page, which is exactly why a fixed cadence fails.
+
+### Monthly reconciliation
+
+Add a monthly Arctic Shift dump pull as a reconciliation pass. It fills `more`-branch gaps, catches deletions the live crawl missed, and repairs any window a poll under-covered. Note the **36-hour settling window** before dump data matches the API.
 
 ## 7. Acquisition routes compared
 
-This table compares **coverage, cost and effort**. It does not rate compliance. Every legality verdict belongs to [01-legal.md](01-legal.md), and none of these routes is clean for a business-operated product, because [Developer Terms §4.1](https://www.redditinc.com/policies/developer-terms) reaches business use whatever the source.
+This table compares **coverage, cost and effort**. It does not rate compliance: every legality verdict for every route belongs to [01-legal.md](01-legal.md), and this document defers to it without exception.
 
-| Route | Coverage | What the route does and does not settle | Cost | Effort |
+| Route | Coverage | Legality | Cost | Effort |
 |---|---|---|---|---|
-| Official API, free tier | Last ~1,000 items per listing; days, not years | First-party and attributable, so no redistribution question about the transport. Grants no history and no commercial permission; tier entitlement is unresolved | $0 list price | Low |
-| Official API, commercial | Same cap, no history | Buys a rate, not a licence: Data API Terms §3.1 still requires a separate agreement with Reddit for commercial use | $79-144/mo at 11-20K calls/day | Low |
-| **Arctic Shift dumps (per-sub torrents)** | **Complete, 2005 → 2026-06** | Settles history, and only history. Torrent metadata carries `terms= {}, license= {}`, so it conveys no permission of any kind | Bandwidth only | Medium |
-| Arctic Shift API | Complete but rate-limited, times out on big subs | Same absence of permission as the dumps; the docs additionally ask you not to bulk-pull | $0 | Low, not scalable |
-| [Bright Data datasets](https://brightdata.com/products/datasets/reddit) | Broad, refreshable monthly | Changes the counterparty, not the underlying permission. Reddit disputes the category and has sued vendors in it | $250 min order, up to $0.0025/record → **~$750K at 300M** | Very low |
-| [Apify actors](https://apify.com/automation-lab/reddit-scraper) | Whatever you crawl, no deep history | Crawls the public site, so it inherits the scraping question rather than answering it | $0.58-3.40 per 1K | Low-medium |
-| Licensed Reddit agreement | Full firehose plus history | The only route that actually grants the rights the others assume. Out of reach at this price | Google ~$60M/yr, OpenAI ~$70M/yr class ([CNBC](https://www.cnbc.com/2026/07/22/reddit-stock-google-ai-content-deal.html)) | Enterprise negotiation |
+| Official API, free tier | Last ~1,000 items per listing; days, not years. First-party and attributable | Not rated here | $0 list price | Low |
+| Official API, commercial | Same cap, no history. Buys a rate, not a licence | Not rated here | $65/mo at 9K calls/day; $79-144/mo at 11-20K | Low |
+| **Arctic Shift dumps (per-sub torrents)** | **Complete, 2005 → 2026-06.** Settles history, and only history | Not rated here | Bandwidth only | Medium |
+| Arctic Shift API | Complete but rate-limited, times out on big subs; docs ask you not to bulk-pull | Not rated here | $0 | Low, not scalable |
+| **External search index (Lane C)** | **Comment-level text no Reddit endpoint can search.** Coverage is whatever the engine indexed: **unknown, unstable, unauditable.** Opportunistic probe only — never a census, never a denominator | Not rated here | Metered per query; ~10 probes/category/day | Low |
+| [Bright Data datasets](https://brightdata.com/products/datasets/reddit) | Broad, refreshable monthly. Changes the counterparty, not the underlying data | Not rated here | $250 min order, up to $0.0025/record → **~$750K at 300M** | Very low |
+| [Apify actors](https://apify.com/automation-lab/reddit-scraper) | Whatever you crawl, no deep history | Not rated here | $0.58-3.40 per 1K | Low-medium |
+| Licensed Reddit agreement | Full firehose plus history | Not rated here | Google ~$60M/yr, OpenAI ~$70M/yr class ([CNBC](https://www.cnbc.com/2026/07/22/reddit-stock-google-ai-content-deal.html)) | Enterprise negotiation |
 
-**Chosen shape:** Arctic Shift per-subreddit dumps for backfill, the official API for daily increments, a commercial vendor only for targeted gap-fills. Which API tier that increment runs on is an open legal question, not a settled build decision.
+**Chosen shape:** Arctic Shift per-subreddit dumps for backfill, the official API on multireddit buckets for continuous increments, the external index as a targeted booster, a commercial vendor only for gap-fills.
+
+⚠️ Lane C output is a **thread URL, not a stored comment.** The snippet is a lead only; the comment is always re-fetched from Reddit's API so stored text and permalinks come from the authoritative source ([13-algorithm.md](13-algorithm.md) §3).
 
 ## 8. Working around the 1,000-item cap
 
@@ -148,6 +177,7 @@ The ingestion job runs for days and will be interrupted. Design for that from th
 | Unit granularity | One artifact per subreddit per month. Small enough to redo cheaply, large enough to avoid millions of files. |
 | Natural keys | Upsert on Reddit's own `t3_`/`t1_` fullnames. Re-ingesting the same dump twice must produce an identical store. |
 | Completion marker | A unit is complete only when a sentinel file is written after the final byte. A partial file without a sentinel is discarded and re-fetched. |
+| Watermarks | One `before` fullname per multireddit bucket. A poll that returns a full page without reaching it means the cadence was too slow: halve the interval and flag the window. |
 | Mutable fields | Score, edit state, and deletion status change after capture. Store `captured_at` per record and let the refresh pass overwrite them. |
 | Deletion propagation | The refresh pass must record when a post or comment has been removed upstream. |
 
@@ -158,7 +188,10 @@ Resumability is what makes the backfill affordable: a crash on day four costs th
 | Item | Status |
 |---|---|
 | Which r/SaaS posting-rate method is right (122/day vs ~350/day) | Unreconciled. Both stated above; history quoted as a range. Settle it by counting surviving posts across a fixed 7-day window |
-| Whether an Empact-operated site may use the free API tier at all | Open, and it is [01-legal.md](01-legal.md)'s call, not this document's |
+| Whether an Empact-operated site may use the free API tier at all | Open, and not this document's call |
+| Lane C coverage — what share of qualifying comments any external index actually holds | **NOT VERIFIED**, and probably unmeasurable. This is why Lane C is capped at opportunistic use |
+| External search API pricing at Lane C probe volume | **NOT VERIFIED** — verified functionally 2026-08-04, never priced at scale |
+| Steady-state calls/day at full taxonomy scale after dedupe | Modelled from the 20-category study, not measured end to end |
 | Whether Reddit self-serve API registration closed in late 2025 | **NOT VERIFIED** — secondary source only |
 | Oxylabs pricing | **NOT VERIFIED** — pricing page returned 404 |
 | Socialgist availability | **NOT VERIFIED** — site returned 404 |
@@ -167,4 +200,4 @@ Resumability is what makes the backfill affordable: a crash on day four costs th
 
 ---
 
-[← Back to README](README.md) · [04-subreddit-mapping.md](04-subreddit-mapping.md) · [08-architecture.md](08-architecture.md) · [data/subreddit-map.csv](data/subreddit-map.csv)
+[← Back to README](README.md) · [The algorithm](13-algorithm.md) · [Category tests](14-category-tests.md) · [Subreddit mapping](04-subreddit-mapping.md) · [Architecture](08-architecture.md) · [data/subreddit-map.csv](data/subreddit-map.csv)

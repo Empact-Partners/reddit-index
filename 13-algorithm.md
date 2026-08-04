@@ -8,9 +8,10 @@ How Reddit Index gets from "a category" to "a ranked board", concretely enough t
 
 - **The comment stream is the unlock.** `/r/{sub}/comments` returns the newest 100 comments in a subreddit regardless of which thread they sit in, with `link_title` attached. It is the only API surface that finds brand opinion in threads whose titles name no brand — which is most of them.
 - **Archives are the census, the API is the edge.** Historical coverage comes from per-subreddit dumps. The API maintains the last few days. Search is never a census.
-- **Cap each category at 8 scoring subreddits**, chosen by measured yield per call, not by subscriber count. Vendor-owned subs are evidence only and never touch a score.
+- **Cap each category at 8 scoring subreddits**, chosen by measured yield per call, not by subscriber count. Vendor-owned subs are evidence only and never touch a score. All 20 Phase-1 categories were measured empirically ([14-category-tests.md](14-category-tests.md)).
 - **Everything expensive runs last.** Local alias matching is nearly free and cuts the corpus by orders of magnitude before entity resolution or any LLM sees a single comment.
-- Roughly **1,200 API calls per category per weekly cycle**, ~60,000 for 50 categories, ~12.5 hours of wall clock at a safe request rate.
+- **Four discovery lanes, not one.** Archives are the census; the multireddit comment stream is the live edge; an external search index reaches comment text Reddit's own API cannot search; Reddit-native search and tree expansion fill the gaps.
+- **Continuous ingest, daily publish.** The site is never more than 24 hours stale. Roughly **180 API calls per category per day**, ~9,000/day for 50 categories, under 2 hours of wall clock.
 
 ---
 
@@ -85,7 +86,14 @@ Subscriber count never enters the score. r/PasswordManagers (54,639) outperforms
 
 ## 3. Discovery — the core of the design
 
-Three lanes with strictly different jobs. **Only lane A is a census.**
+Four lanes with strictly different jobs. **Only Lane A is a census.** B is the live edge, C reaches what Reddit's own search cannot, and D fills gaps.
+
+| Lane | Source | Job | Coverage claim |
+|---|---|---|---|
+| **A** | Archive dumps | Historical census | Complete for the window, subject to declared holes |
+| **B** | `/r/{subs}/comments` | Live edge, comment-level | Complete since the watermark |
+| **C** | External search index | Comment-level targeting | **None.** Opportunistic only |
+| **D** | Reddit search, trees, `/duplicates` | Gap fill | None |
 
 ### Lane A — historical census (archives)
 
@@ -120,15 +128,75 @@ interval_h = clamp(500 / max(rate, 1), 1, 24)
 
 Store a `before` watermark per subreddit — the fullname of the newest comment seen. Page backwards until the watermark is reached. If a poll ever returns a full page without hitting the watermark, the cadence was too slow: halve the interval and flag the gap for archive reconciliation.
 
-### Lane C — boosters (never a census)
+#### Multireddit bucketing — the efficiency win
 
-Run only to raise recall on known gaps and to test coverage:
+The comment stream accepts a `+`-joined subreddit list and returns one merged feed. **Verified live 2026-08-04, scaling to at least 40 subreddits in a single call:**
 
-- **Scoped cross-product search.** `/r/{sub}/search?restrict_sr=1&t=all&raw_json=1`, over general-sub × category-noun and domain-sub × intent-verb ("switching from", "alternative to", "vs", "recommend"). Run both `sort=relevance` and `sort=top` — they return materially different sets.
-- **Comment-tree expansion** on qualifying threads that Lane B surfaced only partially.
-- **Recurring-thread registry.** Many subs run periodic "what do you use?" megathreads. Register them by id and re-poll their trees directly; they are the densest single source in most categories.
+| Subs in one call | URL length | Comments returned | Distinct subs seen | Span of the page |
+|---:|---:|---:|---:|---:|
+| 8 | 64 chars | 100 | 7 | 64.8 min |
+| 15 | 131 chars | 100 | 14 | 18.3 min |
+| 25 | 211 chars | 100 | 17 | 16.7 min |
+| 40 | 360 chars | 100 | 23 | 7.5 min |
+
+The merged rate is the **sum** of the member rates, so merging does not reduce the number of comments you must retrieve. What it removes is per-call overhead on quiet subreddits: eight sleepy subs polled separately burn eight calls to collect a handful of comments each, while merged they fill one page.
+
+So the rule is **bucket by rate, not by category**:
+
+```python
+# Fill roughly one page per poll interval, never more.
+TARGET, PAGE = 24, 100                    # hours, comments per call
+def bucket(subs, rates):                  # rates in comments/hour
+    quiet  = sorted([s for s in subs if rates[s] <  PAGE/TARGET], key=rates.get)
+    loud   =        [s for s in subs if rates[s] >= PAGE/TARGET]
+    buckets, cur, load = [], [], 0.0
+    for s in quiet:                       # pack quiet subs until a bucket fills a page/day
+        if load + rates[s] > PAGE/TARGET and cur:
+            buckets.append(cur); cur, load = [], 0.0
+        cur.append(s); load += rates[s]
+    if cur: buckets.append(cur)
+    return buckets + [[s] for s in loud]  # loud subs stay solo, on their own cadence
+```
+
+Never exceed ~40 members or ~400 URL characters per bucket. A bucket whose page stops covering its interval gets split.
+
+### Lane C — the external index (what Reddit itself cannot search)
+
+Reddit's API cannot search comment bodies. **External search engines can, because they crawl the rendered thread pages.** This lane buys comment-level targeting that no Reddit endpoint offers.
+
+Verified live 2026-08-04 via the Brave Search API, `site:reddit.com "switched from hubspot to" CRM`, reading `extra_snippets`:
+
+> "We too switched from Hubspot to Freshsales for the exact same reasons you mentioned."
+> "HubSpot is atrocious. Absolutely the worst CRM I've ever had the misfortune of working with."
+> "We switched from HubSpot to Attio this year." · "Switched to AC last year and love it."
+
+Every one of those is a comment body carrying a comparative brand opinion, and none is reachable through `/r/{sub}/search`.
+
+**How to use it.** Not as a census — coverage is whatever the engine indexed, which is unknown and unstable. Use it as a **targeted probe** over the patterns that carry the most decision-grade opinion:
+
+| Pattern | Query shape | What it finds |
+|---|---|---|
+| Migration | `site:reddit.com "switched from {A} to"` | Two brands, one polarity each, explicit |
+| Comparison | `site:reddit.com "{A} vs {B}" {category}` | Head-to-head threads |
+| Displacement | `site:reddit.com "alternative to {A}" {category}` | Dissatisfaction with the incumbent |
+| Regret | `site:reddit.com "wish we'd" OR "biggest mistake" {A}` | Strong negative signal |
+| Advocacy | `site:reddit.com "best decision" OR "never going back" {A}` | Strong positive signal |
+
+The output is a **thread URL**, which becomes a Lane D tree fetch. The snippet is only the lead; the comment is always re-fetched from Reddit's API so the stored text and permalink come from the authoritative source, never from the search index.
+
+Run it per brand-pair on the qualifying set, not per brand. For a category with 15 ranked brands that is 105 unordered pairs — cap it at the pairs that actually co-occur in Lane B data.
+
+### Lane D — Reddit-native boosters
+
+- **Scoped cross-product search.** `/r/{sub}/search?restrict_sr=1&t=all&raw_json=1`, over general-sub × category-noun and domain-sub × intent-verb. Run both `sort=relevance` and `sort=top`; they return materially different sets.
+- **Comment-tree expansion** on threads Lane B or Lane C surfaced only partially.
+- **`/duplicates/{id}`** to pick up crossposts of a high-value thread into other mapped subs. Verified working.
 
 **Cut, deliberately:** global search, general-sub `top` sweeps, API-only historical backfill, arbitrary timestamp-slicing, default `morechildren` expansion, author-profile crawls, embeddings and vector search.
+
+⚠️ **`type=comment` on Reddit search does not work.** Verified 2026-08-04: `/r/CRM/search?q=hubspot&type=comment` returns `t3` posts, identical in kind to `type=link`. There is no comment search on the Data API, which is the entire reason Lanes B and C exist.
+
+⚠️ **Stickied posts are not megathreads.** Checked across r/CRM, r/PasswordManagers and r/projectmanagement: the stickies are posting-guideline and rules posts, not recurring "what do you use" threads. Recurring threads have to be found by search and registered by id, not harvested from `/about/sticky`.
 
 ### Deduplication
 
@@ -183,23 +251,37 @@ The cheap local stage that protects everything expensive downstream. It generate
 
 ---
 
-## 7. The weekly loop
+## 7. The loop — continuous ingest, daily publish
+
+Two rhythms, deliberately separated. Ingestion runs on each bucket's own cadence because the comment stream forces it to. Scoring and publishing run **once a day**, so the site is never more than 24 hours stale.
+
+**Continuous — per bucket, every 1-24h (§3 Lane B):**
 
 ```
-1. refresh_subreddit_meta      rules + about, detect rule drift        (~1 call/sub)
-2. poll_comment_streams        Lane B, adaptive cadence                 (bulk of calls)
-3. poll_new                    /r/{sub}/new for post metadata + titles
-4. qualify_threads             apply §4
-5. fetch_trees                 qualifying threads only
-6. boosters                    scoped search + recurring threads
-7. reconcile_archive           monthly, fills `more` gaps and deletions
-8. detect_mentions             Aho-Corasick (local, no API)
-9. resolve_entities            05
-10. classify_sentiment         06
-11. compute_index              07 — n_eff, diversity floors, bootstrap CIs
-12. publish                    rebuild the static site
-13. delete_sync                nightly, independent of the above
+poll_comment_streams   multireddit buckets, watermarked      → append to raw
+poll_new               /r/{sub}/new for post metadata          → append to raw
 ```
+
+**Daily — one ordered pass, ~03:00 UTC:**
+
+```
+1.  refresh_subreddit_meta   rules + about; detect rule drift       (~2 calls/sub)
+2.  qualify_threads          apply §4 to everything new
+3.  fetch_trees              qualifying threads only
+4.  boosters                 Lane C external probes + Lane D search
+5.  detect_mentions          Aho-Corasick over new comments (local, no API)
+6.  resolve_entities         05 — only candidate-bearing comments
+7.  classify_sentiment       06 — only resolved mentions
+8.  compute_index            07 — n_eff, diversity floors, bootstrap CIs
+9.  publish                  revalidateTag per changed brand + category
+10. delete_sync              purge removed content, revalidate affected pages
+```
+
+**Monthly:** `reconcile_archive` — fills `more`-branch gaps, catches deletions the API missed, and repairs any window a poll under-covered.
+
+**Why daily is nearly free.** Stages 5-8 process only the **delta** — comments arriving since the last run. The expensive work is the one-time backfill; steady state is a small daily increment. Publishing daily rather than weekly multiplies the number of publish events by seven while leaving total classified volume unchanged.
+
+**What daily changes on the serving side.** A full rebuild of ~5,000 pages every day is wasteful and risks Vercel's 45-minute build cap. The daily job calls `revalidateTag` only for brands and categories whose scores actually moved, so a typical day rebuilds tens of pages, not thousands. Full rebuilds stay reserved for code and schema changes ([08-architecture.md](08-architecture.md)).
 
 **Resumability is a hard requirement.** Every stage checkpoints to disk atomically: write to `path.tmp`, then `os.replace()`. One file per thread keyed by post id; a re-run skips ids already present. A job that dies at hour 9 resumes at hour 9.
 
@@ -209,24 +291,24 @@ The cheap local stage that protects everything expensive downstream. It generate
 
 ## 8. Cost and time
 
-Per category per weekly cycle, 8 subreddits:
+Steady state, per category, **per day**, 8 subreddits:
 
-| Stage | Calls | Basis |
+| Stage | Calls/day | Basis |
 |---|---:|---|
-| Subreddit meta | 16 | 2 × 8 subs |
-| Comment streams | ~700 | adaptive cadence across mixed-rate subs |
-| `/new` polling | ~120 | daily × 8 subs, paged |
-| Comment trees | ~300 | qualifying threads only |
-| Boosters | ~65 | scoped search, both sorts |
-| **Total** | **~1,200** | |
+| Comment streams | ~90 | rate-bucketed; quiet subs share a bucket |
+| `/new` polling | ~16 | 2 pages × 8 subs |
+| Subreddit meta | ~16 | 2 × 8 subs, drift detection |
+| Comment trees | ~45 | qualifying threads only |
+| Boosters (C + D) | ~10 | external probes + scoped search, rotated |
+| **Total** | **~180/day** | ≈ 1,250/week |
 
-**50 categories ≈ 60,000 calls.** At 80 req/min that is **~12.5 hours** of wall clock, trivially parallelised across subreddits and interruptible at any point.
+**50 categories ≈ 9,000 calls/day.** At 80 req/min that is **under 2 hours** of wall clock, parallelisable and interruptible at any point. It fits comfortably inside a single free-tier app-only client's budget of ~115,000 calls/day.
 
-Subreddits overlap between categories (r/sysadmin serves several), so the real figure is lower — dedupe the ingest set before scheduling.
+Subreddits overlap heavily between categories — r/sysadmin serves Help Desk, Security, Backup and Collaboration — so **dedupe the ingest set before scheduling**. The 187 candidate subreddits across the 20 tested categories collapse to far fewer unique ingest targets ([14-category-tests.md](14-category-tests.md)).
 
 Archive backfill is a separate one-time cost, dominated by download and local scan rather than API calls. **Not yet measured** — its byte count and the machine's scan rate both need benchmarking before anyone quotes a duration.
 
-LLM spend is governed by [06-sentiment.md](06-sentiment.md): only candidate-bearing comments reach the cascade, at roughly $45-85 per million comments classified.
+LLM spend is governed by [06-sentiment.md](06-sentiment.md): only candidate-bearing comments reach the cascade. Daily deltas are small, so the recurring cost is a fraction of the one-time backfill classification.
 
 ---
 

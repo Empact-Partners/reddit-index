@@ -2,7 +2,9 @@
 
 ## Bottom line
 
-- Four flat CSVs, 414 rows, all measured on **2026-08-04**. Every file opens in Excel or Sheets and renders on GitHub.
+- Six flat CSVs (566 rows), the JSON that seeded the 20-category probe, and the probe itself. Every measurement here was taken on **2026-08-04**. Every CSV opens in Excel or Sheets and renders on GitHub.
+- The newest layer is that probe. [subreddit-measurements.csv](subreddit-measurements.csv) measures 132 unique subreddits live: 37% delete brand talk, 36% are one product's own community, 51 are scorable. [../14-category-tests.md](../14-category-tests.md) reads the result.
+- ⚠️ Three of its columns are easy to misread — `comment_span_hours` is velocity and not coverage, `brand_bearing_share` is a 5-brand floor, and `density_ub95` is why a zero never means absence. [Details below](#the-three-columns-people-misread).
 - [domain-availability.csv](domain-availability.csv) records a **Reddit-named** outcome, not a Reddit-free one. The chosen name breaches Reddit's trademark clauses, knowingly. [decisions/0001-name-reddit-index.md](../decisions/0001-name-reddit-index.md) is authoritative.
 - No Capterra category catalog and no product counts are republished here. See [what is deliberately NOT here](#what-is-deliberately-not-here).
 
@@ -12,8 +14,12 @@ Click a file, then **Download raw file** to get the CSV rather than the rendered
 |---|---:|---|
 | [phase1-categories.csv](phase1-categories.csv) | 50 | The Phase 1 category spine |
 | [subreddit-map.csv](subreddit-map.csv) | 131 | Category → subreddit mapping with rule posture |
+| [subreddit-measurements.csv](subreddit-measurements.csv) | 132 | Every unique subreddit in the 20-category probe, measured live |
+| [category-tests-20.csv](category-tests-20.csv) | 20 | Category rollup of those measurements, with 95% bounds |
+| [category-candidates-20.json](category-candidates-20.json) | 20 | The probe's **input**: candidate subreddits and 5 seed brands per category |
+| [probe.py](probe.py) | — | The measurement harness. Resumable |
 | [brand-gazetteer-seed.csv](brand-gazetteer-seed.csv) | 113 | Seed brand list with ambiguity classification |
-| [domain-availability.csv](domain-availability.csv) | 120 | The sweep behind the Reddit Index name, and the exposure it carries |
+| [domain-availability.csv](domain-availability.csv) | 120 | The sweep behind the Reddit Index name |
 
 ---
 
@@ -83,6 +89,129 @@ One row per (category, subreddit) pair. Subscriber counts pulled individually vi
 
 ---
 
+## subreddit-measurements.csv
+
+Every unique subreddit touched by the 20-category probe, measured live on 2026-08-04.
+
+One row per **subreddit**, not per (category, subreddit) pair. The 187 candidate slots collapse to 132 unique subreddits, because subreddits overlap across categories — r/Entrepreneur alone serves 7.
+
+This is a different instrument from `subreddit-map.csv` above, over a different category set ([../14-category-tests.md](../14-category-tests.md)). Names here carry **no `r/` prefix**, so strip the prefix from `subreddit-map.csv` before joining the two.
+
+| Column | Type | Meaning |
+|---|---|---|
+| `subreddit` | string | Bare name, no `r/`. Case as sent to the API. |
+| `status` | `ok` / `unavailable` | Whether `/r/{sub}/about` returned a `t5`. 131 `ok`, 1 `unavailable`. |
+| `subscribers` | int | Count at measurement time. Empty when unavailable. Deliberately **not** a selection signal. |
+| `rule_posture` | enum | How the subreddit's own rules treat brand talk. Four values, table below. |
+| `community_type` | enum | Who the subreddit's population is. Three values, table below. |
+| `comments_per_hour` | float | `100 ÷ comment_span_hours`. Derived from one page. Feeds rate-bucketing in [../13-algorithm.md](../13-algorithm.md) §3. |
+| `comment_span_hours` | float | How far back that one 100-comment page reached. ⚠️ Velocity, not coverage. |
+| `brand_bearing_share` | float 0-1 | Share of those 100 comments containing any of the category's 5 seed brands. ⚠️ A floor. |
+| `density_ub95` | float | 95% one-sided upper bound on brand density given a 100-comment sample. |
+| `bb_per_hour` | float | `comments_per_hour` × `brand_bearing_share`. The rate-adjusted yield, and the selection signal. |
+| `scorable` | `True` / `False` | `ok` **and** not hostile **and** not single-product. True on 51 of 132. |
+| `distinct_threads_in_page` | int | Distinct `link_id`s among the 100 comments. A concentration check: a low value means the page is one busy thread rather than the subreddit. |
+| `measured_at` | ISO UTC | Per-subreddit timestamp. Empty on the unavailable row. |
+
+These are one-time measurements, not the pipeline's running state. Ingest runs continuously per bucket and scoring publishes once daily ([../13-algorithm.md](../13-algorithm.md) §7).
+
+### `rule_posture`
+
+| Value | Count | Meaning |
+|---|---:|---|
+| `permissive` | 64 | Organic brand discussion is allowed. |
+| `hostile` | 48 | The rules remove promotional or product-mention content. **37% of the 131 reachable subreddits.** |
+| `unknown` | 13 | The rules endpoint returned nothing parseable. **Not** a synonym for permissive. |
+| `capped` | 6 | Allowed behind a karma gate or a weekly thread. |
+
+Posture is classified by regex over the full `/about/rules` text, not by a human read. The largest communities skew strictest: r/smallbusiness (2.5M) and r/Accounting (1.27M) both classify hostile.
+
+### `community_type`
+
+| Value | Count | Meaning |
+|---|---:|---|
+| `single_product` | 48 | One product's own community — r/Bitwarden, r/Notion, r/CapCut. Dense, and **never scored**: the population already chose the product. Evidence only. |
+| `ecosystem` | 6 | Vendor-named but market-wide in population: r/salesforce, r/shopify, r/aws, r/Adobe, r/reactjs, r/node. Scorable, carrying a flag. |
+| `independent` | 78 | Neither. The scorable middle. |
+
+The `ecosystem` class was a correction made during analysis. Blanket-excluding every vendor-named subreddit dropped CRM from 5 scorable subs to 4, which would have failed the category on a classification error rather than on evidence.
+
+### The three columns people misread
+
+**`comment_span_hours` measures velocity, not coverage.** One 100-comment page reached back 0.58h in r/recruitinghell and 28,823h — 3.3 years — in r/talentacquisition. Median 27.9h. The same instrument samples the last hour in one subreddit and the last three years in another, so it can never be read as how much of a subreddit was seen.
+
+**`brand_bearing_share` is a floor, not an estimate.** Each subreddit was probed with only the 5 seed brands of its category. Real gazetteers run 20-100 brands, so every share here understates by roughly the ratio of the two lists. 45 of the 131 reachable subreddits measured exactly zero.
+
+**`density_ub95` exists so a zero is never read as absence.** It is the 95% one-sided upper bound on brand density given a 100-comment sample, using the rule of three where the observed count was zero. Across reachable rows it runs 0.0296 to 0.65. A `0.0` share means *not detected in 100 comments*, bounded above by this column.
+
+`bb_per_hour` is what ranks the corpus, and it inverts the intuition. The top rows are r/ObsidianMD (13.24), r/paypal (3.22) and r/Notion (2.70) — all single-product, all unscoreable. What the index can publish comes from the thinner independent middle.
+
+⚠️ **Filter on `status = ok` first.** The one unavailable row, `B2BForSales`, has empty measurements and `density_ub95 = 3.0`. That is the rule-of-three formula run against an empty sample, not a density.
+
+---
+
+## category-tests-20.csv
+
+One row per tested category, rolled up from the subreddit rows over that category's own candidate list. A subreddit serving several categories contributes to each of them. The reading is in [../14-category-tests.md](../14-category-tests.md).
+
+| Column | Type | Meaning |
+|---|---|---|
+| `category` | string | Joins to `category-candidates-20.json`. ⚠️ Only 8 of the 20 match a `phase1-categories.csv` label verbatim; the rest are the same domains under longer labels, and no crosswalk ships yet. |
+| `candidates` | int | Candidate slots for this category. Sums to 187 across the file. |
+| `ok` | int | Candidates whose `/about` resolved. Sums to 186 — one subreddit was unavailable. |
+| `hostile` | int | Candidates whose own rules remove brand talk. |
+| `single_product` | int | Candidates that are one product's own community. |
+| `scorable` | int | Candidates passing the `scorable` predicate. |
+| `live_bb_per_hour` | float | Σ `bb_per_hour` across this category's scorable subs. The measured live yield. |
+| `live_bb_per_hour_ub95` | float | The same sum computed at `density_ub95` instead of the observed share. |
+| `seed_bb_3y` | int | The live rate projected across a 3-year archive window (26,280 hours). |
+| `seed_bb_3y_ub95` | int | The same projection at the upper bound. |
+| `meets_5_sub_floor` | `True` / `False` | `scorable ≥ 5`. True for 6 of 20. |
+
+Both rate columns are computed from unrounded per-subreddit values, so multiplying the rounded rate by 26,280 reproduces `seed_bb_3y` only approximately — CRM stores 53,006 where the rounded column recomputes to 53,086.
+
+⚠️ **This file cannot declare a category dead.** 17 of 20 clear 400 seed-brand mentions on the point estimate and **all 20** clear it at the upper bound. What fails is the five-scorable-subreddit floor, and the cause is short candidate lists rather than absent discussion.
+
+---
+
+## category-candidates-20.json
+
+The **input** to the probe, not an output. Twenty objects, each with a `category`, exactly 5 seed `brands`, and a hand-built `subreddits` list. 187 slots, 132 unique.
+
+```json
+{"category":"CRM","brands":["HubSpot","Salesforce","Pipedrive","Zoho","Attio"],
+ "subreddits":["CRM","sales","salesforce","techsales","hubspot","gohighlevel",
+               "Zoho","smallbusiness","Entrepreneur","EntrepreneurRideAlong","SaaS"]}
+```
+
+Two properties of this file decide how every result reads. The 5-brand lists are what make each yield figure a floor. The subreddit lists are the study's binding constraint: widening them is what would move the 14 categories now sitting below the five-sub floor.
+
+⚠️ `probe.py` loads its category list from a sibling file named `cat20.json`. Rename this file or repoint that path before the first run.
+
+---
+
+## probe.py
+
+The harness behind both CSVs. Five API calls per candidate subreddit — `/r/{sub}/about`, `/r/{sub}/about/rules`, `/r/{sub}/comments?limit=100`, and `/r/{sub}/search` for the first 2 seed brands. Roughly 900 calls for 187 slots.
+
+**Resumable by design.** It writes one JSON per subreddit atomically (`.tmp`, then `os.replace`) and returns the on-disk record for any subreddit already measured, so a re-run costs only the gap. A run interrupted at slot 140 resumes at slot 140.
+
+**Credentials are read, never written.** It pulls `REDDIT_CLIENT_ID`, `REDDIT_CLIENT_SECRET` and `REDDIT_USER_AGENT` from the existing Reddit MCP config and mints an app-only `client_credentials` token. App-only OAuth is read-only — it cannot post, vote or comment. Nothing is hardcoded, and no secret lands in this repo.
+
+Rate discipline: `time.sleep(0.75)` between calls, retry on 429/500/502/503, one token re-fetch on 401.
+
+### Regenerating
+
+```bash
+python3 probe.py        # ~25 min for 187 candidate slots at a safe request rate
+```
+
+Set two things before the first run. `OUT`, at the top of the file, is an absolute scratch path for the per-subreddit JSON. And the category list loads from a sibling `cat20.json`, shipped here as `category-candidates-20.json`.
+
+Two things the harness does not do. The per-subreddit JSON stays in `OUT` and is not committed here, and the step folding those JSONs into the two CSVs is not part of `probe.py` — it measures, prints progress, and stops. Rebuilding the CSVs from a fresh run needs that step supplied.
+
+---
+
 ## brand-gazetteer-seed.csv
 
 The seed for entity resolution. Not exhaustive — it is the starting gazetteer, sized to expose the ambiguity problem rather than to cover the market.
@@ -128,15 +257,7 @@ It records a Reddit-named choice: `redditindex.com` is the primary, with `reddit
 
 `CHOSEN` is `redditindex.com`, `DEFENSIVE` is `redditbrandindex.com`. `LIVE-COMPETITOR` is `whatredditthinks.com`, registered 2026-05-25 and live with an adjacent per-brand audit product — see [../00-concept.md](../00-concept.md).
 
-⚠️ **The chosen name breaches Reddit's trademark clauses.** [Data API Terms §4.1](https://www.redditinc.com/policies/data-api-terms) forbids using Reddit Trademarks "in, or as part of the name of your App", and [Developer Terms §5.3](https://www.redditinc.com/policies/developer-terms) repeats the prohibition. Neither has an exception this name fits.
-
-The enforcement path is a UDRP filing, not a lawsuit. Reddit files them *pro se* for roughly $1,500 and has won every one found: [`reddit.win`](https://www.wipo.int/amc/en/domains/decisions/text/2020/d2020-1834.html) (D2020-1834), [`redditpromotion.com` / `redditshop.com`](https://www.wipo.int/amc/en/domains/decisions/text/2019/d2019-2964.html) (D2019-2964), [`reddit.co`](https://www.wipo.int/amc/en/domains/decisions/text/2018/dco2018-0008.html) (DCO2018-0008).
-
-Low traffic is not a defence. A UDRP is a registrar-level administrative proceeding: no damages, no discovery, no proof that anyone visited. It needs only that Reddit notices.
-
-**What losing costs is the domain, not the project.** The pipeline, the index, the methodology and the content all survive a transfer. That asymmetry is why the exposure was priced and accepted.
-
-The name is also Reddit-locked. Phase 3 in [../12-phasing.md](../12-phasing.md) contemplates Hacker News, Stack Overflow and other sources, and "Reddit Index" cannot carry them without a rename. That option was sold for legibility in a cold email, knowingly.
+⚠️ **The chosen name knowingly breaches Reddit's trademark clauses, and the realistic enforcement path is a UDRP filing Reddit wins.** The exposure was priced and accepted; a loss costs the domain, not the project. The full record, including the migration target, is [../decisions/0001-name-reddit-index.md](../decisions/0001-name-reddit-index.md).
 
 ### `name_family`
 
@@ -150,13 +271,11 @@ The name is also Reddit-locked. Phase 3 in [../12-phasing.md](../12-phasing.md) 
 
 ### Why `descriptive-phrase` is a family of its own
 
-Because the construction changes the trademark posture, which is a real finding rather than a way of sorting rows.
+Because the construction changes the trademark posture, which is a real finding rather than a way of sorting rows. In a `reddit-named` domain, REDDIT leads and the name reads as a Reddit sub-brand. In a `descriptive-phrase` domain, Reddit is the *subject being covered*.
 
-In a `reddit-named` domain, REDDIT leads and the name reads as a Reddit sub-brand. That is the implied-affiliation problem the [`reddit.win`](https://www.wipo.int/amc/en/domains/decisions/text/2020/d2020-1834.html) panel described. In a `descriptive-phrase` domain, Reddit is the *subject being covered*, which supports a real legitimate-interest argument.
+The two adjacent families buy nothing. Hyphens are treated as irrelevant to confusing similarity, so `reddit-named-hyphenated` carries the same posture with worse typability, and "subreddit" is Reddit's own product term.
 
-The two adjacent families buy nothing. UDRP panels treat hyphens as irrelevant to confusing similarity, so `reddit-named-hyphenated` carries the same exposure with worse typability. `reddit-derived` is no safer either: "subreddit" is Reddit's own product term.
-
-`brandsonreddit.com` is available and is materially the better name on this axis. It was not taken, and it is the documented migration target — [../decisions/0001-name-reddit-index.md](../decisions/0001-name-reddit-index.md) records why.
+`brandsonreddit.com` is available and is materially the better name on this axis. It was not taken, and it is the documented migration target.
 
 ### Regenerating
 
@@ -172,4 +291,4 @@ Send a browser User-Agent, cap concurrency at ~8, and retry on 429 and 503.
 
 ---
 
-[← Back to README](../README.md) · [Taxonomy](../03-taxonomy.md) · [Subreddit mapping](../04-subreddit-mapping.md) · [Entity resolution](../05-entity-resolution.md) · [Name decision](../decisions/0001-name-reddit-index.md)
+[← Back to README](../README.md) · [Taxonomy](../03-taxonomy.md) · [Subreddit mapping](../04-subreddit-mapping.md) · [Category tests](../14-category-tests.md) · [The algorithm](../13-algorithm.md) · [Entity resolution](../05-entity-resolution.md) · [Name decision](../decisions/0001-name-reddit-index.md)
