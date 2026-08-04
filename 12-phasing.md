@@ -7,7 +7,7 @@
 - **Phase 1 is the first public spend.** Fifty categories on redditindex.com — but **only 12 have been assessed**. ERP and Help Desk ship labeled "insufficient Reddit signal to rank," and the remaining 38 need subreddit mapping before anyone estimates the phase.
 - Phase 2 is a 1,000+ category problem on Capterra's flat list, 2,237 on G2's ([taxonomy](03-taxonomy.md)). Audit labor scales linearly with it, and the per-brand publish gate stops being enforceable somewhere inside that multiple.
 - **Phase 3 opens with a naming fork, not with ingest work.** The product is Reddit Index, so a non-Reddit source means a rename or a separately-branded second property ([0001](decisions/0001-name-reddit-index.md)).
-- **Infrastructure is not the constraint.** Roughly **$85/month for Phase 1**, roughly **$330/month at full scale** ([architecture §8](08-architecture.md)). What binds is audit labor and a corrections desk staffed in perpetuity.
+- **Infrastructure is not the constraint.** Roughly **$74/month for Phase 1**, roughly **$301/month at full scale** ([architecture §8](08-architecture.md)). What binds is audit labor and a corrections desk staffed in perpetuity.
 
 ---
 
@@ -98,7 +98,7 @@ Every box is green before the domain resolves publicly. These are build requirem
 
 **What is not costed yet.** The other **38 of 50 categories have no subreddit mapping**. Mapping is the first Phase 1 work item, and any Phase 1 estimate produced before it lands is guesswork.
 
-**What it costs to run.** Roughly **$85/month** of infrastructure — $84/mo exactly across R2, the ingest worker, Supabase, Vercel Pro and Cloudflare, at ~50 categories / ~500 brands / ~200 subs / ~1k pages on a weekly refresh ([architecture §8](08-architecture.md)). The audit labor is the expensive line.
+**What it costs to run.** Roughly **$74/month** of infrastructure across the ingest worker, Supabase Pro and Vercel Pro, at ~50 categories / ~500 brands / ~200 subs / ~1k pages on a weekly refresh ([architecture §8](08-architecture.md)). The audit labor is the expensive line.
 
 ### Phase 1 kill criteria
 
@@ -155,7 +155,7 @@ Presented fairly, as the fallback if Phase 0 fails. The owner has chosen the ful
 | | Full build | Cheap version |
 |---|---|---|
 | What it gets | Public leaderboard, standing SEO/AEO surface, brand pages | The same outreach hook, the same PR and citation value |
-| Cost | Phase 0 bandwidth, then ~$85/mo plus audit labor, forever | Days of work on existing report skills ([outreach play](11-outreach-play.md)) |
+| Cost | Phase 0 bandwidth, then ~$74/mo plus audit labor, forever | Days of work on existing report skills ([outreach play](11-outreach-play.md)) |
 | Corpus | Required | None |
 | Recompute obligation | Weekly, forever ([architecture](08-architecture.md)) | None — the study is dated and frozen |
 | Corrections desk | Staffed in perpetuity | None |
@@ -170,8 +170,8 @@ The one thing it cannot deliver is the thing Phase 1 exists for: a standing publ
 | Phase | Elapsed | Build effort | Infra | Recurring human cost |
 |---|---|---|---|---|
 | **0** | 3–5 weeks | ~35h annotation + pipeline | Bandwidth + **<$50** for the phase | None (nothing published) |
-| **1** | Not estimable until 38 categories are mapped | Site + 38 mappings + corrections process | **≈ $84/mo**, quoted as roughly $85/month ([architecture §8](08-architecture.md)) | 75K–150K adjudicated labels/cycle at 50 categories, plus a staffed corrections desk |
-| **2** | Not planned | — | **≈ $328/mo** at full scale, quoted as roughly $330/month ([architecture §8](08-architecture.md)) | 1.5M–3M labels/cycle — the number that breaks it |
+| **1** | Not estimable until 38 categories are mapped | Site + 38 mappings + corrections process | **≈ $74/mo** ([architecture §8](08-architecture.md)) | 75K–150K adjudicated labels/cycle at 50 categories, plus a staffed corrections desk |
+| **2** | Not planned | — | **≈ $301/mo** at full scale ([architecture §8](08-architecture.md)) | 1.5M–3M labels/cycle — the number that breaks it |
 | **3** | Not planned | Second-source ingest, plus a rename or a second brand | Not estimated | Not estimated |
 
 Both infra totals come from the line-item table in [08-architecture.md §8](08-architecture.md) and are the same figures the README carries. Inside them, only the ingest-worker line (Railway, or a Hetzner box) is secondary-sourced; verify it before committing. Every other line is a vendor-published price.

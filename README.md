@@ -18,7 +18,7 @@ Built and operated by **Empact Partners**. Next.js on Vercel, Supabase for data.
 
 **Nobody owns this.** No live property ranks software brands by Reddit sentiment as a public leaderboard. GummySearch, the Reddit-native category leader, shut down 2025-11-30. The adjacent per-brand-audit seat is taken — [redditbrands.com](https://redditbrands.com/) and [whatredditthinks.com](https://whatredditthinks.com/) are both live — but the cross-brand board is open.
 
-**It is buildable, and it is cheap.** The corpus for ~1,000 subreddits is 200-400M items, roughly 0.5-1.5 TB. One machine. **About $85/month** at Phase 1 scale. See [08-architecture.md](08-architecture.md).
+**It is buildable, and it is cheap.** The corpus for ~1,000 subreddits is 200-400M items, roughly 0.5-1.5 TB. One machine. **About $74/month** at Phase 1 scale. See [08-architecture.md](08-architecture.md).
 
 **The one number that reshapes the build: Reddit's API reaches roughly 3 to 8 days of history**, not years. So the API is a maintenance tool, and history comes from archive dumps. Everything downstream follows from that.
 
@@ -34,7 +34,7 @@ Two risks are priced and accepted rather than avoided — the Reddit-containing 
 2. **Reddit search indexes posts, not comment bodies.** Brand opinion lives in comments, so per-brand search is a discovery tool, never a census. You must ingest whole subreddits and match locally.
 3. **Signal does not track subscriber count.** r/PasswordManagers (54,639) beats r/marketing (1,958,653), because r/marketing's rules delete exactly that content — ~2 surviving posts a day against r/SaaS's 122-350.
 4. **31% of software brands share a name with a common English word.** Notion, Slack, Monday, Linear, Stripe, Craft, Front, Ramp, Make, Segment, Loom. This is the hardest engineering problem in the project.
-5. **The corpus is smaller than intuition.** ~1,000 subreddits is 200-400M items: 0.5-1.5 TB as raw JSON, **50-150 GB** once stored as zstd-compressed Parquet. One machine, about $85/month.
+5. **The corpus is smaller than intuition.** ~1,000 subreddits is 200-400M items: 0.5-1.5 TB as raw JSON, **50-150 GB** once stored as zstd-compressed Parquet. One machine, about $74/month.
 
 ---
 
@@ -45,7 +45,7 @@ Two risks are priced and accepted rather than avoided — the Reddit-containing 
 | Reddit listing cap | **~1,000 items** (995 measured) | 🟢 Measured live |
 | History reachable via API | **~3 to 8 days** for r/SaaS | 🟢 Two live methods |
 | Corpus, ~1,000 subreddits | 200-400M items · **50-150 GB** compressed (0.5-1.5 TB raw JSON) | 🟡 Extrapolated |
-| Infrastructure, Phase 1 | **~$85/month** (~$330/month at full scale) | 🟡 Vendor list prices |
+| Infrastructure, Phase 1 | **~$74/month** (~$301/month at full scale) | 🟡 Vendor list prices |
 | Sentiment cascade | ~$31-53 per 1M comments with a Haiku stage 2 · ~$3-6 with a nano-class stage 2 | 🟡 Calculated |
 | Minimum mentions to rank | **n_eff ≥ 400**, after the design-effect correction | 🟢 Derived |
 | High-ambiguity brand names | **35 of 113 (31%)** | 🟢 Classified |
