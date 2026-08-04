@@ -1,0 +1,26 @@
+You are reviewing a documentation repo for INTERNAL CONSISTENCY and honest framing. READ-ONLY: do not edit any file.
+
+REPO: /Users/vladshvets/Projects/reddit-rankings-app
+Read EVERY markdown file in the repo root, in decisions/, and data/README.md.
+
+CONTEXT: The owner deliberately chose a design that breaches Reddit's terms (displaying full Reddit comment text on a commercial lead-generation site). The docs must record that honestly. Softening it, or presenting the project as more viable than the evidence supports, is a DEFECT.
+
+CHECK FOUR THINGS.
+
+1. CROSS-DOCUMENT CONTRADICTIONS. Any fact stated differently in two files. Specifically hunt for: two different minimum-mention thresholds; two different monthly cost figures; two different corpus sizes; two different precision or recall targets; two different category counts; two different stack recommendations; two different lists of which categories cannot be ranked. Report both statements with their files.
+
+2. README ACCURACY. The README claims specific numbers in its "The numbers" table and its "In 30 seconds" list. Verify each against the detailed doc it summarises. A front page that drifts from the underlying docs is the single worst defect in this house style.
+
+3. SELF-FLATTERY / OMISSION. Flag any place a doc:
+   - softens the legal exposure relative to 01-legal.md
+   - omits the confound that mention volume tracks company SIZE and complaint rate tracks ADOPTION MODEL
+   - omits the tension that a 400-mention threshold qualifies only category head brands, who are largely not consultancy buyers
+   - presents a contested or inferred claim as settled fact
+   - reads as marketing rather than an internal document
+
+4. MECHANICS. Every file must: open with a "Bottom line" section; end with a breadcrumb line linking back to README.md; contain no agent preamble ("I will now", "Here is the document", "Perfect!"); have no broken relative link. Report exact file and the offending text.
+
+Report findings only, with exact quotes. Do not report style preferences. Empty findings is valid.
+
+Write JSON to /private/tmp/claude-501/-Users-vladshvets--claude/f6928dd3-ec32-4042-ab81-563839239aff/scratchpad/codex-review/out_consistency.json with shape:
+{"cluster":"consistency","findings":[{"files":["..."],"issue":"...","quotes":["..."],"type":"CONTRADICTION|README_DRIFT|SELF_FLATTERY|OMISSION|MECHANICS","severity":"critical|major|minor","fix":"..."}],"verdict":"..."}

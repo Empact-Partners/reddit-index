@@ -7,6 +7,7 @@
 - Phase 1 ships 50 categories, but **only 12 have been assessed**. ERP and Help Desk must ship labeled "insufficient Reddit signal to rank," and the remaining 38 need subreddit mapping before anyone estimates them.
 - Phase 2 (full taxonomy) is a 1,000+ category problem on Capterra's flat list and 2,237 on G2's ([taxonomy](03-taxonomy.md)). Audit labor scales linearly with it and legal exposure scales faster.
 - Phase 3 is why the name is UGC Ranks, not Reddit Ranks. Hacker News is the natural second source. **NOT VERIFIED** — no non-Reddit source was assessed in the corpus.
+- **Infrastructure is not the constraint.** Roughly **$85/month for Phase 1** and roughly **$330/month at full scale** ([architecture §8](08-architecture.md)). What binds is audit labor and a corrections desk staffed in perpetuity.
 - ⚠️ Publishing full Reddit comment text on brand pages is a **deliberate, priced risk** taken by the owner with the exposure in front of him. It stacks Developer Terms §4.2 / §5.2 against per-commenter copyright Reddit cannot license ([legal](01-legal.md)). No phase gate below makes it compliant.
 
 ---
@@ -16,7 +17,7 @@
 | Phase | Scope | Ships publicly | Hard entry gate |
 |---|---|---|---|
 | **0** | 1 category (Password Managers / Security) | Nothing | None — this is the first spend |
-| **1** | 50 categories | Site, methodology page, corrections desk | Phase 0 passes every test below |
+| **1** | 50 categories | Site, `/methodology`, corrections desk | Phase 0 passes every test below |
 | **2** | Full taxonomy (1,000+) | Same, wider | Phase 1 runs 2 clean cycles at cost |
 | **3** | Non-Reddit sources | Multi-source indices | Phase 1 or 2 stable and a second source verified |
 
@@ -46,11 +47,15 @@ All five must pass. Any single failure stops the project.
 
 | # | Test | Threshold | Source |
 |---|---|---|---|
-| G1 | Mention-level entity precision on held-out | **≥0.97** | [entity resolution](05-entity-resolution.md) |
-| G2 | Brands clearing `n_eff ≥ 400` after design-effect correction | **≥10 brands** | [index methodology](07-index-methodology.md) |
-| G3 | Independence floors: ≥50 authors, ≥5 subreddits, ≤20% single-thread share, ≤5% single-author share | all four, per ranked brand | [index methodology](07-index-methodology.md) |
+| G1 | Mention-level entity precision on held-out | **≥0.97** point estimate, interval reported | [entity resolution](05-entity-resolution.md) |
+| G2 | Brands clearing **`n_eff ≥ 400`**, where `n_eff = n / DEFF` and `DEFF = 1 + (m̄ − 1)·ICC` | **≥10 brands** | [index methodology](07-index-methodology.md) |
+| G3 | All four diversity floors hold: distinct authors ≥50, distinct subreddits ≥5, distinct threads above the floor set in 07, max single-thread share ≤20% of `n` | all four, per ranked brand | [index methodology](07-index-methodology.md) |
 | G4 | Leave-one-subreddit-out rank stability | top 10 does not reorder beyond ties | [index methodology](07-index-methodology.md) |
 | G5 | Human concordance: 3 practitioners blind-rank the top 10 before seeing output, Spearman ρ vs the computed Love Index | **ρ ≥ 0.6** | threshold set here, not derived from the corpus |
+
+G2 gates on the **design-effect-corrected** count, not the raw one. Reddit mentions cluster inside a few mega-threads and within threads by author, so raw `n` overstates independent information. Both `n` and `n_eff` get published on every brand page, and intervals come from a cluster bootstrap resampled by thread and by author.
+
+G1's threshold is a point estimate, not a tight one. On a 500-item held-out set an observed 0.97 carries a Wilson 95% interval of roughly [0.949, 0.980], so it cannot separate 0.97 from 0.95. Either the held-out set grows or the published claim states the interval rather than the point.
 
 G5 is the question the whole phase exists to answer. The ≥0.97 precision / 0.80–0.88 recall figure carried through the research is **inference, never measured on this data** — publishing it before Phase 0 measures it would itself misrepresent the method.
 
@@ -62,19 +67,25 @@ Stop, permanently, on any of these:
 - The "most hated" column returns the category incumbents. That is the adoption-model confound: forced enterprise users complain, voluntary self-serve users praise, and no post-hoc correction exists because the confound sits in the exposure population ([index methodology](07-index-methodology.md)).
 - Inter-annotator agreement lands where the research expects it (Krippendorff's α 0.60–0.75, below 0.35 on sarcasm) and the low-agreement band is large enough that ranks move when adjudication flips.
 
-**Effort:** 3–5 weeks for one person, gold sets included. **Cost:** ~$250 Bright Data minimum order plus free-tier API for freshness ([data acquisition](02-data-acquisition.md)); infrastructure under $50 for the phase.
+**Effort:** 3–5 weeks for one person, gold sets included.
+
+**Cost:** bandwidth, essentially. The chosen acquisition shape is Arctic Shift per-subreddit dumps for backfill plus the official free-tier API for increments, and 12 subreddits sit far inside the free tier ([data acquisition](02-data-acquisition.md)). Infrastructure runs under $50 for the whole phase.
+
+A commercial vendor is a targeted gap-fill option, not the Phase 0 route. Bright Data's $250 minimum order is a cost only if a gap-fill is actually placed, and its per-record pricing makes it unusable as a census ([data acquisition](02-data-acquisition.md)).
 
 ---
 
 ## Phase 1 — Fifty categories
 
-**What ships:** the ugcranks.com site, 50 category pages (two columns plus the consolidated table), brand pages with mentions and thread links, a frozen version-controlled methodology page, the delete-sync job, and a staffed corrections process with a published SLA.
+**What ships:** the ugcranks.com site, 50 category pages (two columns plus the consolidated table), brand pages with mentions and thread links, a frozen version-controlled methodology page at `/methodology`, the delete-sync job, and a staffed corrections process with a published SLA.
 
 Freezing the methodology *before* results are seen is the load-bearing detail. The *Suzuki* case reversed summary judgment because a jury could find the method was tampered with, not because the ranking was wrong ([legal](01-legal.md)).
 
 **What does not rank.** Of the 12 categories assessed, **ERP and Help Desk / Support ship as "insufficient Reddit signal to rank"** rather than as rankings. r/CustomerService is a retail-horror-story sub, not a software sub, and the ERP probe returned 15 total results with the top thread from 2023 ([subreddit map](04-subreddit-mapping.md)).
 
 **What is not costed yet.** The other **38 of 50 categories have no subreddit mapping**. Mapping is the first Phase 1 work item and any Phase 1 estimate produced before it lands is guesswork.
+
+**What it costs to run.** Roughly **$85/month** of infrastructure — $84/mo exactly across R2, the ingest worker, Supabase, Vercel Pro and Cloudflare, at ~50 categories / ~500 brands / ~200 subs / ~1k pages on a weekly refresh ([architecture §8](08-architecture.md)). The audit labor below is the expensive line.
 
 **Phase 1 kill criteria:** more than a handful of takedown demands in 90 days, an audit cycle that fails its publish gate (>3 errors in 60 on a stratum sample), or the corrections desk going unstaffed for a full cycle. Any of the three means the artifact is no longer defensible while it is live.
 
@@ -84,17 +95,17 @@ Freezing the methodology *before* results are seen is the load-bearing detail. T
 
 What changes at scale is arithmetic, not architecture. Capterra renders 1,000 leaf categories and truncates mid-W; G2 enumerates 2,237 ([taxonomy](03-taxonomy.md)).
 
-What breaks first is the audit. At 50 categories × ~15 published brands × ≥150 adjudicated mentions the per-cycle label count is already 75K–150K, against a research budget of 400. Multiply by 20 and the per-brand publish gate stops being enforceable at all.
+What breaks first is the audit. At 50 categories × ~15 published brands × ≥150 adjudicated mentions, Phase 1's per-cycle label count is already 75K–150K, against a research budget of 400. The 20× category expansion puts Phase 2 at roughly 1.5M–3M labels a cycle, at which point the per-brand publish gate stops being enforceable at all.
 
 What breaks second is delete-sync. A full sweep over 200–400M items at 100 ids per `/api/info` call is 2–4M requests and weeks of wall-clock ([data acquisition](02-data-acquisition.md)). A stale `[removed]` behind a cited link proves a terms breach and a method-integrity failure in one exhibit.
 
-The corpus itself is not the problem: ~240M items for 1,000 subreddits is ~53 GB compressed and fits one machine. The cost is human, legal, and recurring.
+The corpus itself is not the problem: ~240M items for 1,000 subreddits is ~53 GB compressed and fits one machine. Storage is budgeted from those compressed bytes, not from the 0.5–1.5 TB raw-JSON figure ([architecture](08-architecture.md)). The cost is human, legal, and recurring.
 
 ---
 
 ## Phase 3 — Beyond Reddit
 
-The product is called UGC Ranks precisely so this phase is possible without renaming. Reddit trademarks cannot appear in a product name under Data API Terms §4.1, and Reddit has won every cited UDRP it filed ([legal](01-legal.md)).
+The product is called UGC Ranks precisely so this phase is possible without renaming. Reddit trademarks cannot appear in a product name under [Data API Terms §4.1](https://www.redditinc.com/policies/data-api-terms), and the one UDRP in this repo's research went Reddit's way: `reddit.win` transferred in *Reddit, Inc. v. Phil Carey*, [WIPO D2020-1834](https://www.wipo.int/amc/en/domains/decisions/text/2020/d2020-1834.html), decided 2020-10-06 ([legal](01-legal.md)).
 
 **Hacker News is the natural second source** — a genuinely permissive public API and a population overlapping the developer-tooling categories. **NOT VERIFIED: a direction to verify, not a fact.** No Hacker News terms, API limits, or signal density were assessed in the corpus.
 
@@ -118,9 +129,9 @@ Presented fairly, as the fallback if Phase 0 fails. The owner has chosen the ful
 | | Full build | Cheap version |
 |---|---|---|
 | What it gets | Public leaderboard, standing SEO/AEO surface, brand pages | The same outreach hook, the same PR and citation value |
-| Cost | Phases 0–1 below, then perpetual | Days of work on existing skills ([architecture](08-architecture.md)) |
+| Cost | Phase 0 bandwidth, then ~$85/mo plus audit labor, forever | Days of work on existing report skills ([outreach play](11-outreach-play.md)) |
 | Corpus | Required | None |
-| Recompute obligation | Monthly, forever | None — the study is dated and frozen |
+| Recompute obligation | Weekly, forever ([architecture](08-architecture.md)) | None — the study is dated and frozen |
 | Corrections desk | Staffed in perpetuity | None |
 | What it gives up | — | The public leaderboard, the live property, the compounding search asset |
 
@@ -132,12 +143,14 @@ The one thing it cannot deliver is the thing Phase 1 exists for: a standing publ
 
 | Phase | Elapsed | Build effort | Infra | Recurring human cost |
 |---|---|---|---|---|
-| **0** | 3–5 weeks | ~35h annotation + pipeline | ~$250 one-off + <$50 | None (nothing published) |
-| **1** | Not estimable until 38 categories are mapped | Site + 38 mappings + corrections process | ~$105/mo at ~300 brands (**NOT VERIFIED** — Railway/Hetzner prices are secondary-sourced) | ~5h/cycle audit at 300 brands; more at 50 categories |
-| **2** | Not planned | — | Storage roughly linear | 75K–150K labels/cycle — the number that breaks it |
+| **0** | 3–5 weeks | ~35h annotation + pipeline | Bandwidth + **<$50** for the phase | None (nothing published) |
+| **1** | Not estimable until 38 categories are mapped | Site + 38 mappings + corrections process | **≈ $84/mo**, quoted as roughly $85/month ([architecture §8](08-architecture.md)) | 75K–150K adjudicated labels/cycle at 50 categories, plus a staffed corrections desk |
+| **2** | Not planned | — | **≈ $328/mo** at full scale, quoted as roughly $330/month ([architecture §8](08-architecture.md)) | 1.5M–3M labels/cycle — the number that breaks it |
 | **3** | Not planned | Second-source ingest | Not estimated | Not estimated |
 
-Legal costs appear in no line above and are real: an Estonian data-protection opinion and a US media-law read of the final page copy, both one-time, both **not disclosed** as figures anywhere in the research.
+Both infra totals come from the line-item table in [08-architecture.md §8](08-architecture.md) and are the same figures the README carries. Inside them, only the ingest-worker line (Railway, or a Hetzner box) is secondary-sourced; verify it before committing. Every other line is a vendor-published price.
+
+Legal costs appear in no line above and are real: an Estonian data-protection opinion and a US media-law read of the final page copy. Both one-time, both **not disclosed** as figures anywhere in the research.
 
 ---
 

@@ -59,7 +59,7 @@ Any page whose value collapses to "a list of somebody else's comments" forfeits 
 | `ItemList` | 🟢 Yes | Category pages ([carousel docs](https://developers.google.com/search/docs/appearance/structured-data/carousel)) |
 | `Dataset` | 🟢 Yes | Category, brand, `/methodology/`, `/data/*.csv` |
 | `Organization`, `WebSite` | 🟢 Yes | Root |
-| `FAQPage` | 🟡 Harmless | Optional; rich-result eligibility is now narrow |
+| `FAQPage` | 🟡 Optional | Rich-result eligibility is now narrow |
 | `AggregateRating`, `Review` | 🔴 Never | Explicit violation on third-party-derived sentiment |
 
 Do not expect schema to move AI citations. Google's own AI-features doc (updated 2025-12-10) states "There's also no special schema.org structured data that you need to add" ([Google](https://developers.google.com/search/docs/appearance/ai-features)). Schema here buys breadcrumb display and machine-readable provenance. That is all it buys.
@@ -70,7 +70,7 @@ Do not expect schema to move AI citations. Google's own AI-features doc (updated
 
 ## 4. Indexation architecture at 5,000 pages
 
-We do not have a crawl-budget problem. Google's own threshold is "1 million+ unique pages" changing weekly or "10,000+ unique pages" changing daily ([crawl budget docs](https://developers.google.com/search/docs/crawling-indexing/large-site-managing-crawl-budget)). At 5K pages the problem is value per page.
+We do not have a crawl-budget problem. Google's threshold is "1 million+ unique pages" changing weekly or "10,000+ unique pages" changing daily ([docs](https://developers.google.com/search/docs/crawling-indexing/large-site-managing-crawl-budget)). At 5K pages the problem is value per page.
 
 | Concern | Rule |
 |---|---|
@@ -103,7 +103,7 @@ Demand is growing on Reddit's side too: weekly search users grew roughly 30% yea
 
 **NOT VERIFIED:** no primary keyword-level dataset for "[category] reddit" volume was obtained, and the repeated "32% of US Gen Z appends reddit weekly" figure is survey-derived secondary. Pull real volumes from Ahrefs before finalizing the category list in [03-taxonomy.md](03-taxonomy.md).
 
-Title and H1 pattern: `Best [Category] According to Reddit ([Month Year])`. The month is real and changes on recompute.
+Title and H1 pattern: `Best [Category] According to Reddit ([Month Year])`, with a real month that changes on recompute.
 
 ---
 
@@ -144,7 +144,7 @@ Blocking a retrieval agent forfeits citation eligibility, which is the entire bu
 
 | # | Risk | Likelihood | Mechanism |
 |---|---|---|---|
-| 1 | Reproduced comment text at scale | 🔴 High | Scraping clause verbatim, plus copyright exposure. Decided anyway; mitigate by making the computed index the page |
+| 1 | Reproduced comment text at scale | 🔴 High | Scraping clause verbatim, plus copyright exposure. Mitigate by making the computed index the page |
 | 2 | Thin brand pages shipped past the gate | 🔴 High | Scaled content abuse |
 | 3 | Faceted or filter URLs left crawlable | 🟡 Medium | 5K pages become 500K; manufactures a doorway problem |
 | 4 | `AggregateRating` on the sentiment index | 🟡 Medium | Structured-data violation → manual action, rich results removed |

@@ -3,11 +3,12 @@
 ## Bottom line
 
 - Reddit brand signal is **not** proportional to subscriber count. [r/PasswordManagers](https://www.reddit.com/r/PasswordManagers/) (54,639 subs) yields more rankable brand comparison than [r/marketing](https://www.reddit.com/r/marketing/) (1,958,653 subs), because r/marketing's rules delete exactly that content.
-- r/marketing produces **~2 surviving posts/day** against [r/SaaS](https://www.reddit.com/r/SaaS/)'s **~350**. That gap is a moderation artifact, not audience absence.
+- r/marketing produces **~2 surviving posts/day** against [r/SaaS](https://www.reddit.com/r/SaaS/)'s **122 to ~350**, depending on the counting method. Either end leaves the gap intact: it is a moderation artifact, not audience absence.
 - Rule posture is the primary mapping variable. A sub that bans product mentions is a dead source no matter how many people are in it. Map to rule-permissive subs, not big ones.
+- Spread, not volume, decides rankability. Eligibility gates on `n_eff ≥ 400` ([07-index-methodology.md](07-index-methodology.md)), and mentions packed into one mega-thread barely move `n_eff`.
 - Traps confirmed live: [r/figma](https://www.reddit.com/r/figma/) is a Japanese action-figure sub, search stem-matches ("Descript" → "description"), and `search_reddit` with `type='sr'` returns nothing under app-only OAuth.
 - 🔴 **ERP** and **Help Desk/Support** cannot be ranked honestly. They ship labelled "insufficient Reddit signal to rank," not ranked anyway.
-- Machine-readable map: [data/subreddit-map.csv](data/subreddit-map.csv) (131 rows, 12 categories, with `rule_posture` and `is_vendor_owned_sub` columns).
+- **12 of the 50 Phase 1 categories are mapped; 38 are still `pending`.** Machine-readable in [data/subreddit-map.csv](data/subreddit-map.csv) (131 rows, 12 categories, `rule_posture` and `is_vendor_owned_sub`) and [data/phase1-categories.csv](data/phase1-categories.csv).
 
 ## Verified general subs
 
@@ -31,6 +32,10 @@ All counts pulled 2026-08-04 via `get_subreddit_info`. Volume is extrapolated fr
 | [r/humanresources](https://www.reddit.com/r/humanresources/) | 234,776 | ~14 | 🟢 Live |
 | [r/NoteTaking](https://www.reddit.com/r/NoteTaking/) | 63,318 | ~5 | Small, on-topic |
 | [r/CustomerService](https://www.reddit.com/r/CustomerService/) | 56,709 | ~6 | 🔴 Misrouted |
+
+⚠️ **Volume depends on method.** A second measurement the same day, spanning the last 100 posts in `/new`, gave r/SaaS **122/day** against the ~350 above, plus r/sysadmin 25, r/webdev 20, r/devops 6, r/projectmanagement 3, r/marketing 2 ([02-data-acquisition.md](02-data-acquisition.md)).
+
+Five of those six agree within roughly 1.4×. Only r/SaaS diverges, by nearly 3×, because the 10-newest extrapolation counts posts that have not yet cleared moderation removal. The ordering is stable under both methods, so the mapping calls below hold. Quote the range, never one figure as measured fact.
 
 ## The map: 12 assessed categories
 
@@ -91,7 +96,9 @@ Seven scoped searches, `sort=relevance`, `t=all`. These are the calibration set:
 | "Klaviyo" in r/Emailmarketing | 15 + cursor, all on-topic | ["Cheaper Alternatives to Klaviyo"](https://reddit.com/r/Emailmarketing/comments/1msuvn1/cheaper_alternatives_to_klaviyo/) (59 comments) |
 | "Zendesk" in r/msp · "Odoo" in r/ERP · "Descript" in r/VideoEditing | 🔴 Failed | Zendesk hits are 2016–2019 (stale). Odoo: 15 total, top thread from 2023, most under 30 comments. Descript: majority false positives |
 
-The mechanical pass mark: at least 25 results with a live `after` cursor, a top thread under three years old, and at least one thread with 50+ comments naming three or more brands.
+**The mechanical pass mark.** At least 25 results with a live `after` cursor; a top thread under three years old; and 50+ comments naming three or more brands spread across **at least three threads in two or more subreddits**, never concentrated in one.
+
+The spread clause is not fussiness. Eligibility gates on `n_eff ≥ 400`, where `n_eff = n / DEFF` and `DEFF = 1 + (m̄ − 1)·ICC` ([07-index-methodology.md](07-index-methodology.md)). Mentions inside one thread are correlated, so a single 500-comment recommendation thread inflates raw `n` while `n_eff` barely moves. Spread survives the design-effect correction; volume alone does not.
 
 ## Vendor-owned and single-product subreddits
 
@@ -102,6 +109,8 @@ Single-product subs (r/hubspot, r/Notion, r/Bitwarden, r/1Password, r/clickup, r
 They stay eligible for one thing: brand-page evidence, displayed with a visible "from the product's own subreddit" label so a reader can discount it. Criticism inside a product's own sub is the strongest negative signal available; praise there is worthless.
 
 ## Honesty flags
+
+🔴 here means the category failed the signal test badly enough that no brand in it is likely to clear `n_eff ≥ 400` on spread-corrected mentions. Marked as inference: the verdict comes from probe results, not from a computed `n_eff`. Such a category ships as a page saying so, never as a ranking.
 
 🔴 **ERP.** Thin across every mapped sub. "Odoo" in r/ERP returned 15 results total, top thread from 2023, most under 30 comments. Labelled "insufficient Reddit signal to rank."
 
@@ -115,18 +124,19 @@ They stay eligible for one thing: brand-page evidence, displayed with a visible 
 
 ## Mapping the remaining 38 Phase 1 categories
 
-Categories still unmapped are tracked as `subreddit_map_status=pending` in [data/phase1-categories.csv](data/phase1-categories.csv). Run this procedure per category, in order, and record the outcome.
+Twelve of the 50 Phase 1 categories are mapped and signal-tested above. The other **38 carry `subreddit_map_status=pending`** in [data/phase1-categories.csv](data/phase1-categories.csv). Run this procedure per category, in order, and write the outcome back to both CSVs in the same commit.
 
 1. **Enumerate candidates by hand.** Automated discovery is unavailable. Draw from three sources: the general subs table above, one sub per known brand in [data/brand-gazetteer-seed.csv](data/brand-gazetteer-seed.csv), and the practitioner sub for the buyer's job function.
 2. **Resolve each name via `get_subreddit_info`.** Confirm subscriber count and description. This is the step that catches r/figma. Never accept a name unread.
 3. **Pull rules via `get_subreddit_rules`.** Classify posture as permissive, capped, or prohibitive into `rule_posture`. Prohibitive subs are dropped regardless of size.
 4. **Measure surviving volume** from the 10 newest posts. Under ~5/day, the sub is supporting evidence only, never a category's primary source.
-5. **Run the empirical signal test** on the category's two largest brands against the pass mark above.
+5. **Run the empirical signal test** on the category's two largest brands against the pass mark above. Record how the hits spread across threads and subreddits, not just the totals: spread is what the design-effect correction consumes.
 6. **Flag single-product subs** as `is_vendor_owned_sub=yes` before the category ships.
 7. **Assign the verdict**: rich, rule-suppressed, or thin. Thin routes to the "insufficient Reddit signal to rank" template.
+8. **Write the result back.** Add one row per subreddit to [data/subreddit-map.csv](data/subreddit-map.csv) and flip that category's `subreddit_map_status` to `mapped` in [data/phase1-categories.csv](data/phase1-categories.csv), together. Two files disagreeing on what is mapped is how this map rots unnoticed.
 
 Categories are cheap to declare unrankable and expensive to publish wrongly. When steps 4 and 5 disagree, the signal test wins.
 
 ---
 
-[← Back to README](README.md) · [Category taxonomy](03-taxonomy.md) · [Data acquisition and the API ceiling](02-data-acquisition.md)
+[← Back to README](README.md) · [Category taxonomy](03-taxonomy.md) · [Data acquisition and the API ceiling](02-data-acquisition.md) · [Index methodology and the eligibility gate](07-index-methodology.md)

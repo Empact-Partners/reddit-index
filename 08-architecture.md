@@ -3,11 +3,12 @@
 ## Bottom line
 
 - 🟢 **The raw corpus does not go in Postgres.** Reddit posts and comments live as Hive-partitioned Parquet on Cloudflare R2 at $0.015/GB-month with zero egress fees ([R2 pricing](https://developers.cloudflare.com/r2/pricing/)), queried in-process by DuckDB 1.5.5, released 2026-07-22 ([DuckDB news](https://duckdb.org/news/)).
+- 🟢 **Size R2 from compressed bytes, not raw JSON.** The full-scale corpus is roughly 150 GB as `.zst` plus Parquet+zstd, against 0.5–1.5 TB as raw ndjson ([02-data-acquisition.md](02-data-acquisition.md)). Nothing ever writes the raw form to disk, so nothing should be billed at that size.
 - 🟢 **Supabase Postgres holds only derived rows** — mentions and aggregates. That keeps it under 200M rows at full scale, which a $110/mo Large instance serves comfortably ([Supabase compute & disk](https://supabase.com/docs/guides/platform/compute-and-disk)).
 - 🟢 **Serving is fully static Astro, not ISR.** Roughly 5,000 pages on a weekly refresh is a build-once problem. Static output costs $0 in ISR reads and writes ([Vercel limits](https://vercel.com/docs/limits)).
 - 🟡 **Ingestion runs on one long-lived worker, never GitHub Actions.** The 6-hour job cap kills a TB-scale decompress ([Actions limits](https://docs.github.com/en/actions/reference/limits)). Actions is fine for the site build only.
 - 🟢 **Cost is roughly $85/month for the Phase 1 MVP and roughly $330/month at full scale.** Line items at the end.
-- 🔴 **A nightly delete-sync job is not optional.** Developer Terms §3.3 requires deleting removed content "as soon as possible" ([Developer Terms](https://www.redditinc.com/policies/developer-terms)). See [01-legal.md](01-legal.md).
+- 🔴 **Delete-sync is not optional.** Developer Terms §3.3 requires deleting or modifying removed content "as soon as possible" ([Developer Terms](https://www.redditinc.com/policies/developer-terms)). Nightly is the cadence we chose to implement that duty; it is not a number the contract states. See [01-legal.md](01-legal.md).
 
 ---
 
@@ -25,7 +26,7 @@ Reddit Data API         ─┘        ▼
                                   ▼
                              S3 disambiguation ──────────────► R2 resolved.parquet
                                   ▼
-                             S4 sentiment (ONNX, CPU) ───────► R2 scored.parquet
+                             S4 sentiment (ONNX + LLM tail) ─► R2 scored.parquet
                                   ▼
                              S5 COPY ───────────────────────► Supabase Postgres
                                   ▼                            mention (partitioned)
@@ -49,10 +50,10 @@ Pick the tier by row count and by whether a human needs sub-second ad-hoc querie
 |---|---|---|---|
 | To ~100M rows / ~200GB | Postgres is fine | Postgres | $25/mo Pro + compute ([Supabase pricing](https://supabase.com/pricing)) |
 | 100M–1B rows | **Parquet on R2 + DuckDB** ✅ our target | Postgres | $0.015/GB-mo, $0 egress ([R2](https://developers.cloudflare.com/r2/pricing/)) |
-| >1B rows, interactive human analytics | ClickHouse Cloud | ClickHouse | $0.2985/compute-unit-hr Scale + $25.30/TB-mo ≈ $218/mo per always-on unit ([ClickHouse](https://clickhouse.com/pricing)) |
+| >1B rows, interactive human analytics | ClickHouse Cloud | ClickHouse | $0.2985/compute-unit-hr Scale = **$218/mo compute** per always-on unit, **plus** $25.30/TB-mo storage → **≈ $243/mo** at 1 TB ([ClickHouse](https://clickhouse.com/pricing)) |
 | >1B rows, weekly batch only | BigQuery | Postgres | $6.25/TiB scanned, 1 TiB/mo free ([BigQuery](https://cloud.google.com/bigquery/pricing)) |
 
-⚠️ For weekly batch, **BigQuery beats ClickHouse because idle costs nothing**. A 500GB weekly full scan is about $6.25/month. ClickHouse is justified by interactive querying, never by row count alone.
+⚠️ For weekly batch, **BigQuery beats ClickHouse because idle costs nothing**. A 500GB weekly full scan is about $6.25/month. ClickHouse is justified by interactive querying, never by row count alone, and its headline unit price is compute only — storage is billed on top.
 
 Supabase can technically hold the raw corpus, but a 2TB database wants a 4XL instance at $1.32/hr, roughly $960/month ([compute & disk](https://supabase.com/docs/guides/platform/compute-and-disk)). Needing that instance is the signal that raw data landed in the wrong store.
 
@@ -85,7 +86,9 @@ Two stores, one boundary. Parquet is append-only and immutable per shard. Postgr
 | `brand_page` | `brand_id PK`, `payload jsonb`, `updated_at` | The exact render payload |
 | `ingest_state` | `subreddit`, `ym`, `stage`, `file_hash`, `rows`, `status`, `finished_at` | `PRIMARY KEY(subreddit, ym, stage)` — the resumability ledger |
 
-`mention.body` is where the priced risk sits. Storing and displaying full comment text breaches Data API Terms §2.4 and §4.1 and adds per-commenter copyright exposure. The owner accepted this knowingly; it is documented in [01-legal.md](01-legal.md), not defended here.
+`mention.body` is where the priced risk sits. Storing and displaying full comment text runs past the narrow display licence in [Data API Terms §2.4](https://www.redditinc.com/policies/data-api-terms) and past [Developer Terms §4.2](https://www.redditinc.com/policies/developer-terms).
+
+It also carries per-commenter copyright exposure, because [Developer Terms §5.2](https://www.redditinc.com/policies/developer-terms) confirms User Content is owned by Users and not by Reddit. The owner accepted this knowingly. It is priced in [01-legal.md](01-legal.md), not defended here.
 
 `brand_page.payload` is the reason the build is fast. The static build does 5,000 single-row reads, not 5,000 joins.
 
@@ -99,7 +102,7 @@ Every stage writes its artifact to R2 first, keyed `(stage, subreddit, ym, code_
 | S1 normalize | `zstd -dc` streamed to Parquet | Worker (DuckDB) | output object exists | one sub-month |
 | S2 candidates | Aho-Corasick over every body | Worker | output object exists | one sub-month |
 | S3 disambiguation | Context window, negative regex, subreddit priors | Worker | output object + `code_version` | one sub-month |
-| S4 sentiment | Local ONNX classifier, batched | Worker (CPU) | output object + `model_version` | one shard |
+| S4 sentiment | Stage-1 ONNX classifier, then the escalated tail through a Stage-2 LLM | Worker (CPU) + Batch API | output object + `model_version` | one shard |
 | S5 load | `COPY` then `ON CONFLICT DO NOTHING` | Supabase | `UNIQUE(brand_id, doc_id)` | one shard |
 | S6 aggregate | SQL rollups into scores and leaderboards | Supabase | full recompute per week partition | one week |
 | S7 export | JSON snapshot for the build | GitHub Actions | content hash | whole snapshot |
@@ -110,7 +113,9 @@ S2 is the only pass that touches every row. `pyahocorasick` over roughly 5,000 a
 
 S3 is where the real difficulty lives: "Apple" in r/gardening, "Notion" as a common noun. Rules and per-subreddit priors first, escalate only the ambiguous tail. Method detail is in [05-entity-resolution.md](05-entity-resolution.md).
 
-S4 uses a local ONNX classifier on the worker at zero marginal cost, not an LLM per mention. An LLM adjudication lane over the ambiguous minority is optional and must be costed separately — current model pricing is **NOT VERIFIED** here.
+S4 is a cascade, not a single model. Stage 1 is a local ONNX classifier on the worker at near-zero marginal cost. A router escalates the ambiguous tail, expected at 15–25% of pairs, to a Stage-2 LLM. That tail is a stage of the recommended design, not an option ([06-sentiment.md](06-sentiment.md)).
+
+Stage-2 unit prices are quoted from the [Anthropic](https://platform.claude.com/docs/en/pricing) and [OpenAI](https://developers.openai.com/api/docs/pricing) rate cards: the cascade lands near $8–15 per 1M mentions with a nano-class stage 2, or $45–85 with Haiku batch ([06-sentiment.md](06-sentiment.md)). It is a line in §8, not an unbudgeted extra.
 
 ## 5. Serving
 
@@ -123,7 +128,9 @@ Fully static Astro output pushed to a CDN. Roughly 5,000 pages builds in an esti
 | Output files | Builds slow past ~100k | 🟢 roughly 5k pages plus assets |
 | ISR reads / writes | $0.0004/1k and $0.004/1k | 🟢 $0, static output |
 
-Source: [Vercel limits](https://vercel.com/docs/limits), updated 2026-07-01. ISR only earns its keep if pages are added continuously between refreshes. They are not — the corpus refreshes weekly. Cloudflare Pages is the cheaper target given R2 is already in the stack.
+Source: [Vercel limits](https://vercel.com/docs/limits), updated 2026-07-01. ISR only earns its keep if pages are added continuously between refreshes. They are not — the corpus refreshes weekly, so static output costs $0 in ISR reads and writes.
+
+**Vercel Pro is the serving target.** The team already pays the seat, so it is the $20 line in §8 and no migration work is bought with it. [Cloudflare Pages](https://developers.cloudflare.com/pages/) is the documented alternative, cheaper on paper because R2 is already in the stack, and worth switching to only if Vercel's build or bandwidth limits start to bite.
 
 ## 6. Weekly refresh
 
@@ -133,18 +140,21 @@ Reddit's listing endpoints cap at roughly 1,000 items, so weekly freshness comes
 |---|---|---|
 | API pull | ~1,000 subs, trailing week | ~11K requests/day at full scale |
 | S2–S6 | Delta shards only | 1–3 h worker time, 10–30 GB scanned (*inference*) |
+| New mentions scored | Delta only | ~35K/week Phase 1, ~325K/week full scale (*inference*) |
 | S7 + static build | Full site | minutes on Actions |
-| Marginal cost | — | a few dollars of worker compute |
+| Marginal cost | — | a few dollars of worker compute plus the Stage-2 LLM tail, both billed in §8 |
 
 Dump-derived rows are authoritative and upsert over API rows. Both carry the same `UNIQUE(brand_id, doc_id)` constraint, so re-running a week is safe.
 
 ## 7. Delete-sync
 
-Required by Developer Terms §3.3 and §7.3, and by the Public Content Policy bar on displaying content Reddit or a Redditor removed. Full clause text in [01-legal.md](01-legal.md).
+[Developer Terms §3.3](https://www.redditinc.com/policies/developer-terms) requires deleting or modifying removed content "as soon as possible"; §7.3 adds deletion on Reddit's request, on the user's request, or when retention is no longer necessary. Neither clause states an interval.
+
+Nightly is our chosen cadence. It is stricter than the 48-hour window Reddit's Data API Wiki recommends and is the tightest schedule a batch pipeline can hold without a streaming feed. Full clause text in [01-legal.md](01-legal.md).
 
 | Property | Design |
 |---|---|
-| Cadence | Nightly. Reddit's Data API Wiki recommends deleting removed content within 48 hours ([Data API Wiki](https://support.reddithelp.com/hc/en-us/articles/16160319875092-Reddit-Data-API-Wiki)) |
+| Cadence | Nightly, our choice. Reddit's Data API Wiki recommends deleting removed content within 48 hours ([Data API Wiki](https://support.reddithelp.com/hc/en-us/articles/16160319875092-Reddit-Data-API-Wiki)) |
 | Detection | Re-fetch stored `doc_id` fullnames via `/api/info`; a missing id, an `author` of `[deleted]`, or a body of `[removed]` marks the row dead |
 | Batch size | 100 fullnames per call (*inference from standard Reddit API behavior — NOT VERIFIED against a primary source*) |
 | Action | Hard-delete the `mention` row and its `mention_sentiment` child; never soft-delete text |
@@ -157,16 +167,21 @@ Required by Developer Terms §3.3 and §7.3, and by the Public Content Policy ba
 
 | Line item | Phase 1 MVP (~50 categories, ~500 brands, ~200 subs, ~1k pages) | Full scale (~5k brands, 1k subs, 5k pages) |
 |---|---|---|
-| R2 storage | 200 GB → **$3** | 1.5 TB → **$23** |
+| R2 storage (compressed: `.zst` + Parquet+zstd) | ~60 GB → **$1** | ~150 GB → **$2** |
 | R2 operations | **~$1** | **~$3** |
 | Worker (Railway, or a Hetzner box — *both secondary-source prices, verify before committing*) | 4 vCPU / 8 GB, ~26 h/mo → **$20** | 16 vCPU / 64 GB, ~90 h/mo → **~$135** |
 | Supabase | Pro $25 + Small compute $15 → **$40** | Pro $25 + Large $110 + ~100 GB disk $11.50 → **~$147** |
+| Stage-2 LLM tail, nano-class at $15 per 1M mentions | ~150K mentions/mo → **$2** | ~1.4M mentions/mo → **$21** |
 | Vercel Pro | **$20** | **$20** (static, ISR ~$0) |
-| Cloudflare CDN and DNS | **$0** | **$0–5** |
+| Cloudflare CDN and DNS (free plan; R2 egress is $0) | **$0** | **$0** |
 | GitHub Actions | included (3,000 min/mo) | included |
-| **Total** | **≈ $84/mo** | **≈ $328/mo** |
+| **Total** | 1 + 1 + 20 + 40 + 2 + 20 = **≈ $84/mo** | 2 + 3 + 135 + 147 + 21 + 20 = **≈ $328/mo** |
 
-Swap-ins: BigQuery instead of DuckDB adds roughly $12–30/mo at these volumes. ClickHouse Cloud Scale adds roughly $220–450/mo and only pays for itself if a human is querying interactively.
+R2 is billed on what it actually holds. 240M items compress to roughly 53 GB of `.zst` plus 60–120 GB of Parquet+zstd on the fields we keep ([02-data-acquisition.md](02-data-acquisition.md)). The 0.5–1.5 TB figure quoted elsewhere is raw ndjson, a format §4 says never to write to disk.
+
+The Stage-2 line assumes the nano-class cascade at the top of its $8–15 per 1M band. Haiku batch instead moves it to $45–85 per 1M, so roughly $7–13/mo at Phase 1 and **$63–119/mo at full scale** ([06-sentiment.md](06-sentiment.md)). That is the largest discretionary swing in the table.
+
+Swap-ins: BigQuery instead of DuckDB adds roughly $12–30/mo at these volumes. ClickHouse Cloud Scale adds roughly $245–475/mo once storage is counted alongside compute, and only pays for itself if a human is querying interactively.
 
 ---
 

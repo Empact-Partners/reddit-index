@@ -7,7 +7,7 @@
 - Knowledge-base linking fails on the head of our own list. Verified live: Wikidata label search for "Linear" returns 10 hits, none of them the issue tracker ([API call](https://www.wikidata.org/w/api.php?action=wbsearchentities&search=Linear&language=en&format=json&limit=10)); "Vercel" returns Q56069184 described only as "San Francisco based cloud computing company", with no aliases ([API call](https://www.wikidata.org/w/api.php?action=wbsearchentities&search=Vercel&language=en&format=json&limit=5)).
 - Our own seed list makes the shape of the problem concrete: **35 of 113 brands (31%) are classed high-ambiguity** in [data/brand-gazetteer-seed.csv](data/brand-gazetteer-seed.csv) — Notion, Slack, Monday, Linear, Stripe, Gusto, Workday, Rippling, Craft, Front, Ramp, Make, Render, Segment, Amplitude, Looker, Loom, Motion, Sketch, Close, Bill.com, Confluence, Teams, Roam, Framer, Obsidian and others.
 - 🟢 The tractable framing: **a closed gazetteer plus per-surface-form disambiguation, not NER.** We already know our brands. The job is deciding whether *this* occurrence of the string "monday" is the vendor — binary classification with strong Reddit-specific features, with direct precedent in RepLab 2013.
-- ⚠️ Precision is the only metric that matters. Target mention-level precision **≥0.97**, let recall float at **0.80-0.88**, and exclude any brand the pipeline cannot resolve confidently rather than guessing it.
+- ⚠️ Precision is the only metric that matters, and it publishes as a **95% Wilson lower bound, never a point estimate**: ≥0.97 overall, ≥0.95 for any brand on a published board. Recall floats at **0.80-0.88**. A brand the pipeline cannot resolve confidently is excluded, not guessed.
 
 ---
 
@@ -94,14 +94,37 @@ It is not uniform here. Ambiguous-name brands lose more recall than clean-name b
 
 | Target | Value | How measured |
 |---|---|---|
-| Mention-level precision, overall | ≥0.97 | Stratified random sample of 400 accepted mentions per cycle, strata = ambiguity class |
-| Mention-level precision, any published top-N brand | ≥0.95 | Per-brand stratum |
+| Mention-level precision, overall | Wilson 95% **lower bound ≥0.97** | Stratified random sample of **1,000** accepted mentions per cycle, strata = ambiguity class |
+| Mention-level precision, any brand on a published board | Wilson 95% **lower bound ≥0.95** | **150** adjudicated mentions per brand, rolling certification |
 | Recall | 0.80-0.88 expected (inference, not measured) | Gold-set coverage |
-| Publish refusal rule | >3 errors in 60 for a brand's stratum | Brand is pulled from that cycle |
+| Publish refusal, whole cycle | overall lower bound below 0.95 | No board publishes that cycle |
+| Publish refusal, single brand | more than 2 errors in 150 | Brand is pulled from that cycle |
 
-At n=400 and p̂=0.97 the Wilson 95% interval is roughly ±1.7pp, which is tight enough to publish as a stated figure.
+### Why the audit is 1,000 and not 400
+
+The Wilson interval is `(p̂ + z²/2n ± z·√(p̂(1−p̂)/n + z²/4n²)) / (1 + z²/n)`, with z = 1.96 at 95% ([Wilson 1927, JASA 22(158):209-212](https://doi.org/10.1080/01621459.1927.10502953)).
+
+At n = 400 and p̂ = 0.97 that evaluates to **[0.948, 0.983]** — a half-width of ±1.7pp. The half-width is tight. The placement is not: the lower bound sits under 0.95, so the sample is consistent with a true precision of 0.949 and cannot separate 0.97 from 0.95.
+
+Failing to reject a target is not evidence for it. A 400-item audit can therefore neither certify the 0.97 claim nor refuse a publication on it, which makes it a reporting exercise rather than a gate.
+
+At n = 1,000 the same arithmetic gives thresholds that decide something:
+
+| Errors in 1,000 | p̂ | Wilson 95% interval | Consequence |
+|---|---|---|---|
+| ≤19 | ≥0.981 | [0.971, 0.988] at 19 errors | 0.97 floor certified — publish the figure |
+| 20-36 | 0.964-0.980 | [0.951, 0.974] at 36 errors | Publish the interval; the ≥0.97 claim is not supported this cycle |
+| ≥37 | ≤0.963 | [0.949, 0.973] at 37 errors | Lower bound under 0.95 — the cycle does not publish |
+
+Per published brand at n = 150: 0 errors gives [0.975, 1.000], 1 gives [0.963, 0.999], 2 gives [0.953, 0.996], 3 gives [0.943, 0.993]. A 0.95 lower bound tolerates two errors and no more.
+
+The rule this replaces — 3 errors in 60 — carries the interval **[0.863, 0.983]**. It clears a brand whose true precision is 0.87, so it was never a gate at the stated bar.
+
+⚠️ These are audit sample sizes, not the eligibility gate. A brand's score publishes on `n_eff ≥ 400` opinionated mentions after the design-effect correction ([index methodology](07-index-methodology.md)). The sizes here govern the labelled sample that measures whether those mentions are attached to the right company.
 
 Expected end-to-end performance is **precision 0.96-0.98, recall 0.80-0.88**, concentrated recall loss on HOSTILE names. That is inference, not a measurement: the 42-F1 WNUT ceiling covers open-vocabulary emerging entities, whereas a closed 113-name gazetteer with URL and co-occurrence evidence is a strictly easier problem.
+
+An expected 0.97 is uncomfortably close to the bar. At p̂ = 0.97 even a 1,000-item audit lands at [0.958, 0.979] and misses the 0.97 floor, so the pipeline has to run nearer 0.98 for the claim to certify. Publishing the interval is what keeps that honest cycle to cycle.
 
 ---
 
@@ -110,9 +133,12 @@ Expected end-to-end performance is **precision 0.96-0.98, recall 0.80-0.88**, co
 | Item | Size | Effort | Frequency |
 |---|---|---|---|
 | Gold set | ~1,000 mentions, 200-item overlap between two annotators for kappa | 12-15 hours | Once |
-| Standing audit | 300-400 stratified samples | ~5 hours | Every refresh cycle |
+| Standing audit | 1,000 stratified samples | 12-15 hours | Every refresh cycle (weekly) |
+| Per-brand certification | 150 mentions per published brand | ~2 hours per brand | Rolling; re-run on any alias, ambiguity-class, or classifier change |
 
-Anything less than this makes the 0.97 precision claim unfalsifiable. The gold set is also the training data for stage 3 — there is no other source of labels.
+Below these sizes the precision claim is unfalsifiable: a smaller sample fails to reject the target and gets read as confirming it. The gold set is also the training data for stage 3 — there is no other source of labels.
+
+The per-brand line is what does not scale. At Phase 1's 50 categories and roughly 15 published brands each it is 75K-150K adjudicated labels per cycle ([phasing](12-phasing.md)), which is why certification is rolling rather than weekly, and why audit labor rather than infrastructure is the binding constraint on how many brands can ship.
 
 ---
 
