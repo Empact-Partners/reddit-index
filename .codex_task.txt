@@ -1,26 +1,21 @@
-You are reviewing a documentation repo for INTERNAL CONSISTENCY and honest framing. READ-ONLY: do not edit any file.
+Design the collection and ranking algorithm for Reddit Index.
 
-REPO: /Users/vladshvets/Projects/reddit-rankings-app
-Read EVERY markdown file in the repo root, in decisions/, and data/README.md.
+READ FIRST, in this order:
+1. /private/tmp/claude-501/-Users-vladshvets--claude/f6928dd3-ec32-4042-ab81-563839239aff/scratchpad/algo-brief.md — the brief. Binding.
+2. /Users/vladshvets/.claude/skills/reddit-api-assistant/SKILL.md — the operational playbook for the Reddit API, written from real harvests. Every trap in it is paid for.
+3. In /Users/vladshvets/Projects/reddit-index/: 02-data-acquisition.md, 04-subreddit-mapping.md, 05-entity-resolution.md, 06-sentiment.md, 07-index-methodology.md
 
-CONTEXT: The owner deliberately chose a design that breaches Reddit's terms (displaying full Reddit comment text on a commercial lead-generation site). The docs must record that honestly. Softening it, or presenting the project as more viable than the evidence supports, is a DEFECT.
+Then produce the algorithm exactly as the brief's 8-section deliverable specifies.
 
-CHECK FOUR THINGS.
+YOUR EMPHASIS: **simplicity, resumability and operational cost.** You are the design that assumes a two-person team maintains this forever with no dedicated data engineer. Every stage must be restartable from disk, debuggable by reading a file, and cheap to run weekly. Prefer one boring pipeline that always finishes over a clever one that needs babysitting.
 
-1. CROSS-DOCUMENT CONTRADICTIONS. Any fact stated differently in two files. Specifically hunt for: two different minimum-mention thresholds; two different monthly cost figures; two different corpus sizes; two different precision or recall targets; two different category counts; two different stack recommendations; two different lists of which categories cannot be ranked. Report both statements with their files.
+Be ruthless about what to cut. If a stage adds 20% recall for 5x the cost or complexity, say so and drop it. Explicitly identify the minimum viable pipeline that could produce a defensible ranking for ONE category, and what each added stage buys.
 
-2. README ACCURACY. The README claims specific numbers in its "The numbers" table and its "In 30 seconds" list. Verify each against the detailed doc it summarises. A front page that drifts from the underlying docs is the single worst defect in this house style.
+Also solve the discovery problem honestly: Reddit search does not index comment bodies, listings cap at 1,000, and most brand opinion sits in comments under threads whose titles name no brand ("what CRM do you use?", "recommend me a tool"). Say what the simple design genuinely cannot reach, rather than pretending it does.
 
-3. SELF-FLATTERY / OMISSION. Flag any place a doc:
-   - softens the legal exposure relative to 01-legal.md
-   - omits the confound that mention volume tracks company SIZE and complaint rate tracks ADOPTION MODEL
-   - omits the tension that a 400-mention threshold qualifies only category head brands, who are largely not consultancy buyers
-   - presents a contested or inferred claim as settled fact
-   - reads as marketing rather than an internal document
+Write your design as markdown to /private/tmp/claude-501/-Users-vladshvets--claude/f6928dd3-ec32-4042-ab81-563839239aff/scratchpad/algo-design-simple.md
 
-4. MECHANICS. Every file must: open with a "Bottom line" section; end with a breadcrumb line linking back to README.md; contain no agent preamble ("I will now", "Here is the document", "Perfect!"); have no broken relative link. Report exact file and the offending text.
+Also write a compact JSON summary to /private/tmp/claude-501/-Users-vladshvets--claude/f6928dd3-ec32-4042-ab81-563839239aff/scratchpad/algo-simple.json with shape:
+{"design":"simple","key_moves":["..."],"census_method":"...","booster_methods":["..."],"mvp_stages":["..."],"cut_list":["..."],"api_calls_one_category":<int>,"api_calls_50_categories":<int>,"wallclock_hours_50_cat":<number>,"known_blind_spots":["..."]}
 
-Report findings only, with exact quotes. Do not report style preferences. Empty findings is valid.
-
-Write JSON to /private/tmp/claude-501/-Users-vladshvets--claude/f6928dd3-ec32-4042-ab81-563839239aff/scratchpad/codex-review/out_consistency.json with shape:
-{"cluster":"consistency","findings":[{"files":["..."],"issue":"...","quotes":["..."],"type":"CONTRADICTION|README_DRIFT|SELF_FLATTERY|OMISSION|MECHANICS","severity":"critical|major|minor","fix":"..."}],"verdict":"..."}
+Do not edit any file in the repo. Write only to the two scratchpad paths above.

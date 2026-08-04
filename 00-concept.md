@@ -2,18 +2,20 @@
 
 ## Bottom line
 
-- Reddit Index is a public, indexable leaderboard that ranks software brands per category by what people say about them on Reddit, split into a "Most Loved" and a "Most Hated" column, operated openly by Empact Partners.
+- **Reddit Index** (`redditindex.com`) is a public, indexable leaderboard that ranks software brands per category by what people say about them on Reddit, split into a **Most Loved** and a **Most Hated** column, operated openly by Empact Partners.
+- Four page types carry the entire product: the homepage `/`, one category page per category, one brand page per brand, and a single methodology page at `/methodology`. Nothing else ships in Phase 1.
+- Three numbers appear on every surface, in the same order: a **Love Index**, a **Hate Index**, and the mention count published as both raw `n` and effective `n_eff`. Two independent scores, never one net score ([decisions/0004](decisions/0004-two-axis-index.md)).
+- Ranking is gated at `n_eff ≥ 400` plus four diversity floors. Everything under the gate is **Profiled**: mentions shown, no position published. That tier is where the outreach comes from ([11-outreach-play.md §6](11-outreach-play.md)).
+- Every mention on a brand page carries the comment text, the author's username, a "from Reddit" label, and a permalink to the thread. Deleted comments disappear within a day, no page runs ads, and removal is free and unconditional.
 - 🟡 The **public cross-brand leaderboard** seat is unoccupied. The **adjacent per-brand audit** seat is not: [redditbrands.com](https://redditbrands.com/) and [whatredditthinks.com](https://whatredditthinks.com/) are both live, both registered within the last three months ([domain sweep](data/domain-availability.csv), verified 2026-08-04).
 - 🟢 The format is proven, just not for software. ApeWisdom has run a public Reddit-derived ticker leaderboard for years on a short, mechanical methodology page ([apewisdom.io/methodology](https://apewisdom.io/methodology/)), and Profound runs the identical playbook for AI answers ([Profound Index](https://www.tryprofound.com/profound-index)).
-- 🟡 Three numbers carry every page: a **Love Index**, a **Hate Index**, and the mention count published as both raw `n` and effective `n_eff`. Two independent scores, never one net score ([decisions/0004](decisions/0004-two-axis-index.md)).
-- ⚠️ Brand pages will display full Reddit comment text. That is a deliberate, priced risk taken by the owner against known contract and copyright exposure, not a compliant design. See [01-legal.md](01-legal.md).
-- ⚠️ The name itself breaches [Data API Terms §4.1](https://www.redditinc.com/policies/data-api-terms) and [Developer Terms §5.3](https://www.redditinc.com/policies/developer-terms). The realistic enforcement path is a UDRP filing, which costs the domain and not the project. Priced and accepted in [decisions/0001](decisions/0001-name-reddit-index.md).
+- Two things here are priced risks rather than solved problems: the Reddit-containing name, and the display of full comment text. The reasoning and the clause citations live in [01-legal.md](01-legal.md).
 
 ---
 
 ## What it is
 
-Reddit Index turns Reddit's opinion layer into a browsable ranking of software brands, one page per category, one page per brand. Every score traces back to individual comments, each linked to its original thread.
+Reddit Index turns Reddit's opinion layer into a browsable ranking of software brands at `redditindex.com`: one page per category, one page per brand. Every score traces back to individual comments, each linked to the thread it came from.
 
 Phase 1 covers the 50 largest software categories. Phase 2 extends to all categories. Nothing is built yet; this repository is documentation only.
 
@@ -49,7 +51,7 @@ The neighboring seats are occupied, and two of them were taken this year. The cr
 
 `redditbrands.com` was registered 2026-06-07 and `whatredditthinks.com` on 2026-05-25; both were fetched live on 2026-08-04 ([domain sweep](data/domain-availability.csv), [method.md](method.md)). They validate the demand and they take the audit lane. The leaderboard seat is open, but it is not open indefinitely.
 
-One detail from `whatredditthinks.com` is worth taking seriously rather than dismissing: it paraphrases, it does not quote. That is the same restraint every surviving analogue shows, and it is precisely what Reddit Index departs from by owner decision.
+One product difference is worth naming plainly: `whatredditthinks.com` paraphrases, it does not quote. Reddit Index quotes, and that single choice is what separates the two properties on every brand page.
 
 Two 2025-2026 events widened the seat. GummySearch, the one true Reddit-native player, shut down on 2025-11-30 ([gummysearch.com](https://gummysearch.com/)). G2 then acquired Capterra, Software Advice, and GetApp from Gartner for roughly $110M, closing 2026-02-05 ([PRNewswire](https://www.prnewswire.com/news-releases/g2-to-acquire-capterra-software-advice-and-getapp-from-gartner-302673901.html)).
 
@@ -102,9 +104,11 @@ The resolution is a two-tier site, not a lower bar: Tier 1 **Ranked** carries po
 
 ### The column labels
 
-The columns are labeled **Most Loved** and **Most Hated** by owner decision, and they do not change. A superlative is a stronger claim than the underlying index supports, which is a priced risk rather than a neutral description — see [01-legal.md](01-legal.md).
+The columns are labeled **Most Loved** and **Most Hated**, and they do not change ([decisions/0005](decisions/0005-superlative-labels.md)).
 
-What every surface must carry alongside the label is the measured variable itself, in the form `Hate Index 21/100 · 412 opinionated mentions · Jan–Jun 2026`. The superlative is the headline; the measured variable is what the reader is entitled to check.
+Every surface carries the measured variable beside the label, in the form `Hate Index 21/100 · 412 opinionated mentions · Jan–Jun 2026`. The superlative is the headline; the measured variable is what the reader checks it against. A label standing alone is a defect, not a style choice.
+
+The scope travels with the label everywhere it appears: this index, this source, this window. No page title, meta description, or badge says "worst software" or "companies people hate."
 
 ---
 
@@ -119,7 +123,7 @@ What every surface must carry alongside the label is the measured variable itsel
 | Two columns | **Most Loved** and **Most Hated**, all categories pooled, top 10 each. Brand name, category, the governing index with its interval, raw and effective mention count |
 | Consolidated table | Every qualifying brand across all categories, sortable by Love Index, Hate Index, mention count, and category. The default sort key is named on the page. Paginated |
 | Category grid | All Phase 1 categories, linked, each showing brand count and last-updated date |
-| Footer | "Created by Empact Partners." Link to `/methodology`. The mandatory non-affiliation notice, exact wording in [decisions/0001](decisions/0001-name-reddit-index.md) |
+| Footer | "Created by Empact Partners," the non-affiliation notice, and the link to `/methodology`. Present on every page of the site, not just this one |
 
 ### Category page — `/category/{slug}`
 
@@ -147,30 +151,33 @@ Below-threshold brands appear in a separate collapsed block labeled with the thr
 | Confound disclosure | The persistent line, plus `neutral_share` and `abstain_share` for the window |
 | Trajectory | The brand against its own baseline over time, shown alongside the cross-brand rank. This is the presentation that survives the size objection |
 | Category ranks | One row per category the brand appears in, with rank, both indexes, and status |
-| Mentions | The individual Reddit comments: text, username, subreddit, date, permalink to the thread |
-| Correction path | Free, unconditional, never bundled with a commercial offer |
+| Mentions | The individual Reddit comments: full text, the author's username, a "from Reddit" label, subreddit, date, and a permalink to the thread |
+| Correction path | Free, unconditional, one click from the page, never bundled with a commercial offer |
 
-⚠️ The mentions section is where the risk sits. Every live analogue — ApeWisdom, SwaggyStocks, Quiver, and now [whatredditthinks.com](https://whatredditthinks.com/) — publishes counts, links or paraphrase but never verbatim user text, and that restraint is the shared survival trait. Reddit Index departs from it by owner decision. Read [01-legal.md](01-legal.md) before changing a word of that section.
+Four requirements ship with the mentions section or the mentions section does not ship. They are build items, not policy language.
+
+- A permalink to the source thread on every single mention
+- The author's username, displayed as written
+- A visible "from Reddit" label on the block, so no reader mistakes the text for ours
+- A nightly delete-sync: a comment deleted, edited, or removed on Reddit is gone here within a day
+
+Two more hold across the whole property. No page runs advertising of any kind, on any surface, ever. Removal requests from a commenter or a brand are free, unconditional, and never routed through a sales conversation.
 
 ### Methodology page — `/methodology`
 
-One URL, everywhere. It is the badge destination, the `Dataset` schema provenance target, the footer link, and the legal disclosure surface. No second `/about` route carries any of that.
-
-**This page is load-bearing legally, not decoratively.** Comparative ratings survive as opinion when the methodology is fully disclosed and applied consistently ([ZL Technologies v. Gartner](https://www.courtlistener.com/opinion/2540667/zl-technologies-inc-v-gartner-inc/)). An undisclosed or altered method is the fact pattern that loses.
-
-⚠️ Two caveats travel with that protection. It is **US caselaw**, and the operating entity is Estonian: [01-legal.md §6](01-legal.md) finds the forum materially worse, with no EU analogue to the §230 shield and *Delfi* the closer precedent for a publisher that selects and republishes.
-
-And both protective precedents involve raters with **no commercial relationship to the rated**. Gartner and Consumers Union do not sell to the companies they score. Reddit Index ranks the companies Empact then solicits, which is a materially different "general tenor" than the ZL holding turned on.
+One URL, everywhere, and one click from every ranking. It is the badge destination, the `Dataset` schema provenance target, and the footer link. No second `/about` route carries any of that.
 
 It must contain, at minimum: the data source and collection window; the exact scoring definitions and both denominators; the `n_eff ≥ 400` gate with its derivation and every diversity floor; the entity-matching rules and their known failure modes; and the tie rule.
 
 It must also carry the exposure confound in plain language, the correction and removal process, the operator's identity and commercial interest, and a version history with dates.
 
+The method is frozen and version-controlled before the first scoring run, and every subsequent change is logged with a timestamp. Nothing is adjusted after seeing where a brand landed, in either direction.
+
 Write it like ApeWisdom's, not like a vendor's: short, mechanical, and openly self-incriminating about what the method gets wrong.
 
 ### Breadcrumbs
 
-`Home > Category > Brand` on every page, marked up as structured data. Category pages carry `Home > Category`. No page is a dead end.
+`Home > Category > Brand` on every page, marked up as structured data. Category pages carry `Home > Category`. No page is a dead end, and no page is reachable only from search.
 
 ---
 
@@ -183,7 +190,7 @@ Write it like ApeWisdom's, not like a vendor's: short, mechanical, and openly se
 | A monitoring tool | No login, no alerts, no dashboard, nothing per-customer |
 | A per-brand audit tool | `redditbrands.com` occupies that lane. Reddit Index publishes a standing cross-brand board, not an on-demand grade |
 | An independent publication | Empact Partners operates it openly as a side project and uses it for outreach. The footer says so |
-| A live API or data product | Reddit's Data API Terms forbid deriving revenue from the data without express written approval ([data-api-terms](https://www.redditinc.com/policies/data-api-terms)) |
+| A live API or data product | No public API, no bulk export, nothing licensed or sold. That constraint is permanent, not a roadmap item |
 
 ---
 
@@ -193,37 +200,16 @@ The product is **Reddit Index**, at `redditindex.com`, verified available 2026-0
 
 The name is deliberately Reddit-specific. It says what the product is with zero explanation, and the surface where that matters most is a cold email, where the first line is the only attention this property ever gets. A name that has to be unpacked spends that line on itself.
 
-Two costs came with the legibility. Both were priced, not avoided.
+Two costs came with that legibility. Both were priced rather than avoided, and the full record, with the alternatives rejected and the conditions attached, is in [decisions/0001](decisions/0001-name-reddit-index.md).
 
-### The name breaches Reddit's trademark clauses
+**The build absorbs the first cost as design rules.** No Reddit visual identity, ever: no orange `#FF4500`, no Snoo, no Reddit Sans, no lookalike mark ([09-design.md](09-design.md)). Plain-text company names only, no logos. A non-affiliation notice in the footer of every page, exact wording in [decisions/0001](decisions/0001-name-reddit-index.md).
 
-| Clause | Text |
-|---|---|
-| [Data API Terms §4.1](https://www.redditinc.com/policies/data-api-terms) | "You are not permitted to use the Reddit Trademarks in, or as part of the name of your App, or any logos used to promote or identify your App, unless expressly authorized in writing by Reddit." |
-| [Developer Terms §5.3](https://www.redditinc.com/policies/developer-terms) | "you are not permitted to use the Reddit Trademarks in the name of your App or to promote or identify your App (including in any materials related to your App), without Reddit's prior written consent." |
+**The second cost is that the name is Reddit-locked.** Phase 3 in [12-phasing.md](12-phasing.md) contemplates Hacker News, Stack Overflow and other sources. "Reddit Index" cannot carry them without a rename, a redirect, and a rebuild of the brand. That option was sold for legibility, knowingly.
 
-§4.2 licenses exactly one construction, the wordmark preceded by "for", as in "[name] for Reddit". We do not use it.
-
-The realistic enforcement path is a UDRP filing, not a lawsuit. Reddit files them *pro se* for roughly $1,500 and has won every one found: [`reddit.win`](https://www.wipo.int/amc/en/domains/decisions/text/2020/d2020-1834.html) (D2020-1834, transferred), [`redditpromotion.com` / `redditshop.com`](https://www.wipo.int/amc/en/domains/decisions/text/2019/d2019-2964.html) (D2019-2964), [`reddit.co`](https://www.wipo.int/amc/en/domains/decisions/text/2018/dco2018-0008.html) (DCO2018-0008).
-
-In `reddit.win` the panel held that even noncommercial free-speech use of an identical mark "carries with it a high risk of implied affiliation."
-
-⚠️ **Low traffic is not a defence.** A UDRP is a registrar-level administrative proceeding. It needs no damages, no discovery, and no proof that anyone visited the site. It needs only that Reddit notices.
-
-What a loss costs is the domain, not the project. The pipeline, the index, the methodology and the content all survive a transfer. That asymmetry is the reason the risk is acceptable, and it is the honest way to state it.
-
-No Reddit visual identity follows, ever: no orange `#FF4500`, no Snoo, no Reddit Sans, no lookalike mark ([09-design.md](09-design.md)). Trade dress stacked on top of the name is what turns a survivable UDRP into an easy one.
-
-### The name is Reddit-locked
-
-Phase 3 in [12-phasing.md](12-phasing.md) contemplates Hacker News, Stack Overflow and other sources. "Reddit Index" cannot carry them without a rename, a redirect, and a rebuild of the brand. That option was sold for legibility, knowingly.
-
-`brandsonreddit.com` was available and carries a materially better UDRP posture: a descriptive phrase in which Reddit is the subject being covered, rather than a compound where REDDIT leads and reads as a sub-brand. It was not taken. It is the documented migration target.
-
-Everything therefore stays cheap to move: all internal links relative, the canonical host in exactly one config value. The full record, with the alternatives rejected and the conditions attached, is in [decisions/0001](decisions/0001-name-reddit-index.md).
+`brandsonreddit.com` was available and is the documented migration target. So everything stays cheap to move: all internal links relative, the canonical host in exactly one config value, and a rename should cost a day rather than a quarter.
 
 ---
 
 ## Related
 
-[← Back to README](README.md) · [01-legal.md](01-legal.md) · [07-index-methodology.md](07-index-methodology.md) · [08-architecture.md](08-architecture.md) · [11-outreach-play.md](11-outreach-play.md) · [decisions/0004](decisions/0004-two-axis-index.md)
+[← Back to README](README.md) · [01-legal.md](01-legal.md) · [07-index-methodology.md](07-index-methodology.md) · [08-architecture.md](08-architecture.md) · [09-design.md](09-design.md) · [11-outreach-play.md](11-outreach-play.md) · [12-phasing.md](12-phasing.md)

@@ -1,24 +1,30 @@
 # Reddit Index
 
-A public site ranking the **most loved and most hated software brands** in every category, computed from what people actually say on Reddit. Built and operated by Empact Partners as a cold-outreach asset.
+### 🔗 redditindex.com
+
+**The most loved and most hated software brands in every category, according to Reddit.**
+
+Pick a category. See the two columns. Click a brand and read the actual comments people wrote about it, linked back to the thread they came from.
+
+Built and operated by **Empact Partners**. Next.js on Vercel, Supabase for data.
 
 **Last verified: 2026-08-04** · 12 research lanes, primary sources, live measurement
 
-> ⚠️ **Nothing is built.** This repo is the specification. No site, no pipeline, no data. Read [01-legal.md](01-legal.md) before writing a line of code.
+> ⚠️ **Nothing is built yet.** This repo is the specification: how it works, how it is scored, and what it costs.
 
 ---
 
 ## ⚡ Bottom line
 
-The **public cross-brand leaderboard** seat is unoccupied and the build is technically tractable — one machine, roughly $85/month. Whether the ranking is *trustworthy* is unproven. That is the question [Phase 0](12-phasing.md) exists to answer, and Phase 0 stops the project if the answer is no.
+**Nobody owns this.** No live property ranks software brands by Reddit sentiment as a public leaderboard. GummySearch, the Reddit-native category leader, shut down 2025-11-30. The adjacent per-brand-audit seat is taken — [redditbrands.com](https://redditbrands.com/) and [whatredditthinks.com](https://whatredditthinks.com/) are both live — but the cross-brand board is open.
 
-The adjacent seat is taken. [redditbrands.com](https://redditbrands.com/) and [whatredditthinks.com](https://whatredditthinks.com/) both ship live per-brand Reddit audits, both registered within the last three months, both fetched live 2026-08-04 ([00-concept.md](00-concept.md)).
+**It is buildable, and it is cheap.** The corpus for ~1,000 subreddits is 200-400M items, roughly 0.5-1.5 TB. One machine. **About $85/month** at Phase 1 scale. See [08-architecture.md](08-architecture.md).
 
-It is also **not compliant with Reddit's terms**, and the owner has chosen to proceed with the exposure understood ([01-legal.md](01-legal.md)). Two breaches are priced and live: the name and the comment display.
+**The one number that reshapes the build: Reddit's API reaches roughly 3 to 8 days of history**, not years. So the API is a maintenance tool, and history comes from archive dumps. Everything downstream follows from that.
 
-What a lost UDRP takes is the domain, not the pipeline, the index, or the methodology. The asset genuinely at risk is Empact's live Reddit operation across roughly 28 partner projects (internal Empact figure, not from the research corpus).
+**What is unproven is trust, not feasibility.** Whether the ranking matches what a knowledgeable person would say about a category is exactly what [Phase 0](12-phasing.md) tests, on one category, before anything ships.
 
-The single number that reframes the build: **Reddit's API reaches roughly 3 to 8 days of history**, not years. Everything else follows from that.
+Two risks are priced and accepted rather than avoided — the Reddit-containing name and displaying full comment text. Both are recorded with their clause citations in [01-legal.md](01-legal.md) and [decisions/](decisions/). If a UDRP ever lands it costs the domain, not the pipeline or the index.
 
 ---
 
@@ -98,7 +104,8 @@ Empact Partners operates it openly. The footer reads "Created by Empact Partners
 | Doc | What's in it |
 |---|---|
 | **[00-concept.md](00-concept.md)** | The product, page by page, and the live competitive field. Start here. |
-| **[01-legal.md](01-legal.md)** | ⚠️ Clause-level risk register. The most important file in the repo. |
+| **[13-algorithm.md](13-algorithm.md)** | **How it actually works.** Subreddit selection, the comment-stream discovery lane, mention detection, the weekly loop. |
+| [01-legal.md](01-legal.md) | The clause-level risk register and the two priced decisions |
 | [02-data-acquisition.md](02-data-acquisition.md) | The 1,000-item cap, archive backfill, volumes, cost |
 | [03-taxonomy.md](03-taxonomy.md) | G2 vs Capterra, and why we derive our own spine |
 | [04-subreddit-mapping.md](04-subreddit-mapping.md) | Category → subreddit, and the rules that kill brand signal |

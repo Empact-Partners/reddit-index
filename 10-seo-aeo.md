@@ -4,6 +4,8 @@
 
 - **Build for citation and the outreach hook, not for sessions.** G2 lost 84.5% of organic traffic (2.56M → 397K visits, Jan 2024 → Dec 2025) yet still holds 23.1% of review-platform links in AI Overviews; Capterra fell 89% and holds 17.8% ([SE Ranking, 30K keywords / 22,729 AIOs, 2025-12-01](https://seranking.com/blog/review-platforms-in-ai-overviews/)).
 - Nothing in Google's spam policy bans programmatic pages. It bans *unoriginal* ones, "no matter how it's created" ([Google spam policies](https://developers.google.com/search/docs/essentials/spam-policies)). Our live exposure is the **Scraping** clause, not the AI clause.
+- **The whole ranking question reduces to one sentence.** redditindex.com is a Reddit-derived property on its own domain, so "some type of unique benefit to the user" is a test every page takes. Section 2 names the four things that pass it and the one layout that fails it.
+- URL structure is three route families — `/category/{slug}`, `/brand/{slug}`, `/methodology` — and a brand page is **global**, so its breadcrumb names a primary category it does not nest under (section 4).
 - `AggregateRating` and `Review` markup are off the table: Google requires ratings "sourced directly from users" and forbids aggregating them from other websites ([review snippet guidelines](https://developers.google.com/search/docs/appearance/structured-data/review-snippet)). Use `Dataset`, `ItemList`, `BreadcrumbList`.
 - Schema does not buy AI citations. Ahrefs tracked 1,885 pages that added JSON-LD Aug 2025 → Mar 2026 against 4,000 matched controls: AI Overviews **−4.6%**, AI Mode +2.4%, ChatGPT +2.2% ([Ahrefs](https://ahrefs.com/blog/schema-ai-citations/)).
 - Skip `llms.txt`. Across 137,210 domains, 28% published a valid file and **97% of those were never fetched by anything** ([Ahrefs, May 2026](https://ahrefs.com/blog/llmstxt-study/)).
@@ -21,11 +23,11 @@ Reddit Index earns its keep three ways, in this order: it gets **cited** by AI e
 |---|---|---|
 | Category page | Cited in ChatGPT / AI Mode / Perplexity answers | Sessions |
 | Brand page | Replies when pasted into a cold email | Ranking position |
-| `/methodology/` | Cited as the provenance for a number | Traffic |
+| `/methodology` | Cited as the provenance for a number | Traffic |
 
 ---
 
-## 2. What actually gets a site killed
+## 2. The Google policy that actually bites
 
 The scaled-content-abuse policy targets "creating large amounts of unoriginal content that provides little to no value to users, no matter how it's created" ([spam policies](https://developers.google.com/search/docs/essentials/spam-policies)). Generation method is explicitly irrelevant.
 
@@ -33,19 +35,24 @@ Our real exposure is the **Scraping** clause in the same document: "Reproducing 
 
 **Site reputation abuse does not apply.** It governs third-party content on a *host* site trading on that host's ranking signals, and its not-a-violation list names "Sites designed to allow user-generated content, such as a forum website or comment sections" ([Google, Nov 2024](https://developers.google.com/search/blog/2024/11/site-reputation-abuse)). 🟡 INFERENCE: a standalone domain is out of scope.
 
-### What our unique benefit is
+### The unique-benefit test, answered
 
-| Layer | Counts as unique benefit? | Why |
-|---|---|---|
-| Computed loved/hated index per brand | 🟢 Yes | Exists nowhere else |
-| Cross-brand ranking inside a category | 🟢 Yes | Reddit has no category leaderboard |
-| Subreddit distribution, thread counts, mention dates | 🟢 Yes | Derived aggregates, not source expression |
-| Stated methodology and scoring formula | 🟢 Yes | Provenance is the citation lever |
-| Reproduced comment text | 🔴 No | This is the feed, not a benefit on top of it |
+Reddit publishes none of the four things below. Each one is a computation that exists because we ran it, which is what makes redditindex.com a property rather than a mirror.
 
-⚠️ **Displaying full comment text is a decided, priced risk.** The owner reviewed the contractual and copyright exposure and chose to display comment bodies with links back to the thread. This is not a compliant posture and is not defended here. Its consequence for SEO is single and specific: **the unique-benefit defense cannot rest on the comments.** See [01-legal.md](01-legal.md).
+| What we add | Why it is a unique benefit |
+|---|---|
+| **The two-axis index** — `love_score` and `hate_score`, separately shrunk empirical-Bayes rates over opinionated mentions only | No score of any kind exists on the source. A single net score would not exist either, and would hide polarized brands ([decisions/0004](decisions/0004-two-axis-index.md)) |
+| **Cross-brand comparison inside a category** | Reddit has no category leaderboard. Ranking every qualifying brand in a category against one window, with ties shown as ties, is the product |
+| **The published methodology** — sample, window, both denominators, entity-matching failure modes, tie rule | Provenance is the citation lever. It is why an engine can attribute a number to us instead of to a thread ([00-concept.md](00-concept.md)) |
+| **The effective-sample correction** — `n_eff = n / DEFF`, gate at `n_eff ≥ 400`, four diversity floors | Raw counts are visible to anyone who scrolls. `n_eff` exists only because we measured the clustering ([07-index-methodology.md](07-index-methodology.md)) |
 
-Any page whose value collapses to "a list of somebody else's comments" forfeits the Scraping-clause defense. The computed index must be the page; quotes are evidence beneath it, never the reverse.
+**What forfeits it, in one line: a page whose value collapses to a list of somebody else's comments.** The computed index is the page; quoted mentions are evidence sitting beneath it. Any layout that inverts that order fails the Scraping clause on its own wording, without Google needing a new policy.
+
+That order is load-bearing here because brand pages render full comment text by owner decision, so the unique-benefit defense cannot rest on the comments. The reasoning and the risk register are in [01-legal.md](01-legal.md).
+
+Two build requirements follow, and they are requirements, not preferences. Every mention card carries permalink, username, and "from Reddit". A nightly delete-sync purges removed or edited content and triggers the static rebuild, because a quote behind a dead link is a method-integrity failure before it is anything else ([08-architecture.md](08-architecture.md)).
+
+Removal requests are honored free, on request, with no commercial step attached — and honored ahead of any index consideration. A page pulled for a removal request returns 410, not `noindex` on a live page.
 
 ---
 
@@ -57,7 +64,7 @@ Any page whose value collapses to "a list of somebody else's comments" forfeits 
 |---|---|---|
 | `BreadcrumbList` | 🟢 Yes | Every page |
 | `ItemList` | 🟢 Yes | Category pages ([carousel docs](https://developers.google.com/search/docs/appearance/structured-data/carousel)) |
-| `Dataset` | 🟢 Yes | Category, brand, `/methodology/`, `/data/*.csv` |
+| `Dataset` | 🟢 Yes | Category, brand, `/methodology`, `/data/*.csv` |
 | `Organization`, `WebSite` | 🟢 Yes | Root |
 | `FAQPage` | 🟡 Optional | Rich-result eligibility is now narrow |
 | `AggregateRating`, `Review` | 🔴 Never | Explicit violation on third-party-derived sentiment |
@@ -68,14 +75,46 @@ Do not expect schema to move AI citations. Google's own AI-features doc (updated
 
 ---
 
-## 4. Indexation architecture at 5,000 pages
+## 4. URL structure
+
+Three route families plus two data surfaces. All lowercase, hyphenated, no trailing slash, self-canonical. Nothing outside this table is indexable.
+
+| Route | Example | What it is |
+|---|---|---|
+| `/` | `redditindex.com/` | Pooled two-column board, consolidated table, category grid |
+| `/category/{slug}` | `/category/project-management` | One category: two columns, full ranked table, below-threshold block |
+| `/brand/{slug}` | `/brand/notion` | One brand, global across categories: both indexes, per-category rank rows, mentions, correction path |
+| `/methodology` | `/methodology` | One URL, everywhere. Badge destination, `Dataset` provenance target, footer link |
+| `/changelog` | `/changelog` | Dated recompute history. The freshness evidence an engine can actually read |
+| `/data/{name}.csv` | `/data/love-index-2026-09.csv` | Flat per-recompute export, one `Dataset` node each |
+
+Slugs are ours and are written by hand. Never reuse a competitor's category slug, and never guess one: twelve plausible Capterra slugs 404'd during research ([03-taxonomy.md](03-taxonomy.md)).
+
+**A brand page is global, not category-nested.** `/category/{cat}/brand/{brand}` does not exist and must never be linked or emailed. A brand appearing in three categories has one URL carrying three rank rows ([11-outreach-play.md](11-outreach-play.md)).
+
+### Breadcrumbs
+
+| Page | Visible crumb | `BreadcrumbList` items |
+|---|---|---|
+| Category | `Home › {Category}` | `/` → `/category/{slug}` |
+| Brand | `Home › {Primary category} › {Brand}` | `/` → `/category/{primary}` → `/brand/{slug}` |
+| Methodology | `Home › Methodology` | `/` → `/methodology` |
+| Changelog | `Home › Methodology › Changelog` | `/` → `/methodology` → `/changelog` |
+
+The brand crumb's middle item is that brand's **primary category**, defined as the one with the highest `n_eff`, resolved at recompute and stored with the page so a near tie cannot flip the crumb month to month.
+
+The crumb is a path through the site, not a path in the URL. Its middle item links to `/category/{primary}`; the brand's own URL stays flat. Visible breadcrumb and markup must agree item for item, or the markup is invalid.
+
+---
+
+## 5. Indexation architecture at 5,000 pages
 
 We do not have a crawl-budget problem. Google's threshold is "1 million+ unique pages" changing weekly or "10,000+ unique pages" changing daily ([docs](https://developers.google.com/search/docs/crawling-indexing/large-site-managing-crawl-budget)). At 5K pages the problem is value per page.
 
 | Concern | Rule |
 |---|---|
 | Internal linking | Hub-and-spoke: 50 category hubs → brand spokes; every brand links up to its category and laterally to 5-10 peers |
-| Breadcrumbs | Visible breadcrumb plus `BreadcrumbList` on every page, no exceptions |
+| Breadcrumbs | Visible breadcrumb plus `BreadcrumbList` on every page, no exceptions — routes and crumb mapping in section 4 |
 | Sitemaps | Index at root, one child sitemap per category, so Search Console coverage is diagnosable per segment |
 | `<lastmod>` | Rewritten on every monthly recompute, accurate or omitted |
 | Canonical | Self-canonical everywhere. No cross-canonical between category and brand |
@@ -95,7 +134,7 @@ There is no published Google word count for a thin page. 🟡 INFERENCE: the ope
 
 ---
 
-## 5. The "[category] reddit" query class
+## 6. The "[category] reddit" query class
 
 This is the target query class because Google keeps rewarding it. Reddit's share of Google top-3 positions rose to **10.24%** after the May 2026 core update, up from 8.56% post-March, gaining across all 20 tracked niches ([SE Ranking](https://seranking.com/blog/google-may-2026-core-update-analysis/)).
 
@@ -107,14 +146,14 @@ Title and H1 pattern: `Best [Category] According to Reddit ([Month Year])`, with
 
 ---
 
-## 6. AEO and GEO: what gets a data property cited
+## 7. AEO and GEO: what gets a data property cited
 
 Four levers, in descending order of evidence strength.
 
 | Lever | Evidence | Implementation |
 |---|---|---|
-| **Freshness** | Median days since publication of cited URLs: ChatGPT 958, Copilot 1,056, Gemini 1,118, Perplexity 1,166, versus Google organic 1,416 ([Ahrefs, 16.975M URLs](https://ahrefs.com/blog/do-ai-assistants-prefer-to-cite-fresh-content/)) | Monthly recompute, visible "Data as of" line, accurate `dateModified`, public `/changelog/` |
-| **Stated methodology** | 🟡 INFERENCE from source-provenance behavior | `/methodology/`: sample size, date range, collection method, scoring formula, limitations, changelog. Linked from every page |
+| **Freshness** | Median days since publication of cited URLs: ChatGPT 958, Copilot 1,056, Gemini 1,118, Perplexity 1,166, versus Google organic 1,416 ([Ahrefs, 16.975M URLs](https://ahrefs.com/blog/do-ai-assistants-prefer-to-cite-fresh-content/)) | Monthly recompute, visible "Data as of" line, accurate `dateModified`, public `/changelog` |
+| **Stated methodology** | 🟡 INFERENCE from source-provenance behavior | `/methodology`: sample size, date range, collection method, scoring formula, limitations, changelog. Linked from every page |
 | **Front-loaded answer** | 🟡 SECONDARY: 44.2% of LLM citations come from the first 30% of page content; listicles 21.9%, articles 16.7%, product pages 13.7% ([Ahrefs data summary](https://www.quattr.com/blog/takeaway-from-ahrefs-ai-search-study)) | Ranked table above the fold. One extractable verdict per brand. No preamble |
 | **Source type** | Semrush, 230K prompts / 13 weeks: UGC dominates but is volatile — Reddit's ChatGPT citation share fell ~60% → ~10% after a Sept 11 parameter change ([Semrush](https://www.semrush.com/blog/most-cited-domains-ai/)) | Do not build on being *inside* Reddit's citation share. Be the structured summary *of* it |
 
@@ -124,7 +163,7 @@ Category-page order: H1 with month → one-sentence verdict → ranked table →
 
 ---
 
-## 7. AI crawler access policy
+## 8. AI crawler access policy
 
 Blocking a retrieval agent forfeits citation eligibility, which is the entire business case.
 
@@ -136,26 +175,29 @@ Blocking a retrieval agent forfeits citation eligibility, which is the entire bu
 | `GPTBot`, `CCBot`, `anthropic-ai` | 🟡 Block | Training-only; standard 2026 posture, costs nothing in citations ([Anagram](https://www.anagram.ai/blog/ai-crawlers-explained-gptbot-claudebot-perplexitybot-and-how-to-let-them-in-2026)) |
 | `/search`, `/filter`, faceted params | 🔴 Disallow | Index bloat |
 
-⚠️ The tension is unresolved: we want AI engines ingesting a derived dataset while Reddit litigates over derived and circumvented data ([Reddit v. SerpApi, Reddit v. Perplexity](https://www.coronium.io/blog/is-web-scraping-legal-2026)). Opening the door widens the audience for whatever exposure the display decision carries. Documented, not mitigated.
+Allowing an agent means serving it the page a person gets. No cloaking, no agent-specific rendering, no interstitial, and no ads anywhere on the site — an ad layer would be the first thing a citing engine renders around our own numbers.
+
+Reddit trade dress stays off every surface: no Reddit logo, no Snoo, no orange, no `r/` styling on our own chrome. Subreddit names appear as plain text inside attribution rows.
 
 ---
 
-## 8. Deindexation risks, ranked by likelihood
+## 9. Deindexation risks, ranked by likelihood
 
 | # | Risk | Likelihood | Mechanism |
 |---|---|---|---|
-| 1 | Reproduced comment text at scale | 🔴 High | Scraping clause verbatim, plus copyright exposure. Mitigate by making the computed index the page |
+| 1 | Reproduced comment text becomes the page | 🔴 High | Scraping clause, verbatim. Mitigate by making the computed index the page and the quotes the evidence |
 | 2 | Thin brand pages shipped past the gate | 🔴 High | Scaled content abuse |
 | 3 | Faceted or filter URLs left crawlable | 🟡 Medium | 5K pages become 500K; manufactures a doorway problem |
 | 4 | `AggregateRating` on the sentiment index | 🟡 Medium | Structured-data violation → manual action, rich results removed |
 | 5 | Generated prose padding thin pages | 🟡 Medium | Padding is the detection signal, not the fix |
 | 6 | Static, never-recomputed data | 🟡 Medium | Decays out of AI answers; reads as abandoned |
-| 7 | No stated methodology | 🟡 Medium | Uncitable by engines needing provenance; a defamation surface on named companies |
-| 8 | Subdomain rented to a third party | 🟢 Low | Site reputation abuse; relocating it "may be viewed as an attempt to circumvent spam policy" |
-| 9 | Forecast built on G2-era traffic assumptions | 🟢 Low (planning) | Directory organic traffic fell 76-92% across the category 2024 → 2025 |
+| 7 | No stated methodology | 🟡 Medium | Uncitable by engines that need provenance, and the largest unique-benefit claim disappears with it |
+| 8 | Category-nested brand URLs shipped by mistake | 🟡 Medium | Two URLs for one brand, split signals, breadcrumb markup that contradicts the visible crumb |
+| 9 | Subdomain rented to a third party | 🟢 Low | Site reputation abuse; relocating it "may be viewed as an attempt to circumvent spam policy" |
+| 10 | Forecast built on G2-era traffic assumptions | 🟢 Low (planning) | Directory organic traffic fell 76-92% across the category 2024 → 2025 |
 
 Claims that a "March 2026 core update explicitly named scaled content abuse" circulate on SEO blogs. **NOT VERIFIED** against any Google primary source. Do not plan against it.
 
 ---
 
-[← Back to README](README.md) · [00-concept.md](00-concept.md) · [11-outreach-play.md](11-outreach-play.md)
+[← Back to README](README.md) · [00-concept.md](00-concept.md) · [03-taxonomy.md](03-taxonomy.md) · [07-index-methodology.md](07-index-methodology.md) · [11-outreach-play.md](11-outreach-play.md)
