@@ -50,7 +50,8 @@ Resolve every candidate with `/r/{sub}/about` and `/r/{sub}/about/rules`. **Neve
 |---|---|
 | Wrong topic, private, or inaccessible | Unusable |
 | `rule_posture = prohibitive` | The sub deletes the content we came for |
-| Vendor-owned / single-product subs | Self-select for invested users. Kept as evidence, never scored |
+| **Single-product** subs | Self-select for invested users. Kept as evidence, never scored. 48 of 132 measured subreddits ([14-category-tests.md](14-category-tests.md)) |
+| — but **not ecosystem** subs | r/salesforce, r/shopify, r/aws are vendor-*named* yet populated by practitioners discussing the whole market. They stay scoreable, flagged. r/salesforce measured 30% brand-bearing with genuinely comparative discussion |
 | Categories with fewer than 5 independent scoring subs | [07-index-methodology.md](07-index-methodology.md) requires each ranked brand to appear across ≥5 subreddits. Below that, the category ships as *insufficient Reddit signal to rank* |
 
 ### Bootstrap score, before any census exists
@@ -113,7 +114,7 @@ Returns the newest 100 `t1` comments in the subreddit, **irrespective of thread*
 
 | Subreddit | Span of one page | Implied rate | Poll interval |
 |---|---|---:|---|
-| r/SaaS | 1.2h | ~83/h | 4h |
+| r/SaaS | 1.2h | ~83/h | 6h |
 | r/CRM | 19.8h | ~5/h | 24h |
 | r/PasswordManagers | 71.7h | ~1.4/h | 24h |
 
@@ -300,7 +301,7 @@ Steady state, per category, **per day**, 8 subreddits:
 | Subreddit meta | ~16 | 2 × 8 subs, drift detection |
 | Comment trees | ~45 | qualifying threads only |
 | Boosters (C + D) | ~10 | external probes + scoped search, rotated |
-| **Total** | **~180/day** | ≈ 1,250/week |
+| **Total** | **~180/day** | 1,260/week |
 
 **50 categories ≈ 9,000 calls/day.** At 80 req/min that is **under 2 hours** of wall clock, parallelisable and interruptible at any point. It fits comfortably inside a single free-tier app-only client's budget of ~115,000 calls/day.
 

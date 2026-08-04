@@ -51,7 +51,7 @@ Two risks are priced and accepted rather than avoided — the Reddit-containing 
 | High-ambiguity brand names | **35 of 113 (31%)** | 🟢 Classified |
 | Capterra categories | 1,000 rendered, truncated mid-W | 🟢 Scraped |
 | G2 categories | 2,237 enumerable | 🟢 Scraped |
-| Subreddits hostile to brand talk | **48 of 131 (37%)** | 🟢 Read from their own rules |
+| Subreddits hostile to brand talk | **48 of 131 (36.6%)** | 🟢 Read from their own rules |
 | Single-product communities (unscoreable) | **48 of 132 (36%)** | 🟢 Classified |
 | Categories reaching the 5-subreddit floor | **6 of 20** | 🟢 Measured live |
 | Candidate slots → unique subreddits | **187 → 132** (~29% ingest saving) | 🟢 Measured |

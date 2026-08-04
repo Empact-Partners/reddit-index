@@ -1,21 +1,43 @@
-Design the collection and ranking algorithm for Reddit Index.
+Fact-check the newest documentation in /Users/vladshvets/Projects/reddit-index against its own shipped data. READ-ONLY: do not edit any file.
 
-READ FIRST, in this order:
-1. /private/tmp/claude-501/-Users-vladshvets--claude/f6928dd3-ec32-4042-ab81-563839239aff/scratchpad/algo-brief.md — the brief. Binding.
-2. /Users/vladshvets/.claude/skills/reddit-api-assistant/SKILL.md — the operational playbook for the Reddit API, written from real harvests. Every trap in it is paid for.
-3. In /Users/vladshvets/Projects/reddit-index/: 02-data-acquisition.md, 04-subreddit-mapping.md, 05-entity-resolution.md, 06-sentiment.md, 07-index-methodology.md
+DOCS TO CHECK:
+- 13-algorithm.md  (the pipeline; contains live endpoint measurements)
+- 14-category-tests.md  (the 20-category study)
+- 02-data-acquisition.md, 04-subreddit-mapping.md, 12-phasing.md, 08-architecture.md, README.md, data/README.md
 
-Then produce the algorithm exactly as the brief's 8-section deliverable specifies.
+GROUND TRUTH — every number in the prose must reconcile against these:
+- data/subreddit-measurements.csv  (132 rows, one per unique subreddit)
+- data/category-tests-20.csv  (20 rows, category rollup)
+- data/category-candidates-20.json  (the probe input)
 
-YOUR EMPHASIS: **simplicity, resumability and operational cost.** You are the design that assumes a two-person team maintains this forever with no dedicated data engineer. Every stage must be restartable from disk, debuggable by reading a file, and cheap to run weekly. Prefer one boring pipeline that always finishes over a clever one that needs babysitting.
+YOUR JOB, in three parts.
 
-Be ruthless about what to cut. If a stage adds 20% recall for 5x the cost or complexity, say so and drop it. Explicitly identify the minimum viable pipeline that could produce a defensible ranking for ONE category, and what each added stage buys.
+PART 1 — RECONCILE EVERY NUMBER. Recompute from the CSVs yourself with a script. Verify at minimum:
+- "48 of 131 hostile (37%)" and "48 of 132 single-product (36%)" — check the denominators are right and consistent; one uses 131 (reachable) and one uses 132 (all). Flag if the docs mix them.
+- "51 of 132 scorable"
+- "only 6 of 20 categories reach the 5-scorable-subreddit floor" — recount from category-tests-20.csv
+- "187 candidate slots collapse to 132 unique subreddits" and the "~29% ingest saving" — verify 187 from the candidates JSON and that the percentage is computed correctly
+- "r/Entrepreneur serves 7 categories" and every other overlap count
+- Every per-subreddit figure quoted in prose (r/Bitwarden 37%, r/paypal 50%, r/SAP 49%, r/salesforce 30%, r/ObsidianMD 21%, subscriber counts, comment rates)
+- Every row of the big category table in 14-category-tests.md §4 against category-tests-20.csv
+- The CRM Phase 0 claims in 12-phasing.md: 5 scorable subs, 2.02 bb/h, ~53,000 3-year point estimate
 
-Also solve the discovery problem honestly: Reddit search does not index comment bodies, listings cap at 1,000, and most brand opinion sits in comments under threads whose titles name no brand ("what CRM do you use?", "recommend me a tool"). Say what the simple design genuinely cannot reach, rather than pretending it does.
+PART 2 — ARITHMETIC AND UNITS.
+- The daily call model in 13-algorithm.md §8: does ~180/category/day × 50 reconcile with ~9,000/day, and does 9,000/day at 80 req/min reconcile with "under 2 hours"?
+- Is "~1,250/week" consistent with ~180/day?
+- The multireddit bucketing pseudocode: does it terminate, and does it actually achieve "roughly one page per poll interval"? Check the units — rates are comments/hour, PAGE/TARGET is 100/24 ≈ 4.17 comments/hour. Is the comparison dimensionally correct?
+- The adaptive cadence formula clamp(500/rate, 1, 24): with rate in comments/hour, does this give hours? Sanity-check against the measured r/SaaS 83/h, r/CRM 5/h, r/PasswordManagers 1.4/h.
+- The 3-year projections: bb/h × 8760 × 3. Verify a few.
+- density_ub95: the docs claim rule-of-three (3/n) where the observed count is zero. Verify that is what the CSV contains.
 
-Write your design as markdown to /private/tmp/claude-501/-Users-vladshvets--claude/f6928dd3-ec32-4042-ab81-563839239aff/scratchpad/algo-design-simple.md
+PART 3 — OVERCLAIM AND CONTRADICTION.
+- 14-category-tests.md insists the study cannot declare a category dead. Does any OTHER doc nonetheless treat a category as dead or unrankable on this evidence? In particular, older text said "ERP and Help Desk cannot be ranked" — Help Desk now PASSES the floor with 6 scorable subs. Flag any surviving contradiction.
+- Does any doc still say weekly refresh?
+- Does any doc still name Password Managers as the Phase 0 subject?
+- Is the Lane C external-index coverage claim honest everywhere it appears (opportunistic, coverage unknown, never a census)?
+- Any place a measured floor is presented as a point estimate, or an upper bound as a measurement.
 
-Also write a compact JSON summary to /private/tmp/claude-501/-Users-vladshvets--claude/f6928dd3-ec32-4042-ab81-563839239aff/scratchpad/algo-simple.json with shape:
-{"design":"simple","key_moves":["..."],"census_method":"...","booster_methods":["..."],"mvp_stages":["..."],"cut_list":["..."],"api_calls_one_category":<int>,"api_calls_50_categories":<int>,"wallclock_hours_50_cat":<number>,"known_blind_spots":["..."]}
+Quote doc text and the recomputed value side by side for every finding. Report only defects. An empty findings list is valid.
 
-Do not edit any file in the repo. Write only to the two scratchpad paths above.
+Write JSON to /private/tmp/claude-501/-Users-vladshvets--claude/f6928dd3-ec32-4042-ab81-563839239aff/scratchpad/codex-review/out_newdocs.json with shape:
+{"findings":[{"file":"...","doc_text":"...","recomputed":"...","type":"NUMBER_ERROR|ARITHMETIC|UNITS|CONTRADICTION|OVERCLAIM|STALE","severity":"critical|major|minor","fix":"..."}],"checks_run":<int>,"verdict":"..."}

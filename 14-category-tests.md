@@ -7,7 +7,7 @@ What happened when the algorithm's subreddit-selection stage was run for real ag
 ## Bottom line
 
 - **The binding constraint is not Reddit's opinion volume. It is the candidate lists.** Only **6 of 20** categories currently reach the five-scorable-subreddit floor, because hostile and single-product communities eat the candidates. That is a research gap we can close, not a property of the platform.
-- **37% of candidate subreddits (48 of 131) actively delete brand talk.** This is the single most consequential number in the study, and it is read directly from each subreddit's own rules.
+- **36.6% of reachable subreddits (48 of 131) actively delete brand talk.** This is the single most consequential number in the study, and it is read directly from each subreddit's own rules.
 - **36% (48 of 132) are single-product communities** — r/Bitwarden, r/Notion, r/CapCut. Useful as evidence, never scoreable, because they self-select for invested users.
 - **The live API edge alone cannot feed this product.** Point-estimate live yield across all 20 categories is a trickle. This confirms the archive census is mandatory rather than optional ([13-algorithm.md](13-algorithm.md) Lane A).
 - **Ingest cost is ~29% lower than category counts imply.** 187 candidate slots collapse to 132 unique subreddits; r/Entrepreneur alone serves 7 categories.
@@ -40,7 +40,7 @@ Raw per-subreddit JSON, the harness, and both CSVs ship with this repo. The harn
 
 ## 2. The rules finding
 
-**48 of 131 reachable subreddits (37%) are hostile to brand mentions.** Their own rules remove promotional or product-mention content.
+**48 of 131 reachable subreddits (36.6%) are hostile to brand mentions.** Their own rules remove promotional or product-mention content.
 
 | Posture | Count | Meaning |
 |---|---:|---|
