@@ -82,7 +82,8 @@ These were raised by reviewers and resolved as **false positives** — do not "f
 - **Migration dependency: the canonical host lives in exactly one config value, and every internal link stays relative.** That is a build constraint created by [decisions/0001](decisions/0001-name-reddit-index.md) and it binds whoever writes the code. A forced move should cost a day, not a quarter.
 - **`brandsonreddit.com` is the documented migration target.** It was available and carries a materially better UDRP posture: a descriptive phrase where Reddit is the subject covered, rather than a compound where REDDIT leads and reads as a sub-brand. It was not taken.
 - **The name is Reddit-locked.** Phase 3 in [12-phasing.md](12-phasing.md) contemplates Hacker News, Stack Overflow and other sources. "Reddit Index" cannot carry them without a rename. That option was knowingly sold for legibility in a cold email, and it is the second trigger the one-config-value rule exists for.
-- **38 of the 50 Phase 1 categories have no subreddit mapping.** Twelve are mapped and signal-tested.
+- **42 of the 50 Phase 1 categories have no subreddit mapping.** Eight are mapped.
+- **No crosswalk ships between the 20 probed categories and the 50-row Phase 1 taxonomy.** Only 8 labels join exactly. Build it before quoting any combined coverage figure.
 - **Legal review before launch**, per [01-legal.md](01-legal.md). Nothing here is legal advice.
 
 ---

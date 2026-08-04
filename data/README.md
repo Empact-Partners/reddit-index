@@ -43,10 +43,10 @@ The 50 categories for Phase 1, ordered by size.
 | `category` | string | Our category name. Industry-standard vocabulary, not a verbatim Capterra label. |
 | `size_tier` | `XL` / `L` / `M` | Coarse size band replacing the raw product count. XL ≈ ranks 1-10, L ≈ 11-31, M ≈ 32-50. |
 | `reddit_signal_verdict` | enum | Whether Reddit carries enough opinion to rank this category honestly. See the enum table below. `not_assessed` means the mapping work has not been done yet. |
-| `subreddit_map_status` | `mapped` / `pending` | Whether this category has rows in `subreddit-map.csv`. 12 of 50 are mapped. |
+| `subreddit_map_status` | `mapped` / `pending` | Whether this category has rows in `subreddit-map.csv`. 8 of 50 are mapped. |
 | `phase` | int | Always `1` in this file. |
 
-**38 of the 50 are `pending`.** Only 12 categories have been mapped and signal-tested so far. That gap is real work, not an oversight.
+**42 of the 50 are `pending`.** Eight are mapped. A separate 20-category study ([../14-category-tests.md](../14-category-tests.md)) probed different labels — only 8 join this taxonomy exactly, and **no crosswalk ships yet**. Do not add the two figures together.
 
 ---
 
@@ -85,7 +85,7 @@ One row per (category, subreddit) pair. Subscriber counts pulled individually vi
 | `hostile_*` | Brand mentions are actively removed. `hostile_removes_product_mentions_since_2026_06` is r/smallbusiness, 2.5M subscribers, deleting product mentions since June 2026. |
 | `not_assessed` | Rules not read yet. |
 
-⚠️ **Subscriber count does not predict signal.** r/PasswordManagers (54,639) yields more rankable comparison than r/marketing (1,958,653), because r/marketing's rules delete exactly that content. Full reasoning in [../04-subreddit-mapping.md](../04-subreddit-mapping.md).
+⚠️ **Subscriber count does not predict signal.** r/PasswordManagers (54,640) yields more rankable comparison than r/marketing (1,958,693), because r/marketing's rules delete exactly that content. Full reasoning in [../04-subreddit-mapping.md](../04-subreddit-mapping.md).
 
 ---
 
@@ -104,7 +104,8 @@ This is a different instrument from `subreddit-map.csv` above, over a different 
 | `subscribers` | int | Count at measurement time. Empty when unavailable. Deliberately **not** a selection signal. |
 | `rule_posture` | enum | How the subreddit's own rules treat brand talk. Four values, table below. |
 | `community_type` | enum | Who the subreddit's population is. Three values, table below. |
-| `comments_per_hour` | float | `100 ÷ comment_span_hours`. Derived from one page. Feeds rate-bucketing in [../13-algorithm.md](../13-algorithm.md) §3. |
+| `comment_page_n` | int | Comments actually returned by the one page. 130 of 131 returned the full 100; r/talentacquisition returned 24. |
+| `comments_per_hour` | float | `comment_page_n ÷ comment_span_hours` — the page's **actual** size, which is *up to* 100 and was 24 for r/talentacquisition. Feeds rate-bucketing in [../13-algorithm.md](../13-algorithm.md) §3. |
 | `comment_span_hours` | float | How far back that one 100-comment page reached. ⚠️ Velocity, not coverage. |
 | `brand_bearing_share` | float 0-1 | Share of those 100 comments containing any of the category's 5 seed brands. ⚠️ A floor. |
 | `density_ub95` | float | 95% one-sided upper bound on brand density given a 100-comment sample. |
@@ -192,7 +193,7 @@ Two properties of this file decide how every result reads. The 5-brand lists are
 
 ## probe.py
 
-The harness behind both CSVs. Five API calls per candidate subreddit — `/r/{sub}/about`, `/r/{sub}/about/rules`, `/r/{sub}/comments?limit=100`, and `/r/{sub}/search` for the first 2 seed brands. Roughly 900 calls for 187 slots.
+The harness behind both CSVs. Five API calls per **unique reachable** subreddit — `/r/{sub}/about`, `/r/{sub}/about/rules`, `/r/{sub}/comments?limit=100`, and `/r/{sub}/search` for the first 2 seed brands. The harness caches by subreddit, so the 187 slots cost 131 × 5 + 1 = **656 base calls**, not 187 × 5. Retries are additional and unlogged.
 
 **Resumable by design.** It writes one JSON per subreddit atomically (`.tmp`, then `os.replace`) and returns the on-disk record for any subreddit already measured, so a re-run costs only the gap. A run interrupted at slot 140 resumes at slot 140.
 

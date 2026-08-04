@@ -32,7 +32,7 @@ Two risks are priced and accepted rather than avoided — the Reddit-containing 
 
 1. **The API cannot backfill.** Every Reddit listing hard-caps at ~1,000 items. Measured live: `/r/SaaS/new` exhausted at 995 items, then `after=None`. Against r/SaaS's measured posting rate that is 3 to 8 days. History has to come from archive dumps.
 2. **Reddit search indexes posts, not comment bodies.** Brand opinion lives in comments, so per-brand search is a discovery tool, never a census. You must ingest whole subreddits and match locally.
-3. **Signal does not track subscriber count.** r/PasswordManagers (54,639) beats r/marketing (1,958,653), because r/marketing's rules delete exactly that content — ~2 surviving posts a day against r/SaaS's 122-350.
+3. **Signal does not track subscriber count.** r/PasswordManagers (54,640) beats r/marketing (1,958,693), because r/marketing's rules delete exactly that content — ~2 surviving posts a day against r/SaaS's 122-350.
 4. **31% of software brands share a name with a common English word.** Notion, Slack, Monday, Linear, Stripe, Craft, Front, Ramp, Make, Segment, Loom. This is the hardest engineering problem in the project.
 5. **The corpus is smaller than intuition.** ~1,000 subreddits is 200-400M items: 0.5-1.5 TB as raw JSON, **50-150 GB** once stored as zstd-compressed Parquet. One machine, about $74/month.
 
@@ -109,7 +109,7 @@ Empact Partners operates it openly. The footer reads "Created by Empact Partners
 | Doc | What's in it |
 |---|---|
 | **[00-concept.md](00-concept.md)** | The product, page by page, and the live competitive field. Start here. |
-| **[13-algorithm.md](13-algorithm.md)** | **How it actually works.** Subreddit selection, the comment-stream discovery lane, mention detection, the weekly loop. |
+| **[13-algorithm.md](13-algorithm.md)** | **How it actually works.** Subreddit selection, the comment-stream discovery lane, mention detection, the continuous-ingest daily-publish loop. |
 | [01-legal.md](01-legal.md) | The clause-level risk register and the two priced decisions |
 | [02-data-acquisition.md](02-data-acquisition.md) | The 1,000-item cap, archive backfill, volumes, cost |
 | [03-taxonomy.md](03-taxonomy.md) | G2 vs Capterra, and why we derive our own spine |
@@ -167,7 +167,7 @@ Column reference and regeneration: **[data/README.md](data/README.md)**
 
 ## Limits
 
-**38 of the 50 Phase 1 categories have no subreddit mapping.** Twelve were mapped and signal-tested. The rest is real work.
+**42 of the 50 Phase 1 categories have no subreddit mapping.** Eight Phase 1 rows are mapped. Separately, 20 categories were probed live ([14-category-tests.md](14-category-tests.md)) — only 8 of those labels join the Phase 1 taxonomy exactly, and **no crosswalk ships yet**. The rest is real work.
 
 **No gold set exists and no pipeline has been run.** Every accuracy figure — precision ≥0.97, recall 0.80-0.88, the sentiment cascade cost — is a target derived from published benchmarks, not a measurement of our own system.
 

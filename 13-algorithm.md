@@ -81,7 +81,7 @@ delta_b(s)  = max(0, n_eff_b(all selected) − n_eff_b(without s))
 worth(s)    = R * T * Σ_b delta_b(s) / ingest_calls(s)
 ```
 
-Subscriber count never enters the score. r/PasswordManagers (54,639) outperforms r/marketing (1,958,653) because r/marketing's rules delete exactly this content.
+Subscriber count never enters the score. r/PasswordManagers (54,640) outperforms r/marketing (1,958,693) because r/marketing's rules delete exactly this content.
 
 ---
 
@@ -114,9 +114,9 @@ Returns the newest 100 `t1` comments in the subreddit, **irrespective of thread*
 
 | Subreddit | Span of one page | Implied rate | Poll interval |
 |---|---|---:|---|
-| r/SaaS | 1.2h | ~83/h | 6h |
-| r/CRM | 19.8h | ~5/h | 24h |
-| r/PasswordManagers | 71.7h | ~1.4/h | 24h |
+| r/SaaS | 1.27h | 78.73/h | 6.35h |
+| r/CRM | 17.98h | 5.56/h | 24h |
+| r/PasswordManagers | 72.80h | 1.37/h | 24h |
 
 Adaptive cadence, so the 1,000-item cap is never the binding constraint:
 
@@ -305,7 +305,7 @@ Steady state, per category, **per day**, 8 subreddits:
 
 **50 categories ≈ 9,000 calls/day.** At 80 req/min that is **under 2 hours** of wall clock, parallelisable and interruptible at any point. It fits comfortably inside a single free-tier app-only client's budget of ~115,000 calls/day.
 
-Subreddits overlap heavily between categories — r/sysadmin serves Help Desk, Security, Backup and Collaboration — so **dedupe the ingest set before scheduling**. The 187 candidate subreddits across the 20 tested categories collapse to far fewer unique ingest targets ([14-category-tests.md](14-category-tests.md)).
+Subreddits overlap heavily between categories — r/sysadmin serves Help Desk, Security, Backup and Collaboration — so **dedupe the ingest set before scheduling**. The 187 candidate slots across the 20 tested categories collapse to 132 unique ingest targets ([14-category-tests.md](14-category-tests.md)).
 
 Archive backfill is a separate one-time cost, dominated by download and local scan rather than API calls. **Not yet measured** — its byte count and the machine's scan rate both need benchmarking before anyone quotes a duration.
 

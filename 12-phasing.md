@@ -4,7 +4,7 @@
 
 - Four phases, each with a written entry gate and a kill test, so Reddit Index can be stopped for the price of the phase it dies in rather than the price of the whole build.
 - **Phase 0 is one category: CRM.** Five scorable subreddits, the highest measured live yield of any category that clears the diversity floor, measured live 2026-08-04 ([category tests](14-category-tests.md)). It publishes nothing. If its ranking does not match what a knowledgeable practitioner would say, the project stops there.
-- **Phase 1 is the first public spend.** Fifty categories on redditindex.com. Twenty are now measured and **only 6 clear the five-scorable-subreddit floor**, so widening the 14 short candidate lists and mapping the remaining 30 categories are entry work, not build work.
+- **Phase 1 is the first public spend.** Fifty categories on redditindex.com. Twenty categories are now probed and **only 6 clear the five-scorable-subreddit floor**, so widening the 14 short candidate lists is entry work, not build work. Note the taxonomies differ: 8 of the 50 Phase 1 rows are mapped, and only 8 of the 20 probed labels join that taxonomy exactly. **No crosswalk ships yet.**
 - Phase 2 is a 1,000+ category problem on Capterra's flat list, 2,237 on G2's ([taxonomy](03-taxonomy.md)). Audit labor scales linearly with it, and the per-brand publish gate stops being enforceable somewhere inside that multiple.
 - **Phase 3 opens with a naming fork, not with ingest work.** The product is Reddit Index, so a non-Reddit source means a rename or a separately-branded second property ([0001](decisions/0001-name-reddit-index.md)).
 - **Infrastructure is not the constraint.** Roughly **$74/month for Phase 1**, roughly **$301/month at full scale** ([architecture §8](08-architecture.md)), on continuous ingest and a daily publish ([algorithm §7](13-algorithm.md)). What binds is audit labor and a corrections desk staffed in perpetuity.
@@ -139,7 +139,7 @@ Two items, each with its own gate, both before anything goes live.
 
 > **Gate:** every one of the 50 either reaches ≥5 scorable subreddits, or ships labeled *insufficient Reddit signal to rank* with the short candidate list named as the reason. The evidence supports a count failure, not a claim of absent discussion.
 
-**2. Map the remaining 30 of 50 categories.** Twenty are measured; thirty have no subreddit mapping at all.
+**2. Build the crosswalk, then map what is left.** 8 of the 50 Phase 1 rows are mapped; 42 are pending. Separately, 20 categories were probed, of which only 8 join the Phase 1 taxonomy exactly. Until a crosswalk ships, those two counts cannot be added together.
 
 > **Gate:** all 50 carry a resolved candidate list with rule posture and community type read live, and the 13 `unknown` rule postures are resolved by hand ([14 §2](14-category-tests.md)).
 
@@ -161,7 +161,7 @@ Every box is green before the domain resolves publicly. These are build requirem
 - [ ] Canonical host in exactly one config value, every internal link relative, so a forced move costs a day rather than a quarter.
 - [ ] Corrections desk staffed, with the SLA published on the site.
 
-**What does not rank, on current evidence.** **ERP holds at 3 scorable subreddits** and is the weakest of the 20 on both the point estimate (2,733) and the upper bound (6,438), consistent with the earlier probe returning 15 results with its top thread from 2023 ([subreddit map](04-subreddit-mapping.md)). It ships labeled *insufficient Reddit signal to rank* unless a wider candidate list clears the floor.
+**What does not rank, on current evidence.** **ERP holds at 3 scorable subreddits** and so fails the diversity floor, consistent with the earlier probe returning 15 results with its top thread from 2023 ([subreddit map](04-subreddit-mapping.md)). Its point estimate is 2,733 and its upper bound 6,438 — low, though not the lowest of the 20 on either measure. It ships labeled *insufficient Reddit signal to rank* unless a wider candidate list clears the floor.
 
 **The earlier Help Desk verdict is overturned.** The 20-category study measures it at 6 scorable subreddits. The r/CustomerService misroute still stands — it is a retail-horror-story sub — and dropping it on topical fit still leaves 5, so the category holds either way.
 

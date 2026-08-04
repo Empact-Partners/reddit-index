@@ -2,12 +2,12 @@
 
 What happened when the algorithm's subreddit-selection stage was run for real against 20 large, deliberately diverse software categories.
 
-**Measured 2026-08-04** · 187 candidate slots · 132 unique subreddits · ~900 live Reddit API calls
+**Measured 2026-08-04** · 187 candidate slots · 132 unique subreddits · **656 base Reddit API calls** (the harness caches by subreddit, so duplicate slots are free)
 
 ## Bottom line
 
 - **The binding constraint is not Reddit's opinion volume. It is the candidate lists.** Only **6 of 20** categories currently reach the five-scorable-subreddit floor, because hostile and single-product communities eat the candidates. That is a research gap we can close, not a property of the platform.
-- **36.6% of reachable subreddits (48 of 131) actively delete brand talk.** This is the single most consequential number in the study, and it is read directly from each subreddit's own rules.
+- **36.6% of *reachable* subreddits (48 of 131) actively delete brand talk.** (The single-product figure below uses all 132; the denominators differ deliberately.) This is the single most consequential number in the study, and it is read directly from each subreddit's own rules.
 - **36% (48 of 132) are single-product communities** — r/Bitwarden, r/Notion, r/CapCut. Useful as evidence, never scoreable, because they self-select for invested users.
 - **The live API edge alone cannot feed this product.** Point-estimate live yield across all 20 categories is a trickle. This confirms the archive census is mandatory rather than optional ([13-algorithm.md](13-algorithm.md) Lane A).
 - **Ingest cost is ~29% lower than category counts imply.** 187 candidate slots collapse to 132 unique subreddits; r/Entrepreneur alone serves 7 categories.
@@ -24,7 +24,7 @@ For each of 187 candidate (category, subreddit) pairs:
 | Subscribers, type, description | `/r/{sub}/about` |
 | Rule posture | `/r/{sub}/about/rules`, classified by regex over the full rules text |
 | Live comment rate | `/r/{sub}/comments?limit=100` — rate derived from the span of one page |
-| Brand-bearing share | Share of those 100 comments containing any of 5 seed brands |
+| Brand-bearing share | Share of that page (up to 100 comments) containing any of 5 seed brands |
 | Search discoverability | `/r/{sub}/search` for 2 seed brands, exact-alias verified locally |
 
 Raw per-subreddit JSON, the harness, and both CSVs ship with this repo. The harness is resumable: it skips any subreddit already on disk, so a re-run costs only the gap.
@@ -65,11 +65,13 @@ That distinction was a correction made during analysis. Blanket-excluding every 
 
 **The instrument is a subreddit inventory, not a category verdict.** Three limits, each of which biases toward under-measuring:
 
-**One page is a small sample.** A single 100-comment page against a subreddit with 0.5% brand density has an expected count of 0.5 hits. Measuring zero there is uninformative. Where a category shows `0.0` live yield, the honest statement is *not detected in a 100-comment sample*, never *absent*.
+**One page is a small sample, and not always a full one.** Pages return *up to* 100 comments. In practice **130 of 131 returned a full 100**; the single exception is r/talentacquisition at 24, and it is also the sub with the 3.3-year span. Against a subreddit with 0.5% brand density, 100 comments has an expected count of 0.5 hits. Measuring zero there is uninformative.
+
+Where a category shows `0.0` live yield, the honest statement is *not detected in the sample*, never *absent*. Each subreddit's upper bound uses its own actual page size `n`, not an assumed 100.
 
 **Five seed brands, not the real gazetteer.** Each category was probed with 5 brands. Real category gazetteers run 20-100 brands, so every yield figure here is a **floor**, understated by roughly the ratio of the lists.
 
-**The measurement window varies by three orders of magnitude.** One 100-comment page spans 0.58h in r/recruitinghell and 28,823h — 3.3 years — in r/talentacquisition. The same instrument measures "this hour" in one sub and "this presidency" in another.
+**The measurement window varies by three orders of magnitude.** One page spans 0.58h in r/recruitinghell and 28,823h — 3.3 years — in r/talentacquisition, which is also the 24-comment page. The same instrument measures "this hour" in one sub and "this presidency" in another.
 
 So the table below reports both a point estimate and a **95% upper bound** (rule-of-three where the count was zero). The upper bound is what the data cannot rule out.
 
@@ -96,7 +98,7 @@ So the table below reports both a point estimate and a **95% upper bound** (rule
 | Marketing Automation | 2 | 4 | 2 | 0.00 | 0 | 6,433 | ❌ |
 | Applicant Tracking and Recruiting | 4 | 3 | 0 | 0.00 | 0 | 217,968 | ❌ |
 
-<sup>`bb/h` = brand-bearing comments per hour across scorable subs, 5 seed brands. `3y` projects the live rate across a 3-year archive window. Upper bound is the 95% one-sided limit on brand density given a 100-comment sample.</sup>
+<sup>`bb/h` = brand-bearing comments per hour across scorable subs, 5 seed brands. `3y` projects the live rate across a 3-year archive window. Upper bound is the 95% one-sided limit on brand density given each page's actual size, rule-of-three where the observed count was zero.</sup>
 
 **17 of 20 clear 400 seed-brand mentions on the point estimate. All 20 clear it at the upper bound.** The mention threshold is not what fails here.
 
@@ -120,20 +122,20 @@ Every one of these is fixable by widening the candidate list with independent pr
 
 The densest brand discussion per hour, across all 132 measured subreddits:
 
-| Subreddit | Subscribers | Comments/h | Brand-bearing | Type | Scoreable |
-|---|---:|---:|---:|---|:--|
-| r/ObsidianMD | 350,730 | 63.0 | 21% | single-product | ❌ |
-| r/paypal | 103,008 | 6.4 | 50% | single-product | ❌ |
-| r/Notion | 466,690 | 8.2 | 33% | single-product | ❌ |
-| r/SAP | 60,641 | 3.2 | 49% | single-product | ❌ |
-| r/Bitwarden | 119,768 | 3.9 | 37% | single-product | ❌ |
-| r/salesforce | 113,705 | 4.5 | 30% | ecosystem | ✅ |
-| r/synology | 199,249 | 6.4 | 22% | independent | ✅ |
-| r/UXDesign | 245,287 | 8.3 | 12% | independent | ✅ |
-| r/PowerBI | 208,597 | 5.3 | 17% | single-product | ❌ |
-| r/canva | 97,478 | 3.7 | 30% | single-product | ❌ |
+| Subreddit | Subscribers | Comments/h | Brand-bearing | bb/h | Type | Scoreable |
+|---|---:|---:|---:|---:|---|:--|
+| r/ObsidianMD | 350,730 | 63.0 | 21% | 13.24 | single-product | ❌ |
+| r/paypal | 103,008 | 6.4 | 50% | 3.21 | single-product | ❌ |
+| r/Notion | 466,690 | 8.2 | 33% | 2.70 | single-product | ❌ |
+| r/FinancialCareers | 1,762,260 | 25.8 | 7% | 1.81 | independent | ❌ |
+| r/SAP | 60,641 | 3.2 | 49% | 1.57 | single-product | ❌ |
+| r/CapCut | 98,523 | 4.8 | 32% | 1.53 | single-product | ❌ |
+| r/Bitwarden | 119,768 | 3.9 | 37% | 1.44 | single-product | ❌ |
+| r/synology | 199,249 | 6.4 | 22% | 1.42 | single-product | ❌ |
+| r/salesforce | 113,705 | 4.5 | 30% | 1.35 | ecosystem | ✅ |
+| r/premiere | 184,980 | 5.8 | 21% | 1.22 | single-product | ❌ |
 
-**The densest sources are systematically the ones we cannot score.** That is the structural tension of the whole product: the places people talk most about a product are the places that product's fans gather. Everything the index publishes has to come from the thinner, harder, independent middle.
+**The densest sources are systematically the ones we cannot score — only 1 of the top 10 is scoreable.** That is the structural tension of the whole product: the places people talk most about a product are the places that product's fans gather. Everything the index publishes has to come from the thinner, harder, independent middle.
 
 r/salesforce is the exception worth studying — an ecosystem community with single-product density and genuinely comparative discussion.
 
@@ -164,7 +166,7 @@ Ingest is per-subreddit, not per-category, so **the ingest set must be deduplica
 4. **Ship the six floor-passing categories first** — CRM, Business Intelligence, Help Desk, Cloud Hosting, Backup and Storage, Team Collaboration. They are the natural Phase 1 set, and CRM is the natural Phase 0 subject on this evidence.
 5. **Investigate the ecosystem-community pattern.** If r/salesforce generalises, it is a large recoverable source of scoreable density.
 
-**Phase 0 recommendation changes on this evidence.** [12-phasing.md](12-phasing.md) proposed Password Managers on an earlier, narrower measurement. **CRM** is the better subject: it passes the floor with 5 scorable subs, carries the highest measured live yield of any floor-passing category, and its 3-year point estimate is comfortably above threshold.
+**Phase 0 recommendation changes on this evidence.** Password Managers was the pre-study candidate, chosen on an earlier and narrower measurement; [12-phasing.md](12-phasing.md) now specifies CRM. **CRM** is the better subject: it passes the floor with 5 scorable subs, carries the highest measured live yield of any floor-passing category, and its 3-year point estimate is comfortably above threshold.
 
 ---
 

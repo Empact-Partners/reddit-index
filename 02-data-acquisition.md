@@ -131,7 +131,7 @@ The merged rate is the **sum** of the member rates, so merging does **not** redu
 
 ⚠️ So the rule is **bucket by rate, not by category.** Quiet subs are packed together until a bucket fills roughly one page per interval; loud subs stay solo on their own cadence. Never exceed ~40 members or ~400 URL characters per bucket, and split any bucket whose page stops covering its interval.
 
-Bucket sizing needs a measured comments/hour figure per subreddit. [14-category-tests.md](14-category-tests.md) carries those rates for 132 subreddits ([data/subreddit-measurements.csv](data/subreddit-measurements.csv)) — they span three orders of magnitude, from 0.5h to 3.3 years per 100-comment page, which is exactly why a fixed cadence fails.
+Bucket sizing needs a measured comments/hour figure per subreddit. [14-category-tests.md](14-category-tests.md) carries those rates for 132 subreddits ([data/subreddit-measurements.csv](data/subreddit-measurements.csv)) — they span three orders of magnitude, from 0.5h to 3.3 years per page of up to 100 comments, which is exactly why a fixed cadence fails.
 
 ### Monthly reconciliation
 

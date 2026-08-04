@@ -52,7 +52,7 @@ These are marked in place throughout, and are flagged again here because they dr
 
 ## Known gaps
 
-- **38 of the 50 Phase 1 categories have no subreddit mapping.** Twelve were mapped and signal-tested. See [data/phase1-categories.csv](data/phase1-categories.csv).
+- **42 of the 50 Phase 1 categories have no subreddit mapping.** Eight Phase 1 rows are mapped. 20 categories were probed live in a separate study; only 8 of those labels join the Phase 1 taxonomy exactly, and no crosswalk ships yet. See [data/phase1-categories.csv](data/phase1-categories.csv).
 - **No gold set exists.** Every accuracy figure is a target, not a measurement.
 - **No sentiment pipeline has been run** against real Reddit data. The cascade design is untested.
 - **G2's terms of use were not read.** Assumed similar to Capterra's post-acquisition. Marked NOT VERIFIED in [03-taxonomy.md](03-taxonomy.md).
