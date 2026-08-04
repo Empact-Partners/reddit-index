@@ -103,6 +103,7 @@ Empact Partners operates it openly. The footer reads "Created by Empact Partners
 | [10-seo-aeo.md](10-seo-aeo.md) | Indexation, schema, AI citation, what gets it killed |
 | [11-outreach-play.md](11-outreach-play.md) | The GTM motion and the email angles, ranked |
 | [12-phasing.md](12-phasing.md) | Phase 0 → 3, with kill criteria |
+| **[HANDOFF.md](HANDOFF.md)** | Open items. 6 known defects, listed not hidden. Read before editing. |
 | [method.md](method.md) | How this research was done, how to re-run it |
 | [sources.md](sources.md) | Every primary source, dated |
 
