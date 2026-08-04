@@ -1,18 +1,19 @@
-# UGC Ranks — Product Concept
+# Reddit Index — Product Concept
 
 ## Bottom line
 
-- UGC Ranks is a public, indexable leaderboard that ranks software brands per category by what people say about them on Reddit, split into a "Most Loved" and a "Most Hated" column, operated openly by Empact Partners.
+- Reddit Index is a public, indexable leaderboard that ranks software brands per category by what people say about them on Reddit, split into a "Most Loved" and a "Most Hated" column, operated openly by Empact Partners.
 - 🟡 The **public cross-brand leaderboard** seat is unoccupied. The **adjacent per-brand audit** seat is not: [redditbrands.com](https://redditbrands.com/) and [whatredditthinks.com](https://whatredditthinks.com/) are both live, both registered within the last three months ([domain sweep](data/domain-availability.csv), verified 2026-08-04).
 - 🟢 The format is proven, just not for software. ApeWisdom has run a public Reddit-derived ticker leaderboard for years on a short, mechanical methodology page ([apewisdom.io/methodology](https://apewisdom.io/methodology/)), and Profound runs the identical playbook for AI answers ([Profound Index](https://www.tryprofound.com/profound-index)).
 - 🟡 Three numbers carry every page: a **Love Index**, a **Hate Index**, and the mention count published as both raw `n` and effective `n_eff`. Two independent scores, never one net score ([decisions/0004](decisions/0004-two-axis-index.md)).
 - ⚠️ Brand pages will display full Reddit comment text. That is a deliberate, priced risk taken by the owner against known contract and copyright exposure, not a compliant design. See [01-legal.md](01-legal.md).
+- ⚠️ The name itself breaches [Data API Terms §4.1](https://www.redditinc.com/policies/data-api-terms) and [Developer Terms §5.3](https://www.redditinc.com/policies/developer-terms). The realistic enforcement path is a UDRP filing, which costs the domain and not the project. Priced and accepted in [decisions/0001](decisions/0001-name-reddit-index.md).
 
 ---
 
 ## What it is
 
-UGC Ranks turns Reddit's opinion layer into a browsable ranking of software brands, one page per category, one page per brand. Every score traces back to individual comments, each linked to its original thread.
+Reddit Index turns Reddit's opinion layer into a browsable ranking of software brands, one page per category, one page per brand. Every score traces back to individual comments, each linked to its original thread.
 
 Phase 1 covers the 50 largest software categories. Phase 2 extends to all categories. Nothing is built yet; this repository is documentation only.
 
@@ -48,7 +49,7 @@ The neighboring seats are occupied, and two of them were taken this year. The cr
 
 `redditbrands.com` was registered 2026-06-07 and `whatredditthinks.com` on 2026-05-25; both were fetched live on 2026-08-04 ([domain sweep](data/domain-availability.csv), [method.md](method.md)). They validate the demand and they take the audit lane. The leaderboard seat is open, but it is not open indefinitely.
 
-One detail from `whatredditthinks.com` is worth taking seriously rather than dismissing: it paraphrases, it does not quote. That is the same restraint every surviving analogue shows, and it is precisely what UGC Ranks departs from by owner decision.
+One detail from `whatredditthinks.com` is worth taking seriously rather than dismissing: it paraphrases, it does not quote. That is the same restraint every surviving analogue shows, and it is precisely what Reddit Index departs from by owner decision.
 
 Two 2025-2026 events widened the seat. GummySearch, the one true Reddit-native player, shut down on 2025-11-30 ([gummysearch.com](https://gummysearch.com/)). G2 then acquired Capterra, Software Advice, and GetApp from Gartner for roughly $110M, closing 2026-02-05 ([PRNewswire](https://www.prnewswire.com/news-releases/g2-to-acquire-capterra-software-advice-and-getapp-from-gartner-302673901.html)).
 
@@ -118,7 +119,7 @@ What every surface must carry alongside the label is the measured variable itsel
 | Two columns | **Most Loved** and **Most Hated**, all categories pooled, top 10 each. Brand name, category, the governing index with its interval, raw and effective mention count |
 | Consolidated table | Every qualifying brand across all categories, sortable by Love Index, Hate Index, mention count, and category. The default sort key is named on the page. Paginated |
 | Category grid | All Phase 1 categories, linked, each showing brand count and last-updated date |
-| Footer | "Created by Empact Partners." Link to `/methodology`. Explicit no-affiliation-with-Reddit disclaimer |
+| Footer | "Created by Empact Partners." Link to `/methodology`. The mandatory non-affiliation notice, exact wording in [decisions/0001](decisions/0001-name-reddit-index.md) |
 
 ### Category page — `/category/{slug}`
 
@@ -149,7 +150,7 @@ Below-threshold brands appear in a separate collapsed block labeled with the thr
 | Mentions | The individual Reddit comments: text, username, subreddit, date, permalink to the thread |
 | Correction path | Free, unconditional, never bundled with a commercial offer |
 
-⚠️ The mentions section is where the risk sits. Every live analogue — ApeWisdom, SwaggyStocks, Quiver, and now [whatredditthinks.com](https://whatredditthinks.com/) — publishes counts, links or paraphrase but never verbatim user text, and that restraint is the shared survival trait. UGC Ranks departs from it by owner decision. Read [01-legal.md](01-legal.md) before changing a word of that section.
+⚠️ The mentions section is where the risk sits. Every live analogue — ApeWisdom, SwaggyStocks, Quiver, and now [whatredditthinks.com](https://whatredditthinks.com/) — publishes counts, links or paraphrase but never verbatim user text, and that restraint is the shared survival trait. Reddit Index departs from it by owner decision. Read [01-legal.md](01-legal.md) before changing a word of that section.
 
 ### Methodology page — `/methodology`
 
@@ -159,7 +160,7 @@ One URL, everywhere. It is the badge destination, the `Dataset` schema provenanc
 
 ⚠️ Two caveats travel with that protection. It is **US caselaw**, and the operating entity is Estonian: [01-legal.md §6](01-legal.md) finds the forum materially worse, with no EU analogue to the §230 shield and *Delfi* the closer precedent for a publisher that selects and republishes.
 
-And both protective precedents involve raters with **no commercial relationship to the rated**. Gartner and Consumers Union do not sell to the companies they score. UGC Ranks ranks the companies Empact then solicits, which is a materially different "general tenor" than the ZL holding turned on.
+And both protective precedents involve raters with **no commercial relationship to the rated**. Gartner and Consumers Union do not sell to the companies they score. Reddit Index ranks the companies Empact then solicits, which is a materially different "general tenor" than the ZL holding turned on.
 
 It must contain, at minimum: the data source and collection window; the exact scoring definitions and both denominators; the `n_eff ≥ 400` gate with its derivation and every diversity floor; the entity-matching rules and their known failure modes; and the tie rule.
 
@@ -173,14 +174,14 @@ Write it like ApeWisdom's, not like a vendor's: short, mechanical, and openly se
 
 ---
 
-## What UGC Ranks is explicitly NOT
+## What Reddit Index is explicitly NOT
 
 | Not this | Because |
 |---|---|
 | A review site | No one submits a review. Nothing is solicited, verified, or vendor-supplied |
 | A G2 competitor | No vendor pays, no profiles are claimed, no badges are sold |
 | A monitoring tool | No login, no alerts, no dashboard, nothing per-customer |
-| A per-brand audit tool | `redditbrands.com` occupies that lane. UGC Ranks publishes a standing cross-brand board, not an on-demand grade |
+| A per-brand audit tool | `redditbrands.com` occupies that lane. Reddit Index publishes a standing cross-brand board, not an on-demand grade |
 | An independent publication | Empact Partners operates it openly as a side project and uses it for outreach. The footer says so |
 | A live API or data product | Reddit's Data API Terms forbid deriving revenue from the data without express written approval ([data-api-terms](https://www.redditinc.com/policies/data-api-terms)) |
 
@@ -188,15 +189,38 @@ Write it like ApeWisdom's, not like a vendor's: short, mechanical, and openly se
 
 ## Name rationale
 
-The product is **UGC Ranks**, at ugcranks.com. "Reddit" appears nowhere in the name, domain, subdomain, or logo.
+The product is **Reddit Index**, at `redditindex.com`, verified available 2026-08-04 with no DNS and effectively no archive history. `redditbrandindex.com` is registered as a defensive second name and redirects to it.
 
-Two contracts forbid the alternative, and both were checked verbatim against the live text. Data API Terms §4.1 forbid using Reddit trademarks in or as part of an app's name, and §4.2 licenses only the "[X] for Reddit" form ([data-api-terms](https://www.redditinc.com/policies/data-api-terms)).
+The name is deliberately Reddit-specific. It says what the product is with zero explanation, and the surface where that matters most is a cold email, where the first line is the only attention this property ever gets. A name that has to be unpacked spends that line on itself.
 
-Developer Terms §5.3 says the same thing in its own words: "you are not permitted to use the Reddit Trademarks in the name of your App or to promote or identify your App (including in any materials related to your App), without Reddit's prior written consent" ([developer-terms](https://www.redditinc.com/policies/developer-terms)).
+Two costs came with the legibility. Both were priced, not avoided.
 
-Reddit also litigates domain names *pro se* and wins. `reddit.win` was transferred in [WIPO D2020-1834](https://www.wipo.int/amc/en/domains/decisions/text/2020/d2020-1834.html) (*Reddit, Inc. v. Phil Carey*, decision dated 2020-10-06), where the panel held that even noncommercial use of an identical mark "carries with it a high risk of implied affiliation."
+### The name breaches Reddit's trademark clauses
 
-The second reason is product scope. "UGC" lets the property extend to Hacker News, Stack Overflow, YouTube comments, and X without a rename, a redirect, or a rebuild of the brand. The full record is in [decisions/0001](decisions/0001-name-ugc-ranks.md).
+| Clause | Text |
+|---|---|
+| [Data API Terms §4.1](https://www.redditinc.com/policies/data-api-terms) | "You are not permitted to use the Reddit Trademarks in, or as part of the name of your App, or any logos used to promote or identify your App, unless expressly authorized in writing by Reddit." |
+| [Developer Terms §5.3](https://www.redditinc.com/policies/developer-terms) | "you are not permitted to use the Reddit Trademarks in the name of your App or to promote or identify your App (including in any materials related to your App), without Reddit's prior written consent." |
+
+§4.2 licenses exactly one construction, the wordmark preceded by "for", as in "[name] for Reddit". We do not use it.
+
+The realistic enforcement path is a UDRP filing, not a lawsuit. Reddit files them *pro se* for roughly $1,500 and has won every one found: [`reddit.win`](https://www.wipo.int/amc/en/domains/decisions/text/2020/d2020-1834.html) (D2020-1834, transferred), [`redditpromotion.com` / `redditshop.com`](https://www.wipo.int/amc/en/domains/decisions/text/2019/d2019-2964.html) (D2019-2964), [`reddit.co`](https://www.wipo.int/amc/en/domains/decisions/text/2018/dco2018-0008.html) (DCO2018-0008).
+
+In `reddit.win` the panel held that even noncommercial free-speech use of an identical mark "carries with it a high risk of implied affiliation."
+
+⚠️ **Low traffic is not a defence.** A UDRP is a registrar-level administrative proceeding. It needs no damages, no discovery, and no proof that anyone visited the site. It needs only that Reddit notices.
+
+What a loss costs is the domain, not the project. The pipeline, the index, the methodology and the content all survive a transfer. That asymmetry is the reason the risk is acceptable, and it is the honest way to state it.
+
+No Reddit visual identity follows, ever: no orange `#FF4500`, no Snoo, no Reddit Sans, no lookalike mark ([09-design.md](09-design.md)). Trade dress stacked on top of the name is what turns a survivable UDRP into an easy one.
+
+### The name is Reddit-locked
+
+Phase 3 in [12-phasing.md](12-phasing.md) contemplates Hacker News, Stack Overflow and other sources. "Reddit Index" cannot carry them without a rename, a redirect, and a rebuild of the brand. That option was sold for legibility, knowingly.
+
+`brandsonreddit.com` was available and carries a materially better UDRP posture: a descriptive phrase in which Reddit is the subject being covered, rather than a compound where REDDIT leads and reads as a sub-brand. It was not taken. It is the documented migration target.
+
+Everything therefore stays cheap to move: all internal links relative, the canonical host in exactly one config value. The full record, with the alternatives rejected and the conditions attached, is in [decisions/0001](decisions/0001-name-reddit-index.md).
 
 ---
 

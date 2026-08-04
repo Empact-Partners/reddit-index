@@ -6,7 +6,7 @@
 - **1,000 leaf URLs actually render and the list truncates mid-W at "Warranty Management,"** so the true count exceeds 1,000. The URL pattern is uniform: `capterra.com/{slug}-software/`.
 - **G2 is the better spine: 2,237 category URLs enumerable from one page,** with the real two-level parent to child structure Capterra lacks ([g2.com/categories](https://www.g2.com/categories), scraped 2026-08-04).
 - ⚠️ **Capterra's Terms of Use name category structure as a protected element.** §10 bans automated extraction and bans replicating their "information architecture, category structure, or user experience." Their robots.txt is permissive and the two documents directly conflict.
-- **Therefore UGC Ranks does not ship a copy of anyone's catalog.** The spine is the intersection of G2 and Capterra vocabulary, renamed and reordered by us, anchored to Wikidata Q-IDs, with no product counts or ratings published.
+- **Therefore Reddit Index does not ship a copy of anyone's catalog.** The spine is the intersection of G2 and Capterra vocabulary, renamed and reordered by us, anchored to Wikidata Q-IDs, with no product counts or ratings published.
 - **Phase 1 is 50 categories** ([data/phase1-categories.csv](data/phase1-categories.csv)); Phase 2 opens the long tail once the pipeline holds.
 
 ---
@@ -33,7 +33,7 @@ That §10 clause is unusually specific and is aimed at exactly this use case. Ta
 
 G2 now owns Capterra, so G2's terms are likely to be equally restrictive. **NOT VERIFIED** — nobody has read `g2.com/static/terms` yet. Treat G2 as legally identical to Capterra until someone does.
 
-Note that this is a separate exposure from the Reddit comment text UGC Ranks displays on brand pages. That is a deliberate, priced risk taken by the owner and is documented in [01-legal.md](01-legal.md), not here.
+Note that this is a separate exposure from the Reddit comment text Reddit Index displays on brand pages. That is a deliberate, priced risk taken by the owner and is documented in [01-legal.md](01-legal.md), not here.
 
 ## 3. Alternative taxonomies compared
 

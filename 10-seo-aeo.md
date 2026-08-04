@@ -15,7 +15,7 @@
 
 Directory traffic economics are broken. Directory citation economics are not. Modeling revenue on sessions from this category is modeling 2023.
 
-UGC Ranks earns its keep three ways, in this order: it gets **cited** by AI engines answering "best X", it produces a **per-brand outreach artifact** Empact can email a CMO, and only third does it earn clicks. See [00-concept.md](00-concept.md) and [11-outreach-play.md](11-outreach-play.md).
+Reddit Index earns its keep three ways, in this order: it gets **cited** by AI engines answering "best X", it produces a **per-brand outreach artifact** Empact can email a CMO, and only third does it earn clicks. See [00-concept.md](00-concept.md) and [11-outreach-play.md](11-outreach-play.md).
 
 | Asset | Metric that matters | Metric that does not |
 |---|---|---|

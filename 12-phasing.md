@@ -6,7 +6,7 @@
 - **Phase 0 is one category: Password Managers / Security** — rated the richest signal in the assessed set, verified live 2026-08-04 ([subreddit map](04-subreddit-mapping.md)). If its ranking does not match what a knowledgeable practitioner would say, the project stops there.
 - Phase 1 ships 50 categories, but **only 12 have been assessed**. ERP and Help Desk must ship labeled "insufficient Reddit signal to rank," and the remaining 38 need subreddit mapping before anyone estimates them.
 - Phase 2 (full taxonomy) is a 1,000+ category problem on Capterra's flat list and 2,237 on G2's ([taxonomy](03-taxonomy.md)). Audit labor scales linearly with it and legal exposure scales faster.
-- Phase 3 is why the name is UGC Ranks, not Reddit Ranks. Hacker News is the natural second source. **NOT VERIFIED** — no non-Reddit source was assessed in the corpus.
+- **Phase 3 now opens with a naming fork.** The product is Reddit Index, so a non-Reddit source means a rename or a separately-branded second property. That is a known, accepted cost of the name ([0001](decisions/0001-name-reddit-index.md)). Hacker News is the natural second source and is **NOT VERIFIED** — no non-Reddit source was assessed in the corpus.
 - **Infrastructure is not the constraint.** Roughly **$85/month for Phase 1** and roughly **$330/month at full scale** ([architecture §8](08-architecture.md)). What binds is audit labor and a corrections desk staffed in perpetuity.
 - ⚠️ Publishing full Reddit comment text on brand pages is a **deliberate, priced risk** taken by the owner with the exposure in front of him. It stacks Developer Terms §4.2 / §5.2 against per-commenter copyright Reddit cannot license ([legal](01-legal.md)). No phase gate below makes it compliant.
 
@@ -19,7 +19,7 @@
 | **0** | 1 category (Password Managers / Security) | Nothing | None — this is the first spend |
 | **1** | 50 categories | Site, `/methodology`, corrections desk | Phase 0 passes every test below |
 | **2** | Full taxonomy (1,000+) | Same, wider | Phase 1 runs 2 clean cycles at cost |
-| **3** | Non-Reddit sources | Multi-source indices | Phase 1 or 2 stable and a second source verified |
+| **3** | Non-Reddit sources | Multi-source indices | Phase 1 or 2 stable, a second source verified, and the naming fork resolved |
 
 ---
 
@@ -77,9 +77,13 @@ A commercial vendor is a targeted gap-fill option, not the Phase 0 route. Bright
 
 ## Phase 1 — Fifty categories
 
-**What ships:** the ugcranks.com site, 50 category pages (two columns plus the consolidated table), brand pages with mentions and thread links, a frozen version-controlled methodology page at `/methodology`, the delete-sync job, and a staffed corrections process with a published SLA.
+**What ships:** the redditindex.com site, 50 category pages (two columns plus the consolidated table), brand pages with mentions and thread links, a frozen version-controlled methodology page at `/methodology`, the delete-sync job, and a staffed corrections process with a published SLA.
 
 Freezing the methodology *before* results are seen is the load-bearing detail. The *Suzuki* case reversed summary judgment because a jury could find the method was tampered with, not because the ranking was wrong ([legal](01-legal.md)).
+
+**The trademark exposure goes live here.** Phase 1 is the first time the name resolves publicly, which is when `redditindex.com` becomes a standing searchable signal. Losing a UDRP costs the domain, not the corpus, the pipeline, or the methodology — the asymmetry that made the risk acceptable ([0001](decisions/0001-name-reddit-index.md)).
+
+That decision puts one build obligation on Phase 1: the canonical host lives in exactly one config value and every internal link stays relative, so a forced move costs a day rather than a quarter.
 
 **What does not rank.** Of the 12 categories assessed, **ERP and Help Desk / Support ship as "insufficient Reddit signal to rank"** rather than as rankings. r/CustomerService is a retail-horror-story sub, not a software sub, and the ERP probe returned 15 total results with the top thread from 2023 ([subreddit map](04-subreddit-mapping.md)).
 
@@ -105,7 +109,14 @@ The corpus itself is not the problem: ~240M items for 1,000 subreddits is ~53 GB
 
 ## Phase 3 — Beyond Reddit
 
-The product is called UGC Ranks precisely so this phase is possible without renaming. Reddit trademarks cannot appear in a product name under [Data API Terms §4.1](https://www.redditinc.com/policies/data-api-terms), and the one UDRP in this repo's research went Reddit's way: `reddit.win` transferred in *Reddit, Inc. v. Phil Carey*, [WIPO D2020-1834](https://www.wipo.int/amc/en/domains/decisions/text/2020/d2020-1834.html), decided 2020-10-06 ([legal](01-legal.md)).
+**The name does not travel.** The product ships as Reddit Index on `redditindex.com`, so a Hacker News or Stack Overflow index cannot sit under it. This phase therefore opens with a naming fork rather than with ingest work, and the fork is the entry gate.
+
+| Fork | What it means | What it costs |
+|---|---|---|
+| **Rename the property** | Move everything to a source-neutral name. `brandsonreddit.com`, the migration target recorded in [0001](decisions/0001-name-reddit-index.md), solves the trademark problem and not this one — it is Reddit-scoped too, so a genuinely multi-source name is a third choice still to be made. | Redirects, plus every citation and inbound link earned under the old name. |
+| **Run a second property** | Reddit Index stays as it is and the non-Reddit index ships under its own brand. | Two sites, two frozen methodology pages, two corrections desks, no combined leaderboard. |
+
+Neither is cheap. The fork was priced when the name was chosen: legibility in a cold email was judged worth more than keeping the multi-source option open ([0001](decisions/0001-name-reddit-index.md)).
 
 **Hacker News is the natural second source** — a genuinely permissive public API and a population overlapping the developer-tooling categories. **NOT VERIFIED: a direction to verify, not a fact.** No Hacker News terms, API limits, or signal density were assessed in the corpus.
 
@@ -116,7 +127,7 @@ The product is called UGC Ranks precisely so this phase is possible without rena
 | YouTube comments | 🔴 Not assessed | **NOT VERIFIED** |
 | X | 🔴 Not assessed | **NOT VERIFIED** |
 
-Adding a second source does not dilute the Reddit legal exposure. It adds a new terms surface alongside it.
+Adding a second source does not dilute the Reddit legal exposure. It adds a new terms surface alongside it, and the [Data API Terms §4.1](https://www.redditinc.com/policies/data-api-terms) trademark breach the name carries is live from Phase 1 whatever happens here ([legal](01-legal.md)).
 
 ---
 
@@ -146,7 +157,7 @@ The one thing it cannot deliver is the thing Phase 1 exists for: a standing publ
 | **0** | 3–5 weeks | ~35h annotation + pipeline | Bandwidth + **<$50** for the phase | None (nothing published) |
 | **1** | Not estimable until 38 categories are mapped | Site + 38 mappings + corrections process | **≈ $84/mo**, quoted as roughly $85/month ([architecture §8](08-architecture.md)) | 75K–150K adjudicated labels/cycle at 50 categories, plus a staffed corrections desk |
 | **2** | Not planned | — | **≈ $328/mo** at full scale, quoted as roughly $330/month ([architecture §8](08-architecture.md)) | 1.5M–3M labels/cycle — the number that breaks it |
-| **3** | Not planned | Second-source ingest | Not estimated | Not estimated |
+| **3** | Not planned | Second-source ingest, plus a rename or a second brand | Not estimated | Not estimated |
 
 Both infra totals come from the line-item table in [08-architecture.md §8](08-architecture.md) and are the same figures the README carries. Inside them, only the ingest-worker line (Railway, or a Hetzner box) is secondary-sourced; verify it before committing. Every other line is a vendor-published price.
 

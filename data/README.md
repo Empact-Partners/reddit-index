@@ -1,6 +1,10 @@
 # Data — column reference
 
-Four flat CSVs. All measured on **2026-08-04**. Every file opens in Excel or Sheets and renders on GitHub.
+## Bottom line
+
+- Four flat CSVs, 414 rows, all measured on **2026-08-04**. Every file opens in Excel or Sheets and renders on GitHub.
+- [domain-availability.csv](domain-availability.csv) records a **Reddit-named** outcome, not a Reddit-free one. The chosen name breaches Reddit's trademark clauses, knowingly. [decisions/0001-name-reddit-index.md](../decisions/0001-name-reddit-index.md) is authoritative.
+- No Capterra category catalog and no product counts are republished here. See [what is deliberately NOT here](#what-is-deliberately-not-here).
 
 Click a file, then **Download raw file** to get the CSV rather than the rendered table.
 
@@ -9,7 +13,7 @@ Click a file, then **Download raw file** to get the CSV rather than the rendered
 | [phase1-categories.csv](phase1-categories.csv) | 50 | The Phase 1 category spine |
 | [subreddit-map.csv](subreddit-map.csv) | 131 | Category → subreddit mapping with rule posture |
 | [brand-gazetteer-seed.csv](brand-gazetteer-seed.csv) | 113 | Seed brand list with ambiguity classification |
-| [domain-availability.csv](domain-availability.csv) | 87 | The domain sweep behind the UGC Ranks name |
+| [domain-availability.csv](domain-availability.csv) | 120 | The sweep behind the Reddit Index name, and the exposure it carries |
 
 ---
 
@@ -107,24 +111,60 @@ This single number is why [../05-entity-resolution.md](../05-entity-resolution.m
 
 ## domain-availability.csv
 
-The sweep that produced the UGC Ranks name. Checked via RDAP against the Verisign `.com` registry.
+The sweep that produced the Reddit Index name, checked via RDAP against the registry for each TLD.
+
+It records a Reddit-named choice: `redditindex.com` is the primary, with `redditbrandindex.com` registered defensively and redirecting to it.
 
 | Column | Type | Meaning |
 |---|---|---|
-| `domain` | string | The domain checked. `.com` only — the `.io` and `.co` variants were checked separately and are noted in [../decisions/0001-name-ugc-ranks.md](../decisions/0001-name-ugc-ranks.md). |
-| `name_family` | enum | `ugc-neutral` (no trademark exposure), `reddit-trademark` (contains "reddit"), `descriptive` (neither). |
-| `status` | `available` / `taken` / `error_*` | RDAP result. `available` = registry returned 404. |
+| `domain` | string | The domain checked. 104 `.com`, plus the `.co` / `.io` / `.net` / `.org` variants of four shortlisted names. |
+| `name_family` | enum | Where the Reddit mark sits inside the name. Five values, table below. A trademark-posture classification, not a filing convenience. |
+| `status` | `available` / `taken` | RDAP result. `available` = registry returned 404. No `error_*` rows survived this run. |
 | `registered_date` | ISO date | Creation date when taken. Empty when available. |
+| `note` | `CHOSEN` / `DEFENSIVE` / `LIVE-COMPETITOR` | Marks the three rows that carry a decision. Empty on the other 117. |
 | `checked_date` | ISO date | Always `2026-08-04`. |
 
-**61 of 87 available.** Availability moves — re-run before buying.
+**92 of 120 available.** Availability moves — re-run before buying.
+
+`CHOSEN` is `redditindex.com`, `DEFENSIVE` is `redditbrandindex.com`. `LIVE-COMPETITOR` is `whatredditthinks.com`, registered 2026-05-25 and live with an adjacent per-brand audit product — see [../00-concept.md](../00-concept.md).
+
+⚠️ **The chosen name breaches Reddit's trademark clauses.** [Data API Terms §4.1](https://www.redditinc.com/policies/data-api-terms) forbids using Reddit Trademarks "in, or as part of the name of your App", and [Developer Terms §5.3](https://www.redditinc.com/policies/developer-terms) repeats the prohibition. Neither has an exception this name fits.
+
+The enforcement path is a UDRP filing, not a lawsuit. Reddit files them *pro se* for roughly $1,500 and has won every one found: [`reddit.win`](https://www.wipo.int/amc/en/domains/decisions/text/2020/d2020-1834.html) (D2020-1834), [`redditpromotion.com` / `redditshop.com`](https://www.wipo.int/amc/en/domains/decisions/text/2019/d2019-2964.html) (D2019-2964), [`reddit.co`](https://www.wipo.int/amc/en/domains/decisions/text/2018/dco2018-0008.html) (DCO2018-0008).
+
+Low traffic is not a defence. A UDRP is a registrar-level administrative proceeding: no damages, no discovery, no proof that anyone visited. It needs only that Reddit notices.
+
+**What losing costs is the domain, not the project.** The pipeline, the index, the methodology and the content all survive a transfer. That asymmetry is why the exposure was priced and accepted.
+
+The name is also Reddit-locked. Phase 3 in [../12-phasing.md](../12-phasing.md) contemplates Hacker News, Stack Overflow and other sources, and "Reddit Index" cannot carry them without a rename. That option was sold for legibility in a cold email, knowingly.
+
+### `name_family`
+
+| Value | Rows | Available | Meaning |
+|---|---:|---:|---|
+| `reddit-named` | 82 | 57 | Contains "reddit" as a leading or embedded element: `redditindex.com`, `theredditverdict.com`. The chosen family. |
+| `reddit-named-hyphenated` | 9 | 9 | The same, hyphenated: `reddit-index.com`. |
+| `reddit-derived` | 3 | 3 | Built on "subreddit": `subredditindex.com`, `subredditrankings.com`. |
+| `descriptive-phrase` | 16 | 13 | Reddit is the object of a phrase: `brandsonreddit.com`, `whatredditsays.com`. |
+| `no-reddit` | 10 | 10 | No Reddit token at all: `upvoteindex.com`, `forumverdict.com`. |
+
+### Why `descriptive-phrase` is a family of its own
+
+Because the construction changes the trademark posture, which is a real finding rather than a way of sorting rows.
+
+In a `reddit-named` domain, REDDIT leads and the name reads as a Reddit sub-brand. That is the implied-affiliation problem the [`reddit.win`](https://www.wipo.int/amc/en/domains/decisions/text/2020/d2020-1834.html) panel described. In a `descriptive-phrase` domain, Reddit is the *subject being covered*, which supports a real legitimate-interest argument.
+
+The two adjacent families buy nothing. UDRP panels treat hyphens as irrelevant to confusing similarity, so `reddit-named-hyphenated` carries the same exposure with worse typability. `reddit-derived` is no safer either: "subreddit" is Reddit's own product term.
+
+`brandsonreddit.com` is available and is materially the better name on this axis. It was not taken, and it is the documented migration target — [../decisions/0001-name-reddit-index.md](../decisions/0001-name-reddit-index.md) records why.
 
 ### Regenerating
 
-RDAP is a public read-only registry lookup, no key needed:
+RDAP is a public read-only registry lookup, no key needed. Verisign serves `.com` and `.net`; `.co`, `.io` and `.org` sit on their own endpoints, resolvable through the IANA bootstrap file:
 
 ```
-GET https://rdap.verisign.com/com/v1/domain/{domain}
+GET https://rdap.verisign.com/{tld}/v1/domain/{domain}   # .com and .net
+GET https://data.iana.org/rdap/dns.json                  # bootstrap for every other TLD
 # 404 = available, 200 = taken
 ```
 
@@ -132,4 +172,4 @@ Send a browser User-Agent, cap concurrency at ~8, and retry on 429 and 503.
 
 ---
 
-[← Back to README](../README.md) · [Taxonomy](../03-taxonomy.md) · [Subreddit mapping](../04-subreddit-mapping.md) · [Entity resolution](../05-entity-resolution.md)
+[← Back to README](../README.md) · [Taxonomy](../03-taxonomy.md) · [Subreddit mapping](../04-subreddit-mapping.md) · [Entity resolution](../05-entity-resolution.md) · [Name decision](../decisions/0001-name-reddit-index.md)

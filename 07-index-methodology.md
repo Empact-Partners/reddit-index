@@ -63,7 +63,7 @@ It answers "what is the worst-case true rate given this sample." The penalty ter
 
 The reason not to rank on it stands. The size penalty is an artifact of the question the estimator answers, so a small brand can lose to a large one on identical observed behaviour — precisely the attack a large brand would run, inverted.
 
-| Objective | Answers | Ranks | Role in UGC Ranks |
+| Objective | Answers | Ranks | Role in Reddit Index |
 |---|---|---|---|
 | Raw rate `x/N_op` | "what did we observe" | noise at small `N_op` | never published as a rank |
 | Wilson lower bound | "worst-case true rate" | rate and sample size jointly, penalising small `n` | neither ranked on nor used as the error bar |
@@ -183,7 +183,7 @@ Exponential decay `w(t) = exp(−ln2·Δt/H)` is the standard reputation forgett
 
 **Recommended default: a trailing 12-month window with uniform weight inside it**, plus published 24-month and all-time archives. A window is auditable and reproducible by a third party. A decay half-life is a hidden knob that silently rewrites history, and every rank change becomes an accusation.
 
-**What breaks with a six-year-old scandal.** It leaves the trailing index, which is correct — and is exactly when UGC Ranks gets accused of laundering a reputation. The fix is not a longer window. It is a permanent per-brand **event register** plus a trajectory chart beside the current rank, so history stays visible even when it no longer scores.
+**What breaks with a six-year-old scandal.** It leaves the trailing index, which is correct — and is exactly when Reddit Index gets accused of laundering a reputation. The fix is not a longer window. It is a permanent per-brand **event register** plus a trajectory chart beside the current rank, so history stays visible even when it no longer scores.
 
 ---
 
@@ -256,7 +256,7 @@ The fitted quantities are covered by the same discipline. `α₀`, `β₀`, and 
 | 11 | Corrections and appeals | named contact, response SLA, public changelog with effective dates |
 | 12 | Reproducibility artifact | downloadable per-brand counts — pos, neg, neutral, abstain, `n`, `n_eff` — behind every score |
 
-Item 12 ends more disputes than the other eleven combined. A CMO who can download the counts argues with the counts, not with UGC Ranks.
+Item 12 ends more disputes than the other eleven combined. A CMO who can download the counts argues with the counts, not with Reddit Index.
 
 ---
 

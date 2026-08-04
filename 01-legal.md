@@ -1,13 +1,16 @@
 # Legal Position and Risk Register
 
-⚠️ **This is not legal advice.** It is an internal risk document written from primary sources by non-lawyers. Before ugcranks.com goes live, get an Estonian data-protection opinion and a US media-law read on the final page copy. Nothing below is a clearance to publish.
+⚠️ **This is not legal advice.** It is an internal risk document written from primary sources by non-lawyers. Before redditindex.com goes live, get an Estonian data-protection opinion and a US media-law read on the final page copy. Nothing below is a clearance to publish.
 
 ## Bottom line
 
-- Reddit's terms do not permit what UGC Ranks does. A business may not "access or use any of the Reddit Services and Data by or on behalf of a business," and that restriction expressly reaches derived data ([Developer Terms §4.1](https://www.redditinc.com/policies/developer-terms)).
+- Reddit's terms do not permit what Reddit Index does. A business may not "access or use any of the Reddit Services and Data by or on behalf of a business," and that restriction expressly reaches derived data ([Developer Terms §4.1](https://www.redditinc.com/policies/developer-terms)).
 - Displaying stored comment text breaches the narrow display licence in [Data API Terms §2.4](https://www.redditinc.com/policies/data-api-terms) and Developer Terms §4.2 simultaneously. Links back and usernames are required whatever else we do.
 - Aggregate-only scores would not fix the contract problem. Data API Terms §6 reaches "any data or models that were derived from User Content." Aggregation helps on copyright, not on contract, and contract is the theory Reddit is actually pressing — the one that survived preemption in *Anthropic*.
-- The name is handled, but by our own analysis rather than a rule on point. [Data API Terms §4.1](https://www.redditinc.com/policies/data-api-terms) bars Reddit marks "in, or as part of the name of your App." No Reddit guideline addresses domains — **NOT VERIFIED**. Keeping "reddit" out of ugcranks.com combines §4.1, the Brand Guidelines, and Reddit's UDRP record.
+- ⚠️ The name breaches Reddit's trademark clauses outright. [Data API Terms §4.1](https://www.redditinc.com/policies/data-api-terms) and [Developer Terms §5.3](https://www.redditinc.com/policies/developer-terms) both bar Reddit marks in a product name absent written consent, and "Reddit Index" on redditindex.com sits inside both ([0001](decisions/0001-name-reddit-index.md)).
+- The enforcement path for the name is a UDRP filing, not a lawsuit. Reddit runs them *pro se* for roughly $1,500 and has won every one we found: [reddit.win](https://www.wipo.int/amc/en/domains/decisions/text/2020/d2020-1834.html), [redditpromotion.com / redditshop.com](https://www.wipo.int/amc/en/domains/decisions/text/2019/d2019-2964.html), [reddit.co](https://www.wipo.int/amc/en/domains/decisions/text/2018/dco2018-0008.html).
+- ⚠️ Low traffic is not a defence against a UDRP. It is a registrar-level administrative proceeding: no damages, no discovery, no proof anyone visited the site. It needs only that Reddit notices.
+- Losing one costs the domain, not the project. The pipeline, index, methodology and content all survive a transfer, and that asymmetry is the entire reason the name was judged affordable.
 - ⚠️ The real asset at stake is not this website. The [Responsible Builder Policy](https://support.reddithelp.com/hc/en-us/articles/42728983564564-Responsible-Builder-Policy) permits Reddit to suspend "associated accounts, bots, domains, or subreddits" — which reaches Empact's live Reddit operation across roughly 28 partner projects (internal Empact figure, not from the research corpus).
 - Owner decision, recorded: we display full comment text with links back, knowingly, without a Reddit agreement. That is a priced risk, not a compliant design, and this document does not pretend otherwise.
 
@@ -15,19 +18,20 @@
 
 Two contracts bind. **Data API Terms** — effective June 19, 2023, last revised **July 20, 2026** ([text](https://www.redditinc.com/policies/data-api-terms)). **Developer Terms** — effective September 24, 2024, last revised **March 24, 2026** ([text](https://www.redditinc.com/policies/developer-terms)).
 
-| Clause | What it says | What it means for UGC Ranks |
+| Clause | What it says | What it means for Reddit Index |
 |---|---|---|
 | [Data API Terms §2.4](https://www.redditinc.com/policies/data-api-terms) | Non-exclusive, revocable licence to "copy and display the User Content using the Data API"; "You may not modify the User Content except to format it for such display." | A ranking computed from comments is arguably not "display." Our brand pages are display plus derivation. 🔴 |
 | [Data API Terms §3.1](https://www.redditinc.com/policies/data-api-terms) | Commercial purposes, or any use "not expressly permitted," require "a separate agreement with Reddit." | We have no such agreement. An Empact-operated lead-gen asset is commercial on any reading. 🔴 |
 | [Data API Terms §3.2](https://www.redditinc.com/policies/data-api-terms) | No deriving revenues without express written approval; must "immediately delete" any data not required for the approved use case. | No approved use case exists, so every stored comment is arguably data we must delete. 🔴 |
-| [Data API Terms §4.1](https://www.redditinc.com/policies/data-api-terms) | "You are not permitted to use the Reddit Trademarks in, or as part of the name of your App," or in logos promoting it. | Satisfied on the app name and logo: the product is UGC Ranks. The clean **domain** is our own combined reading of §4.1, the [Brand Guidelines](https://redditinc.com/hubfs/Reddit%20Inc/PDF/reddit_brand_guidelines_version_2022_2022-04-01-160548_akmi.pdf) and the UDRP record; no Reddit rule names domains. 🟢 |
-| [Data API Terms §4.2](https://www.redditinc.com/policies/data-api-terms) | The only licensed wordmark form is "[insert name] for Reddit." | We do not use it, and should not adopt it later without checking whether it implies affiliation. 🟢 |
+| [Data API Terms §4.1](https://www.redditinc.com/policies/data-api-terms) | "You are not permitted to use the Reddit Trademarks in, or as part of the name of your App," or in logos promoting it. | Breached. The product is **Reddit Index** on redditindex.com, and there is no written authorization. Priced, not defended ([0001](decisions/0001-name-reddit-index.md)). 🔴 |
+| [Data API Terms §4.2](https://www.redditinc.com/policies/data-api-terms) | The only licensed wordmark form is "[insert name] for Reddit." | The one safe harbour, and we are outside it. "Reddit Index" is not "[name] for Reddit," so no licensed construction covers us. 🟡 |
 | [Data API Terms §6](https://www.redditinc.com/policies/data-api-terms) | On termination, delete cached or stored User Content "including any data or models that were derived from User Content and Materials." | Termination obligates deleting the rankings, not just the comment store. The whole site is derived data. 🔴 |
 | [Developer Terms §2.2](https://www.redditinc.com/policies/developer-terms) | Defines "Reddit Services and Data" to include content "obtained through or otherwise derived from" the Services. | This definition is what makes §4.1 reach our scores, not only raw comments. 🔴 |
 | [Developer Terms §3.3](https://www.redditinc.com/policies/developer-terms) | If content is deleted, protected, suspended, withheld, modified, or removed, you must delete or modify it "as soon as possible." | The contract says "as soon as possible" and names no interval. We implement a nightly job. Build it regardless of everything else. 🟡 |
 | [Developer Terms §4.1](https://www.redditinc.com/policies/developer-terms) | No access or use "by or on behalf of a business or as part of a service or product that is monetized"; no revenue "including from any data derived from the foregoing." | The core breach. Empact Partners operating it openly is exactly the fact pattern this clause names. 🔴 |
 | [Developer Terms §4.2](https://www.redditinc.com/policies/developer-terms) | No derivative works, copying, reproduction, redistribution, or syndication; no behavior "likely to violate our Public Content Policy." | Republishing comment bodies on our own pages is reproduction and redistribution. 🔴 |
 | [Developer Terms §5.2](https://www.redditinc.com/policies/developer-terms) | Attribution is mandatory: "a link back to the User Content on our Services, cite the applicable User's username, and clearly indicate that the User Content is from our Services." | Cheap and non-negotiable. Every mention gets permalink, username, "from Reddit." 🟡 |
+| [Developer Terms §5.3](https://www.redditinc.com/policies/developer-terms) | "you are not permitted to use the Reddit Trademarks in the name of your App or to promote or identify your App," without Reddit's prior written consent. | Breached twice: the mark is in the product name and in the domain, and both appear in outreach materials. Same decision, same price ([0001](decisions/0001-name-reddit-index.md)). 🔴 |
 | [Developer Terms §7.3](https://www.redditinc.com/policies/developer-terms) | Deletion on Reddit's request, on the user's request, or when retention is no longer necessary. | Requires a working removal route for individual Redditors, not only for brands. 🟡 |
 | [Responsible Builder Policy](https://support.reddithelp.com/hc/en-us/articles/42728983564564-Responsible-Builder-Policy) | Approval required before accessing data; no commercialization "without express written approval," extending to "commercial and non-commercial mining, scraping." Enforcement includes suspending "associated accounts, bots, domains, or subreddits." | The blast-radius clause. See risk 8. 🔴 |
 
@@ -43,15 +47,21 @@ Reddit's developer documentation lists "Free product features available for upse
 
 **INFERENCE:** a free, ad-free site that exists to open sales conversations is "a free product feature available for upsell." Ad-free helps far less than it feels like it should.
 
-## 3. The decision, stated plainly
+## 3. The two priced decisions, stated plainly
 
-UGC Ranks will display full Reddit comment text on brand pages, with links back to the original threads. The owner reviewed the clauses above and chose this. Recorded here as a decision, not a finding of compliance.
+Two choices in this product are breaches the owner made with the clauses in front of him. Both are recorded here as decisions, not as findings of compliance.
 
-This breaches Data API Terms §2.4, §3.1, and §3.2, Developer Terms §4.1 and §4.2, and the Responsible Builder Policy. It adds per-commenter copyright exposure an aggregate-only site would not carry.
+**The display ([decision 0002](decisions/0002-display-full-mentions.md)).** Reddit Index shows full Reddit comment text on brand pages, with links back to the original threads. This breaches Data API Terms §2.4, §3.1, and §3.2, Developer Terms §4.1 and §4.2, and the Responsible Builder Policy.
 
-That exposure has no mitigation. [Developer Terms §5.2](https://www.redditinc.com/policies/developer-terms) states that User Content is owned by Users and not by Reddit, so no Reddit licence can reach it. Attribution and free removal reduce the sympathy cost of a claim, not the claim itself ([decision 0002](decisions/0002-display-full-mentions.md)).
+It also adds per-commenter copyright exposure an aggregate-only site would not carry, and that exposure has no mitigation. [Developer Terms §5.2](https://www.redditinc.com/policies/developer-terms) states that User Content is owned by Users and not by Reddit, so no Reddit licence can reach it.
 
-What it buys is the product itself: the outreach asset only works because a founder can read the actual sentences. This document's job is to keep the price visible, not to relitigate it.
+Attribution and free removal reduce the sympathy cost of such a claim, not the claim itself. What the display buys is the product: the outreach asset only works because a founder can read the actual sentences.
+
+**The name ([decision 0001](decisions/0001-name-reddit-index.md)).** The product is Reddit Index on redditindex.com. This breaches Data API Terms §4.1 and Developer Terms §5.3, which bar Reddit marks in a product name without written consent we do not have and did not seek.
+
+What the name buys is legibility: it says what it is in a cold email with no sentence of explanation. What it costs is the domain if Reddit files a UDRP, plus the option on non-Reddit sources — Phase 3 in [12-phasing.md](12-phasing.md) cannot ship under this name without a rename.
+
+This document's job is to keep both prices visible, not to relitigate either.
 
 ## 4. Risk register
 
@@ -63,13 +73,15 @@ What it buys is the product itself: the outreach asset only works because a foun
 | 4 | Individual commenter copyright claim over displayed comment text | Medium | 🟡 Low-Med | **None exists short of not displaying the text** ([0002](decisions/0002-display-full-mentions.md)). Authors own their comments and Reddit cannot license them ([Developer Terms §5.2](https://www.redditinc.com/policies/developer-terms)). Permalink, username, and free removal cut the sympathy cost, not the claim. | Build lead |
 | 5 | GDPR complaint or Art. 17 erasure request (usernames + comment text are pseudonymous personal data) | Medium | 🔴 Med-High | Published privacy notice with a documented legitimate-interests assessment ([EDPB Guidelines 1/2024](https://www.edpb.europa.eu/system/files/2024-10/edpb_guidelines_202401_legitimateinterest_en.pdf)); working erasure route; retention cap. | Vlad + counsel |
 | 6 | Defamation / trade libel from a brand placed in "Most Hated" | High | 🟡 Medium | The superlative ships and is priced in [0005](decisions/0005-superlative-labels.md). The measured variable appears beside it on every surface; methodology frozen, versioned, and published at `/methodology`; see §6. | Vlad |
-| 7 | UDRP or trademark action over the domain | Low | 🟢 Low | Already mitigated by dropping "reddit" from the name ([Reddit v. Carey, WIPO D2020-1834](https://www.wipo.int/amc/en/domains/decisions/text/2020/d2020-1834.html)). | Done |
-| 8 | ⚠️ Reddit suspends "associated accounts, bots, domains, or subreddits" — reaching Empact's personas, aged accounts, and production Reddit agent | **Critical** | 🟡 Low-Med | Hard-separate infrastructure: distinct registrant, hosting, and API credentials, no shared IPs or accounts with partner operations. Never link UGC Ranks from a Reddit comment. | Build lead |
+| 7 | ⚠️ UDRP filed over redditindex.com, domain transferred ([Carey, D2020-1834](https://www.wipo.int/amc/en/domains/decisions/text/2020/d2020-1834.html)) | Medium | 🟡 Medium *(rises with visibility, §4.2)* | **Nothing prevents a UDRP except not using the name.** Mitigation is recovery, not avoidance: `redditbrandindex.com` registered before launch, canonical host in one config value, links relative, `brandsonreddit.com` as the migration target ([0001](decisions/0001-name-reddit-index.md)). | Vlad |
+| 8 | ⚠️ Reddit suspends "associated accounts, bots, domains, or subreddits" — reaching Empact's personas, aged accounts, and production Reddit agent | **Critical** | 🟡 Low-Med | Hard-separate infrastructure: distinct registrant, hosting, and API credentials, no shared IPs or accounts with partner operations. Never link Reddit Index from a Reddit comment. | Build lead |
 | 9 | Outreach recast as a reputational shakedown | High | 🟡 Medium | Removal and correction always free, never mentioned near a commercial offer ([Mugshots.com charges](https://thecrimereport.org/2018/05/18/california-sues-mugshots-com-over-removal-fees/)); outreach shows only the recipient's own data. | Vlad |
 | 10 | Small-n noise producing a visibly wrong ranking | Medium | 🔴 High | Minimum mention threshold; publish raw n and n_eff per brand; suppress below threshold. | Build lead |
 | 11 | ⚠️ Empact partners, prospects, and Qvery competitors appear in rankings Empact operates | High | 🔴 High | Disclose every partner and related entity on the `/methodology` page; scoring blind to partner status; inclusion rule frozen before the first scoring run. See §4.1. | Vlad |
 
 Risk 8 should govern architecture. The website is replaceable in a weekend. Empact's Reddit operation is years of aged accounts across roughly 28 partner projects (internal Empact figure), and it is the actual revenue line.
+
+The name does not widen that blast radius, but it makes the trigger cheaper. A reddit-named domain is a standing, searchable signal, and the [Responsible Builder Policy](https://support.reddithelp.com/hc/en-us/articles/42728983564564-Responsible-Builder-Policy) reaches "domains" by name. Hard separation is what keeps risk 7 from becoming risk 8.
 
 ### 4.1 The conflict of interest runs both ways
 
@@ -83,13 +95,13 @@ Empact sells Reddit comment placement, and Empact has commercial relationships w
 
 ### 4.2 Risk 2's likelihood is conditional, and the GTM contradicts it
 
-The Low-Med rating on risk 2 assumes UGC Ranks stays below Reddit's enforcement threshold. The plan does not. [10-seo-aeo.md](10-seo-aeo.md) makes being cited by AI engines the primary success metric, and [11-outreach-play.md](11-outreach-play.md) targets an annual PR study, 500+ ranked companies, ≥40 badge embeds, and ≥60 referring domains.
+The Low-Med rating on risk 2 assumes Reddit Index stays below Reddit's enforcement threshold. The plan does not. [10-seo-aeo.md](10-seo-aeo.md) makes being cited by AI engines the primary success metric, and [11-outreach-play.md](11-outreach-play.md) targets an annual PR study, 500+ ranked companies, ≥40 badge embeds, and ≥60 referring domains.
 
 Low visibility and those targets are mutually exclusive. Either the likelihood is re-rated upward once the growth plan runs, or the growth targets are capped as a deliberate legal choice. [Decision 0002](decisions/0002-display-full-mentions.md) already names growing visibility as a revisit trigger; this note records that the register's number depends on it.
 
 ## 5. Mitigations to build in from day one
 
-These are cheap, none is conditional on the display decision, and every one improves our posture if a dispute starts.
+These are cheap, none is conditional on either priced decision, and every one improves our posture if a dispute starts.
 
 | Mitigation | Why | Source |
 |---|---|---|
@@ -100,6 +112,10 @@ These are cheap, none is conditional on the display decision, and every one impr
 | Methodology frozen and version-controlled **before** first scoring run | The fact that decides the defamation case | [Suzuki v. Consumers Union](https://caselaw.findlaw.com/court/us-9th-circuit/1359248.html) |
 | The measured variable printed beside every superlative | "sentiment index 21/100 · 412 opinionated mentions · Jan–Jun 2026" is checkable; "Most Hated" alone is not | [Milkovich](https://supreme.justia.com/cases/federal/us/497/1/) |
 | Plain-text company names, no logos | Nominative fair use limit | [New Kids on the Block](https://digitalcommons.law.ggu.edu/cgi/viewcontent.cgi?article=1631&context=ggulrev) |
+| Non-affiliation notice in the footer of **every** page: "Not affiliated with, endorsed by, or sponsored by Reddit, Inc." | Implied affiliation is the theory UDRP panels actually run on, and the name invites it | [Carey, D2020-1834](https://www.wipo.int/amc/en/domains/decisions/text/2020/d2020-1834.html) |
+| No Reddit visual identity, ever: no `#FF4500`, no Snoo, no Reddit Sans, no lookalike mark | Trade dress stacked on top of the name turns a survivable UDRP into an easy one | [Brand Guidelines](https://redditinc.com/hubfs/Reddit%20Inc/PDF/reddit_brand_guidelines_version_2022_2022-04-01-160548_akmi.pdf) |
+| Defensive `redditbrandindex.com` registered **before** launch, redirecting to the primary | A defensive name bought after a complaint lands reads as bad faith, not protection | [0001](decisions/0001-name-reddit-index.md) |
+| Migration plan kept warm: canonical host in one config value, all internal links relative, `brandsonreddit.com` as the target | A forced move should cost a day, not a quarter. "Brands on Reddit" is descriptive, with Reddit as the subject covered rather than the leading mark, which is a materially better UDRP posture | [0001](decisions/0001-name-reddit-index.md) |
 
 The research recommended labelling the columns with the measured variable instead of a superlative. The owner chose "Most Loved" and "Most Hated," and that exposure is priced in [decision 0005](decisions/0005-superlative-labels.md), which carries the conditions the label is accepted under. It is not listed above, because a mitigation the product contradicts is not a mitigation in force.
 
@@ -117,7 +133,7 @@ The cautionary case is *Suzuki Motor Corp. v. Consumers Union*, 330 F.3d 1110 (9
 
 ⚠️ **Estonia is a materially worse flag than the US caselaw suggests.** In *Delfi AS v. Estonia* [GC], no. 64569/09 (2015), the ECtHR found no Article 10 violation where Estonian courts held a news portal liable for anonymous reader comments it merely hosted, even though it removed them on notice ([Columbia GFoE](https://globalfreedomofexpression.columbia.edu/cases/delfi-as-v-estonia/)).
 
-Empact Partners OÜ is an Estonian entity, and UGC Ranks does not merely host: it selects, ranks, and republishes comments with our own characterization on top. **INFERENCE:** worse than Delfi's posture, with no EU analogue to the US §230 shield that protected a republisher in [*Barrett v. Rosenthal*](https://caselaw.findlaw.com/court/ca-supreme-court/1282926.html).
+Empact Partners OÜ is an Estonian entity, and Reddit Index does not merely host: it selects, ranks, and republishes comments with our own characterization on top. **INFERENCE:** worse than Delfi's posture, with no EU analogue to the US §230 shield that protected a republisher in [*Barrett v. Rosenthal*](https://caselaw.findlaw.com/court/ca-supreme-court/1282926.html).
 
 UK-domiciled brands face a higher bar: s.1(2) of the Defamation Act 2013 requires a for-profit claimant to show serious financial loss ([legislation.gov.uk](https://www.legislation.gov.uk/ukpga/2013/26/section/1)). Whether s.9 bars a US brand suing an Estonian publisher is **NOT VERIFIED**.
 
@@ -126,6 +142,8 @@ UK-domiciled brands face a higher bar: s.1(2) of the Defamation Act 2013 require
 *New Kids on the Block v. News America Publishing*, 971 F.2d 302 (9th Cir. 1992), permits referring to a marked product where it is not readily identifiable otherwise, only so much of the mark as is necessary is used, and nothing suggests sponsorship ([discussion](https://digitalcommons.law.ggu.edu/cgi/viewcontent.cgi?article=1631&context=ggulrev)).
 
 Limb two is where logos fail. Plain-text word marks pass routinely; stylized logos, brand colors, and taglines do not. **Rule: plain-text company names only, no logos on a negative-ranking page, plus an explicit disclaimer of affiliation.** The EU referential-use provision in Art. 14(1)(c) EUTMR is **NOT VERIFIED** here.
+
+**INFERENCE:** the same test run against REDDIT in our own name fails limbs two and three. Putting the mark in a product name uses more of it than identification requires, and leading with it reads as sponsorship. The name rests on the priced risk in [0001](decisions/0001-name-reddit-index.md), not on fair use, and this section should never be cited as covering it.
 
 ## 8. Litigation backdrop
 
@@ -143,4 +161,4 @@ Reddit locked down robots.txt in 2024 and restricted the Internet Archive to its
 
 ---
 
-[← Back to README](README.md) · [Data acquisition and storage](02-data-acquisition.md) · [Phase 1 category list](data/phase1-categories.csv)
+[← Back to README](README.md) · [Naming decision](decisions/0001-name-reddit-index.md) · [Display decision](decisions/0002-display-full-mentions.md) · [Data acquisition and storage](02-data-acquisition.md) · [Phase 1 category list](data/phase1-categories.csv)

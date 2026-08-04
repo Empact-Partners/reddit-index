@@ -94,8 +94,8 @@ Everything in [01-legal.md](01-legal.md) and [decisions/0002](decisions/0002-dis
 | [Law.com](https://www.law.com/newyorklawjournal/2026/07/31/reddits-dmca-claims-against-perplexity-serpapi-survive-ai-scraping-challenge/) | [01-legal.md](01-legal.md) |
 | [legislation.gov.uk](https://www.legislation.gov.uk/ukpga/2013/26/section/1) | [01-legal.md](01-legal.md) |
 | [Loeb](https://www.loeb.com/en/insights/publications/2026/04/reddit-inc-v-anthropic-pbc) | [01-legal.md](01-legal.md) |
-| [`reddit.co`](https://www.wipo.int/amc/en/domains/decisions/text/2018/dco2018-0008.html) | [decisions/0001-name-ugc-ranks.md](decisions/0001-name-ugc-ranks.md) |
-| [Reddit v. Carey, WIPO D2020-1834](https://www.wipo.int/amc/en/domains/decisions/text/2020/d2020-1834.html) | [00-concept.md](00-concept.md), [01-legal.md](01-legal.md), [decisions/0001-name-ugc-ranks.md](decisions/0001-name-ugc-ranks.md) |
+| [`reddit.co`](https://www.wipo.int/amc/en/domains/decisions/text/2018/dco2018-0008.html) | [decisions/0001-name-reddit-index.md](decisions/0001-name-reddit-index.md) |
+| [Reddit v. Carey, WIPO D2020-1834](https://www.wipo.int/amc/en/domains/decisions/text/2020/d2020-1834.html) | [00-concept.md](00-concept.md), [01-legal.md](01-legal.md), [decisions/0001-name-reddit-index.md](decisions/0001-name-reddit-index.md) |
 
 ### Data archives and vendors
 

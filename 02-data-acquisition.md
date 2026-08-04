@@ -66,7 +66,7 @@ Neither is a 24-hour contractual figure, and no fixed interval should be quoted 
 
 Reddit sued Perplexity, SerpApi, Oxylabs, and AWMProxy on 2025-10-22 over "industrial-scale scraping" ([Search Engine Land](https://searchengineland.com/reddit-sues-perplexity-serpapi-scraping-google-463681)).
 
-UGC Ranks displays full comment text with links back to the source thread. That is a deliberate, priced decision by the owner, taken with the contractual and copyright exposure on the table. This document does not rule on it; the clause-level reading and the risk register live in [01-legal.md](01-legal.md).
+Reddit Index displays full comment text with links back to the source thread. That is a deliberate, priced decision by the owner, taken with the contractual and copyright exposure on the table. This document does not rule on it; the clause-level reading and the risk register live in [01-legal.md](01-legal.md).
 
 ## 5. Measured corpus volume
 

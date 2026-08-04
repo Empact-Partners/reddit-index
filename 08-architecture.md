@@ -37,14 +37,14 @@ Reddit Data API         ─┘        ▼
                                                                     ▼
                                                                Astro static build
                                                                     ▼
-                                                               CDN → ugcranks.com
+                                                               CDN → redditindex.com
 
 delete-sync (nightly): Postgres doc_ids ─► Reddit /api/info ─► purge missing ─► flag rebuild
 ```
 
 ## 2. Storage breakpoints
 
-Pick the tier by row count and by whether a human needs sub-second ad-hoc queries. UGC Ranks does not — it needs a weekly batch pass and a fast single-row read at build time.
+Pick the tier by row count and by whether a human needs sub-second ad-hoc queries. Reddit Index does not — it needs a weekly batch pass and a fast single-row read at build time.
 
 | Scale | Raw corpus | Derived rows | 2026 price |
 |---|---|---|---|

@@ -1,4 +1,4 @@
-# UGC Ranks
+# Reddit Index
 
 A public site ranking the **most loved and most hated software brands** in every category, computed from what people actually say on Reddit. Built and operated by Empact Partners as a cold-outreach asset.
 
@@ -14,7 +14,9 @@ The **public cross-brand leaderboard** seat is unoccupied and the build is techn
 
 The adjacent seat is taken. [redditbrands.com](https://redditbrands.com/) and [whatredditthinks.com](https://whatredditthinks.com/) both ship live per-brand Reddit audits, both registered within the last three months, both fetched live 2026-08-04 ([00-concept.md](00-concept.md)).
 
-It is also **not compliant with Reddit's terms**, and the owner has chosen to proceed with the exposure understood ([01-legal.md](01-legal.md)). The asset genuinely at risk is not this website — it is Empact's live Reddit operation across roughly 28 partner projects (internal Empact figure, not from the research corpus).
+It is also **not compliant with Reddit's terms**, and the owner has chosen to proceed with the exposure understood ([01-legal.md](01-legal.md)). Two breaches are priced and live: the name and the comment display.
+
+What a lost UDRP takes is the domain, not the pipeline, the index, or the methodology. The asset genuinely at risk is Empact's live Reddit operation across roughly 28 partner projects (internal Empact figure, not from the research corpus).
 
 The single number that reframes the build: **Reddit's API reaches roughly 3 to 8 days of history**, not years. Everything else follows from that.
 
@@ -63,6 +65,7 @@ The gate is therefore `n_eff = n / DEFF ≥ 400`, where `DEFF = 1 + (m̄ − 1)�
 | "Big subreddits have the most brand talk" | ❌ **Wrong.** The biggest ones ban it. Map to rule-permissive subs. See [04-subreddit-mapping.md](04-subreddit-mapping.md). |
 | "Free and ad-free keeps us outside the commercial rules" | ❌ **Wrong.** Reddit lists "free product features available for upsell" as commercial use. |
 | "Aggregate scores only would be legally safer" | 🟡 **Half right.** Safer on copyright, not on contract. Reddit has not won that case — but its contract theory survived a preemption challenge and was remanded to state court on 2026-03-30. See [01-legal.md](01-legal.md). |
+| "A low-profile site won't attract Reddit's attention" | ❌ **Wrong.** A [UDRP](https://www.wipo.int/amc/en/domains/decisions/text/2020/d2020-1834.html) is a registrar-level administrative proceeding. It needs no damages, no discovery, and no proof anyone visited. Reddit files them *pro se* for roughly $1,500 and has won every one found. See [decisions/0001](decisions/0001-name-reddit-index.md). |
 | "Use Capterra's categories" | 🟡 **Half right.** Their ToS §10 names "category structure" as protected. Derive the spine instead. See [decisions/0003](decisions/0003-g2-taxonomy-spine.md). |
 | "One sentiment score, sorted both ways" | ❌ **Wrong.** Love and hate are separable. A net score makes a polarizing brand look identical to an ignored one. |
 | "Upvoted comments should count more" | ❌ **Wrong.** Reddit fuzzes vote counts, and one seeded upvote inflated scores 25% via herding. |
@@ -76,13 +79,17 @@ The gate is therefore `n_eff = n / DEFF ≥ 400`, where `DEFF = 1 + (m̄ − 1)�
 
 | # | Decision | Record |
 |---|---|---|
-| 1 | Product is **UGC Ranks** on `ugcranks.com`. "Reddit" removed from the name — Data API Terms §4.1 forbids it, and Reddit has won every UDRP case found. | [0001](decisions/0001-name-ugc-ranks.md) |
+| 1 | Product is **Reddit Index** on `redditindex.com`. "Reddit" kept in the name deliberately, breaching [Data API Terms §4.1](https://www.redditinc.com/policies/data-api-terms) and [Developer Terms §5.3](https://www.redditinc.com/policies/developer-terms). The realistic enforcement is a UDRP filing, not a lawsuit, and losing one costs the domain rather than the project. | [0001](decisions/0001-name-reddit-index.md) |
 | 2 | Brand pages **display full comment text** with links back. Knowingly non-compliant, priced as a risk. | [0002](decisions/0002-display-full-mentions.md) |
 | 3 | **Derive the category spine**, do not copy Capterra's. | [0003](decisions/0003-g2-taxonomy-spine.md) |
 | 4 | **Two axes**, love and hate scored independently. | [0004](decisions/0004-two-axis-index.md) |
 | 5 | Columns stay labelled **"Most Loved" and "Most Hated."** Owner-specified superlatives, priced as exposure, with the measured variable shown beside them. | [0005](decisions/0005-superlative-labels.md) |
 
-Empact Partners operates it openly. The footer reads "Created by Empact Partners." It is a side project, not an independent publication, and does not pretend to be one.
+⚠️ **Decisions 1 and 2 are priced risks, not solved problems.** The name breaches Reddit's trademark clauses and the brand pages display full comment text. Both were taken with the exposure in front of the owner, and neither is mitigated by anything built later.
+
+The name is also **Reddit-locked**: Phase 3 in [12-phasing.md](12-phasing.md) contemplates Hacker News and other sources, which "Reddit Index" cannot carry without a rename. `redditbrandindex.com` is the defensive registration. `brandsonreddit.com` was available, carries a materially better UDRP posture, and is the documented migration target ([0001](decisions/0001-name-reddit-index.md)).
+
+Empact Partners operates it openly. The footer reads "Created by Empact Partners," beside the non-affiliation notice that decision 1 makes mandatory on every page. It is a side project, not an independent publication, and does not pretend to be one.
 
 ---
 

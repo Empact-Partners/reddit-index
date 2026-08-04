@@ -3,7 +3,7 @@
 ## Bottom line
 
 - The rate-then-sell mechanic is proven, but only in the form where **the rated company can see and fix its own score for free**. SecurityScorecard's entire funnel is a free, unlimited self-scorecard ([SecurityScorecard free tier](https://securityscorecard.com/pricing-packages/free/), [free public scorecard](https://securityscorecard.com/free-account-public-scorecard/)).
-- What is contested is **publishing individual company scores**. The industry's own governing document says: "Rating companies should not publicize an individual organization's rating" — Principle 6, [U.S. Chamber of Commerce, Principles for Fair and Accurate Security Ratings, 2017](https://www.uschamber.com/security/cybersecurity/principles-for-fair-and-accurate-security-ratings). UGC Ranks does exactly that by design.
+- What is contested is **publishing individual company scores**. The industry's own governing document says: "Rating companies should not publicize an individual organization's rating" — Principle 6, [U.S. Chamber of Commerce, Principles for Fair and Accurate Security Ratings, 2017](https://www.uschamber.com/security/cybersecurity/principles-for-fair-and-accurate-security-ratings). Reddit Index does exactly that by design.
 - **Guilt-framed cold email raises reply rate but cuts meetings booked by 14%** ([Gong cold email stats](https://www.gong.io/blog/cold-email-stats)). Replies are not the goal, so the "most hated" angle is banned even though it would perform on the vanity metric.
 - Recommended motion: **positive-led public ranking, negative diagnosis delivered privately and free.** The public site leads with most loved; the low-sentiment finding is what the email offers to explain in private.
 - Badges are a **distribution and AI-citation play, not a link-building play**. Google requires widget and badge links to be `nofollow` or `sponsored` ([Google spam policies](https://developers.google.com/search/docs/essentials/spam-policies)).
@@ -37,7 +37,7 @@ This keeps Empact inside Chamber [Principle 1 (transparency) and Principle 2 (ri
 
 **The superlative always travels with the measured variable.** "Most Loved" and "Most Hated" are the owner's column labels and they do not change ([decisions/0005-superlative-labels.md](decisions/0005-superlative-labels.md)). Every surface carrying them — page, badge, email, press cut — shows the sentiment index, the opinionated mention count, and the window immediately beside the label.
 
-⚠️ UGC Ranks displays full Reddit comment text by owner decision. That is a deliberate, priced risk documented in [01-legal.md](01-legal.md), and it raises the cost of getting right-of-reply wrong. Outreach must never imply the brand page is negotiable in exchange for a commercial conversation.
+⚠️ Reddit Index displays full Reddit comment text by owner decision. That is a deliberate, priced risk documented in [01-legal.md](01-legal.md), and it raises the cost of getting right-of-reply wrong. Outreach must never imply the brand page is negotiable in exchange for a commercial conversation.
 
 ---
 
@@ -75,7 +75,7 @@ column for {{category}} — sentiment index {{sentiment_index}},
 
 The page, the badge, and every thread behind the number are
 free and open, no signup:
-ugcranks.com/brand/{{brand_slug}}
+redditindex.com/brand/{{brand_slug}}
 
 {{n_positive_drivers}} threads are doing most of the lifting
 for you and {{n_negative_drivers}} is working against you.
@@ -83,7 +83,7 @@ Happy to send that breakdown — no charge, we built the index
 and the analysis is already done.
 
 Vlad
-Empact Partners (we build and operate UGC Ranks)
+Empact Partners (we build and operate Reddit Index)
 ```
 
 Brand pages live at `/brand/{slug}` and category pages at `/category/{slug}` per [00-concept.md](00-concept.md). A brand page is global rather than per-category, so a category-nested link would point at a URL the site does not serve.
@@ -102,7 +102,7 @@ The badge face carries the superlative and the measured variable together: categ
 
 Separately, embedding a third-party rating widget makes the embedding page **ineligible for star rich results**, and sites "must not aggregate reviews or ratings from other websites" ([Google review snippet docs](https://developers.google.com/search/docs/appearance/structured-data/review-snippet)).
 
-So G2's claim that badges "supplement your SEO initiatives" ([G2 badge docs](https://documentation.g2.com/docs/g2-badges)) is **overstated for the embedding brand**. Never repeat it in a pitch. The badge earns brand distribution and AI citation surface, and SEO value accrues to the UGC Ranks methodology and index pages via editorial coverage.
+So G2's claim that badges "supplement your SEO initiatives" ([G2 badge docs](https://documentation.g2.com/docs/g2-badges)) is **overstated for the embedding brand**. Never repeat it in a pitch. The badge earns brand distribution and AI citation surface, and SEO value accrues to the Reddit Index methodology and index pages via editorial coverage.
 
 ---
 
@@ -170,7 +170,7 @@ Annual **"State of Reddit Brand Sentiment"**, quarterly category cuts, and a per
 
 Realistic link expectation, **SECONDARY evidence, low confidence**: the average digital PR campaign earns links from 42 referring domains at average DR 61, at roughly $750 per earned link ([reporteroutreach.com, aggregating Digitaloft / Reboot / BuzzStream](https://www.reporteroutreach.com/blog/digital-pr-statistics)).
 
-The bigger payoff is AI citation: longitudinal studies of this shape get cited as sources by AI engines, which is the asset class UGC Ranks is building.
+The bigger payoff is AI citation: longitudinal studies of this shape get cited as sources by AI engines, which is the asset class Reddit Index is building.
 
 ---
 

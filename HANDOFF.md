@@ -1,6 +1,6 @@
 # Handoff — open items
 
-**State as of 2026-08-04.** The repo is complete and internally consistent enough to read and act on. `validate.py` passes: 0 failures, 464 relative links resolve.
+**State as of 2026-08-04.** The repo is complete and internally consistent enough to read and act on. `validate.py` passes: 0 failures, every relative link resolves.
 
 A third review pass found **6 defects that are still open**. They are listed here rather than silently left, and they are all in one cluster plus one arithmetic slip.
 
@@ -8,7 +8,8 @@ A third review pass found **6 defects that are still open**. They are listed her
 
 - The **diversity-floor set diverged** between `07-index-methodology.md` and the five documents that cite it. This is the one real problem. Fix 07 or fix the five — but pick one set.
 - One **Wilson interval in `12-phasing.md` is miscomputed**, and its stated conclusion is false as computed.
-- Everything else below is small.
+- Everything else in the defect list is small.
+- Outside the docs, **neither domain is registered**, and the name carries a live trademark exposure that was chosen and priced in [decisions/0001](decisions/0001-name-reddit-index.md).
 
 ---
 
@@ -72,7 +73,15 @@ These were raised by reviewers and resolved as **false positives** — do not "f
 
 ## Also outstanding, outside the docs
 
-- **`ugcranks.com` is not registered.** Verified available 2026-08-04 along with `ugcrankings.com`. Availability moves — re-check before buying. The `.io` and `.co` variants are marked *not checked* in [data/domain-availability.csv](data/domain-availability.csv).
+- **Neither domain is registered.** `redditindex.com` is the chosen primary and `redditbrandindex.com` the defensive name that redirects to it. Both verified available 2026-08-04 — availability moves, so re-check before buying. [decisions/0001](decisions/0001-name-reddit-index.md) requires both before launch, not after.
+- **The `.io`, `.co`, `.net` and `.org` variants of both names are also recorded available** on the same date in [data/domain-availability.csv](data/domain-availability.csv). Only the `.com` pair is mandatory; the rest is a cheap defensive decision nobody has made yet.
+- **The name breaches two Reddit clauses.** [Data API Terms §4.1](https://www.redditinc.com/policies/data-api-terms) and [Developer Terms §5.3](https://www.redditinc.com/policies/developer-terms) both forbid Reddit trademarks in a product name. This is recorded, not overlooked — the owner made the call with the exposure in front of him.
+- **Enforcement is a UDRP filing, not a lawsuit.** Reddit runs them *pro se* for roughly $1,500 and has won every one found: [reddit.win](https://www.wipo.int/amc/en/domains/decisions/text/2020/d2020-1834.html) (D2020-1834), [redditpromotion.com / redditshop.com](https://www.wipo.int/amc/en/domains/decisions/text/2019/d2019-2964.html) (D2019-2964), [reddit.co](https://www.wipo.int/amc/en/domains/decisions/text/2018/dco2018-0008.html) (DCO2018-0008).
+- **Low traffic is not a defence.** A UDRP is a registrar-level administrative proceeding. It needs no damages, no discovery, and no proof that anyone visited. It needs only that Reddit notices.
+- **What a loss costs is the domain, not the project.** The pipeline, the index, the methodology and the content all survive a transfer. That asymmetry is why the risk was accepted, and it is why the next item is a build requirement rather than a preference.
+- **Migration dependency: the canonical host lives in exactly one config value, and every internal link stays relative.** That is a build constraint created by [decisions/0001](decisions/0001-name-reddit-index.md) and it binds whoever writes the code. A forced move should cost a day, not a quarter.
+- **`brandsonreddit.com` is the documented migration target.** It was available and carries a materially better UDRP posture: a descriptive phrase where Reddit is the subject covered, rather than a compound where REDDIT leads and reads as a sub-brand. It was not taken.
+- **The name is Reddit-locked.** Phase 3 in [12-phasing.md](12-phasing.md) contemplates Hacker News, Stack Overflow and other sources. "Reddit Index" cannot carry them without a rename. That option was knowingly sold for legibility in a cold email, and it is the second trigger the one-config-value rule exists for.
 - **38 of the 50 Phase 1 categories have no subreddit mapping.** Twelve are mapped and signal-tested.
 - **Legal review before launch**, per [01-legal.md](01-legal.md). Nothing here is legal advice.
 

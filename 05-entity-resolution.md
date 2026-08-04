@@ -2,7 +2,7 @@
 
 ## Bottom line
 
-- This is the hardest engineering problem in UGC Ranks. Everything downstream (counts, rankings, brand pages, the outreach email) is wrong if a mention is attached to the wrong company.
+- This is the hardest engineering problem in Reddit Index. Everything downstream (counts, rankings, brand pages, the outreach email) is wrong if a mention is attached to the wrong company.
 - Off-the-shelf tooling does not solve it. The best published system on the closest benchmark, WNUT-17 emerging/rare entities with a test set drawn from Reddit and StackExchange, scored **41.86 entity F1** ([task page](http://noisy-text.github.io/2017/emerging-rare-entities.html)).
 - Knowledge-base linking fails on the head of our own list. Verified live: Wikidata label search for "Linear" returns 10 hits, none of them the issue tracker ([API call](https://www.wikidata.org/w/api.php?action=wbsearchentities&search=Linear&language=en&format=json&limit=10)); "Vercel" returns Q56069184 described only as "San Francisco based cloud computing company", with no aliases ([API call](https://www.wikidata.org/w/api.php?action=wbsearchentities&search=Vercel&language=en&format=json&limit=5)).
 - Our own seed list makes the shape of the problem concrete: **35 of 113 brands (31%) are classed high-ambiguity** in [data/brand-gazetteer-seed.csv](data/brand-gazetteer-seed.csv) — Notion, Slack, Monday, Linear, Stripe, Gusto, Workday, Rippling, Craft, Front, Ramp, Make, Render, Segment, Amplitude, Looker, Loom, Motion, Sketch, Close, Bill.com, Confluence, Teams, Roam, Framer, Obsidian and others.

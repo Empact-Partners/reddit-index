@@ -14,7 +14,7 @@
 
 ## 1. The framing error
 
-Every general-purpose sentiment model takes a document and returns one label. UGC Ranks needs a label per brand per mention. Those are different tasks, and the difference is not cosmetic.
+Every general-purpose sentiment model takes a document and returns one label. Reddit Index needs a label per brand per mention. Those are different tasks, and the difference is not cosmetic.
 
 | Comment | Document label | Correct targeted labels |
 |---|---|---|
@@ -117,7 +117,7 @@ Converging signals: account age and karma, posting velocity, inter-comment reply
 
 ### The conflict of interest, both directions
 
-Empact Partners runs Reddit marketing for paying partners and also operates UGC Ranks. That is two separate exposures, and the stage-1 filter closes only one of them.
+Empact Partners runs Reddit marketing for paying partners and also operates Reddit Index. That is two separate exposures, and the stage-1 filter closes only one of them.
 
 **Inbound contamination.** Comments an Empact campaign produced or prompted are not organic sentiment about the brands involved. They must be identifiable from our own campaign records, tagged at stage 1, and excluded from published scores, with the exclusion rate reported per category and per brand.
 
@@ -126,7 +126,7 @@ Empact Partners runs Reddit marketing for paying partners and also operates UGC 
 - **Disclosure.** Current partners and related entities (Empact Partners, Qvery, MarketSplash, Mystery Demo) are listed on `/methodology`. Any ranked or profiled brand on that list carries a visible "Empact Partners works with this company" label on its brand page.
 - **Blind scoring.** Partner status is not an input to any stage of this pipeline, is not shown to annotators in the stage-6 human loop, and is never a reason to suppress, delay, or re-run a score. Suppression happens only through the published eligibility rules in [07-index-methodology.md](07-index-methodology.md).
 
-**What those controls do not fix.** Recusal — Empact not running Reddit marketing in any category UGC Ranks ranks — is the only control that removes the incentive rather than disclosing it. It is not proposed, because it would mean closing the service that funds the site. Disclosure plus blind scoring stands in its place, and that gap is the exposure.
+**What those controls do not fix.** Recusal — Empact not running Reddit marketing in any category Reddit Index ranks — is the only control that removes the incentive rather than disclosing it. It is not proposed, because it would mean closing the service that funds the site. Disclosure plus blind scoring stands in its place, and that gap is the exposure.
 
 ---
 

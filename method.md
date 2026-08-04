@@ -66,7 +66,7 @@ Everything here is reproducible without a paid seat except the Reddit API calls,
 ```bash
 # Domain availability — public registry, no key
 curl -H "User-Agent: Mozilla/5.0" \
-  https://rdap.verisign.com/com/v1/domain/ugcranks.com
+  https://rdap.verisign.com/com/v1/domain/redditindex.com
 # 404 = available, 200 = taken
 
 # Reddit terms — the load-bearing primary sources
