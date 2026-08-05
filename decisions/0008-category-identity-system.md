@@ -38,7 +38,16 @@ The hue bands are the primary gate because they are categorical and checkable: a
 
 16,296 in-gamut candidates satisfy C1–C7. A farthest-point seed followed by an annealed local search selects the 20 that **maximise the minimum pairwise OKLab distance**.
 
-> **Achieved minimum pairwise distance: ΔE_OKLab = 0.0931.**
+> **Achieved minimum pairwise distance: ΔE_OKLab = 0.0927.**
+
+⚠️ **The constraints are checked on the quantised hex, not on the continuous target.**
+The optimiser satisfies C1–C7 in continuous OKLCH and then writes an 8-bit hex, and
+quantisation moved five of the twenty rows a few ten-thousandths across a boundary —
+`project-management` over the chroma ceiling, `hr` and `business-intelligence` under the
+lightness floor, `password-managers` and `help-desk` under the chroma floor.
+`scripts/gen-palette.mjs` repairs them by moving each one 8-bit step, and
+`scripts/gates/category-constraints.mjs` recomputes from the stored hex on every build.
+A gate with an epsilon wide enough to excuse the data it checks has never failed anything.
 
 That number is reported, not asserted. It is modest, and it is the honest ceiling: 20 colours in ~165° of usable hue cannot be as separable as 20 colours on the full wheel. Two consequences follow, and both are design rules rather than caveats.
 
@@ -52,7 +61,7 @@ That number is reported, not asserted. It is modest, and it is the honest ceilin
 | Breadcrumb category segment | The mention card's sentiment label |
 | The category grid | Anything on the insufficient-signal panel, which uses no accent hue at all |
 
-**Colour is never the sole carrier of a category's identity.** The category name is present as text wherever its colour is, which is what makes ΔE 0.0931 acceptable: the colour is recognition support for a label that is already there, not a substitute for it.
+**Colour is never the sole carrier of a category's identity.** The category name is present as text wherever its colour is, which is what makes ΔE 0.0927 acceptable: the colour is recognition support for a label that is already there, not a substitute for it.
 
 ### Icons
 
@@ -66,7 +75,7 @@ Hue is assigned in wheel order, not by meaning. No category gets a colour that i
 
 ## Consequences
 
-**Adding categories in Phase 2 shrinks separation.** The usable hue space is fixed, so 50 categories cannot hold ΔE 0.0931. Phase 2 must either group categories into families that share a hue and separate on lightness, or drop per-category colour above some count. This is a real limit, recorded now rather than discovered later.
+**Adding categories in Phase 2 shrinks separation.** The usable hue space is fixed, so 50 categories cannot hold ΔE 0.0927. Phase 2 must either group categories into families that share a hue and separate on lightness, or drop per-category colour above some count. This is a real limit, recorded now rather than discovered later.
 
 **The generator is the source of truth.** Colours are regenerated from the constraint set, not hand-edited in a stylesheet. Editing a hex by hand silently voids C1 through C7.
 

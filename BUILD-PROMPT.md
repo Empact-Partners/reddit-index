@@ -122,6 +122,29 @@ Advertising, sponsorship, affiliate links or paid placement on any surface. Bran
 
 # Milestones
 
+> **Re-cut 2026-08-05, during the first build.** The ladder below sequenced the
+> eligibility gate, the honest below-threshold and insufficient-signal states, and
+> `/methodology` **after** the milestone that computes and renders a score. Three
+> documents make that ordering unworkable: [decisions/0005](decisions/0005-superlative-labels.md)
+> makes the methodology page and the measured-variable-beside-the-superlative rule
+> *conditions* of using "Most Loved" and "Most Hated" at all;
+> [decisions/0009](decisions/0009-category-scaled-thresholds.md) says "a flag is not a
+> gate — anything on a board is a claim"; and [07 §9](07-index-methodology.md) requires
+> the method frozen with its commit hash recorded *before the first production crawl*.
+>
+> So the honesty layer shipped first, and the data made that the only sensible order
+> anyway: on a sample corpus almost every company sits below threshold and several
+> categories cannot be ranked, which makes those two states the site's dominant
+> surface rather than an edge case. The pre-deploy gates in M4 also run from the
+> first build — they are cheap, and the apex is live.
+>
+> A collection **window** is also missing from every milestone below. It is a trailing
+> 12 months, uniform weight, per [07 §6](07-index-methodology.md), frozen in
+> `methodology_params` — without it a builder scores 2022 threads, because Lane D
+> searches `t=all`.
+>
+> What actually shipped, and the state of each gate, is in [HANDOFF.md](HANDOFF.md).
+
 Work them in order. Each has an acceptance gate; **do not start the next milestone until the current gate passes**. Stopping cleanly at any gate is a valid end state.
 
 ## M1 — Vertical slice: CRM, end to end, real data
@@ -130,7 +153,7 @@ The point is to prove the whole pipeline on one category before scaling anything
 
 **Build:**
 
-1. Supabase project. Schema per [08-architecture.md §3](08-architecture.md): `subreddits`, `documents`, `brands`, `mentions`, `scores`, `categories`, `ingest_state`, `removals`. Include `doc_type`, the frozen `slug` column, persisted rank columns, and the per-category threshold tier.
+1. Supabase project. Schema per [08-architecture.md §3](08-architecture.md), which is the authority: `categories`, `subreddits`, `category_subreddits`, `brands`, `brand_aliases`, `threads`, `mentions`, `mention_sentiment`, `brand_category_scores`, `leaderboards`, `brand_pages`, `removals`, `ingest_state` — thirteen tables. (`documents` and `scores` appeared in an earlier draft of this line and exist nowhere in §3; they were `threads` and `brand_category_scores`.) Include `doc_type`, the frozen `slug` column, persisted rank columns, and the per-category threshold tier.
 2. Railway worker, long-lived. Ingest **CRM only**, using the scorable generalist subreddits in [data/subreddit-measurements.csv](data/subreddit-measurements.csv). Lane B (`/r/{sub}/comments` with multireddit rate-bucketing) plus Lane D, per [13-algorithm.md](13-algorithm.md). Respect ~80 req/min and `time.sleep(0.75)`.
 3. Entity resolution over the CRM slice of [data/brand-gazetteer-seed.csv](data/brand-gazetteer-seed.csv). **Word-boundary matching, never substring** — a naive pass matched "Monday" the weekday in r/nfl and "SAP" the fluid in r/worldbuilding. Use the gazetteer's `ambiguity_class`. Target precision ≥ 0.97 ([05-entity-resolution.md](05-entity-resolution.md)).
 4. Targeted ABSA sentiment — one comment naming three brands has three polarities ([06-sentiment.md](06-sentiment.md)).

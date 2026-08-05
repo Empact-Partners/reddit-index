@@ -130,15 +130,27 @@ That makes the derivation above the *start* of the argument. Taken alone it is t
 ### The design-effect correction
 
 ```
-DEFF  = 1 + (m̄ − 1)·ICC
-n_eff = n / DEFF
+DEFF  = 1 + (m̃ − 1)·ICC        m̃ = Σn_j²/N, Kish's size-weighted mean
+n_eff = N_op / DEFF
 ```
 
 `m̄` is the mean mentions per cluster for that brand and `ICC` the intra-cluster correlation, estimated from the data. This is Kish's design effect and the effective sample size it implies ([design effect](https://en.wikipedia.org/wiki/Design_effect)). `m̄` is a cluster size and has nothing to do with the prior strength `m` in §1.
 
 **Decision, marked as ours rather than cited:** compute `DEFF` twice — clustering by thread and clustering by author — and carry the larger of the two, so the gate is set by whichever dependence structure is worse for that brand.
 
-> **The separate eligibility gate is `n_eff ≥ n_min` for the category's frozen tier:** Deep `≥ 600`, Standard `≥ 400`, Thin `≥ 200`. Raw `n` is never the gate. Both numbers are published on every brand page, and both appear in the downloadable counts.
+> **Amended 2026-08-05, during the first build.** Two corrections, both recorded in
+[HANDOFF.md](HANDOFF.md) and frozen in `methodology_params`:
+
+1. **`n_eff` divides `N_op`, not `n`.** `n_min = z²·0.25/h²` is the sample size needed to
+   estimate a *proportion* to half-width `h`, and that proportion's denominator is the
+   opinionated count. §1 already says `n` is "never a denominator"; dividing it here
+   contradicted that and would publish a ±4pp claim on roughly a third of the evidence the
+   claim names.
+2. **`m̃` replaces `m̄`.** For unequal cluster sizes the plain mean understates the design
+   effect, and ours are violently unequal — one thread can carry seventy mentions while
+   most carry one. `m̃ ≥ m̄` always, so the error runs toward refusing to publish.
+
+**The separate eligibility gate is `n_eff ≥ n_min` for the category's frozen tier:** Deep `≥ 600`, Standard `≥ 400`, Thin `≥ 200`. Raw `n` is never the gate. Both numbers are published on every brand page, and both appear in the downloadable counts.
 
 **Worked check** (Standard tier; ICC = 0.08, illustrative — the real value is measured in Phase 0; arithmetic computed for this spec):
 

@@ -242,9 +242,19 @@ Every observation keys on its **Reddit fullname** (`t1_xxxx` for comments, `t3_x
 
 Post listings are cheap; comment trees are expensive. Only fetch a tree when the thread earns it:
 
+> ⚠️ **MEASURED CORRECTION, 2026-08-05.** `num_comments` is an actively HARMFUL ranking
+> key. Measured live during the first harvest: a 1,232-comment r/sales thread returned
+> **2** brand-bearing comments; a 34-comment r/CRM thread returned **12**. Big threads are
+> general chatter. It is kept as a floor (>= 3) and given a deliberately weak `log1p` weight;
+> the ranking is otherwise driven by brand and category density in the title. Recall comes
+> from query DIVERSITY, not pagination depth — Reddit search truncates around 250 results
+> per (sub, query, sort) however deep you page, and `sort=relevance` against `sort=top`
+> overlap only 12-53%, so both run on every query.
+
+
 | Rule | Threshold |
 |---|---|
-| Not archived | Reddit locks comments after ~6 months on many subs |
+| ~~Not archived~~ **Archived is recorded, not filtered on** | ⚠️ Corrected 2026-08-05. Reddit's archiving blocks *writes*, not reads. Filtering archived threads out discards everything older than about six months, which is the entire historical corpus Lane D exists to reach. The flag is stored and used to set delete-sync cadence, nothing more |
 | Comment count | ≥ 3 |
 | Substance | Skip short `selftext` unless comment count is high. A one-line post with 40 comments is a good discussion; one with 3 is noise |
 | Brand-bearing | At least one alias candidate in the title, body, or any Lane B comment already seen from that thread |

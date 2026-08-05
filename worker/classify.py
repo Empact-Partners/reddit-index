@@ -152,8 +152,12 @@ def main():
     ap.add_argument("--category", action="append")
     ap.add_argument("--all", action="store_true")
     ap.add_argument("--batch", type=int, default=12)
-    ap.add_argument("--workers", type=int, default=2,
-                    help="More than a couple of concurrent headless claude sessions return rc=1.")
+    ap.add_argument("--workers", type=int, default=3,
+                    help="Six concurrent headless claude sessions return rc=1; three is safe.")
+    ap.add_argument("--max-mentions", type=int, default=0,
+                    help="Cap the CLASSIFIED corpus. Selection is by thread, in qualification "
+                         "order, so a thread is either wholly in or wholly out — never a "
+                         "per-brand sample, which would make n and the score disagree.")
     args = ap.parse_args()
 
     import csv
@@ -182,6 +186,29 @@ def main():
                 "marked": mark_target(m.get("body") or "", m["matched_form"],
                                       m.get("char_offset", 0)),
             })
+
+        if args.max_mentions and len(items) > args.max_mentions:
+            # Whole threads, in the order the harvester ranked them, until the
+            # budget is spent. A thread is wholly in or wholly out — never a
+            # per-brand sample, which would leave `n` counting mentions nobody
+            # ever labelled and make the published count disagree with the score.
+            per_thread = defaultdict(list)
+            for m in mentions:
+                per_thread[m.get("thread_id")].append(m)
+            kept_ids, taken = set(), 0
+            for tid, group in per_thread.items():
+                if taken + len(group) > args.max_mentions and taken > 0:
+                    continue
+                for m in group:
+                    kept_ids.add(f"{m['doc_id']}:{m['brand_slug']}")
+                taken += len(group)
+                if taken >= args.max_mentions:
+                    break
+            before = len(items)
+            items = [it for it in items if it["item_id"] in kept_ids]
+            mentions = [m for m in mentions if f"{m['doc_id']}:{m['brand_slug']}" in kept_ids]
+            print(f"  corpus cap: {before} -> {len(items)} mentions over "
+                  f"{len({m.get('thread_id') for m in mentions})} whole threads", flush=True)
 
         batches = [items[i:i + args.batch] for i in range(0, len(items), args.batch)]
         print(f"{slug}: {len(items)} (document x brand) pairs in {len(batches)} batches", flush=True)

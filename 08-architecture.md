@@ -252,7 +252,7 @@ Live state, verified 2026-08-04 against the Vercel and GitHub APIs.
 | Git link | `Empact-Partners/reddit-index`, production branch `main` |
 | Vercel GitHub App | Installed on the `Empact-Partners` org |
 | Deploy hooks | None created |
-| Deployments to date | **0** |
+| Deployments to date | **5, all ERROR** — the repo had no `package.json`. The next successful build is a public launch on the apex, so it ships `noindex` behind one constant in `lib/site-stage.ts` |
 
 **Zero deployments is the correct state, not a failure.** The repository holds documentation and data, no application code, so there is nothing to build. The first deployment happens when the first commit under an app directory lands on `main`.
 

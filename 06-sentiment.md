@@ -52,6 +52,16 @@ Read that table carefully. SiEBERT's 93.2% is binary on review text; TweetEval's
 
 ---
 
+> **Amended 2026-08-05, during the first build.** The cascade below is not what runs.
+> Its whole economic argument is a per-million API bill, and this build uses no metered
+> API at all — classification runs through `claude -p` on the Claude Max subscription,
+> locally. Its stage 1 also needs an encoder trained on a 1,000–1,500 item gold set that
+> does not exist, while this document says to build the gold set first — which is
+> circular, because a gold set is adjudicated *from* labels. Running everything through
+> the model breaks the circle: this pass produces the labels a gold set would be
+> adjudicated from. The cascade stays specified here for the day volume justifies it.
+> Recorded in [HANDOFF.md](HANDOFF.md) and frozen as `sentiment_engine`.
+
 ## 3. The recommended cascade
 
 | # | Stage | What it does | What it hands on |
