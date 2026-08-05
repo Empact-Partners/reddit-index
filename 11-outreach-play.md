@@ -8,7 +8,7 @@
 - Recommended motion: **positive-led public ranking, negative diagnosis delivered privately and free.** The public site leads with most loved; the low-sentiment finding is what the email offers to explain in private.
 - Badges are a **distribution and AI-citation play, not a link-building play**. Google requires widget and badge links to be `nofollow` or `sponsored` ([Google spam policies](https://developers.google.com/search/docs/essentials/spam-policies)).
 - **No template in this file carries a literal figure.** Every number is a merge field. A fabricated statistic inside a cold email about somebody's reputation is the worst possible place to be caught with one.
-- ⚠️ **The threshold squeeze is real:** at `n_eff ≥ 400` plus four independence floors, only category head brands qualify to be ranked, and those are largely not Empact retainer buyers. §6 proposes a two-tier site. That proposal is untested and it has a cost, priced there.
+- ⚠️ **The threshold squeeze is real:** at `n_eff ≥ n_min` (600, 400 or 200 by category tier) plus four independence floors, only category head brands qualify to be ranked, and those are largely not Empact retainer buyers. §6 proposes a two-tier site. That proposal is untested and it has a cost, priced there.
 
 ---
 
@@ -86,7 +86,7 @@ Vlad
 Empact Partners (we build and operate Reddit Index)
 ```
 
-Brand pages live at `/brand/{slug}` and category pages at `/category/{slug}` per [00-concept.md](00-concept.md). A brand page is global rather than per-category, so a category-nested link would point at a URL the site does not serve.
+Company pages live at `/{company}/` and category pages at `/{category}/` — one flat namespace, per [decisions/0007](decisions/0007-flat-url-namespace.md). A company page is global rather than per-category, so a category-nested link would point at a URL the site does not serve.
 
 Note the disclosure in the signature. Empact operates the index openly per [00-concept.md](00-concept.md), so the email says so rather than letting the prospect find out later.
 
@@ -126,7 +126,7 @@ This list is also the page-generation list. §6 explains why nothing outside it 
 
 ## 6. ⚠️ The threshold squeeze
 
-[07-index-methodology.md](07-index-methodology.md) gates eligibility on **`n_eff ≥ 400`**, where `n_eff = n / DEFF` and `DEFF = 1 + (m̄ − 1)·ICC`. Reddit mentions cluster inside mega-recommendation threads and by author, so raw `n` overstates the information in a sample and the naive 384 → 400 derivation is insufficient on its own.
+[07-index-methodology.md](07-index-methodology.md) gates eligibility on **`n_eff ≥ n_min`**, where `n_eff = n / DEFF`, `DEFF = 1 + (m̄ − 1)·ICC`, and `n_min` is 600, 400 or 200 depending on the category's published precision target ([decisions/0009](decisions/0009-category-scaled-thresholds.md)). Reddit mentions cluster inside mega-recommendation threads and by author, so raw `n` overstates the information in a sample and the naive 384 → 400 derivation is insufficient on its own.
 
 Four independence floors sit on top: distinct authors ≥ 50, distinct subreddits ≥ 5, max share from any single thread ≤ 20% of `n`, and max share from any single author ≤ 5% of `n`. Distinct threads is published evidence, not a floor. Together they are what stops a coordinated push from producing a ranking.
 
@@ -136,7 +136,7 @@ It also means only category head brands qualify. Head brands are Salesforce-clas
 
 **Do not resolve this by lowering the threshold.** A weakened cutoff produces rankings that a rated company can trivially discredit, which destroys the PR and AI-citation asset that is the actual moat.
 
-**Proposed resolution — inference, not sourced, and untested.** Run a two-tier site. Tier 1 is **Ranked** at `n_eff ≥ 400` with published position, badges, and PR value. Tier 2 is **Profiled** below threshold: a brand page with mentions and a clearly labeled "not enough data to rank" state, no position, no most-hated placement.
+**Proposed resolution — inference, not sourced, and untested.** Run a two-tier site. Tier 1 is **Ranked** at `n_eff ≥ n_min` with published position, badges, and PR value. Tier 2 is **Profiled** below threshold: a brand page with mentions and a clearly labeled "not enough data to rank" state, no position, no most-hated placement.
 
 Outreach pipeline comes from Tier 2, where Empact ICP actually lives and where no ranking claim has been published at all. Tier 1 carries credibility, press, and citations. The badge revenue and the retainer revenue come from different tiers by design.
 
@@ -190,7 +190,7 @@ The clock starts when the site ships, not at project start. Phase 0 runs 3–5 w
 | Lagging | Closed retainers | ≥2 | No verified close-rate benchmark — first-party baseline |
 | Lagging | Takedown or legal demands | 0 | — |
 
-**Where ≥150 comes from.** The only anchor is the Phase 0 gate: ≥10 brands clearing `n_eff ≥ 400` in Password Managers, the richest of the 12 categories assessed in [04-subreddit-mapping.md](04-subreddit-mapping.md). Of those 12, six are 🟢 rich, four are 🟡 partial (top-3 only, or one segment), and two are 🔴 unrankable.
+**Where ≥150 comes from.** The only anchor is the Phase 0 gate: ≥10 brands clearing `n_eff ≥ n_min` in CRM, which carries the widest margin of the 20 categories measured in [04-subreddit-mapping.md](04-subreddit-mapping.md) at 17 scorable subreddits. All 20 clear the 5-subreddit floor, but clearing it is not the same as being rankable — per-brand eligibility has never been measured.
 
 Hold that ratio across 50 categories: roughly 25 rich, 17 partial, 8 unrankable. Rich categories will average well under the richest one's 10 — call it 5 — and partial categories publish about 3. That gives 25×5 + 17×3 ≈ 175, with a ceiling near 300 only if every rich category matched Password Managers.
 

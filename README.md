@@ -49,7 +49,7 @@ Two risks are priced and accepted rather than avoided — the Reddit-containing 
 | Corpus, ~1,000 subreddits | 200-400M items · **50-150 GB** compressed (0.5-1.5 TB raw JSON) | 🟡 Extrapolated |
 | Infrastructure, Phase 1 | **~$74/month** (~$301/month at full scale) | 🟡 Vendor list prices |
 | Sentiment cascade | ~$31-53 per 1M comments with a Haiku stage 2 · ~$3-6 with a nano-class stage 2 | 🟡 Calculated |
-| Minimum mentions to rank | **n_eff ≥ 400**, after the design-effect correction | 🟢 Derived |
+| Minimum mentions to rank | **`n_eff ≥ n_min`** after the design-effect correction — 600, 400 or 200 by category tier | 🟢 Derived |
 | High-ambiguity brand names | **35 of 113 (31%)** | 🟢 Classified |
 | Capterra categories | 1,000 rendered, truncated mid-W | 🟢 Scraped |
 | G2 categories | 2,237 enumerable | 🟢 Scraped |
@@ -58,7 +58,7 @@ Two risks are priced and accepted rather than avoided — the Reddit-containing 
 | Subreddits hostile to brand talk | **54 of 156 (35%)** | 🟢 Read from their own rules |
 | Scorable: generalist and non-hostile | **62 of 156 (40%)** | 🟢 Derived |
 | Brand-bearing volume left on scorable subs | **9%** | 🟢 Measured live |
-| Categories reaching the 5-subreddit floor | **12 of 20** | 🟢 Measured live |
+| Categories reaching the 5-subreddit floor | **20 of 20** (5 to 17 scorable subs each) | 🟢 Measured live |
 | Candidate slots → unique subreddits | **254 → 156** (~39% ingest saving) | 🟢 Measured |
 | Live adjacent competitors | **2**, both per-brand audits | 🟢 Fetched live |
 
@@ -87,8 +87,8 @@ The gate is therefore `n_eff = n / DEFF ≥ n_min`, where `DEFF = 1 + (m̄ − 1
 | "Upvoted comments should count more" | ❌ **Wrong.** Reddit fuzzes vote counts, and one seeded upvote inflated scores 25% via herding. |
 | "This space is crowded" | 🟡 **Half right.** Monitoring is crowded and private. The per-brand audit lane now has live entrants. No public cross-brand Reddit-derived software leaderboard exists. |
 | "Nobody else is building anything like this" | ❌ **Wrong.** [redditbrands.com](https://redditbrands.com/) (registered 2026-06-07) grades one brand at a time A-to-F with a four-engine AI probe and PDF export. [whatredditthinks.com](https://whatredditthinks.com/) (2026-05-25) publishes per-question consensus pages. Both live 2026-08-04. See [00-concept.md](00-concept.md). |
-| "Reddit doesn't have enough discussion for most categories" | ❌ **Wrong.** The candidate lists were short, not Reddit. Widening them with generalist practitioner subs moved the categories clearing the 5-subreddit floor from 4 of 20 to **12 of 20**, under the same rule. The 8 that still fail are killed by hostility: Note-taking has **11 hostile of 17 candidates**. See [14-category-tests.md](14-category-tests.md). |
-| "A product's own subreddit is the best source" | ❌ **Wrong for a ranking.** Only generalist subs score. Vendor subs hold **76%** of measured brand-bearing volume and are excluded anyway, because a big home subreddit would buy rank against a competitor that has none — community size, not sentiment. They stay usable as evidence on a brand's own page. |
+| "Reddit doesn't have enough discussion for most categories" | ❌ **Wrong.** The candidate lists were short, not Reddit. Widening them with generalist practitioner subs, then again by subreddit discovery, moved the categories clearing the 5-subreddit floor from 4 of 20 to **12 of 20**, under the same rule. The 8 that still fail are killed by hostility: Note-taking has **11 hostile of 17 candidates**. See [14-category-tests.md](14-category-tests.md). |
+| "A product's own subreddit is the best source" | ❌ **Wrong for a ranking.** Only generalist subs score. Vendor subs hold **50%** of measured brand-bearing volume and are excluded anyway, because a big home subreddit would buy rank against a competitor that has none — community size, not sentiment. They stay usable as evidence on a brand's own page. |
 | "The one Reddit-native player is gone, so the field is clear" | 🟡 **Half right.** GummySearch did shut down on 2025-11-30 ([gummysearch.com](https://gummysearch.com/)), but two adjacent properties launched inside the following seven months. The seat is open, not open indefinitely. |
 
 ---

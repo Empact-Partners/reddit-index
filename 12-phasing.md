@@ -4,7 +4,7 @@
 
 - Four phases, each with a written entry gate and a kill test, so Reddit Index can be stopped for the price of the phase it dies in rather than the price of the whole build.
 - **Only generalist subreddits score.** Any subreddit named for a vendor or product is excluded from every ranking. The reason is cross-brand comparability, not sentiment ([the scoring rule](#the-scoring-rule-generalist-subreddits-only)).
-- **That rule is expensive and the cost is stated up front:** generalist subs carry **9%** of measured brand-bearing volume. The 56 vendor subs carry the other 76%, hostile subs the rest.
+- **That rule is expensive and the cost is stated up front:** generalist subs retain **32%** of measured brand-bearing volume. The 50 vendor subs carry **50%** and rule-hostile subs the remaining **17%**.
 - **Phase 0 is one category: CRM.** 23 candidates, **16 scorable generalist subreddits**, **0.85 brand-bearing comments/hour** — the highest live yield of any floor-passing category, measured 2026-08-05. It publishes nothing.
 - **Phase 1 is the first public spend.** Twenty categories are probed and **12 clear the five-scorable-subreddit floor**, up from 4 before the candidate lists were widened. The binding constraint was always the lists, never Reddit's opinion volume and never the exclusion rule.
 - **Widening is proven work, not an open risk.** One widening pass added 24 candidate subreddits across the study, 18 of them usable; CRM alone went from 6 scorable subs to 16.
@@ -24,7 +24,7 @@ Formally, a subreddit is scorable when its status is `ok`, its rule posture is n
 
 **The reason is not fan bias.** Sentiment was never measured in this study, so no directional claim about vendor subs is supportable in either direction. r/paypal is plausibly a support-seeking population; r/ObsidianMD is plausibly an enthusiast one. Neither was tested.
 
-**The cost is real and is not to be softened.** Vendor subs carry **76%** of all measured brand-bearing volume; generalist subs retain **9%**. The excluded data is the densest measured, not the weakest. It is excluded because it is not comparable, not because it is poor.
+**The cost is real and is not to be softened.** Vendor subs carry **50%** of all measured brand-bearing volume and rule-hostile subs a further **17%**; generalist subs retain **32%**. The excluded data is the densest measured, not the weakest. It is excluded because it is not comparable, not because it is poor.
 
 Vendor subs stay usable as **evidence** on a brand's own page, and for tracking one brand against its own baseline over time. They never enter a ranking.
 
@@ -87,7 +87,7 @@ Across the whole study the same pass added 24 subreddits: 18 scorable, 6 hostile
 Sixteen scorable subs against a floor of five means the category survives its two open classification calls rather than dying on either:
 
 - **r/CRM's rule posture came back `unknown`** — the rules endpoint returned nothing parseable. Read those rules by hand before ingest. It is the densest scorable sub in the set at 12%, so losing it costs yield, not the floor.
-- **r/revops is also `unknown`.** Seven of the 62 scorable subs carry an unknown posture and six more are `capped`; all thirteen need a manual read before ingest.
+- **r/revops is also `unknown`.** Across the full measured set, 28 subreddits carry an unknown rule posture — **22 of them currently counted scorable** — and 11 more are `capped`. All of them need a manual read before ingest ([HANDOFF.md](HANDOFF.md) item 3).
 
 ### Why CRM and not Password Managers
 
@@ -117,10 +117,10 @@ All five must pass. Any single failure stops the project.
 | # | Test | Threshold | Source |
 |---|---|---|---|
 | G1 | Mention-level entity precision on held-out | **≥0.97** point estimate, interval reported | [entity resolution](05-entity-resolution.md) |
-| G2 | Brands clearing **`n_eff ≥ 400`**, where `n_eff = n / DEFF` and `DEFF = 1 + (m̄ − 1)·ICC` | **≥10 brands** | [index methodology](07-index-methodology.md) |
+| G2 | Brands clearing **`n_eff ≥ n_min`**, where `n_eff = n / DEFF` and `DEFF = 1 + (m̄ − 1)·ICC`. CRM is a **Deep** category, so `n_min` = 600 | **≥10 brands** | [index methodology](07-index-methodology.md) |
 | G3 | All four diversity floors hold: distinct authors ≥50, distinct subreddits ≥5, max single-thread share ≤20% of `n`, max single-author share ≤5% of `n` | all four, per ranked brand | [index methodology](07-index-methodology.md) |
 | G4 | Leave-one-subreddit-out rank stability | top 10 does not reorder beyond ties | [index methodology](07-index-methodology.md) |
-| G5 | Human concordance: 3 practitioners blind-rank the top 10 before seeing output, Spearman ρ vs the computed Love Index | **ρ ≥ 0.6** | threshold set here, not derived from the corpus |
+| G5 | Human concordance: 3 practitioners blind-rank the top 10 before seeing output, Spearman ρ vs the computed Reddit Love Score | **ρ ≥ 0.6** | threshold set here, not derived from the corpus |
 
 G2 gates on the **design-effect-corrected** count, not the raw one. Reddit mentions cluster inside a few mega-threads and within threads by author, so raw `n` overstates independent information. Both `n` and `n_eff` publish on every brand page, with intervals from a cluster bootstrap resampled by thread and by author.
 
@@ -128,7 +128,7 @@ G1's threshold is a point estimate, not a tight one. On a 500-item held-out set 
 
 G5 is the question the whole phase exists to answer. The ≥0.97 precision / 0.80–0.88 recall figure carried through the research is **inference, never measured on this data**.
 
-G2 is now the tighter risk on CRM, not G3. Sixteen subs leave the `distinct subreddits ≥5` clause easy to satisfy, but generalist-only retains 9% of the volume, so whether ten brands reach `n_eff ≥ 400` is genuinely open. **That is inference from the retention share, not a measured result** — nothing in this study counted mentions per brand.
+G2 is now the tighter risk on CRM, not G3. Seventeen scorable subs leave the `distinct subreddits ≥5` clause easy to satisfy, but generalist-only retains 32% of measured brand-bearing volume, and CRM is a **Deep** category so its gate is `n_eff ≥ 600` rather than 400 ([decisions/0009](decisions/0009-category-scaled-thresholds.md)). Whether ten brands reach it is genuinely open. **That is inference from the retention share, not a measured result** — nothing in this study counted mentions per brand.
 
 ### Phase 0 kill criteria
 
@@ -206,7 +206,7 @@ Two items, each with its own gate, both before anything goes live.
 
 > **Gate:** all 50 carry a resolved candidate list with rule posture and vendor status read live, and the 15 `unknown` rule postures are resolved by hand.
 
-**Dedupe before scheduling.** Ingest is per-subreddit, not per-category. The **254 candidate slots** across the 20 measured categories collapse to **156 unique subreddits**, and r/startups alone serves 9 categories — skip the dedupe and ~39% of calls re-fetch the same comment streams.
+**Dedupe before scheduling.** Ingest is per-subreddit, not per-category. The **347 candidate slots** across the 20 measured categories collapse to **232 unique subreddits**, and r/startups alone serves 9 categories — skip the dedupe and ~39% of calls re-fetch the same comment streams.
 
 ### Phase 1 ship checklist
 

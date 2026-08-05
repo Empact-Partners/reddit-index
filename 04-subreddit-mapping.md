@@ -8,9 +8,9 @@ How a category becomes a list of subreddits worth scoring — the one binding ex
 
 - **Only generalist subreddits score a brand.** Any subreddit named for, or dedicated to, a specific vendor or product is excluded from scoring outright. `scorable` = status ok **and** posture not hostile **and** not a vendor sub. That rule reproduces all 156 rows of the measurements CSV with zero exceptions.
 - **The reason is cross-brand comparability, not bias.** A brand with a large active home subreddit would outscore a competitor with a small one or none. Rank would then partly measure community size — the same confound the index already rejects for raw mention counts.
-- **254 candidate slots resolve to 156 unique subreddits.** 56 are vendor subs, 54 are hostile to brand talk, and **62 are scorable generalist subs**.
-- **12 of 20 tested categories clear the 5-subreddit floor.** Before the candidate lists were widened, only 4 did. The binding constraint was always the lists — never Reddit's opinion volume, never the exclusion rule.
-- **Generalist-only retains 9% of measured brand-bearing volume.** That is a deliberate and expensive choice. The excluded data is the densest measured, not the weakest.
+- **347 candidate slots resolve to 232 unique subreddits.** 50 are vendor subs, 56 are hostile to brand talk, and **125 are scorable generalist subs**.
+- **All 20 tested categories clear the 5-subreddit floor**, carrying 5 to 17 scorable subs each. Before the candidate lists were widened, only 4 did. The binding constraint was always the lists — never Reddit's opinion volume, never the exclusion rule.
+- **Generalist-only retains 32% of measured brand-bearing volume**, giving up 50% to vendor subs and 17% to rule-hostile ones. That is a deliberate and expensive choice. The excluded data is the densest measured, not the weakest.
 - ⚠️ **No category may be declared dead from this evidence.** This is a floor instrument. At the 95% upper bound all 20 clear the mention threshold ([14-category-tests.md](14-category-tests.md) §4).
 
 ## Where the numbers live
@@ -38,7 +38,7 @@ A subreddit named for or dedicated to one vendor or product is excluded from sco
 
 ### The cost, stated honestly
 
-Vendor subs hold **76%** of all brand-bearing comments-per-hour measured across the 156 subreddits. Generalist-only keeps **9%**. The densest rows in the file are the excluded ones: r/Odoo 51% brand-bearing, r/paypal 50%, r/SAP 49%, r/Wix 49%, r/hubspot 48%, r/Slack 48%. r/ObsidianMD alone produces 13.2 brand-bearing comments per hour.
+Vendor subs hold **50%** of all brand-bearing comments-per-hour measured across the 232 subreddits, and rule-hostile subs a further **17%**. Generalist-only keeps **32%**. The densest rows in the file are the excluded ones: r/Odoo 51% brand-bearing, r/paypal 50%, r/SAP 49%, r/Wix 49%, r/hubspot 48%, r/Slack 48%, r/OneNote 44%.
 
 Never present the exclusion as free, and never call the excluded data low quality. It is high quality and structurally unusable for ranking.
 
@@ -65,47 +65,52 @@ The two exclusions overlap less than expected: 17 subs are both vendor and hosti
 
 ## Widening the candidate list is the method, not a fallback
 
-This is the step that decides categories. Before the lists were widened with generalist practitioner subs, only **4 of 20** categories cleared the floor. After widening, **12 of 20** clear it — with the exclusion rule made *stricter*, not looser.
+This is the step that decides categories. Before the lists were widened with generalist practitioner subs, only **4 of 20** categories cleared the floor. After two rounds of widening — the second driven by subreddit *discovery* rather than by hand — **20 of 20** clear it, with the exclusion rule made *stricter*, not looser.
 
-**CRM demonstrates the whole mechanism.** Of its 23 candidates, the 11 carried over from the earlier map yield **4** scorable subs. The 12 generalist practitioner subs added in the re-run yield **12** — every single one scorable. CRM finishes at **16 scorable generalist subs**, the most of any category, on 0.85 brand-bearing comments per hour, which is why it is emphatically the Phase 0 subject.
+**CRM demonstrates the whole mechanism.** Its candidate list grew to 26 across two widening rounds, and it finishes at **17 scorable generalist subs** — the most of any category, on 0.96 brand-bearing comments per hour. That is why it is emphatically the Phase 0 subject. CRM is a **Deep** category, so its eligibility gate is `n_eff ≥ 600`.
 
 The added subs were r/msp, r/consulting, r/startups, r/agency, r/RealEstateTechnology, r/InsuranceAgent, r/smallbusinessuk, r/B2BSaaS, r/salesdevelopment, r/SalesOperations, r/revops and r/PPC. None is obvious from the category name. All are places a buyer actually asks.
 
-**Small focused practitioner subs beat large ones.** r/revops (6,593 subscribers, 0.36 comments/hour) measured **5% brand-bearing**. r/startups (2,107,067 subscribers, 16.76 comments/hour) measured **0%** on the same instrument. Enumerate by buyer job function, not by subscriber count.
+**Small focused practitioner subs beat large ones.** r/revops (6,593 subscribers) measured **5% brand-bearing**. r/startups (2,107,067 subscribers) measured **0%** on the same instrument. Enumerate by buyer job function, not by subscriber count.
 
-### Categories clearing the floor (12 of 20)
+### All 20 categories clear the floor
 
-| Category | Scorable | Candidates | Hostile | Vendor |
-|---|---:|---:|---:|---:|
-| CRM | 16 | 23 | 3 | 4 |
-| Project Management | 10 | 18 | 6 | 5 |
-| Applicant Tracking and Recruiting | 8 | 11 | 3 | 0 |
-| Marketing Automation | 7 | 14 | 4 | 2 |
-| Password Managers and Security | 7 | 15 | 4 | 4 |
-| ERP | 7 | 13 | 4 | 4 |
-| HR and HRIS | 6 | 10 | 4 | 0 |
-| Email Marketing | 6 | 14 | 5 | 4 |
-| Cloud Hosting and Infrastructure | 6 | 12 | 2 | 4 |
-| Backup and Storage | 6 | 9 | 1 | 2 |
-| Help Desk and Customer Support | 5 | 10 | 2 | 3 |
-| Team Collaboration and Chat | 5 | 8 | 3 | 2 |
+Every measured category carries at least 5 scorable generalist subreddits, from 5 (Payroll) to
+17 (CRM). Generated from [data/category-tests-20.csv](data/category-tests-20.csv), sorted by
+scorable count.
 
-### Still below the floor (8 of 20)
+| Category | Scorable | Candidates | Hostile | Vendor | Tier | `n_min` |
+|---|---:|---:|---:|---:|---|---:|
+| CRM | 17 | 26 | 5 | 4 | Deep | 600 |
+| Design and Prototyping | 16 | 26 | 7 | 3 | Deep | 600 |
+| Cloud Hosting and Infrastructure | 15 | 18 | 3 | 0 | Standard | 400 |
+| Business Intelligence and Analytics | 14 | 18 | 1 | 3 | Deep | 600 |
+| Marketing Automation | 13 | 22 | 6 | 2 | Deep | 600 |
+| Team Collaboration and Chat | 12 | 18 | 4 | 2 | Deep | 600 |
+| Project Management | 11 | 20 | 4 | 5 | Standard | 400 |
+| Password Managers and Security | 10 | 19 | 5 | 4 | Deep | 600 |
+| Video Editing | 10 | 23 | 9 | 4 | Deep | 600 |
+| Applicant Tracking and Recruiting | 8 | 11 | 3 | 0 | Thin | 200 |
+| Backup and Storage | 8 | 12 | 1 | 3 | Standard | 400 |
+| Email Marketing | 8 | 17 | 6 | 3 | Thin | 200 |
+| Accounting | 7 | 16 | 7 | 2 | Standard | 400 |
+| ERP | 7 | 13 | 2 | 4 | Thin | 200 |
+| Note-taking and Knowledge Management | 7 | 21 | 8 | 6 | Standard | 400 |
+| HR and HRIS | 6 | 10 | 4 | 0 | Standard | 400 |
+| Help Desk and Customer Support | 6 | 11 | 2 | 3 | Thin | 200 |
+| Payment Processing | 6 | 16 | 6 | 4 | Deep | 600 |
+| eCommerce Platforms | 6 | 19 | 8 | 5 | Thin | 200 |
+| Payroll | 5 | 11 | 6 | 0 | Thin | 200 |
 
-| Category | Scorable | Candidates | Hostile | Vendor |
-|---|---:|---:|---:|---:|
-| Note-taking and Knowledge Management | 4 | 17 | 11 | 6 |
-| Design and Prototyping | 4 | 12 | 6 | 4 |
-| Business Intelligence and Analytics | 4 | 9 | 1 | 4 |
-| Payroll | 4 | 10 | 6 | 0 |
-| Accounting | 3 | 11 | 6 | 2 |
-| Video Editing | 3 | 14 | 7 | 5 |
-| eCommerce Platforms | 3 | 13 | 7 | 5 |
-| Payment Processing | 3 | 11 | 6 | 3 |
+The **tier** is the category's eligibility threshold, set from a published precision target
+rather than picked: Deep ±4pp → `n_min` 600, Standard ±5pp → 400, Thin ±7pp → 200
+([decisions/0009](decisions/0009-category-scaled-thresholds.md)). Tiers are **provisional** —
+they derive from category-level comment flow, not per-brand counts, and Phase 0 must confirm
+them from real `n_eff`.
 
-**Business Intelligence moved from passing to failing.** It had been carried by vendor subs — r/PowerBI, r/tableau, r/SQL and r/MicrosoftFabric are all four of its exclusions, and only one of its 9 candidates is hostile. Its pass was a classification artefact.
-
-**Hostility now dominates the remaining failures.** Note-taking has 11 hostile of 17 candidates; Video Editing 7 of 14; eCommerce Platforms 7 of 13; Accounting, Payroll, Payment Processing and Design 6 each. Widening helps less where the generalist subs themselves delete brand talk — but Payroll shows the ceiling is not reached: zero vendor exclusions and still only 4 scorable.
+Clearing the 5-subreddit floor is **not** the same as being rankable. Per-brand eligibility
+still runs on `n_eff ≥ n_min` plus the four diversity floors, and no brand-level ingest has
+been run.
 
 ## Traps, verified live
 
@@ -121,7 +126,7 @@ The added subs were r/msp, r/consulting, r/startups, r/agency, r/RealEstateTechn
 
 ## Map per category, ingest per subreddit
 
-The 20 tested categories request **254 candidate slots** that resolve to **156 unique subreddits**. **36 subs serve more than one category**, so deduplicating before scheduling saves 39% of calls.
+The 20 tested categories request **347 candidate slots** that resolve to **232 unique subreddits**. **49 subs serve more than one category** and r/startups serves 9, so deduplicating before scheduling saves 33% of calls.
 
 | Subreddit | Categories served |
 |---|---:|

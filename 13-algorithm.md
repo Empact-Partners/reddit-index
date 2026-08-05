@@ -8,7 +8,7 @@ How Reddit Index gets from "a category" to "a ranked board", concretely enough t
 
 - **The comment stream is the unlock.** `/r/{sub}/comments` returns the newest 100 comments in a subreddit regardless of which thread they sit in, with `link_title` attached. It is the only API surface that finds brand opinion in threads whose titles name no brand — which is most of them.
 - **Archives are the census, the API is the edge.** Historical coverage comes from per-subreddit dumps. The API maintains the last few days. Search is never a census.
-- **Only generalist subreddits score.** Any vendor-named or vendor-dedicated sub is evidence, never a score. That costs 91% of measured brand-bearing volume and is paid deliberately, for cross-brand comparability. **62 of 156** measured subs qualify; **12 of 20** categories clear the 5-subreddit floor ([14-category-tests.md](14-category-tests.md)). Cap each category at 8, chosen by measured yield per call, never by subscriber count.
+- **Only generalist subreddits score.** Any vendor-named or vendor-dedicated sub is evidence, never a score. Vendor subs carry 50% of measured brand-bearing volume and hostile subs a further 17%, so 32% is retained — paid deliberately, for cross-brand comparability. **125 of 232** measured subs qualify; **all 20** categories clear the 5-subreddit floor ([14-category-tests.md](14-category-tests.md)). Cap each category at 8, chosen by measured yield per call, never by subscriber count.
 - **Everything expensive runs last.** Local alias matching is nearly free and cuts the corpus by orders of magnitude before entity resolution or any LLM sees a single comment.
 - **Four discovery lanes, not one.** Archives are the census; the multireddit comment stream is the live edge; an external search index reaches comment text Reddit's own API cannot search; Reddit-native search and tree expansion fill the gaps.
 - **Continuous ingest, daily publish.** The site is never more than 24 hours stale. Roughly **180 API calls per category per day**, ~9,000/day for 50 categories, under 2 hours of wall clock.
@@ -54,7 +54,7 @@ Resolve every candidate with `/r/{sub}/about` and `/r/{sub}/about/rules`. **Neve
 
 ### Widening the candidate list — required before any category is judged
 
-Widening the lists changed the study's headline. **12 of 20 categories now clear the 5-subreddit floor**, against 4 under the narrower lists this probe replaced (those superseded lists are not in the shipped data). The binding constraint was never Reddit's opinion volume, and never the exclusion rule. It was the candidate lists.
+Widening the lists changed the study's headline. **All 20 categories now clear the 5-subreddit floor**, against 4 under the narrowest lists this probe replaced (those superseded lists are not in the shipped data). The binding constraint was never Reddit's opinion volume, and never the exclusion rule. It was the candidate lists.
 
 Measured in the shipped data: the widening probe added **24 subreddits, 18 of them scorable**. CRM alone gained **10 candidates, all 10 scorable**, taking it from 6 scoring subs to **16** — emphatically the Phase 0 subject, at 0.85 brand-bearing comments/hour live.
 
@@ -338,7 +338,7 @@ Steady state, per category, **per day**, 8 subreddits:
 
 **50 categories ≈ 9,000 calls/day.** At 80 req/min that is **under 2 hours** of wall clock, parallelisable and interruptible at any point. It fits comfortably inside a single free-tier app-only client's budget of ~115,000 calls/day.
 
-Subreddits overlap heavily between categories — r/sysadmin serves Help Desk, Security, Backup and Collaboration — so **dedupe the ingest set before scheduling**. The 254 candidate slots across the 20 tested categories collapse to 156 unique ingest targets ([14-category-tests.md](14-category-tests.md)).
+Subreddits overlap heavily between categories — r/sysadmin serves Help Desk, Security, Backup and Collaboration — so **dedupe the ingest set before scheduling**. The 347 candidate slots across the 20 tested categories collapse to 232 unique ingest targets ([14-category-tests.md](14-category-tests.md)).
 
 Archive backfill is a separate one-time cost, dominated by download and local scan rather than API calls. **Not yet measured** — its byte count and the machine's scan rate both need benchmarking before anyone quotes a duration.
 
