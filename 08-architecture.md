@@ -323,7 +323,7 @@ The continuous-ingest, daily-publish cycle from [13-algorithm.md](13-algorithm.m
 
 At 50 categories the daily pass is roughly 9,000 Reddit API calls, under two hours of wall clock at 80 req/min ([13-algorithm.md](13-algorithm.md) §8). That is why 03:00 UTC works as a start time, and why a run that dies at 04:30 is restarted rather than rescued.
 
-Ingest is per-subreddit, not per-category. **Deduplicate the ingest set before scheduling** or ~29% of calls re-fetch streams another category already pulled — r/Entrepreneur alone appears in 7 of the 20 tested categories ([14-category-tests.md](14-category-tests.md) §7).
+Ingest is per-subreddit, not per-category. **Deduplicate the ingest set before scheduling** or ~39% of calls re-fetch streams another category already pulled — r/startups alone appears in 9 of the 20 tested categories ([14-category-tests.md](14-category-tests.md) §7).
 
 Every stage writes its artifact before it writes its ledger row, keyed `(stage, subreddit, ym, code_version)`. On start a stage lists existing keys and skips them, so a job that dies at hour 9 resumes at hour 9 and the worst case is one lost sub-month shard.
 

@@ -1,21 +1,21 @@
-category,candidates,ok,hostile,single_product,scorable,live_bb_per_hour,live_bb_per_hour_ub95,seed_bb_3y,seed_bb_3y_ub95,meets_5_sub_floor
-CRM,11,11,3,3,5,2.02,4.39,53006,115393,True
-Project Management,11,11,6,5,3,0.29,1.09,7726,28736,False
-Accounting,10,10,6,2,2,0.01,0.83,367,21751,False
-HR and HRIS,8,8,4,0,4,0.21,6.35,5439,166956,False
-Email Marketing,10,10,5,3,3,0.4,0.84,10538,22061,False
-Marketing Automation,9,8,4,2,2,0.0,0.24,0,6433,False
-Password Managers and Security,11,11,3,4,4,0.57,4.32,15111,113608,False
-Note-taking and Knowledge Management,10,10,7,6,1,0.03,0.04,735,1135,False
-Design and Prototyping,10,10,6,3,2,0.99,3.21,26017,84266,False
-Video Editing,9,9,4,5,1,0.27,0.5,7016,13163,False
-Help Desk and Customer Support,10,10,2,2,6,0.3,4.52,7831,118844,True
-ERP,9,9,4,4,3,0.1,0.24,2733,6438,False
-Business Intelligence and Analytics,9,9,1,2,6,1.11,2.4,29144,62988,True
-eCommerce Platforms,10,10,6,4,2,0.3,0.76,7831,20057,False
-Applicant Tracking and Recruiting,7,7,3,0,4,0.0,8.29,0,217968,False
-Payroll,7,7,5,0,2,0.07,0.92,1787,24307,False
-Cloud Hosting and Infrastructure,10,10,2,1,7,0.24,6.17,6254,162105,True
+category,candidates,ok,hostile,vendor_subs,scorable,live_bb_per_hour,live_bb_per_hour_ub95,seed_bb_3y,seed_bb_3y_ub95,meets_5_sub_floor
+CRM,23,23,3,4,16,0.85,4.44,22259,116689,True
+Project Management,18,18,6,5,10,0.29,7.54,7726,198037,True
+Accounting,11,11,6,2,3,0.01,0.99,367,26056,False
+HR and HRIS,10,10,4,0,6,0.21,7.02,5439,184474,True
+Email Marketing,14,14,5,4,6,0.1,1.09,2706,28659,True
+Marketing Automation,14,13,4,2,7,0.08,1.05,2128,27645,True
+Password Managers and Security,15,15,4,4,7,0.57,6.33,15111,166360,True
+Note-taking and Knowledge Management,17,17,11,6,4,0.03,2.21,735,58058,False
+Design and Prototyping,12,12,6,4,4,1.08,4.37,28356,114903,False
+Video Editing,14,14,7,5,3,0.34,1.68,8882,44026,False
+Help Desk and Customer Support,10,10,2,3,5,0.0,3.89,0,102168,True
+ERP,13,13,4,4,7,0.1,4.12,2733,108299,True
+Business Intelligence and Analytics,9,9,1,4,4,0.84,1.86,22075,48777,False
+eCommerce Platforms,13,13,7,5,3,0.0,0.76,0,20049,False
+Applicant Tracking and Recruiting,11,11,3,0,8,0.14,9.5,3652,249729,True
+Payroll,10,10,6,0,4,0.07,2.29,1787,60210,False
+Cloud Hosting and Infrastructure,12,12,2,4,6,0.14,6.45,3652,169573,True
 Team Collaboration and Chat,8,8,3,2,5,0.14,4.41,3652,115875,True
 Backup and Storage,9,9,1,2,6,0.54,6.83,14191,179474,True
-Payment Processing,9,9,6,2,2,0.3,0.64,7936,16845,False
+Payment Processing,11,11,6,3,3,0.0,0.64,105,16837,False

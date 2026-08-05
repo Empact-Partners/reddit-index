@@ -112,7 +112,7 @@ Steady state, per category, per day, across 8 scoring subreddits:
 
 Rate limit is **100 queries per minute per OAuth client id**, averaged over a ten-minute window, per the [Data API Wiki](https://support.reddithelp.com/hc/en-us/articles/16160319875092-Reddit-Data-API-Wiki). Run at ≤80 QPM, which is ~115,000 calls/day. 9,000/day is about **8% of one app-only client's budget**. The limit is per client_id, not per user, so extra accounts do not multiply it.
 
-⚠️ Ingest is per-subreddit, not per-category. **Dedupe the ingest set before scheduling** or the overlap is paid twice: 187 candidate slots across the 20 tested categories collapse to 132 unique subreddits, and r/Entrepreneur alone serves 7 of them ([14-category-tests.md](14-category-tests.md) §7).
+⚠️ Ingest is per-subreddit, not per-category. **Dedupe the ingest set before scheduling** or the overlap is paid twice: 254 candidate slots across the 20 tested categories collapse to 156 unique subreddits, and r/startups alone serves 9 of them ([14-category-tests.md](14-category-tests.md) §7).
 
 At the commercial rate of **$0.24 per 1,000 calls** ([TechTarget](https://www.techtarget.com/whatis/feature/Reddit-pricing-API-charge-explained)), 9,000/day is ~270K/month ≈ **$65/mo**. A larger 1,000-sub corpus at 11-20K calls/day is **$79-144/mo**. Do not plan against the $0 line; tier entitlement is unresolved.
 

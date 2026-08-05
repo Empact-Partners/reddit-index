@@ -1,61 +1,496 @@
 [
- {"category":"CRM","brands":["HubSpot","Salesforce","Pipedrive","Zoho","Attio"],
-  "subreddits":["CRM","sales","salesforce","techsales","hubspot","gohighlevel","Zoho","smallbusiness","Entrepreneur","EntrepreneurRideAlong","SaaS"]},
-
- {"category":"Project Management","brands":["Asana","ClickUp","Notion","Jira","Monday"],
-  "subreddits":["projectmanagement","pmp","agile","scrum","jira","clickup","trello","Asana","Notion","productivity","ExperiencedDevs"]},
-
- {"category":"Accounting","brands":["QuickBooks","Xero","NetSuite","FreshBooks","Sage"],
-  "subreddits":["Accounting","QuickBooks","Bookkeeping","tax","CPA","smallbusiness","Netsuite","ERP","Entrepreneur","FinancialCareers"]},
-
- {"category":"HR and HRIS","brands":["Workday","BambooHR","Gusto","Rippling","Deel"],
-  "subreddits":["humanresources","AskHR","recruiting","Payroll","smallbusiness","Entrepreneur","ExperiencedDevs","antiwork"]},
-
- {"category":"Email Marketing","brands":["Klaviyo","Mailchimp","ActiveCampaign","Beehiiv","ConvertKit"],
-  "subreddits":["Emailmarketing","ecommerce","shopify","DigitalMarketing","marketing","copywriting","MailChimp","Klaviyo","SaaS","Substack"]},
-
- {"category":"Marketing Automation","brands":["HubSpot","Marketo","ActiveCampaign","Braze","Customerio"],
-  "subreddits":["marketing","DigitalMarketing","PPC","SEO","hubspot","gohighlevel","SaaS","bigseo","B2BForSales"]},
-
- {"category":"Password Managers and Security","brands":["Bitwarden","1Password","LastPass","Dashlane","Proton Pass"],
-  "subreddits":["PasswordManagers","Bitwarden","1Password","ProtonPass","KeePass","privacy","cybersecurity","netsec","sysadmin","selfhosted","ITManagers"]},
-
- {"category":"Note-taking and Knowledge Management","brands":["Notion","Obsidian","Evernote","OneNote","Logseq"],
-  "subreddits":["NoteTaking","Notion","ObsidianMD","PKMS","OneNote","Evernote","logseq","Zettelkasten","Anytype","productivity"]},
-
- {"category":"Design and Prototyping","brands":["Figma","Sketch","Canva","Adobe XD","Framer"],
-  "subreddits":["FigmaDesign","UXDesign","UI_Design","userexperience","graphic_design","web_design","webdev","canva","webflow","Adobe"]},
-
- {"category":"Video Editing","brands":["DaVinci Resolve","Premiere","Final Cut","CapCut","Descript"],
-  "subreddits":["VideoEditing","editors","davinciresolve","premiere","finalcutpro","AfterEffects","videography","NewTubers","CapCut"]},
-
- {"category":"Help Desk and Customer Support","brands":["Zendesk","Freshdesk","Intercom","Help Scout","ServiceNow"],
-  "subreddits":["sysadmin","msp","ITManagers","CustomerSuccess","CustomerService","servicenow","helpdesk","Zendesk","SaaS","shopify"]},
-
- {"category":"ERP","brands":["NetSuite","SAP","Odoo","Dynamics","Acumatica"],
-  "subreddits":["ERP","Netsuite","SAP","Odoo","Dynamics365","supplychain","manufacturing","BusinessIntelligence","Accounting"]},
-
- {"category":"Business Intelligence and Analytics","brands":["Tableau","Power BI","Looker","Metabase","Qlik"],
-  "subreddits":["BusinessIntelligence","dataengineering","datascience","analytics","PowerBI","tableau","SQL","dataanalysis","MicrosoftFabric"]},
-
- {"category":"eCommerce Platforms","brands":["Shopify","WooCommerce","BigCommerce","Squarespace","Wix"],
-  "subreddits":["ecommerce","shopify","woocommerce","BigCommerce","squarespace","Wix","dropship","FulfillmentByAmazon","smallbusiness","Entrepreneur"]},
-
- {"category":"Applicant Tracking and Recruiting","brands":["Greenhouse","Lever","Workable","Ashby","Workday"],
-  "subreddits":["recruiting","humanresources","AskHR","recruitinghell","cscareerquestions","talentacquisition","Entrepreneur"]},
-
- {"category":"Payroll","brands":["Gusto","ADP","Paychex","Rippling","Deel"],
-  "subreddits":["Payroll","Accounting","humanresources","smallbusiness","Bookkeeping","Entrepreneur","tax"]},
-
- {"category":"Cloud Hosting and Infrastructure","brands":["Vercel","Netlify","Heroku","DigitalOcean","Railway"],
-  "subreddits":["webdev","devops","selfhosted","aws","nextjs","reactjs","sysadmin","homelab","kubernetes","node"]},
-
- {"category":"Team Collaboration and Chat","brands":["Slack","Microsoft Teams","Discord","Zoom","Confluence"],
-  "subreddits":["sysadmin","ITManagers","msp","productivity","remotework","ExperiencedDevs","Slack","MicrosoftTeams"]},
-
- {"category":"Backup and Storage","brands":["Backblaze","Dropbox","Google Drive","Synology","Veeam"],
-  "subreddits":["DataHoarder","selfhosted","sysadmin","homelab","backblaze","synology","msp","ITManagers","NAS"]},
-
- {"category":"Payment Processing","brands":["Stripe","PayPal","Square","Adyen","Braintree"],
-  "subreddits":["stripe","smallbusiness","Entrepreneur","ecommerce","shopify","SaaS","webdev","paypal","Payments"]}
+ {
+  "category": "CRM",
+  "brands": [
+   "HubSpot",
+   "Salesforce",
+   "Pipedrive",
+   "Zoho",
+   "Attio"
+  ],
+  "subreddits": [
+   "CRM",
+   "sales",
+   "salesforce",
+   "techsales",
+   "hubspot",
+   "gohighlevel",
+   "Zoho",
+   "smallbusiness",
+   "Entrepreneur",
+   "EntrepreneurRideAlong",
+   "SaaS",
+   "msp",
+   "consulting",
+   "startups",
+   "agency",
+   "RealEstateTechnology",
+   "InsuranceAgent",
+   "smallbusinessuk",
+   "B2BSaaS",
+   "salesdevelopment",
+   "SalesOperations",
+   "revops",
+   "PPC"
+  ]
+ },
+ {
+  "category": "Project Management",
+  "brands": [
+   "Asana",
+   "ClickUp",
+   "Notion",
+   "Jira",
+   "Monday"
+  ],
+  "subreddits": [
+   "projectmanagement",
+   "pmp",
+   "agile",
+   "scrum",
+   "jira",
+   "clickup",
+   "trello",
+   "Asana",
+   "Notion",
+   "productivity",
+   "ExperiencedDevs",
+   "startups",
+   "consulting",
+   "agency",
+   "cscareerquestions",
+   "ITManagers",
+   "sysadmin",
+   "msp"
+  ]
+ },
+ {
+  "category": "Accounting",
+  "brands": [
+   "QuickBooks",
+   "Xero",
+   "NetSuite",
+   "FreshBooks",
+   "Sage"
+  ],
+  "subreddits": [
+   "Accounting",
+   "QuickBooks",
+   "Bookkeeping",
+   "tax",
+   "CPA",
+   "smallbusiness",
+   "Netsuite",
+   "ERP",
+   "Entrepreneur",
+   "FinancialCareers",
+   "consulting"
+  ]
+ },
+ {
+  "category": "HR and HRIS",
+  "brands": [
+   "Workday",
+   "BambooHR",
+   "Gusto",
+   "Rippling",
+   "Deel"
+  ],
+  "subreddits": [
+   "humanresources",
+   "AskHR",
+   "recruiting",
+   "Payroll",
+   "smallbusiness",
+   "Entrepreneur",
+   "ExperiencedDevs",
+   "antiwork",
+   "consulting",
+   "startups"
+  ]
+ },
+ {
+  "category": "Email Marketing",
+  "brands": [
+   "Klaviyo",
+   "Mailchimp",
+   "ActiveCampaign",
+   "Beehiiv",
+   "ConvertKit"
+  ],
+  "subreddits": [
+   "Emailmarketing",
+   "ecommerce",
+   "shopify",
+   "DigitalMarketing",
+   "marketing",
+   "copywriting",
+   "MailChimp",
+   "Klaviyo",
+   "SaaS",
+   "Substack",
+   "PPC",
+   "agency",
+   "B2BSaaS",
+   "startups"
+  ]
+ },
+ {
+  "category": "Marketing Automation",
+  "brands": [
+   "HubSpot",
+   "Marketo",
+   "ActiveCampaign",
+   "Braze",
+   "Customerio"
+  ],
+  "subreddits": [
+   "marketing",
+   "DigitalMarketing",
+   "PPC",
+   "SEO",
+   "hubspot",
+   "gohighlevel",
+   "SaaS",
+   "bigseo",
+   "B2BForSales",
+   "agency",
+   "B2BSaaS",
+   "RevOps",
+   "SalesOperations",
+   "startups"
+  ]
+ },
+ {
+  "category": "Password Managers and Security",
+  "brands": [
+   "Bitwarden",
+   "1Password",
+   "LastPass",
+   "Dashlane",
+   "Proton Pass"
+  ],
+  "subreddits": [
+   "PasswordManagers",
+   "Bitwarden",
+   "1Password",
+   "ProtonPass",
+   "KeePass",
+   "privacy",
+   "cybersecurity",
+   "netsec",
+   "sysadmin",
+   "selfhosted",
+   "ITManagers",
+   "msp",
+   "homelab",
+   "AskNetsec",
+   "techsupport"
+  ]
+ },
+ {
+  "category": "Note-taking and Knowledge Management",
+  "brands": [
+   "Notion",
+   "Obsidian",
+   "Evernote",
+   "OneNote",
+   "Logseq"
+  ],
+  "subreddits": [
+   "NoteTaking",
+   "Notion",
+   "ObsidianMD",
+   "PKMS",
+   "OneNote",
+   "Evernote",
+   "logseq",
+   "Zettelkasten",
+   "Anytype",
+   "productivity",
+   "students",
+   "GradSchool",
+   "writing",
+   "selfhosted",
+   "DigitalMinimalism",
+   "academia",
+   "ADHD"
+  ]
+ },
+ {
+  "category": "Design and Prototyping",
+  "brands": [
+   "Figma",
+   "Sketch",
+   "Canva",
+   "Adobe XD",
+   "Framer"
+  ],
+  "subreddits": [
+   "FigmaDesign",
+   "UXDesign",
+   "UI_Design",
+   "userexperience",
+   "graphic_design",
+   "web_design",
+   "webdev",
+   "canva",
+   "webflow",
+   "Adobe",
+   "Frontend",
+   "forhire"
+  ]
+ },
+ {
+  "category": "Video Editing",
+  "brands": [
+   "DaVinci Resolve",
+   "Premiere",
+   "Final Cut",
+   "CapCut",
+   "Descript"
+  ],
+  "subreddits": [
+   "VideoEditing",
+   "editors",
+   "davinciresolve",
+   "premiere",
+   "finalcutpro",
+   "AfterEffects",
+   "videography",
+   "NewTubers",
+   "CapCut",
+   "filmmakers",
+   "youtubers",
+   "smallbusiness",
+   "freelance",
+   "editing"
+  ]
+ },
+ {
+  "category": "Help Desk and Customer Support",
+  "brands": [
+   "Zendesk",
+   "Freshdesk",
+   "Intercom",
+   "Help Scout",
+   "ServiceNow"
+  ],
+  "subreddits": [
+   "sysadmin",
+   "msp",
+   "ITManagers",
+   "CustomerSuccess",
+   "CustomerService",
+   "servicenow",
+   "helpdesk",
+   "Zendesk",
+   "SaaS",
+   "shopify"
+  ]
+ },
+ {
+  "category": "ERP",
+  "brands": [
+   "NetSuite",
+   "SAP",
+   "Odoo",
+   "Dynamics",
+   "Acumatica"
+  ],
+  "subreddits": [
+   "ERP",
+   "Netsuite",
+   "SAP",
+   "Odoo",
+   "Dynamics365",
+   "supplychain",
+   "manufacturing",
+   "BusinessIntelligence",
+   "Accounting",
+   "consulting",
+   "ITManagers",
+   "sysadmin",
+   "msp"
+  ]
+ },
+ {
+  "category": "Business Intelligence and Analytics",
+  "brands": [
+   "Tableau",
+   "Power BI",
+   "Looker",
+   "Metabase",
+   "Qlik"
+  ],
+  "subreddits": [
+   "BusinessIntelligence",
+   "dataengineering",
+   "datascience",
+   "analytics",
+   "PowerBI",
+   "tableau",
+   "SQL",
+   "dataanalysis",
+   "MicrosoftFabric"
+  ]
+ },
+ {
+  "category": "eCommerce Platforms",
+  "brands": [
+   "Shopify",
+   "WooCommerce",
+   "BigCommerce",
+   "Squarespace",
+   "Wix"
+  ],
+  "subreddits": [
+   "ecommerce",
+   "shopify",
+   "woocommerce",
+   "BigCommerce",
+   "squarespace",
+   "Wix",
+   "dropship",
+   "FulfillmentByAmazon",
+   "smallbusiness",
+   "Entrepreneur",
+   "agency",
+   "webdev",
+   "startups"
+  ]
+ },
+ {
+  "category": "Applicant Tracking and Recruiting",
+  "brands": [
+   "Greenhouse",
+   "Lever",
+   "Workable",
+   "Ashby",
+   "Workday"
+  ],
+  "subreddits": [
+   "recruiting",
+   "humanresources",
+   "AskHR",
+   "recruitinghell",
+   "cscareerquestions",
+   "talentacquisition",
+   "Entrepreneur",
+   "ExperiencedDevs",
+   "startups",
+   "consulting",
+   "agency"
+  ]
+ },
+ {
+  "category": "Payroll",
+  "brands": [
+   "Gusto",
+   "ADP",
+   "Paychex",
+   "Rippling",
+   "Deel"
+  ],
+  "subreddits": [
+   "Payroll",
+   "Accounting",
+   "humanresources",
+   "smallbusiness",
+   "Bookkeeping",
+   "Entrepreneur",
+   "tax",
+   "AskHR",
+   "recruiting",
+   "consulting"
+  ]
+ },
+ {
+  "category": "Cloud Hosting and Infrastructure",
+  "brands": [
+   "Vercel",
+   "Netlify",
+   "Heroku",
+   "DigitalOcean",
+   "Railway"
+  ],
+  "subreddits": [
+   "webdev",
+   "devops",
+   "selfhosted",
+   "aws",
+   "nextjs",
+   "reactjs",
+   "sysadmin",
+   "homelab",
+   "kubernetes",
+   "node",
+   "ExperiencedDevs",
+   "startups"
+  ]
+ },
+ {
+  "category": "Team Collaboration and Chat",
+  "brands": [
+   "Slack",
+   "Microsoft Teams",
+   "Discord",
+   "Zoom",
+   "Confluence"
+  ],
+  "subreddits": [
+   "sysadmin",
+   "ITManagers",
+   "msp",
+   "productivity",
+   "remotework",
+   "ExperiencedDevs",
+   "Slack",
+   "MicrosoftTeams"
+  ]
+ },
+ {
+  "category": "Backup and Storage",
+  "brands": [
+   "Backblaze",
+   "Dropbox",
+   "Google Drive",
+   "Synology",
+   "Veeam"
+  ],
+  "subreddits": [
+   "DataHoarder",
+   "selfhosted",
+   "sysadmin",
+   "homelab",
+   "backblaze",
+   "synology",
+   "msp",
+   "ITManagers",
+   "NAS"
+  ]
+ },
+ {
+  "category": "Payment Processing",
+  "brands": [
+   "Stripe",
+   "PayPal",
+   "Square",
+   "Adyen",
+   "Braintree"
+  ],
+  "subreddits": [
+   "stripe",
+   "smallbusiness",
+   "Entrepreneur",
+   "ecommerce",
+   "shopify",
+   "SaaS",
+   "webdev",
+   "paypal",
+   "Payments",
+   "startups",
+   "agency"
+  ]
+ }
 ]

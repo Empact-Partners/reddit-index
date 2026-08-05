@@ -8,13 +8,13 @@ Pick a category. See the two columns. Click a brand and read the actual comments
 
 Built and operated by **Empact Partners**. Next.js on Vercel, Supabase for data.
 
-**Last verified: 2026-08-04** · 12 research lanes, primary sources, live measurement
+**Last verified: 2026-08-05** · 12 research lanes, primary sources, live measurement
 
 > ⚠️ **Nothing is built yet.** This repo is the specification: how it works, how it is scored, and what it costs.
 
 ---
 
-## ⚡ Bottom line
+## Bottom line
 
 **Nobody owns this.** No live property ranks software brands by Reddit sentiment as a public leaderboard. GummySearch, the Reddit-native category leader, shut down 2025-11-30. The adjacent per-brand-audit seat is taken — [redditbrands.com](https://redditbrands.com/) and [whatredditthinks.com](https://whatredditthinks.com/) are both live — but the cross-brand board is open.
 
@@ -22,7 +22,9 @@ Built and operated by **Empact Partners**. Next.js on Vercel, Supabase for data.
 
 **The one number that reshapes the build: Reddit's API reaches roughly 3 to 8 days of history**, not years. So the API is a maintenance tool, and history comes from archive dumps. Everything downstream follows from that.
 
-**What is unproven is trust, not feasibility.** Whether the ranking matches what a knowledgeable person would say about a category is exactly what [Phase 0](12-phasing.md) tests, on one category, before anything ships.
+**Only generalist subreddits score a brand.** Any subreddit named for a vendor or a product is out, r/salesforce and r/shopify included. That is **56 of the 156** subreddits measured and **76%** of the brand-bearing volume, given up so that two brands in a category are ranked on the same ground.
+
+**What is unproven is trust, not feasibility.** Whether the ranking matches what a knowledgeable person would say is exactly what [Phase 0](12-phasing.md) tests, on **CRM**: 16 scorable generalist subreddits out of 23 candidates, the widest margin of any category measured.
 
 Two risks are priced and accepted rather than avoided — the Reddit-containing name and displaying full comment text. Both are recorded with their clause citations in [01-legal.md](01-legal.md) and [decisions/](decisions/). If a UDRP ever lands it costs the domain, not the pipeline or the index.
 
@@ -32,7 +34,7 @@ Two risks are priced and accepted rather than avoided — the Reddit-containing 
 
 1. **The API cannot backfill.** Every Reddit listing hard-caps at ~1,000 items. Measured live: `/r/SaaS/new` exhausted at 995 items, then `after=None`. Against r/SaaS's measured posting rate that is 3 to 8 days. History has to come from archive dumps.
 2. **Reddit search indexes posts, not comment bodies.** Brand opinion lives in comments, so per-brand search is a discovery tool, never a census. You must ingest whole subreddits and match locally.
-3. **Signal does not track subscriber count.** r/PasswordManagers (54,640) beats r/marketing (1,958,693), because r/marketing's rules delete exactly that content — ~2 surviving posts a day against r/SaaS's 122-350.
+3. **Signal does not track subscriber count.** r/PasswordManagers (54,640 subscribers) runs **42%** brand-bearing comments. r/marketing (1,958,693) runs **0%**, because its rules delete exactly that content. Same story in CRM: r/CRM (55,275) at 12%, r/startups (2,107,067) at 0%.
 4. **31% of software brands share a name with a common English word.** Notion, Slack, Monday, Linear, Stripe, Craft, Front, Ramp, Make, Segment, Loom. This is the hardest engineering problem in the project.
 5. **The corpus is smaller than intuition.** ~1,000 subreddits is 200-400M items: 0.5-1.5 TB as raw JSON, **50-150 GB** once stored as zstd-compressed Parquet. One machine, about $74/month.
 
@@ -51,11 +53,16 @@ Two risks are priced and accepted rather than avoided — the Reddit-containing 
 | High-ambiguity brand names | **35 of 113 (31%)** | 🟢 Classified |
 | Capterra categories | 1,000 rendered, truncated mid-W | 🟢 Scraped |
 | G2 categories | 2,237 enumerable | 🟢 Scraped |
-| Subreddits hostile to brand talk | **48 of 131 (36.6%)** | 🟢 Read from their own rules |
-| Single-product communities (unscoreable) | **48 of 132 (36%)** | 🟢 Classified |
-| Categories reaching the 5-subreddit floor | **6 of 20** | 🟢 Measured live |
-| Candidate slots → unique subreddits | **187 → 132** (~29% ingest saving) | 🟢 Measured |
+| Unique subreddits measured | **156** | 🟢 Measured live |
+| Vendor subreddits, excluded from scoring | **56 of 156 (36%)** | 🟢 Classified |
+| Subreddits hostile to brand talk | **54 of 156 (35%)** | 🟢 Read from their own rules |
+| Scorable: generalist and non-hostile | **62 of 156 (40%)** | 🟢 Derived |
+| Brand-bearing volume left on scorable subs | **9%** | 🟢 Measured live |
+| Categories reaching the 5-subreddit floor | **12 of 20** | 🟢 Measured live |
+| Candidate slots → unique subreddits | **254 → 156** (~39% ingest saving) | 🟢 Measured |
 | Live adjacent competitors | **2**, both per-brand audits | 🟢 Fetched live |
+
+**On the generalist-only rule.** Vendor subreddits are the densest data measured, and they are excluded anyway. A brand with a large home subreddit would otherwise out-rank a competitor with a small one or none, so the table would partly measure community size. The price is 91% of the brand-bearing volume, and it is not free ([14-category-tests.md](14-category-tests.md)).
 
 **On reachable history.** r/SaaS was measured twice on 2026-08-04 by two methods: **122 posts/day** from the span of the last 100 posts in `/new`, and **~350/day** extrapolated from the 10 newest. The second runs high because the newest posts have not yet cleared moderation removal. Quote the range, never "8 days" as a fact ([02-data-acquisition.md](02-data-acquisition.md)).
 
@@ -80,8 +87,8 @@ The gate is therefore `n_eff = n / DEFF ≥ 400`, where `DEFF = 1 + (m̄ − 1)�
 | "Upvoted comments should count more" | ❌ **Wrong.** Reddit fuzzes vote counts, and one seeded upvote inflated scores 25% via herding. |
 | "This space is crowded" | 🟡 **Half right.** Monitoring is crowded and private. The per-brand audit lane now has live entrants. No public cross-brand Reddit-derived software leaderboard exists. |
 | "Nobody else is building anything like this" | ❌ **Wrong.** [redditbrands.com](https://redditbrands.com/) (registered 2026-06-07) grades one brand at a time A-to-F with a four-engine AI probe and PDF export. [whatredditthinks.com](https://whatredditthinks.com/) (2026-05-25) publishes per-question consensus pages. Both live 2026-08-04. See [00-concept.md](00-concept.md). |
-| "We just need enough Reddit discussion" | 🟡 **Half right.** Volume is not the binding constraint — subreddit COUNT is. Only 6 of 20 categories reach the 5-scorable-subreddit floor, because hostile and single-product communities eat the candidate lists. See [14-category-tests.md](14-category-tests.md). |
-| "A product's own subreddit is the best source" | ❌ **Wrong.** It is the densest and the least usable. r/Bitwarden measured 37% brand-bearing, r/paypal 50% — and every one is disqualified, because a product's subreddit is people who already chose it. |
+| "Reddit doesn't have enough discussion for most categories" | ❌ **Wrong.** The candidate lists were short, not Reddit. Widening them with generalist practitioner subs moved the categories clearing the 5-subreddit floor from 4 of 20 to **12 of 20**, under the same rule. The 8 that still fail are killed by hostility: Note-taking has **11 hostile of 17 candidates**. See [14-category-tests.md](14-category-tests.md). |
+| "A product's own subreddit is the best source" | ❌ **Wrong for a ranking.** Only generalist subs score. Vendor subs hold **76%** of measured brand-bearing volume and are excluded anyway, because a big home subreddit would buy rank against a competitor that has none — community size, not sentiment. They stay usable as evidence on a brand's own page. |
 | "The one Reddit-native player is gone, so the field is clear" | 🟡 **Half right.** GummySearch did shut down on 2025-11-30 ([gummysearch.com](https://gummysearch.com/)), but two adjacent properties launched inside the following seven months. The seat is open, not open indefinitely. |
 
 ---
@@ -118,7 +125,7 @@ Empact Partners operates it openly. The footer reads "Created by Empact Partners
 | [06-sentiment.md](06-sentiment.md) | Targeted ABSA, the cascade, validation protocol |
 | **[07-index-methodology.md](07-index-methodology.md)** | The formulas. What a hostile CMO attacks first. |
 | [08-architecture.md](08-architecture.md) | Next.js on Vercel, Supabase, schema, daily refresh, cost table |
-| **[14-category-tests.md](14-category-tests.md)** | **20 categories measured live.** 132 subreddits, what the data says and what it cannot say |
+| **[14-category-tests.md](14-category-tests.md)** | **20 categories measured live.** 156 subreddits, the generalist-only rule, what the data says and what it cannot say |
 | [09-design.md](09-design.md) | Empact brand applied — Syne, Public Sans, the palette |
 | [10-seo-aeo.md](10-seo-aeo.md) | Indexation, schema, AI citation, what gets it killed |
 | [11-outreach-play.md](11-outreach-play.md) | The GTM motion and the email angles, ranked |
@@ -135,10 +142,12 @@ All CSV, one click each. Click the file, then **Download raw file**.
 
 | File | Rows | What's in it |
 |---|---:|---|
-| **[phase1-categories.csv](data/phase1-categories.csv)** | 50 | **The Phase 1 spine.** Start here. |
-| **[subreddit-map.csv](data/subreddit-map.csv)** | 131 | Category → subreddit, with rule posture |
+| **[subreddit-measurements.csv](data/subreddit-measurements.csv)** | 156 | **Every subreddit measured**, with `is_vendor_sub` and `scorable`. Start here. |
+| **[category-tests-20.csv](data/category-tests-20.csv)** | 20 | Per category: candidates, hostile, vendor, scorable, floor verdict |
+| [phase1-categories.csv](data/phase1-categories.csv) | 50 | The Phase 1 spine |
+| [subreddit-map.csv](data/subreddit-map.csv) | 131 | The earlier category → subreddit map, superseded for scoring |
 | [brand-gazetteer-seed.csv](data/brand-gazetteer-seed.csv) | 113 | Seed brands with ambiguity classification |
-| [domain-availability.csv](data/domain-availability.csv) | 87 | The sweep behind the name, plus the live competitors |
+| [domain-availability.csv](data/domain-availability.csv) | 120 | The sweep behind the name, plus the live competitors |
 
 Column reference and regeneration: **[data/README.md](data/README.md)**
 
@@ -168,6 +177,8 @@ Column reference and regeneration: **[data/README.md](data/README.md)**
 ## Limits
 
 **42 of the 50 Phase 1 categories have no subreddit mapping.** Eight Phase 1 rows are mapped. Separately, 20 categories were probed live ([14-category-tests.md](14-category-tests.md)) — only 8 of those labels join the Phase 1 taxonomy exactly, and **no crosswalk ships yet**. The rest is real work.
+
+**A failed floor is not a dead category.** Eight of the 20 fall short of five scorable generalist subreddits. That is a statement about the candidate list, not about Reddit — widening the lists once already flipped categories that had failed. This is a floor instrument. It cannot declare a category empty.
 
 **No gold set exists and no pipeline has been run.** Every accuracy figure — precision ≥0.97, recall 0.80-0.88, the sentiment cascade cost — is a target derived from published benchmarks, not a measurement of our own system.
 
