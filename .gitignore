@@ -11,3 +11,18 @@ __pycache__/
 
 # OS
 .DS_Store
+
+# Next.js
+/.next/
+/out/
+node_modules/
+next-env.d.ts
+*.tsbuildinfo
+.vercel
+
+# discovery cache — resumable, regenerable, not source
+data/.discover-cache/
+worker/.cache/
+
+.env.local
+.env*.local

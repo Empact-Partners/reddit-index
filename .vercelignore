@@ -1,0 +1,8 @@
+worker/
+supabase/
+data/
+decisions/
+scripts/gates/__selftest__.mjs
+tests/
+*.md
+.codex_*

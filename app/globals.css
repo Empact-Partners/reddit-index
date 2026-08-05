@@ -1,0 +1,336 @@
+@import "tailwindcss";
+@import "./_generated/category-colors.css";
+
+/* 16-design-system.md: "There is no dark mode." One ground, one set of contrast
+   measurements, one thing to verify. No @custom-variant dark, no .dark block,
+   and no animation library — 09-design.md bans entrance animation outright. */
+
+@layer base {
+  :root {
+    /* ── Empact base — exact brand values, never altered (15-empact-brand.md) ── */
+    --sherpa-blue:  #02454F;
+    --lucky-green:  #40C890;
+    --virtual-goal: #C6FF53;
+    --sugar-grape:  #A155FF;
+    --space-black:  #171616;
+    --snowbelt:     #EEF1ED;
+
+    /* ── Derived display tints. NOT palette additions. ──────────────────────
+       Lucky Green is 1.87:1 on Snowbelt and Sugar Grape 3.51:1; neither can
+       carry text, so text and icons use the darkened pair instead. */
+    --green-deep:  #267856;  /* 4.72:1 on Snowbelt — loved text and icons  */
+    --grape-deep:  #7940BF;  /* 5.59:1 on Snowbelt — hated text and icons  */
+    --grape-light: #D0AAFF;  /* 5.53:1 on Sherpa   — hated accent on dark  */
+
+    /* ── Semantic ────────────────────────────────────────────────────────────
+       Green and grape stop being brand accents the moment they become the
+       sentiment scale. Neither may be used decoratively anywhere on this site. */
+    --bg:            var(--snowbelt);
+    --fg:            var(--space-black);
+    --structure:     var(--sherpa-blue);
+    --rule:          rgb(2 69 79 / 0.12);
+    --loved-fill:    var(--lucky-green);
+    --loved-ink:     var(--green-deep);
+    --hated-fill:    var(--sugar-grape);
+    --hated-ink:     var(--grape-deep);
+    --focus:         var(--sugar-grape);
+    --focus-on-dark: var(--virtual-goal);
+
+    /* ── Type scale — a DECLARED override of the Empact scale ────────────────
+       Empact tops out at a 68px H1 and bottoms out at a 12px caption. Both are
+       wrong here: a ranking page is dense, and no figure a reader is entitled
+       to check may sit at 12px. Micro carries timestamps, usernames and table
+       metadata only. Desktop values; the mobile step is below. */
+    --fs-display: 61px; --fs-h1: 49px; --fs-h2: 39px; --fs-h3: 31px; --fs-h4: 25px;
+    --fs-lead:    20px; --fs-body: 17px; --fs-small: 15px; --fs-micro: 13px;
+
+    /* ── Spacing, grid, surface (09-design.md) ─────────────────────────────── */
+    --container: 1200px;
+    --gutter: 24px;
+    --section: 96px;
+  }
+
+  @media (max-width: 767px) {
+    :root {
+      --fs-display: 39px; --fs-h1: 31px; --fs-h2: 25px; --fs-h3: 21px;
+      --fs-h4: 19px; --fs-lead: 18px;
+      --gutter: 16px;
+      --section: 56px;
+    }
+  }
+}
+
+@theme {
+  /* The highest-leverage line in this file. Wiping Tailwind's default palette
+     means `bg-orange-500` generates NO CSS at all — Reddit orange becomes
+     unreachable through a utility class, so the trade-dress gate only has to
+     police hand-written CSS. Same for shadows and gradients, which 15-empact
+     -brand.md §8 bans outright ("no gradients, no drop shadows, hard edges"). */
+  --color-*: initial;
+  --radius-*: initial;
+  --shadow-*: initial;
+  --drop-shadow-*: initial;
+  --blur-*: initial;
+  --text-*: initial;
+  --font-*: initial;
+  --animate-*: initial;
+
+  --color-sherpa-blue:  #02454F;
+  --color-lucky-green:  #40C890;
+  --color-virtual-goal: #C6FF53;
+  --color-sugar-grape:  #A155FF;
+  --color-space-black:  #171616;
+  --color-snowbelt:     #EEF1ED;
+  --color-white:        #FFFFFF;
+  --color-green-deep:   #267856;
+  --color-grape-deep:   #7940BF;
+  --color-grape-light:  #D0AAFF;
+  --color-rule:         rgb(2 69 79 / 0.12);
+
+  --radius-card: 6px;
+  --radius-chip: 999px;  /* pills are SENTIMENT ONLY */
+  --radius-tile: 6px;    /* category tiles are squares — this is the separator */
+
+  --spacing: 4px;
+}
+
+@theme inline {
+  /* `inline` is required twice over. next/font declares --font-syne on a CLASS
+     on <html>, not on :root, so a non-inline @theme would emit a self-reference
+     and recurse. And it inlines var(--fs-*) into the utilities, so the mobile
+     media query above actually reaches .text-h1 — @theme cannot hold a media
+     query itself. */
+  --font-syne: var(--font-syne), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-public-sans), ui-sans-serif, system-ui, sans-serif;
+
+  --text-display: var(--fs-display); --text-display--line-height: 1.05;
+  --text-h1:      var(--fs-h1);      --text-h1--line-height: 1.10;
+  --text-h2:      var(--fs-h2);      --text-h2--line-height: 1.15;
+  --text-h3:      var(--fs-h3);      --text-h3--line-height: 1.20;
+  --text-h4:      var(--fs-h4);      --text-h4--line-height: 1.25;
+  --text-lead:    var(--fs-lead);    --text-lead--line-height: 1.55;
+  --text-body:    var(--fs-body);    --text-body--line-height: 1.60;
+  --text-small:   var(--fs-small);   --text-small--line-height: 1.50;
+  --text-micro:   var(--fs-micro);   --text-micro--line-height: 1.40;
+}
+
+@layer base {
+  * { box-sizing: border-box; }
+
+  html {
+    background: var(--bg);
+    color: var(--fg);
+    /* All numerals are tabular. A ranking table whose digits shift width is a
+       ranking table nobody can scan down. */
+    font-variant-numeric: tabular-nums;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    margin: 0;
+    font-family: var(--font-sans);
+    font-size: var(--fs-body);
+    line-height: 1.6;
+  }
+
+  h1, h2, h3, h4 {
+    font-family: var(--font-syne);
+    font-weight: 500;   /* Syne Medium. There is no third face. */
+    margin: 0;
+  }
+
+  a { color: inherit; }
+
+  /* 09-design.md §2.4.7 and 16 §7: never `outline: none`. */
+  :focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+  }
+  .on-dark :focus-visible { outline-color: var(--focus-on-dark); }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+
+  /* The two Empact pattern modules, inherited unchanged (15-empact-brand.md §6).
+     Hard stops, never a blend: "no gradients" is about gradient FILLS, and these
+     are the guide's own seamless modules. The linear module runs behind category
+     headers; the dotted module fills the insufficient-signal state. */
+  .pattern-linear {
+    background-image: repeating-linear-gradient(45deg,
+      var(--rule) 0 1px, transparent 1px 9px);
+  }
+  .pattern-dotted {
+    background-image: radial-gradient(var(--rule) 1.2px, transparent 1.2px);
+    background-size: 10px 10px;
+  }
+
+  .sr-only {
+    position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+    overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0;
+  }
+}
+
+@layer components {
+  .container-site {
+    width: 100%;
+    max-width: var(--container);
+    margin-inline: auto;
+    padding-inline: var(--gutter);
+  }
+}
+
+/* ─────────────────────────────────────────────── data components
+   Each declaration below is a spec requirement, not a stylistic default.
+   scripts/gates/css-rules.mjs re-asserts them against the BUILT css. */
+@layer components {
+
+  /* Score chip — five fields, one line, Small, never truncated, never a
+     tooltip. Pill shape is reserved for sentiment and score surfaces; a
+     category tile is a 6px square, and that shape difference is the whole
+     separation between "identity" and "verdict". */
+  .score-chip {
+    display: inline-block;
+    font-size: var(--fs-small);
+    line-height: 1.5;
+    border-radius: var(--radius-chip);
+    padding: 8px 16px;
+    color: var(--space-black);
+    font-variant-numeric: tabular-nums;
+    max-width: none;
+    overflow: visible;
+    text-overflow: clip;
+    margin: 0;
+  }
+  .score-chip .f { white-space: nowrap; }  /* wraps BETWEEN fields, never inside one */
+  .score-chip b  { font-weight: 600; }
+  .score-chip[data-tone="loved"]   { background: var(--loved-fill); }  /* 8.50:1 */
+  .score-chip[data-tone="hated"]   { background: var(--hated-fill); }  /* 4.52:1 */
+  .score-chip[data-tone="neutral"] { background: transparent; border: 1px solid var(--rule); }
+
+  /* Mention card */
+  .mention-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 32px; }
+  .mention-card {
+    border: 1px solid var(--rule);
+    border-radius: var(--radius-card);
+    padding: 20px;
+    background: transparent;
+  }
+  .mention-attribution {
+    font-size: var(--fs-micro);
+    color: var(--sherpa-blue);
+    margin: 0 0 10px;
+    display: flex; flex-wrap: wrap; align-items: center; gap: 2px;
+  }
+  /* WCAG 2.5.8 inline exception: 24x24 on inline attribution links. 44x44 on a
+     13px inline link is unimplementable; the permalink below carries 2.5.5. */
+  .mention-attribution a {
+    min-height: 24px; display: inline-flex; align-items: center;
+    padding-block: 4px; text-decoration: underline; text-underline-offset: 3px;
+  }
+  .mention-meta {
+    margin: 0 0 12px; display: flex; flex-wrap: wrap; align-items: center; gap: 10px;
+    font-size: var(--fs-micro); color: var(--sherpa-blue);
+  }
+  .sentiment-chip {
+    border-radius: var(--radius-chip);
+    padding: 4px 12px;
+    font-size: var(--fs-small);
+    color: var(--space-black);
+  }
+  .sentiment-chip[data-sentiment="pos"] { background: var(--loved-fill); }
+  .sentiment-chip[data-sentiment="neg"] { background: var(--hated-fill); }
+  .sentiment-chip[data-sentiment="neu"],
+  .sentiment-chip[data-sentiment="abstain"] { background: transparent; border: 1px solid var(--rule); }
+
+  /* Full text. No clamp, no mask, no max-height — all three are explicit. */
+  .mention-body {
+    font-size: var(--fs-body);
+    max-width: 68ch;
+    border-left: 3px solid var(--rule);
+    padding-left: 16px;
+    margin: 0 0 12px;
+    overflow: visible;
+    max-height: none;
+    text-overflow: clip;
+    quotes: "\201C" "\201D";
+  }
+  .mention-body p { margin: 0 0 10px; }
+  .mention-body p:last-child { margin-bottom: 0; }
+  .mention-body p:first-child::before { content: open-quote; }
+  .mention-body p:last-child::after   { content: close-quote; }
+
+  /* WCAG 2.5.5 — the card's largest tap target. */
+  .mention-permalink {
+    display: inline-flex; align-items: center;
+    min-height: 44px; min-width: 44px; padding: 12px 16px;
+    font-size: var(--fs-body);
+    border: 1px solid var(--rule);
+    border-radius: var(--radius-card);
+    text-decoration: underline; text-underline-offset: 3px;
+  }
+
+  /* Category identity. 6px square, never circular, never a pill — decisions/0008.
+     --cat is legal ONLY under these selectors, and the CSS gate enforces it. */
+  .cat-tile {
+    width: 40px; height: 40px;
+    border-radius: var(--radius-tile);
+    background: var(--cat);
+    display: inline-flex; align-items: center; justify-content: center;
+    flex: none;
+  }
+  @media (max-width: 767px) { .cat-tile { width: 32px; height: 32px; } }
+  .cat-chip {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-size: var(--fs-small);
+  }
+  .cat-chip::before {
+    content: ""; width: 12px; height: 12px; flex: none;
+    border-radius: 3px; background: var(--cat);
+  }
+  .cat-header-rule { border-top: 3px solid var(--cat); }
+  .breadcrumb-cat::before {
+    content: ""; display: inline-block; width: 10px; height: 10px;
+    border-radius: 2px; background: var(--cat); margin-right: 6px;
+  }
+  .cat-card-rule { border-top: 3px solid var(--cat); }
+
+  /* Tables are real tables, with a caption and scoped headers. Corners square. */
+  .rank-table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+  .rank-table caption { text-align: left; font-size: var(--fs-small); padding-bottom: 12px; }
+  .rank-table th, .rank-table td {
+    text-align: left; padding: 12px 14px; border-bottom: 1px solid var(--rule);
+    vertical-align: baseline;
+  }
+  .rank-table th { font-weight: 600; font-size: var(--fs-small); }
+  .rank-table td.col-rank  { font-size: var(--fs-micro); width: 1%; white-space: nowrap; }
+  .rank-table td.col-score { font-size: var(--fs-h4); font-family: var(--font-syne); }
+  .rank-table td.col-brand { font-size: var(--fs-body); }
+  /* Below 768px the table scrolls inside its OWN container. The page body never
+     scrolls sideways, and no column is ever dropped — the dropped ones would be
+     the diversity floors, which is the evidence a reader needs most when a
+     claim looks wrong. */
+  .table-scroll { overflow-x: auto; }
+
+  .badge {
+    display: inline-block; border-radius: var(--radius-card);
+    padding: 3px 10px; font-size: var(--fs-small);
+    border: 1px solid var(--rule);
+  }
+  .badge[data-variant="ranked"] { background: var(--loved-fill); color: var(--space-black); border-color: transparent; }
+  .badge[data-variant="tied"]   { background: transparent; }
+  .badge[data-variant="below"]  { background: transparent; }
+
+  /* The insufficient-signal panel uses NO accent hue. A category with no verdict
+     must look different from one with a verdict before a word is read. */
+  .signal-panel {
+    border: 1px solid var(--rule);
+    border-radius: var(--radius-card);
+    padding: 32px;
+  }
+}

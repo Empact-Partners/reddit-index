@@ -1,0 +1,44 @@
+{
+  "name": "reddit-index",
+  "private": true,
+  "packageManager": "pnpm@10.33.0",
+  "engines": {
+    "node": ">=20.9.0"
+  },
+  "scripts": {
+    "dev": "next dev",
+    "gen": "node scripts/gen-categories.mjs && node scripts/fetch-fonts.mjs --check",
+    "gates:pre": "node scripts/gates/category-constraints.mjs && node scripts/gates/icons.mjs && node scripts/gates/contrast.mjs && node scripts/gates/fonts.mjs",
+    "gates:post": "node scripts/gates/trade-dress.mjs && node scripts/gates/slugs.mjs && node scripts/gates/footer-slot4.mjs && node scripts/gates/css-rules.mjs",
+    "gates:selftest": "node scripts/gates/__selftest__.mjs",
+    "prebuild": "pnpm run gen && pnpm run gates:pre",
+    "build": "next build",
+    "postbuild": "pnpm run gates:post",
+    "start": "next start",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "lucide-react": "1.28.0",
+    "next": "16.3.0",
+    "postgres": "3.4.7",
+    "react": "19.2.0",
+    "react-dom": "19.2.0",
+    "server-only": "0.0.1"
+  },
+  "devDependencies": {
+    "@fontsource/public-sans": "5.2.6",
+    "@fontsource/syne": "5.2.6",
+    "@tailwindcss/postcss": "4.3.3",
+    "@testing-library/react": "16.3.0",
+    "@types/node": "^24.13.3",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.4",
+    "@vitejs/plugin-react": "5.1.0",
+    "jsdom": "27.0.0",
+    "tailwindcss": "4.3.3",
+    "typescript": "5.9.3",
+    "vitest": "3.2.4"
+  }
+}

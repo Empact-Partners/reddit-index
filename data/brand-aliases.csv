@@ -1,0 +1,360 @@
+brand_slug,alias,alias_type,surface_class,min_corroborating,bare_disabled
+salesforce,Salesforce,canonical,SAFE,0,False
+salesforce,SFDC,alias,SAFE,0,False
+salesforce,Sales Cloud,alias,SAFE,0,False
+salesforce,salesforce.com,domain,SAFE,0,False
+salesforce,force.com,domain,SAFE,0,False
+hubspot,HubSpot,canonical,SAFE,0,False
+hubspot,HubSpot CRM,alias,SAFE,0,False
+hubspot,hubspot.com,domain,SAFE,0,False
+zoho-crm,Zoho CRM,canonical,SAFE,0,False
+zoho-crm,Zoho,alias,AMBIGUOUS,1,False
+zoho-crm,crm.zoho.com,domain,SAFE,0,False
+zoho-crm,zoho.com/crm,domain,SAFE,0,False
+monday-crm,monday CRM,canonical,SAFE,0,False
+monday-crm,monday.com,domain,SAFE,0,False
+monday-crm,monday,alias,HOSTILE,2,False
+pipedrive,Pipedrive,canonical,SAFE,0,False
+pipedrive,pipedrive.com,domain,SAFE,0,False
+bitrix24,Bitrix24,canonical,SAFE,0,False
+bitrix24,Bitrix,alias,SAFE,0,False
+bitrix24,bitrix24.com,domain,SAFE,0,False
+netsuite,NetSuite,canonical,SAFE,0,False
+netsuite,Oracle NetSuite,alias,SAFE,0,False
+netsuite,netsuite.com,domain,SAFE,0,False
+close,Close,canonical,HOSTILE,2,True
+close,Close.com,domain,SAFE,0,False
+close,Close CRM,alias,SAFE,0,False
+close,close.io,domain,SAFE,0,False
+freshsales,Freshsales,canonical,AMBIGUOUS,1,False
+freshsales,Freshworks CRM,alias,SAFE,0,False
+freshsales,freshsales.io,domain,SAFE,0,False
+freshsales,freshworks.com/crm,domain,SAFE,0,False
+monday-com,monday.com,domain,SAFE,0,False
+monday-com,monday,alias,HOSTILE,2,False
+monday-com,monday work management,alias,SAFE,0,False
+asana,Asana,canonical,AMBIGUOUS,1,False
+asana,asana.com,domain,SAFE,0,False
+jira,Jira,canonical,SAFE,0,False
+jira,Atlassian Jira,alias,SAFE,0,False
+jira,atlassian.com/software/jira,domain,SAFE,0,False
+wrike,Wrike,canonical,SAFE,0,False
+wrike,wrike.com,domain,SAFE,0,False
+smartsheet,Smartsheet,canonical,SAFE,0,False
+smartsheet,smartsheet.com,domain,SAFE,0,False
+clickup,ClickUp,canonical,SAFE,0,False
+clickup,clickup.com,domain,SAFE,0,False
+trello,Trello,canonical,SAFE,0,False
+trello,trello.com,domain,SAFE,0,False
+basecamp,Basecamp,canonical,AMBIGUOUS,1,False
+basecamp,basecamp.com,domain,SAFE,0,False
+notion,Notion,canonical,HOSTILE,2,False
+notion,Notion.so,domain,SAFE,0,False
+notion,notion.com,domain,SAFE,0,False
+linear,Linear,canonical,HOSTILE,2,False
+linear,Linear.app,domain,SAFE,0,False
+slack,Slack,canonical,HOSTILE,2,False
+slack,Slack.com,domain,SAFE,0,False
+microsoft-teams,Microsoft Teams,canonical,SAFE,0,False
+microsoft-teams,MS Teams,alias,SAFE,0,False
+microsoft-teams,Teams,alias,HOSTILE,2,False
+microsoft-teams,teams.microsoft.com,domain,SAFE,0,False
+confluence,Confluence,canonical,HOSTILE,2,False
+confluence,Atlassian Confluence,alias,SAFE,0,False
+confluence,atlassian.com/software/confluence,domain,SAFE,0,False
+miro,Miro,canonical,AMBIGUOUS,1,False
+miro,miro.com,domain,SAFE,0,False
+google-workspace,Google Workspace,canonical,SAFE,0,False
+google-workspace,GSuite,alias,AMBIGUOUS,1,False
+google-workspace,G Suite,alias,SAFE,0,False
+google-workspace,workspace.google.com,domain,SAFE,0,False
+bamboohr,BambooHR,canonical,SAFE,0,False
+bamboohr,Bamboo HR,alias,SAFE,0,False
+bamboohr,bamboohr.com,domain,SAFE,0,False
+rippling,Rippling,canonical,HOSTILE,2,False
+rippling,rippling.com,domain,SAFE,0,False
+gusto,Gusto,canonical,HOSTILE,2,False
+gusto,gusto.com,domain,SAFE,0,False
+workday,Workday,canonical,HOSTILE,2,False
+workday,workday.com,domain,SAFE,0,False
+hibob,HiBob,canonical,HOSTILE,2,False
+hibob,Bob,alias,HOSTILE,2,True
+hibob,hibob.com,domain,SAFE,0,False
+paylocity,Paylocity,canonical,SAFE,0,False
+paylocity,paylocity.com,domain,SAFE,0,False
+paycom,Paycom,canonical,SAFE,0,False
+paycom,paycom.com,domain,SAFE,0,False
+deel,Deel,canonical,AMBIGUOUS,1,False
+deel,deel.com,domain,SAFE,0,False
+adp,ADP,canonical,AMBIGUOUS,1,False
+adp,adp.com,domain,SAFE,0,False
+quickbooks,QuickBooks,canonical,SAFE,0,False
+quickbooks,QBO,alias,SAFE,0,False
+quickbooks,QB,alias,SAFE,0,False
+quickbooks,quickbooks.intuit.com,domain,SAFE,0,False
+xero,Xero,canonical,AMBIGUOUS,1,False
+xero,xero.com,domain,SAFE,0,False
+freshbooks,FreshBooks,canonical,SAFE,0,False
+freshbooks,freshbooks.com,domain,SAFE,0,False
+chargebee,Chargebee,canonical,SAFE,0,False
+chargebee,chargebee.com,domain,SAFE,0,False
+stripe,Stripe,canonical,HOSTILE,2,False
+stripe,Stripe Billing,alias,SAFE,0,False
+stripe,stripe.com,domain,SAFE,0,False
+bill-com,Bill.com,domain,SAFE,0,False
+bill-com,BILL,alias,HOSTILE,2,False
+melio,Melio,canonical,SAFE,0,False
+melio,meliopayments.com,domain,SAFE,0,False
+ramp,Ramp,canonical,HOSTILE,2,False
+ramp,ramp.com,domain,SAFE,0,False
+brex,Brex,canonical,SAFE,0,False
+brex,brex.com,domain,SAFE,0,False
+hubspot-marketing-hub,HubSpot Marketing Hub,canonical,SAFE,0,False
+hubspot-marketing-hub,HubSpot,alias,AMBIGUOUS,1,False
+hubspot-marketing-hub,hubspot.com/products/marketing,domain,SAFE,0,False
+marketo-engage,Marketo Engage,canonical,SAFE,0,False
+marketo-engage,Marketo,alias,SAFE,0,False
+marketo-engage,marketo.com,domain,SAFE,0,False
+activecampaign,ActiveCampaign,canonical,AMBIGUOUS,1,False
+activecampaign,AC,alias,AMBIGUOUS,1,False
+activecampaign,activecampaign.com,domain,SAFE,0,False
+klaviyo,Klaviyo,canonical,SAFE,0,False
+klaviyo,klaviyo.com,domain,SAFE,0,False
+mailchimp,Mailchimp,canonical,SAFE,0,False
+mailchimp,mailchimp.com,domain,SAFE,0,False
+braze,Braze,canonical,AMBIGUOUS,1,False
+braze,braze.com,domain,SAFE,0,False
+constant-contact,Constant Contact,canonical,SAFE,0,False
+constant-contact,constantcontact.com,domain,SAFE,0,False
+beehiiv,Beehiiv,canonical,SAFE,0,False
+beehiiv,beehiiv.com,domain,SAFE,0,False
+figma,Figma,canonical,AMBIGUOUS,1,False
+figma,figma.com,domain,SAFE,0,False
+sketch,Sketch,canonical,HOSTILE,2,False
+sketch,sketch.com,domain,SAFE,0,False
+adobe-xd,Adobe XD,canonical,SAFE,0,False
+adobe-xd,XD,alias,HOSTILE,2,False
+adobe-xd,adobe.com/products/xd,domain,SAFE,0,False
+canva,Canva,canonical,SAFE,0,False
+canva,canva.com,domain,SAFE,0,False
+framer,Framer,canonical,HOSTILE,2,False
+framer,framer.com,domain,SAFE,0,False
+webflow,Webflow,canonical,SAFE,0,False
+webflow,webflow.com,domain,SAFE,0,False
+bitwarden,Bitwarden,canonical,SAFE,0,False
+bitwarden,bitwarden.com,domain,SAFE,0,False
+1password,1Password,canonical,SAFE,0,False
+1password,1PW,alias,SAFE,0,False
+1password,OnePassword,alias,SAFE,0,False
+1password,1password.com,domain,SAFE,0,False
+lastpass,LastPass,canonical,SAFE,0,False
+lastpass,lastpass.com,domain,SAFE,0,False
+dashlane,Dashlane,canonical,SAFE,0,False
+dashlane,dashlane.com,domain,SAFE,0,False
+proton-pass,Proton Pass,canonical,SAFE,0,False
+proton-pass,ProtonPass,alias,SAFE,0,False
+proton-pass,proton.me/pass,domain,SAFE,0,False
+keepass,KeePass,canonical,SAFE,0,False
+keepass,KeePassXC,alias,SAFE,0,False
+keepass,keepass.info,domain,SAFE,0,False
+nordpass,NordPass,canonical,SAFE,0,False
+nordpass,nordpass.com,domain,SAFE,0,False
+obsidian,Obsidian,canonical,HOSTILE,2,False
+obsidian,ObsidianMD,alias,HOSTILE,2,False
+obsidian,obsidian.md,domain,SAFE,0,False
+evernote,Evernote,canonical,SAFE,0,False
+evernote,evernote.com,domain,SAFE,0,False
+onenote,OneNote,canonical,SAFE,0,False
+onenote,MS OneNote,alias,SAFE,0,False
+onenote,onenote.com,domain,SAFE,0,False
+logseq,Logseq,canonical,SAFE,0,False
+logseq,logseq.com,domain,SAFE,0,False
+anytype,Anytype,canonical,SAFE,0,False
+anytype,anytype.io,domain,SAFE,0,False
+roam-research,Roam Research,canonical,SAFE,0,False
+roam-research,Roam,alias,HOSTILE,2,False
+roam-research,roamresearch.com,domain,SAFE,0,False
+craft,Craft,canonical,HOSTILE,2,True
+craft,Craft.do,domain,SAFE,0,False
+zendesk,Zendesk,canonical,SAFE,0,False
+zendesk,zendesk.com,domain,SAFE,0,False
+freshdesk,Freshdesk,canonical,SAFE,0,False
+freshdesk,freshdesk.com,domain,SAFE,0,False
+intercom,Intercom,canonical,HOSTILE,2,False
+intercom,intercom.com,domain,SAFE,0,False
+front,Front,canonical,HOSTILE,2,True
+front,Frontapp,alias,HOSTILE,2,False
+front,frontapp.com,domain,SAFE,0,False
+front,front.com,domain,SAFE,0,False
+help-scout,Help Scout,canonical,SAFE,0,False
+help-scout,HelpScout,alias,AMBIGUOUS,1,False
+help-scout,helpscout.com,domain,SAFE,0,False
+servicenow,ServiceNow,canonical,AMBIGUOUS,1,False
+servicenow,SNOW,alias,AMBIGUOUS,1,False
+servicenow,servicenow.com,domain,SAFE,0,False
+sap,SAP,canonical,AMBIGUOUS,1,False
+sap,sap.com,domain,SAFE,0,False
+odoo,Odoo,canonical,SAFE,0,False
+odoo,odoo.com,domain,SAFE,0,False
+sage-intacct,Sage Intacct,canonical,SAFE,0,False
+sage-intacct,Intacct,alias,HOSTILE,2,False
+sage-intacct,Sage,alias,HOSTILE,2,False
+sage-intacct,intacct.com,domain,SAFE,0,False
+microsoft-dynamics-365,Microsoft Dynamics 365,canonical,SAFE,0,False
+microsoft-dynamics-365,Dynamics,alias,AMBIGUOUS,1,False
+microsoft-dynamics-365,D365,alias,AMBIGUOUS,1,False
+microsoft-dynamics-365,dynamics.microsoft.com,domain,SAFE,0,False
+acumatica,Acumatica,canonical,SAFE,0,False
+acumatica,acumatica.com,domain,SAFE,0,False
+shopify,Shopify,canonical,SAFE,0,False
+shopify,shopify.com,domain,SAFE,0,False
+woocommerce,WooCommerce,canonical,AMBIGUOUS,1,False
+woocommerce,Woo,alias,AMBIGUOUS,1,False
+woocommerce,woocommerce.com,domain,SAFE,0,False
+bigcommerce,BigCommerce,canonical,SAFE,0,False
+bigcommerce,bigcommerce.com,domain,SAFE,0,False
+squarespace,Squarespace,canonical,SAFE,0,False
+squarespace,squarespace.com,domain,SAFE,0,False
+wix,Wix,canonical,SAFE,0,False
+wix,wix.com,domain,SAFE,0,False
+tableau,Tableau,canonical,AMBIGUOUS,1,False
+tableau,tableau.com,domain,SAFE,0,False
+power-bi,Power BI,canonical,SAFE,0,False
+power-bi,PowerBI,alias,SAFE,0,False
+power-bi,powerbi.microsoft.com,domain,SAFE,0,False
+looker,Looker,canonical,HOSTILE,2,False
+looker,Looker Studio,alias,SAFE,0,False
+looker,looker.com,domain,SAFE,0,False
+qlik,Qlik,canonical,SAFE,0,False
+qlik,QlikView,alias,SAFE,0,False
+qlik,Qlik Sense,alias,SAFE,0,False
+qlik,qlik.com,domain,SAFE,0,False
+amplitude,Amplitude,canonical,HOSTILE,2,False
+amplitude,amplitude.com,domain,SAFE,0,False
+mixpanel,Mixpanel,canonical,SAFE,0,False
+mixpanel,mixpanel.com,domain,SAFE,0,False
+segment,Segment,canonical,HOSTILE,2,False
+segment,Twilio Segment,alias,SAFE,0,False
+segment,segment.com,domain,SAFE,0,False
+vercel,Vercel,canonical,SAFE,0,False
+vercel,vercel.com,domain,SAFE,0,False
+netlify,Netlify,canonical,SAFE,0,False
+netlify,netlify.com,domain,SAFE,0,False
+heroku,Heroku,canonical,SAFE,0,False
+heroku,heroku.com,domain,SAFE,0,False
+render,Render,canonical,HOSTILE,2,True
+render,render.com,domain,SAFE,0,False
+railway,Railway,canonical,HOSTILE,2,False
+railway,Railway.app,domain,SAFE,0,False
+railway,railway.com,domain,SAFE,0,False
+supabase,Supabase,canonical,SAFE,0,False
+supabase,supabase.com,domain,SAFE,0,False
+loom,Loom,canonical,HOSTILE,2,False
+loom,loom.com,domain,SAFE,0,False
+descript,Descript,canonical,HOSTILE,2,False
+descript,descript.com,domain,SAFE,0,False
+capcut,CapCut,canonical,SAFE,0,False
+capcut,capcut.com,domain,SAFE,0,False
+davinci-resolve,DaVinci Resolve,canonical,SAFE,0,False
+davinci-resolve,Resolve,alias,HOSTILE,2,True
+davinci-resolve,DaVinci,alias,HOSTILE,2,False
+davinci-resolve,blackmagicdesign.com/products/davinciresolve,domain,SAFE,0,False
+final-cut-pro,Final Cut Pro,canonical,SAFE,0,False
+final-cut-pro,FCP,alias,SAFE,0,False
+final-cut-pro,FCPX,alias,SAFE,0,False
+final-cut-pro,apple.com/final-cut-pro,domain,SAFE,0,False
+premiere-pro,Premiere Pro,canonical,SAFE,0,False
+premiere-pro,Premiere,alias,AMBIGUOUS,1,False
+premiere-pro,PPro,alias,AMBIGUOUS,1,False
+premiere-pro,adobe.com/products/premiere,domain,SAFE,0,False
+motion,Motion,canonical,HOSTILE,2,True
+motion,Apple Motion,alias,SAFE,0,False
+motion,apple.com/final-cut-pro/motion,domain,SAFE,0,False
+greenhouse,Greenhouse,canonical,HOSTILE,2,False
+greenhouse,Greenhouse.io,domain,SAFE,0,False
+lever,Lever,canonical,HOSTILE,2,True
+lever,Lever.co,domain,SAFE,0,False
+workable,Workable,canonical,HOSTILE,2,False
+ashby,Ashby,canonical,AMBIGUOUS,1,False
+ashby,AshbyHQ,alias,AMBIGUOUS,1,False
+recruitee,Recruitee,canonical,SAFE,0,False
+smartrecruiters,SmartRecruiters,canonical,SAFE,0,False
+lokala,Lokala,canonical,SAFE,0,False
+paychex,Paychex,canonical,SAFE,0,False
+paychex,paychex.com,domain,SAFE,0,False
+justworks,Justworks,canonical,SAFE,0,False
+justworks,justworks.com,domain,SAFE,0,False
+remote,Remote,canonical,HOSTILE,2,True
+remote,Remote.com,domain,SAFE,0,False
+onpay,OnPay,canonical,AMBIGUOUS,1,False
+onpay,onpay.com,domain,SAFE,0,False
+papaya-global,Papaya Global,canonical,SAFE,0,False
+papaya-global,Papaya,alias,AMBIGUOUS,1,False
+papaya-global,papayaglobal.com,domain,SAFE,0,False
+digitalocean,DigitalOcean,canonical,SAFE,0,False
+digitalocean,Digital Ocean,alias,SAFE,0,False
+digitalocean,DO droplet,alias,SAFE,0,False
+digitalocean,digitalocean.com,domain,SAFE,0,False
+linode,Linode,canonical,SAFE,0,False
+linode,Akamai Linode,alias,SAFE,0,False
+linode,linode.com,domain,SAFE,0,False
+hetzner,Hetzner,canonical,SAFE,0,False
+hetzner,hetzner.com,domain,SAFE,0,False
+cloudflare,Cloudflare,canonical,SAFE,0,False
+cloudflare,Cloudflare Pages,alias,SAFE,0,False
+cloudflare,cloudflare.com,domain,SAFE,0,False
+fly-io,Fly.io,domain,SAFE,0,False
+fly-io,Flyio,alias,AMBIGUOUS,1,False
+backblaze,Backblaze,canonical,SAFE,0,False
+backblaze,B2,alias,SAFE,0,True
+backblaze,backblaze.com,domain,SAFE,0,False
+dropbox,Dropbox,canonical,SAFE,0,False
+dropbox,dropbox.com,domain,SAFE,0,False
+google-drive,Google Drive,canonical,SAFE,0,False
+google-drive,GDrive,alias,AMBIGUOUS,1,False
+google-drive,drive.google.com,domain,SAFE,0,False
+synology,Synology,canonical,SAFE,0,False
+synology,synology.com,domain,SAFE,0,False
+veeam,Veeam,canonical,SAFE,0,False
+veeam,veeam.com,domain,SAFE,0,False
+pcloud,pCloud,canonical,SAFE,0,False
+pcloud,pcloud.com,domain,SAFE,0,False
+wasabi,Wasabi,canonical,HOSTILE,2,False
+wasabi,wasabi.com,domain,SAFE,0,False
+paypal,PayPal,canonical,SAFE,0,False
+paypal,paypal.com,domain,SAFE,0,False
+square,Square,canonical,HOSTILE,2,True
+square,Block Square,alias,SAFE,0,False
+square,squareup.com,domain,SAFE,0,False
+adyen,Adyen,canonical,SAFE,0,False
+adyen,adyen.com,domain,SAFE,0,False
+braintree,Braintree,canonical,AMBIGUOUS,1,False
+braintree,braintreepayments.com,domain,SAFE,0,False
+mollie,Mollie,canonical,HOSTILE,2,False
+mollie,mollie.com,domain,SAFE,0,False
+checkout-com,Checkout.com,domain,SAFE,0,False
+checkout-com,Checkout com,alias,SAFE,0,False
+attio,Attio,canonical,SAFE,0,False
+attio,attio.com,domain,SAFE,0,False
+sage,Sage,canonical,HOSTILE,2,False
+sage,Sage Accounting,alias,SAFE,0,False
+sage,sage.com,domain,SAFE,0,False
+wave,Wave,canonical,HOSTILE,2,True
+wave,Wave Accounting,alias,SAFE,0,False
+wave,waveapps.com,domain,SAFE,0,False
+convertkit,ConvertKit,canonical,SAFE,0,False
+convertkit,Kit,alias,SAFE,0,True
+convertkit,convertkit.com,domain,SAFE,0,False
+convertkit,kit.com,domain,SAFE,0,False
+customer-io,Customer.io,domain,SAFE,0,False
+customer-io,Customerio,alias,AMBIGUOUS,1,False
+metabase,Metabase,canonical,SAFE,0,False
+metabase,metabase.com,domain,SAFE,0,False
+discord,Discord,canonical,HOSTILE,2,False
+discord,discord.com,domain,SAFE,0,False
+discord,discord.gg,domain,SAFE,0,False
+zoom,Zoom,canonical,HOSTILE,2,False
+zoom,zoom.us,domain,SAFE,0,False
+google-meet,Google Meet,canonical,SAFE,0,False
+google-meet,GMeet,alias,AMBIGUOUS,1,False
+google-meet,meet.google.com,domain,SAFE,0,False

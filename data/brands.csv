@@ -1,0 +1,146 @@
+brand,slug,primary_category_slug,also_in_category_slugs,ambiguity_class,surface_class,require_context,min_corroborating,domains,stop_contexts,ambiguity_note,source
+Salesforce,salesforce,crm,,low,SAFE,False,0,salesforce.com;force.com,,,gazetteer
+HubSpot,hubspot,crm,,low,SAFE,False,0,hubspot.com,,,gazetteer
+Zoho CRM,zoho-crm,crm,,medium,AMBIGUOUS,True,1,crm.zoho.com;zoho.com/crm,,'Zoho' spans a large product suite; must resolve to product,gazetteer
+monday CRM,monday-crm,crm,,high,HOSTILE,True,2,monday.com,on monday;next monday;last monday;this monday;every monday;monday morning;monday afternoon;monday night;monday evening;monday through friday;monday to friday;mon-fri;by monday;until monday;since monday;mondays;cyber monday;blue monday;monday night football;bank holiday monday;tuesday;wednesday;thursday;friday;saturday;sunday,'monday' is a common English weekday noun,gazetteer
+Pipedrive,pipedrive,crm,,low,SAFE,False,0,pipedrive.com,,,gazetteer
+Bitrix24,bitrix24,crm,,low,SAFE,False,0,bitrix24.com,,,gazetteer
+NetSuite,netsuite,crm,erp,low,SAFE,False,0,netsuite.com,,,gazetteer
+Close,close,crm,,high,HOSTILE,True,2,close.com;close.io,close the deal;closed won;closed lost;close rate;closing;close to;too close;so close;very close;pretty close;not close;close enough;close call;up close;close it;close out;close the ticket;close the tab;close the account;market close,'close' is an extremely common English verb and adjective,gazetteer
+Freshsales,freshsales,crm,,medium,AMBIGUOUS,True,1,freshsales.io;freshworks.com/crm,,Freshworks family collides across products,gazetteer
+monday.com,monday-com,project-management,,high,HOSTILE,True,2,monday.com,on monday;next monday;last monday;this monday;every monday;monday morning;monday through friday;mon-fri;mondays;cyber monday;tuesday;wednesday;thursday;friday,weekday noun,gazetteer
+Asana,asana,project-management,,medium,AMBIGUOUS,True,1,asana.com,,also a yoga posture term; collides in wellness subs,gazetteer
+Jira,jira,project-management,,low,SAFE,False,0,atlassian.com/software/jira,,,gazetteer
+Wrike,wrike,project-management,,low,SAFE,False,0,wrike.com,,,gazetteer
+Smartsheet,smartsheet,project-management,,low,SAFE,False,0,smartsheet.com,,,gazetteer
+ClickUp,clickup,project-management,,low,SAFE,False,0,clickup.com,,,gazetteer
+Trello,trello,project-management,,low,SAFE,False,0,trello.com,,,gazetteer
+Basecamp,basecamp,project-management,,medium,AMBIGUOUS,True,1,basecamp.com,,common noun in outdoor/climbing contexts,gazetteer
+Notion,notion,project-management,note-taking,high,HOSTILE,True,2,notion.so;notion.com,the notion that;notion of;no notion;any notion;notions;romantic notion;vague notion;preconceived notion,'notion' is a common English noun,gazetteer
+Linear,linear,project-management,,high,HOSTILE,True,2,linear.app,linear regression;linear algebra;linear equation;linear time;linear model;linear scale;linear relationship;linearly;non-linear;nonlinear;linear fashion,'linear' is a common adjective; Wikidata has no entry for the issue tracker,gazetteer
+Slack,slack,team-chat,,high,HOSTILE,True,2,slack.com,slack off;slacking;picked up the slack;pick up the slack;cut me some slack;cut some slack;slack in the rope;slack jaw,'slack' is a common English noun and adjective,gazetteer
+Microsoft Teams,microsoft-teams,team-chat,,high,HOSTILE,True,2,teams.microsoft.com,,'Teams' collides with the plural noun,gazetteer
+Confluence,confluence,team-chat,,high,HOSTILE,True,2,atlassian.com/software/confluence,,'confluence' is a common English noun,gazetteer
+Miro,miro,team-chat,,medium,AMBIGUOUS,True,1,miro.com,,also a painter surname,gazetteer
+Google Workspace,google-workspace,team-chat,,medium,AMBIGUOUS,True,1,workspace.google.com,,renamed product; legacy alias still dominant on Reddit,gazetteer
+BambooHR,bamboohr,hr,,low,SAFE,False,0,bamboohr.com,,,gazetteer
+Rippling,rippling,hr,,high,HOSTILE,True,2,rippling.com,rippling water;rippling muscles;rippling effect;rippling through;ripples,'rippling' is a common English present participle,gazetteer
+Gusto,gusto,hr,,high,HOSTILE,True,2,gusto.com,with gusto;gusto for;ate with gusto,'gusto' is a common English noun,gazetteer
+Workday,workday,hr,,high,HOSTILE,True,2,workday.com,long workday;the workday;during the workday;workdays;end of the workday;a workday,'workday' is a common English noun,gazetteer
+HiBob,hibob,hr,,high,HOSTILE,True,2,hibob.com,hi bob;hey bob;bob's;bob said;uncle bob,alias 'Bob' is a given name,gazetteer
+Paylocity,paylocity,hr,,low,SAFE,False,0,paylocity.com,,,gazetteer
+Paycom,paycom,hr,,low,SAFE,False,0,paycom.com,,,gazetteer
+Deel,deel,hr,,medium,AMBIGUOUS,True,1,deel.com,,near-homophone of 'deal'; frequent misspelling collisions,gazetteer
+ADP,adp,hr,,medium,AMBIGUOUS,True,1,adp.com,,also an abbreviation in biochemistry (adenosine diphosphate),gazetteer
+QuickBooks,quickbooks,accounting,,low,SAFE,False,0,quickbooks.intuit.com,,,gazetteer
+Xero,xero,accounting,,medium,AMBIGUOUS,True,1,xero.com,,collides with 'Xerox' truncations and 'zero' misspellings,gazetteer
+FreshBooks,freshbooks,accounting,,low,SAFE,False,0,freshbooks.com,,,gazetteer
+Chargebee,chargebee,accounting,,low,SAFE,False,0,chargebee.com,,,gazetteer
+Stripe,stripe,accounting,,high,HOSTILE,True,2,stripe.com,pinstripe;racing stripe;stripe of;stripes;striped,'stripe' is a common English noun,gazetteer
+Bill.com,bill-com,accounting,,high,HOSTILE,True,2,bill.com,the bill;a bill;bills;bill for;electric bill;phone bill;bill of;billed;billing,'bill' is an extremely common English noun,gazetteer
+Melio,melio,accounting,,low,SAFE,False,0,meliopayments.com,,,gazetteer
+Ramp,ramp,accounting,,high,HOSTILE,True,2,ramp.com,on-ramp;off-ramp;ramp up;ramp down;ramping;wheelchair ramp;loading ramp;ramp period,'ramp' is a common English noun,gazetteer
+Brex,brex,accounting,,low,SAFE,False,0,brex.com,,,gazetteer
+HubSpot Marketing Hub,hubspot-marketing-hub,marketing-automation,,medium,AMBIGUOUS,True,1,hubspot.com/products/marketing,,company vs product ambiguity,gazetteer
+Marketo Engage,marketo-engage,marketing-automation,,low,SAFE,False,0,marketo.com,,,gazetteer
+ActiveCampaign,activecampaign,marketing-automation,,medium,AMBIGUOUS,True,1,activecampaign.com,,alias 'AC' collides with air conditioning,gazetteer
+Klaviyo,klaviyo,marketing-automation,,low,SAFE,False,0,klaviyo.com,,,gazetteer
+Mailchimp,mailchimp,email-marketing,,low,SAFE,False,0,mailchimp.com,,,gazetteer
+Braze,braze,email-marketing,,medium,AMBIGUOUS,True,1,braze.com,,near-homophone of 'braise'/'brace',gazetteer
+Constant Contact,constant-contact,email-marketing,,low,SAFE,False,0,constantcontact.com,,,gazetteer
+Beehiiv,beehiiv,email-marketing,,low,SAFE,False,0,beehiiv.com,,,gazetteer
+Figma,figma,design,,medium,AMBIGUOUS,True,1,figma.com,,r/figma is a Japanese action-figure sub; the design sub is r/FigmaDesign,gazetteer
+Sketch,sketch,design,,high,HOSTILE,True,2,sketch.com,sketch out;sketchy;quick sketch;sketches;sketching;sketch comedy;rough sketch,'sketch' is a common English noun and verb,gazetteer
+Adobe XD,adobe-xd,design,,high,HOSTILE,True,2,adobe.com/products/xd,,'XD' is a common emoticon,gazetteer
+Canva,canva,design,,low,SAFE,False,0,canva.com,,,gazetteer
+Framer,framer,design,,high,HOSTILE,True,2,framer.com,framer motion,'framer' is a common English occupational noun,gazetteer
+Webflow,webflow,design,,low,SAFE,False,0,webflow.com,,,gazetteer
+Bitwarden,bitwarden,password-managers,,low,SAFE,False,0,bitwarden.com,,,gazetteer
+1Password,1password,password-managers,,low,SAFE,False,0,1password.com,,,gazetteer
+LastPass,lastpass,password-managers,,low,SAFE,False,0,lastpass.com,,,gazetteer
+Dashlane,dashlane,password-managers,,low,SAFE,False,0,dashlane.com,,,gazetteer
+Proton Pass,proton-pass,password-managers,,low,SAFE,False,0,proton.me/pass,,,gazetteer
+KeePass,keepass,password-managers,,low,SAFE,False,0,keepass.info,,,gazetteer
+NordPass,nordpass,password-managers,,low,SAFE,False,0,nordpass.com,,,gazetteer
+Obsidian,obsidian,note-taking,,high,HOSTILE,True,2,obsidian.md,,'obsidian' is a volcanic glass; frequent in geology and gaming subs,gazetteer
+Evernote,evernote,note-taking,,low,SAFE,False,0,evernote.com,,,gazetteer
+OneNote,onenote,note-taking,,low,SAFE,False,0,onenote.com,,,gazetteer
+Logseq,logseq,note-taking,,low,SAFE,False,0,logseq.com,,,gazetteer
+Anytype,anytype,note-taking,,low,SAFE,False,0,anytype.io,,,gazetteer
+Roam Research,roam-research,note-taking,,high,HOSTILE,True,2,roamresearch.com,,'roam' is a common English verb,gazetteer
+Craft,craft,note-taking,,high,HOSTILE,True,2,craft.do,craft beer;craft a;crafting;crafted;handcraft;witchcraft;aircraft;spacecraft;craftsmanship;crafts,'craft' is an extremely common English noun and verb,gazetteer
+Zendesk,zendesk,help-desk,,low,SAFE,False,0,zendesk.com,,,gazetteer
+Freshdesk,freshdesk,help-desk,,low,SAFE,False,0,freshdesk.com,,,gazetteer
+Intercom,intercom,help-desk,,high,HOSTILE,True,2,intercom.com,,'intercom' is a common English noun for the hardware device,gazetteer
+Front,front,help-desk,,high,HOSTILE,True,2,frontapp.com;front.com,in front;up front;front end;front-end;front of;storefront;front door;front page;front line;front desk;waterfront,'front' is an extremely common English noun,gazetteer
+Help Scout,help-scout,help-desk,,medium,AMBIGUOUS,True,1,helpscout.com,,alias collides with the generic phrase,gazetteer
+ServiceNow,servicenow,help-desk,,medium,AMBIGUOUS,True,1,servicenow.com,,alias 'SNOW' collides with weather,gazetteer
+SAP,sap,erp,,medium,AMBIGUOUS,True,1,sap.com,,also a common English noun (tree sap) and slang,gazetteer
+Odoo,odoo,erp,,low,SAFE,False,0,odoo.com,,,gazetteer
+Sage Intacct,sage-intacct,erp,,high,HOSTILE,True,2,intacct.com,,"'Sage' is a herb, a colour and a given name",gazetteer
+Microsoft Dynamics 365,microsoft-dynamics-365,erp,,medium,AMBIGUOUS,True,1,dynamics.microsoft.com,,,gazetteer
+Acumatica,acumatica,erp,,low,SAFE,False,0,acumatica.com,,,gazetteer
+Shopify,shopify,ecommerce,,low,SAFE,False,0,shopify.com,,,gazetteer
+WooCommerce,woocommerce,ecommerce,,medium,AMBIGUOUS,True,1,woocommerce.com,,alias 'Woo' is an interjection,gazetteer
+BigCommerce,bigcommerce,ecommerce,,low,SAFE,False,0,bigcommerce.com,,,gazetteer
+Squarespace,squarespace,ecommerce,,low,SAFE,False,0,squarespace.com,,,gazetteer
+Wix,wix,ecommerce,,low,SAFE,False,0,wix.com,,,gazetteer
+Tableau,tableau,business-intelligence,,medium,AMBIGUOUS,True,1,tableau.com,,"French loanword, appears in art contexts",gazetteer
+Power BI,power-bi,business-intelligence,,low,SAFE,False,0,powerbi.microsoft.com,,,gazetteer
+Looker,looker,business-intelligence,,high,HOSTILE,True,2,looker.com,good looker;nice looker;lookers,'looker' is English slang for an attractive person,gazetteer
+Qlik,qlik,business-intelligence,,low,SAFE,False,0,qlik.com,,,gazetteer
+Amplitude,amplitude,business-intelligence,,high,HOSTILE,True,2,amplitude.com,amplitude of;wave amplitude;signal amplitude;peak amplitude,'amplitude' is a common physics and maths term,gazetteer
+Mixpanel,mixpanel,business-intelligence,,low,SAFE,False,0,mixpanel.com,,,gazetteer
+Segment,segment,business-intelligence,,high,HOSTILE,True,2,segment.com,customer segment;market segment;segment of;segments;segmentation;audience segment;user segment,'segment' is a common English noun and verb,gazetteer
+Vercel,vercel,cloud-hosting,,low,SAFE,False,0,vercel.com,,Wikidata entry exists but carries no aliases,gazetteer
+Netlify,netlify,cloud-hosting,,low,SAFE,False,0,netlify.com,,,gazetteer
+Heroku,heroku,cloud-hosting,,low,SAFE,False,0,heroku.com,,,gazetteer
+Render,render,cloud-hosting,,high,HOSTILE,True,2,render.com,render a;rendering;rendered;3d render;render farm;render time;render engine;renders,'render' is a common English verb,gazetteer
+Railway,railway,cloud-hosting,,high,HOSTILE,True,2,railway.app;railway.com,railway station;railway line;railway company;railways;railway track;national railway,'railway' is a common English noun,gazetteer
+Supabase,supabase,cloud-hosting,,low,SAFE,False,0,supabase.com,,,gazetteer
+Loom,loom,video-editing,,high,HOSTILE,True,2,loom.com,,'loom' is a weaving device and a common verb,gazetteer
+Descript,descript,video-editing,,high,HOSTILE,True,2,descript.com,,stem-matches 'description' in Reddit search,gazetteer
+CapCut,capcut,video-editing,,low,SAFE,False,0,capcut.com,,,gazetteer
+DaVinci Resolve,davinci-resolve,video-editing,,high,HOSTILE,True,2,blackmagicdesign.com/products/davinciresolve,,alias 'Resolve' is a common English verb,gazetteer
+Final Cut Pro,final-cut-pro,video-editing,,low,SAFE,False,0,apple.com/final-cut-pro,,,gazetteer
+Premiere Pro,premiere-pro,video-editing,,medium,AMBIGUOUS,True,1,adobe.com/products/premiere,,'premiere' is a common English noun,gazetteer
+Motion,motion,video-editing,,high,HOSTILE,True,2,apple.com/final-cut-pro/motion,in motion;slow motion;motion blur;motion graphics;range of motion;motion sensor;motion to;motions;motion sickness,'motion' is an extremely common English noun,gazetteer
+Greenhouse,greenhouse,recruiting,,high,HOSTILE,True,2,,greenhouse gas;greenhouse effect;greenhouse emissions;a greenhouse;greenhouses;greenhouse tomatoes,'greenhouse' is a common English noun,seed-brands
+Lever,lever,recruiting,,high,HOSTILE,True,2,,lever to;leverage;leveraging;levers;pull the lever;lever arm,'lever' is a common English noun,seed-brands
+Workable,workable,recruiting,,high,HOSTILE,True,2,,workable solution;workable plan;not workable;a workable;workable compromise,'workable' is a common English adjective,seed-brands
+Ashby,ashby,recruiting,,medium,AMBIGUOUS,True,1,,,also a surname and an English place name,seed-brands
+Recruitee,recruitee,recruiting,,low,SAFE,False,0,,,,seed-brands
+SmartRecruiters,smartrecruiters,recruiting,,low,SAFE,False,0,,,,seed-brands
+Lokala,lokala,recruiting,,low,SAFE,False,0,,,,seed-brands
+Paychex,paychex,payroll,,low,SAFE,False,0,paychex.com,,,seed-brands
+Justworks,justworks,payroll,,low,SAFE,False,0,justworks.com,,,seed-brands
+Remote,remote,payroll,,high,HOSTILE,True,2,remote.com,remote work;remote job;remote team;remote first;fully remote;work remote;remote control;remote location;remotely;remote server,'remote' is an extremely common English word,seed-brands
+OnPay,onpay,payroll,,medium,AMBIGUOUS,True,1,onpay.com,,'on pay' occurs as an ordinary phrase,seed-brands
+Papaya Global,papaya-global,payroll,,medium,AMBIGUOUS,True,1,papayaglobal.com,papaya fruit;papaya salad;eat papaya,'papaya' is a common noun,seed-brands
+DigitalOcean,digitalocean,cloud-hosting,,low,SAFE,False,0,digitalocean.com,,,seed-brands
+Linode,linode,cloud-hosting,,low,SAFE,False,0,linode.com,,,seed-brands
+Hetzner,hetzner,cloud-hosting,,low,SAFE,False,0,hetzner.com,,,seed-brands
+Cloudflare,cloudflare,cloud-hosting,,low,SAFE,False,0,cloudflare.com,,,seed-brands
+Fly.io,fly-io,cloud-hosting,,medium,AMBIGUOUS,True,1,fly.io,fly to;flying;fly out;fly by;fruit fly;on the fly,'fly' is a common English verb,seed-brands
+Backblaze,backblaze,backup-storage,,low,SAFE,False,0,backblaze.com,,,seed-brands
+Dropbox,dropbox,backup-storage,,low,SAFE,False,0,dropbox.com,,,seed-brands
+Google Drive,google-drive,backup-storage,,medium,AMBIGUOUS,True,1,drive.google.com,,'Drive' alone is far too common to match,seed-brands
+Synology,synology,backup-storage,,low,SAFE,False,0,synology.com,,,seed-brands
+Veeam,veeam,backup-storage,,low,SAFE,False,0,veeam.com,,,seed-brands
+pCloud,pcloud,backup-storage,,low,SAFE,False,0,pcloud.com,,,seed-brands
+Wasabi,wasabi,backup-storage,,high,HOSTILE,True,2,wasabi.com,wasabi peas;wasabi sauce;soy and wasabi;wasabi paste,'wasabi' is a common food noun,seed-brands
+PayPal,paypal,payment-processing,,low,SAFE,False,0,paypal.com,,,seed-brands
+Square,square,payment-processing,,high,HOSTILE,True,2,squareup.com,square footage;square feet;square meter;square metre;town square;square one;fair and square;square root;square peg;square away;squares;times square,'square' is an extremely common English word,seed-brands
+Adyen,adyen,payment-processing,,low,SAFE,False,0,adyen.com,,,seed-brands
+Braintree,braintree,payment-processing,,medium,AMBIGUOUS,True,1,braintreepayments.com,,also a US place name,seed-brands
+Mollie,mollie,payment-processing,,high,HOSTILE,True,2,mollie.com,mollie is;hi mollie;mollie's,'Mollie' is a common given name,seed-brands
+Checkout.com,checkout-com,payment-processing,,medium,AMBIGUOUS,True,1,checkout.com,,'checkout' is ordinary commerce vocabulary,seed-brands
+Attio,attio,crm,,low,SAFE,False,0,attio.com,,,seed-brands
+Sage,sage,accounting,,high,HOSTILE,True,2,sage.com,sage advice;sage green;sage leaves;burning sage;sage brush;sagebrush;wise sage;sage and onion,'sage' is a herb and an adjective,seed-brands
+Wave,wave,accounting,,high,HOSTILE,True,2,waveapps.com,wave of;new wave;heat wave;brain wave;sound wave;waves;wave goodbye;microwave;shockwave,'wave' is a common English word,seed-brands
+ConvertKit,convertkit,email-marketing,,low,SAFE,False,0,convertkit.com;kit.com,,,seed-brands
+Customer.io,customer-io,marketing-automation,,medium,AMBIGUOUS,True,1,customer.io,,reads as the ordinary phrase 'customer io',seed-brands
+Metabase,metabase,business-intelligence,,low,SAFE,False,0,metabase.com,,,seed-brands
+Discord,discord,team-chat,,high,HOSTILE,True,2,discord.com;discord.gg,discord between;sowing discord;sow discord;in discord;discord among;marital discord,"'discord' is a common English noun, and the app is named constantly outside software evaluation",seed-brands
+Zoom,zoom,team-chat,,high,HOSTILE,True,2,zoom.us,zoom in;zoom out;zoomed;zooming;zoom lens;zoom level,'zoom' is a common English verb,seed-brands
+Google Meet,google-meet,team-chat,,medium,AMBIGUOUS,True,1,meet.google.com,,'Meet' alone is far too common to match,seed-brands
