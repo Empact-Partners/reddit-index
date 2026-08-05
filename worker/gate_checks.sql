@@ -18,7 +18,11 @@ union all
 -- 3. No (brand, document) pair appears twice. The partition key forces a
 --    three-column primary key, so the two-column uniqueness the spec asked for
 --    is asserted rather than enforced.
-select 'duplicate (brand_id, doc_id)', m.doc_id, count(*)
+-- Group by BOTH columns. Grouping by doc_id alone fires on the correct case:
+-- one comment naming three products is three mentions with three brand_ids,
+-- which is the whole point of targeted ABSA. An assertion that fires on good
+-- data gets muted, and a muted assertion protects nothing.
+select 'duplicate (brand_id, doc_id)', m.doc_id || ':' || m.brand_id, count(*)
 from mentions m group by 1, 2 having count(*) > 1
 
 union all

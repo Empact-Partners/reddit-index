@@ -97,11 +97,11 @@ def hand_recompute(brand, category, out):
     L.append(f"abstain= {ab}")
     L.append(f"N_op   = {pos} + {neg} = {n_op}")
     L.append("")
-    L.append(f"category prior, fitted leave-one-out over {row['prior_k']} other "
-             f"{category} brands with N_op >= 30")
+    L.append(f"category prior, fitted leave-one-out over every other {category} brand "
+             f"with N_op >= 30")
     L.append(f"  alpha0 = {a0}")
     L.append(f"  beta0  = {b0}")
-    if row["prior_fallback"]:
+    if row.get("prior_fallback"):
         L.append("  (the moment estimate was degenerate, so the recorded fallback prior")
         L.append("   strength was used — this is published per row, never silent)")
     L.append("")

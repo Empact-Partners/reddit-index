@@ -270,6 +270,12 @@ def load_scores():
             vals = []
             for s in batch:
                 n = lambda k: (s[k] if s.get(k) is not None else "NULL")  # noqa: E731
+                # max_subreddit_share is published evidence the scorer does not
+                # yet emit. HANDOFF records why it exists: the four floors cap
+                # THREAD and AUTHOR concentration and nothing caps SUBREDDIT
+                # concentration, so a score that is 79% one community's opinion
+                # passes every floor cleanly.
+                s.setdefault("max_subreddit_share", None)
                 vals.append(
                     f"({lit(s['brand_slug'])}, {lit(s['category_slug'])}, {lit(today)}::date, "
                     f"{s['pos']}, {s['neg']}, {s['neu']}, {s['abstain']}, {s['n']}, {s['n_op']}, "
@@ -290,9 +296,12 @@ def load_scores():
                  "n_threads, max_thread_share, max_author_share, max_subreddit_share, rank_desc, "
                  "rank_asc, eligible, failed_test, failed_observed, failed_required, "
                  "window_start, window_end, methodology_version) "
-                 "SELECT b.id, c.id, v.ws, v.pos, v.neg, v.neu, v.abstain, v.n, v.n_op, v.n_eff, "
-                 "v.deff, v.dt, v.da, v.it, v.ia, v.ie, v.a0, v.b0, v.rls, v.pol, v.ns, v.abs, "
-                 "v.cl, v.ch, v.na, v.nsub, v.nth, v.mts, v.mas, v.mss, v.rd, v.ra, v.el, "
+                 "SELECT b.id, c.id, v.ws, v.pos, v.neg, v.neu, v.abstain, v.n, v.n_op, "
+                 "v.n_eff::numeric, v.deff::numeric, v.dt::numeric, v.da::numeric, "
+                 "v.it::numeric, v.ia::numeric, v.ie, v.a0::numeric, v.b0::numeric, "
+                 "v.rls::int, v.pol::numeric, v.ns::numeric, v.abs::numeric, "
+                 "v.cl::numeric, v.ch::numeric, v.na, v.nsub, v.nth, v.mts::numeric, "
+                 "v.mas::numeric, v.mss::numeric, v.rd::int, v.ra::int, v.el, "
                  "v.ft, v.fo, v.fr, v.wstart, v.wend, v.mv FROM (VALUES\n"
                  + ",\n".join(vals)
                  + "\n) AS v(bslug, cslug, ws, pos, neg, neu, abstain, n, n_op, n_eff, deff, dt, "
