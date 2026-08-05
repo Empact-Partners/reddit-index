@@ -4,10 +4,10 @@
 
 - 🟢 **Three vendors, one of which is the CDN.** Next.js App Router on Vercel, Supabase Postgres plus Supabase Storage for data, one long-lived worker for the pipeline. Push to `main` deploys. Nothing else is in the serving path.
 - 🟢 **Vercel Pro is in place, and it had to be.** Hobby is licensed for personal, non-commercial use ([Vercel pricing](https://vercel.com/pricing)). A harder blocker binds first: Hobby teams cannot connect to a repository owned by a GitHub organization at all ([Vercel limits](https://vercel.com/docs/limits)), and the repo is `Empact-Partners/reddit-index`. Live state in §6.
-- 🟢 **The raw corpus never enters Postgres.** 200-400M items live as Hive-partitioned Parquet in Supabase Storage and are scanned in-process by DuckDB during pipeline runs. Postgres holds roughly 4M derived rows at Phase 1 and 38M at full scale, against a design ceiling of 200M.
-- 🟢 **Continuous ingest, daily publish** ([13-algorithm.md](13-algorithm.md) §7). Scoring and publishing run once a day at ~03:00 UTC, so the site is never more than 24 hours stale. The daily job calls `revalidateTag` only for the brands and categories whose scores moved — tens of pages, not the ~5,000-page corpus.
+- 🟢 **The raw corpus never enters Postgres.** 200-400M items live as Hive-partitioned Parquet in Supabase Storage and are scanned in-process by DuckDB during pipeline runs. Postgres holds roughly 4M derived rows at the planning scale and 38M at full scale, against a design ceiling of 200M.
+- 🟢 **Continuous ingest, daily publish** ([13-algorithm.md](13-algorithm.md) §7). Scoring and publishing run once a day at ~03:00 UTC, so the site is never more than 24 hours stale. The daily job calls `revalidateTag` only for the company and category pages whose published Reddit Love Score or evidence moved, plus the pooled homepage when its board can change — tens of pages, not the ~5,000-page corpus.
 - 🟡 **Supabase Storage bills egress at $0.09/GB past 250 GB** ([Supabase pricing](https://supabase.com/pricing)), where Cloudflare R2 billed none. Cache shards on the worker's local NVMe and treat Supabase Storage as the durable copy, not the working set.
-- 🟢 **Cost is ≈ $74/month at Phase 1 and ≈ $301/month at full scale, and daily publishing does not move either number.** Line items and the recheck in §9.
+- 🟢 **Cost is ≈ $74/month at the planning scale and ≈ $301/month at full scale, and daily publishing does not move either number.** Line items and the recheck in §9.
 
 ---
 
@@ -60,7 +60,7 @@ So: **Parquet in Supabase Storage for everything the pipeline scans, Postgres fo
 
 **Derived row counts, the number that governs the split:**
 
-| Postgres table | Phase 1 | Full scale |
+| Postgres table | Planning scale | Full scale |
 |---|---:|---:|
 | `mentions` | ~1.8M | ~17M |
 | `mention_sentiment` | ~1.8M | ~17M |
@@ -70,7 +70,7 @@ So: **Parquet in Supabase Storage for everything the pipeline scans, Postgres fo
 | everything else | <10K | <100K |
 | **Total** | **≈ 4M** | **≈ 38M** |
 
-Full scale assumes ~325K new mentions per week, about 46K a day ([13-algorithm.md](13-algorithm.md)), over a trailing 12-month window ([07-index-methodology.md](07-index-methodology.md)). Phase 1 assumes ~35K per week. Both are *inference from the modelled rates, not measured*.
+Full scale assumes ~325K new mentions per week, about 46K a day ([13-algorithm.md](13-algorithm.md)), over a trailing 12-month window ([07-index-methodology.md](07-index-methodology.md)). The planning-scale figures assume ~35K per week. They are capacity-planning figures for a 50-category scale, not a statement that the v1 catalog exceeds the 20 measured categories in [14-category-tests.md](14-category-tests.md). Both are *inference from the modelled rates, not measured*.
 
 **Publishing daily instead of weekly does not move these counts.** The same comments arrive either way and the window is unchanged; what changes is how often the derived tables are recomputed and republished. Ingest cadence sizes the worker, not Postgres.
 
@@ -78,7 +78,7 @@ Full scale assumes ~325K new mentions per week, about 46K a day ([13-algorithm.m
 
 | Derived rows | Compute | What you do |
 |---|---|---|
-| < 10M | Micro $10 or Small $15 | Single tables, no partitioning needed. Phase 1 sits here |
+| < 10M | Micro $10 or Small $15 | Single tables, no partitioning needed. The planning scale sits here |
 | 10M-50M | Small $15 to Medium $60 | Partition `mentions` by month. Full scale sits here |
 | 50M-200M | Large $110 + ~100 GB gp3 | The ceiling this design is sized against. Hot indexes must still fit 8 GB RAM |
 | 200M-1B | XL $210 or 2XL $410 | Drop `mentions.body` from Postgres and read bodies from Parquet at publish time |
@@ -97,15 +97,15 @@ Prices from [Supabase compute and disk](https://supabase.com/docs/guides/platfor
 | Table | Key columns | Index / constraint | Kind |
 |---|---|---|---|
 | `subreddits` | `id`, `name`, `rule_posture`, `comments_per_hour`, `poll_interval_h`, `rules_hash`, `checked_at` | `UNIQUE(name)` | base |
-| `categories` | `id`, `slug`, `name`, `parent_id`, `base_rate_c numeric`, `status` | `UNIQUE(slug)` | base |
+| `categories` | `id`, `slug` (persisted and frozen after publication), `name`, `parent_id`, `base_rate_c numeric`, `threshold_tier` (`deep`/`standard`/`thin`), `status` | `UNIQUE(slug)` | base |
 | `category_subreddits` | `category_id`, `subreddit_id`, `is_scoring bool`, `worth numeric` | `PK(category_id, subreddit_id)`; partial index `WHERE is_scoring` | base |
-| `brands` | `id`, `slug`, `name`, `primary_category_id`, `require_context bool`, `stop_contexts text[]`, `domains text[]` | `UNIQUE(slug)`; GIN on `domains` | base |
+| `brands` | `id`, `slug` (persisted and frozen after publication), `name`, `primary_category_id` (highest opinionated-mention volume), `require_context bool`, `stop_contexts text[]`, `domains text[]` | `UNIQUE(slug)`; GIN on `domains` | base |
 | `brand_aliases` | `brand_id`, `alias`, `alias_type`, `is_ambiguous bool` | `UNIQUE(alias, brand_id)`; feeds the Aho-Corasick automaton | base, **service-role only** |
 | `threads` | `id text PK` (t3 fullname), `subreddit_id`, `link_title`, `permalink`, `created_utc`, `num_comments`, `archived bool` | `(subreddit_id, created_utc DESC)` | base |
-| `mentions` | `id bigserial`, `brand_id`, `doc_type smallint`, `doc_id text` (fullname), `thread_id`, `subreddit_id`, `author`, `created_utc timestamptz`, `permalink`, `score int`, `body text`, `match_conf real`, `run_id uuid` | `PARTITION BY RANGE(created_utc)` monthly; `UNIQUE(brand_id, doc_id)`; `(brand_id, created_utc DESC)`; `(thread_id)`; `(brand_id, author)` | base, partitioned |
+| `mentions` | `id bigserial`, `brand_id`, `doc_type` (`post_body`/`comment`), `doc_id text` (fullname), `thread_id`, `subreddit_id`, `author`, `created_utc timestamptz`, `permalink`, `score int`, `body text`, `match_conf real`, `run_id uuid` | `PARTITION BY RANGE(created_utc)` monthly; `UNIQUE(brand_id, doc_id)`; `(brand_id, created_utc DESC)`; `(thread_id)`; `(brand_id, author)` | base, partitioned |
 | `mention_sentiment` | `mention_id`, `model_version`, `label smallint`, `intensity real`, `conf real`, `stage smallint` | `PK(mention_id, model_version)` | base |
-| `brand_category_scores` | `brand_id`, `category_id`, `week_start date`, `pos`, `neg`, `neu`, `abstain`, `n`, `n_eff`, `deff`, `love_score`, `hate_score`, `polarization`, `ci_low`, `ci_high`, `n_authors`, `n_subreddits`, `max_thread_share`, `max_author_share`, `eligible bool`, `failed_test text` | `PK(brand_id, category_id, week_start)` | **materialised** by S6 |
-| `leaderboards` | `category_id`, `week_start`, `board` (`love`/`hate`), `brand_id`, `rank int`, `tied_with int[]`, `score numeric`, `rank_delta int` | `PK(category_id, week_start, board, brand_id)` | **materialised** from `brand_category_scores` |
+| `brand_category_scores` | `brand_id`, `category_id`, `week_start date`, `pos`, `neg`, `neu`, `abstain`, `n`, `n_eff`, `deff`, `reddit_love_score int`, `polarization`, `ci_low`, `ci_high`, `n_authors`, `n_subreddits`, `max_thread_share`, `max_author_share`, `rank_desc int`, `rank_asc int`, `eligible bool`, `failed_test text` | `PK(brand_id, category_id, week_start)` | **materialised** by S6 |
+| `leaderboards` | `category_id`, `week_start`, `board` (`most_loved`/`most_hated`), `brand_id`, `rank int`, `tied_with int[]`, `reddit_love_score int`, `n int`, `rank_delta int` | `PK(category_id, week_start, board, brand_id)` | **materialised** from `brand_category_scores`; both boards are positions in one ordering |
 | `brand_pages` | `brand_id PK`, `payload jsonb`, `content_hash`, `updated_at` | joined from `brands` by slug | **materialised** render payload |
 | `removals` | `doc_id text PK`, `doc_type smallint`, `brand_ids bigint[]`, `reason`, `detected_at`, `purged_at`, `revalidated_at` | `(detected_at)`; `(revalidated_at) WHERE revalidated_at IS NULL` | tombstone ledger |
 | `ingest_state` | `subreddit`, `ym`, `stage`, `code_version`, `file_hash`, `rows`, `status`, `finished_at` | `PK(subreddit, ym, stage, code_version)` | resumability ledger |
@@ -126,21 +126,36 @@ Three notes on the tables that are not obvious.
 
 `brand_aliases` is service-role only because the alias, stop-context and ambiguity table is a working recipe for gaming the index. [07-index-methodology.md](07-index-methodology.md) §10 item 9 requires stating that countermeasures exist without publishing them.
 
-`mentions.body` stores and displays full comment text. That is a priced, accepted risk, recorded with its clause citations in [01-legal.md](01-legal.md).
+`mentions.body` stores and displays full matched text. That is a priced, accepted risk, recorded with its clause citations in [01-legal.md](01-legal.md).
+
+`mentions.doc_type` records whether the matched text came from a post body or a comment. Both are counted and displayed identically, and both feed the same Reddit Love Score; the type only selects the card label and the correct permalink.
+
+`categories.threshold_tier` is the published Deep, Standard or Thin tier. S6 derives its `n_min` from that tier's stated precision target and applies the separate eligibility gate to `n_eff`; it never scales the four diversity floors.
+
+The tier mapping is Deep: ±4 pp / `n_min` 600, Standard: ±5 pp / 400, and Thin: ±7 pp / 200, from `n_min = 1.96² × 0.25 / h²`. At every tier the diversity floors remain distinct authors ≥ 50, distinct subreddits ≥ 5, maximum one-thread share ≤ 20% of `n`, and maximum one-author share ≤ 5% of `n`. A leaderboard row has exactly two headline metrics: the published Reddit Love Score and total mention count `n`; all other fields are evidence.
 
 ## 4. Next.js on Vercel
 
-App Router, React Server Components, no client-side data fetching in the reader path. Route families follow [10-seo-aeo.md](10-seo-aeo.md) §4, where a brand page is **global and flat** — `/category/{cat}/brand/{brand}` is not a route and must never be generated.
+App Router, React Server Components, no client-side data fetching in the reader path. Category and company pages share one flat dynamic segment. The resolver is built from the slug registry below: `/{category}/` is one category and `/{company}/` is one global company page listing every category it qualifies in; the breadcrumb shows its primary category. `/category/{cat}` and `/brand/{brand}` are not routes and must never be generated.
 
-| Route | Count (Phase 1 → full) | Strategy | Revalidation |
+| Route | Count (v1 → full) | Strategy | Revalidation |
 |---|---:|---|---|
-| `/` | 1 | Prerendered at build | `revalidateTag('leaderboards')` on publish |
-| `/category/[slug]` | 50 → ~1,000 | `generateStaticParams` over eligible categories, prerendered | `revalidateTag('category:{slug}')`; `revalidate = 86400` floor, matching the daily publish |
-| `/brand/[slug]` | ~1,000 → ~5,000 | `generateStaticParams` over the **published** set only; `dynamicParams = true` for the tail | `revalidateTag('brand:{slug}')` on publish and on delete-sync |
-| `/brand/[slug]/mentions/[page]` | paginated | Prerender pages 1-3, rest on first request | `revalidateTag('brand:{slug}')` |
+| `/` | 1 | Prerendered pooled board: up to 100 at each end of the published Reddit Love Score ordering, capped at five companies per category, with category as the third column; the two lists are disjoint. If fewer than 200 companies qualify, each list takes at most `floor(N/2)` and the page states its actual count. This is a cross-category discovery question, not a category ranking; the cap and disclosure mitigate, but do not erase, category differences | `revalidateTag('pooled-homepage')` when a changed result can alter either capped list |
+| `/[slug]` | 20 measured categories + ~1,000 → ~5,000 published companies | One shared `generateStaticParams` reads the build-time slug registry and prerenders the resolved category and company paths; `dynamicParams = true` for the published company tail | `revalidateTag('category:{slug}')` for a category; `revalidateTag('company:{slug}')` for a company; `revalidate = 86400` floor, matching the daily publish |
+| `/[slug]/mentions/[page]` | company-only, paginated | Prerender pages 1-3, rest on first request after the parent slug resolves as a company | `revalidateTag('company:{slug}')` |
 | `/methodology` | 1 | Fully static, no data fetch, version-frozen | Rebuild only |
 | `/sitemap.xml` + `/sitemap/[category].xml` | 1 + N | Route handlers, `revalidate = 3600` | `revalidateTag('sitemap')` |
 | `/api/revalidate` | 1 | Route handler, `POST`, `dynamic = 'force-dynamic'`, bearer-secret gated | — |
+
+### Slug registry and build gate
+
+The build emits one slug registry for the shared `/{slug}/` namespace. Published category and company slugs are persisted in `categories.slug` and `brands.slug` and are frozen: a display-name or gazetteer change cannot regenerate a live URL. A necessary move records the old path as a permanent redirect.
+
+The registry's reserved-path union is checked in fixed precedence order: (1) framework and file paths such as `/api/*`, `/_next/*`, `/sitemap.xml`, `/robots.txt` and `/favicon.ico`; (2) site routes such as `/methodology`, `/search` and `/search-index.json`; (3) the 20 measured category slugs; and (4) company slugs. A company whose natural slug is already reserved receives its deterministic, primary-category disambiguator before it is published. The build asserts that the final union is unique and **fails on any duplicate**. Resolution therefore never depends on a request-time router match, and a new site route cannot silently shadow a published company.
+
+### Search index build artifact
+
+The site build also emits a static client-side search index, containing each published company's name, aliases, slug, category and published Reddit Love Score. It powers `/search` without putting a database credential or a reader-path query in the browser. For roughly 500–2,000 companies, it is on the order of a few hundred KB to a couple of MB of JSON before compression, driven mainly by alias count and length; the build records the emitted byte size rather than treating that estimate as measured.
 
 ### Why SSG with on-demand revalidation, and not per-request rendering
 
@@ -154,10 +169,10 @@ SSR moves the same traffic onto Function Invocations at $0.60 per million plus A
 
 Two mechanisms, deliberately separated:
 
-1. **`revalidateTag` via `POST /api/revalidate`** — the default, and what the daily pass uses. Step 9 `publish` diffs the freshly computed `brand_category_scores` against the previous run and sends only the slugs whose scores moved, with `Authorization: Bearer $REVALIDATE_SECRET`. The handler calls `revalidateTag()` per slug. Seconds, and no deployment.
+1. **`revalidateTag` via `POST /api/revalidate`** — the default, and what the daily pass uses. Step 9 `publish` diffs the freshly computed `brand_category_scores` against the previous run and sends `company:{slug}` and `category:{slug}` only for changed published results, with `Authorization: Bearer $REVALIDATE_SECRET`. It also sends `pooled-homepage` when a change can alter either capped, disjoint homepage list. The handler calls `revalidateTag()` per tag. Seconds, and no deployment.
 2. **A Vercel deploy hook** — reserved for code, schema and methodology-version changes, where the whole site has to be rebuilt. Vercel allows 5 deploy hooks per project and 60 triggers per hour ([Vercel limits](https://vercel.com/docs/limits)). None is created on the project yet (§6).
 
-**The daily pass never revalidates all ~5,000 pages.** One day of comments lands against a trailing 12-month window, so the great majority of brands do not move at all, and a brand whose score is unchanged to the published precision is not sent. Expect **tens of tags a day** — the movers plus their categories.
+**The daily pass never revalidates all ~5,000 pages.** One day of comments lands against a trailing 12-month window, so the great majority of companies do not move at all, and a company whose published Reddit Love Score and evidence are unchanged is not sent. Expect **tens of tags a day** — the movers, their categories, and the pooled homepage only when it can change.
 
 That page count is *inference from the window arithmetic, not measured*. Instrument it in Phase 0: log the slug set on every revalidate call, and treat a day that sends thousands of tags as a defect in the diff, not as a busy news day.
 
@@ -170,7 +185,7 @@ Two rules keep it honest. The publisher must diff rather than blanket-send — s
 The cap therefore binds in exactly one place: a code or schema rebuild. Build time is capped at **45 minutes per deployment on every plan, Hobby and Pro alike** ([Vercel limits](https://vercel.com/docs/limits)). A 5,000-page build at 20-40 ms of render per page is roughly 2-4 minutes plus install and compile (*inference, not benchmarked*), so the headroom is wide. Five things to do, in order, if it stops being wide:
 
 1. **Fetch once, not per page.** One query returning every `brand_pages.payload` into a module-scoped map makes the build CPU-bound instead of 5,000 network round trips. This is the single biggest lever.
-2. **Return only the published set from `generateStaticParams`.** Brands failing the `n_eff ≥ 400` gate render on demand; they are linked from the below-threshold block, not crawled hard.
+2. **Return only the published set from `generateStaticParams`.** Brands failing their category's `n_eff ≥ n_min` eligibility gate render on demand; they are linked from the below-threshold block, not crawled hard.
 3. **Cap `generateStaticParams` at the top N by traffic and keep `dynamicParams = true`.** The tail generates on first request and stays cached until its tag is invalidated.
 4. **Move to a larger build machine.** Build CPU Minutes bill at $0.0035 per CPU-minute, so more CPU is cheap next to a failed deploy.
 5. **Split into two Vercel projects** — category surfaces and brand surfaces — behind one domain. Last resort; it doubles the deployment surface.
@@ -203,7 +218,7 @@ RLS is enabled on every table in `public`. What is public and what is not:
 
 | Free limit | Value | Where it bites |
 |---|---|---|
-| Database size | 500 MB | Phase 1 `mentions` alone is ~1 GB. Bites on the first production load |
+| Database size | 500 MB | Planning-scale `mentions` alone is ~1 GB. Bites on the first production load |
 | File storage | 1 GB | The corpus is 60-150 GB. Bites at 60× |
 | Egress | 5 GB | A single day's delta scan is 1.5-4 GB. Bites inside the first week |
 | Project pausing | Paused after 1 week of inactivity | A paused project fails the daily pass silently |
@@ -315,13 +330,13 @@ The continuous-ingest, daily-publish cycle from [13-algorithm.md](13-algorithm.m
 | Daily | 4. `boosters` | Worker | Lane C external-index probes plus Lane D scoped search, rotated across brand pairs |
 | Daily | 5. `detect_mentions` · 6. `resolve_entities` · 7. `classify_sentiment` | Worker + DuckDB; LLM tail via Batch API | Parquet in, Parquet out. **Delta shards only** — comments arriving since the last run |
 | Daily | S5 load | Worker → Postgres, direct 5432 | `COPY` then `ON CONFLICT DO NOTHING`; `UNIQUE(brand_id, doc_id)` makes a re-run safe |
-| Daily | 8. `compute_index` | Postgres SQL | Recomputes the in-progress `week_start` bucket into `brand_category_scores`, `leaderboards`, `brand_pages`. The score grain stays weekly; only the publish cadence is daily |
-| Daily | 9. `publish` | Worker → `POST /api/revalidate` | `revalidateTag` for changed brands and categories only. Seconds, not a rebuild |
-| Daily | 10. `delete_sync` | Worker | `/api/info` over stored `doc_id`s → purge `mentions` and children → write `removals` → `revalidateTag` per affected brand |
+| Daily | 8. `compute_index` | Postgres SQL | Recomputes the in-progress `week_start` bucket into `brand_category_scores`, `leaderboards`, `brand_pages`; applies each category's tier-derived `n_min` to `n_eff` while retaining the four fixed diversity floors. The score grain stays weekly; only the publish cadence is daily |
+| Daily | 9. `publish` | Worker → `POST /api/revalidate` | `revalidateTag` for changed company and category tags, plus `pooled-homepage` when either capped homepage list can change. Seconds, not a rebuild |
+| Daily | 10. `delete_sync` | Worker | `/api/info` over stored `doc_id`s → purge `mentions` and children → write `removals` → `revalidateTag` for affected companies and categories, and `pooled-homepage` when needed |
 | **Monthly** | `reconcile_archive` | Worker | New dump shards fill `more` gaps and catch deletions; dump rows are authoritative and upsert over API rows |
 | **On merge to `main`** | Site build | Vercel | Code, schema and methodology-version changes only. Never part of the daily pass |
 
-At 50 categories the daily pass is roughly 9,000 Reddit API calls, under two hours of wall clock at 80 req/min ([13-algorithm.md](13-algorithm.md) §8). That is why 03:00 UTC works as a start time, and why a run that dies at 04:30 is restarted rather than rescued.
+At the 50-category planning scale the daily pass is roughly 9,000 Reddit API calls, under two hours of wall clock at 80 req/min ([13-algorithm.md](13-algorithm.md) §8). v1 serves the 20 measured categories; the 50-category figure is retained here as a capacity projection. That is why 03:00 UTC works as a start time, and why a run that dies at 04:30 is restarted rather than rescued.
 
 Ingest is per-subreddit, not per-category. **Deduplicate the ingest set before scheduling** or ~39% of calls re-fetch streams another category already pulled — r/startups alone appears in 9 of the 20 tested categories ([14-category-tests.md](14-category-tests.md) §7).
 
@@ -333,7 +348,7 @@ Every stage writes its artifact before it writes its ledger row, keyed `(stage, 
 
 ## 9. Cost
 
-| Line item | Phase 1 (~50 categories, ~500 brands, ~200 subs, ~1k pages) | Full scale (~5k brands, 1k subs, ~5k pages) |
+| Line item | Planning scale (~50 categories, ~500 brands, ~200 subs, ~1k pages) | Full scale (~5k brands, 1k subs, ~5k pages) |
 |---|---|---|
 | Vercel Pro seat | **$20** | **$20** |
 | Vercel usage: build CPU minutes, ISR reads and writes, Fast Data Transfer | **~$1** | **~$2** |
@@ -354,7 +369,7 @@ Prices from [Vercel pricing](https://vercel.com/pricing), [Vercel limits](https:
 
 Five caveats on the table:
 
-**The Stage-2 line is the largest discretionary swing.** It assumes the nano-class cascade at the top of its $8-15 per 1M band. Haiku batch instead moves it to $45-85 per 1M, so $7-13/mo at Phase 1 and $63-119/mo at full scale ([06-sentiment.md](06-sentiment.md)).
+**The Stage-2 line is the largest discretionary swing.** It assumes the nano-class cascade at the top of its $8-15 per 1M band. Haiku batch instead moves it to $45-85 per 1M, so $7-13/mo at the planning scale and $63-119/mo at full scale ([06-sentiment.md](06-sentiment.md)).
 
 **Worker sizing is list-price arithmetic, not a benchmark.** A Hetzner dedicated box with a 2 TB NVMe is the cheaper alternative once the corpus is cached locally, and it removes the egress exposure in §5 almost entirely — *Hetzner pricing NOT VERIFIED, check before committing*.
 

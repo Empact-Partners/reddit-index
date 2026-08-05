@@ -6,7 +6,7 @@
 - Off-the-shelf **VADER, SiEBERT, and twitter-roberta all emit document labels** and will systematically mis-rank brands in exactly the comparative threads that carry the most signal.
 - **No single model wins.** Fine-tuned encoders beat zero-shot LLMs on structured ABSA (XLM-R **68.86 F1** vs GPT-4o **49.85**, SemEval-2016 five-language, [arXiv 2412.12564v3](https://arxiv.org/html/2412.12564v3), Dec 2024), but LLMs are the plausible fix for the hard cases encoders silently botch. Hence a cascade.
 - **The classifier emits four labels — `pos`, `neg`, `neu`, `abstain` — and only two of them score.** The denominator is `N_opinionated = pos + neg`; `neutral_share` and `abstain_share` are first-class published outputs beside every score ([07-index-methodology.md](07-index-methodology.md)).
-- **Cascade cost at batch pricing ≈ $31–53 per 1M comments** with a Haiku stage 2, **≈ $3–6** with a nano-class stage 2, against $200 to batch every mention through Haiku. Like for like that is a 2–7× saving. All totals are our arithmetic, marked INFERENCE.
+- **Cascade cost at batch pricing ≈ $31–53 per 1M comments** with a Haiku stage 2, **≈ $3–6** with a nano-class stage 2, against $200 to batch every mention through Haiku. Like for like that is a **2.0–6.5×** saving. All totals are our arithmetic, marked INFERENCE.
 - ⚠️ **The operator conflict runs both ways, and bot filtering closes only one direction.** Empact-influenced threads are excluded before any polarity is assigned; separately, partner status is disclosed on `/methodology` and is never an input to a score.
 - **Validation is the first thing built, not the last.** 1,000–1,500 stratified human-labelled comments, ≥2 annotators, Krippendorff's α reported per class on `/methodology`.
 
@@ -85,7 +85,7 @@ Assumptions, which drive everything: ~250 input tokens per item (comment, parent
 
 Worked at the router's central 20%, batch pricing: Haiku = $1–3 + 0.20 × $200 = **$41–43**. Nano = $1–3 + 0.20 × $12.25 = **$3.45–5.45**. Every cascade cell is those same two components, nothing else.
 
-**The saving, stated like for like.** Same model, same pricing tier: Haiku batch $200 → $31–53 is **3.8–6.5×**; nano batch $12.25 → $2.84–6.06 is **2.0–4.3×**. Call it 2–7×. Larger multiples come from pricing a Haiku standard full pass against a nano batch cascade, which moves two variables at once.
+**The saving, stated like for like.** Same model, same pricing tier: Haiku batch $200 → $31–53 is **3.8–6.5×**; nano batch $12.25 → $2.84–6.06 is **2.0–4.3×**. Call it **2.0–6.5×** — the union of the two like-for-like ranges, not rounded up past either. Larger multiples come from pricing a Haiku standard full pass against a nano batch cascade, which moves two variables at once.
 
 The cost case is solid. The quality case is not yet made: no F1 exists for any of these models on Reddit brand sentiment (§2), so "the LLM resolves what the encoder botched" is the cascade's premise, not a measured result. The gold set in §7 is what tests it. If tail accuracy does not beat stage 1, the router is only spending money.
 

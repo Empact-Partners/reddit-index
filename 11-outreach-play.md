@@ -128,9 +128,9 @@ This list is also the page-generation list. §6 explains why nothing outside it 
 
 [07-index-methodology.md](07-index-methodology.md) gates eligibility on **`n_eff ≥ 400`**, where `n_eff = n / DEFF` and `DEFF = 1 + (m̄ − 1)·ICC`. Reddit mentions cluster inside mega-recommendation threads and by author, so raw `n` overstates the information in a sample and the naive 384 → 400 derivation is insufficient on its own.
 
-Four independence floors sit on top: distinct authors, distinct subreddits, distinct threads, and a cap on the share of mentions from any single thread. Together they are what stops a coordinated push from producing a ranking.
+Four independence floors sit on top: distinct authors ≥ 50, distinct subreddits ≥ 5, max share from any single thread ≤ 20% of `n`, and max share from any single author ≤ 5% of `n`. Distinct threads is published evidence, not a floor. Together they are what stops a coordinated push from producing a ranking.
 
-**Sourcing, stated plainly.** The 400 figure is an internal derivation in this repo, not a research-corpus finding. It is defensible because the derivation is published; it is not a fact anyone else has validated. The design-effect correction tightens it further, because `n_eff` is always below `n`.
+**Sourcing, stated plainly.** The 400 figure is an internal derivation in this repo, not a research-corpus finding. It is defensible because the derivation is published; it is not a fact anyone else has validated. The design-effect correction tightens it further, because `n_eff` is never **above** `n` — it equals `n` only when `DEFF = 1`, which needs `ICC = 0` or one mention per cluster.
 
 It also means only category head brands qualify. Head brands are Salesforce-class incumbents, and those companies do not buy consultancy retainers from a boutique. The statistically sound half of the product and the commercially useful half point at different companies.
 

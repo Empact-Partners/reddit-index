@@ -1,0 +1,13 @@
+# Codex CLI run artifacts — written into whatever directory a job uses as its
+# workspace. They are transcripts of a build session, not part of the spec.
+.codex_task.txt
+.codex_stdout.log
+.codex_stderr.log
+.codex_last_message.txt
+
+# Python
+__pycache__/
+*.pyc
+
+# OS
+.DS_Store

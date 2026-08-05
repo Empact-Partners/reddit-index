@@ -118,13 +118,13 @@ All five must pass. Any single failure stops the project.
 |---|---|---|---|
 | G1 | Mention-level entity precision on held-out | **≥0.97** point estimate, interval reported | [entity resolution](05-entity-resolution.md) |
 | G2 | Brands clearing **`n_eff ≥ 400`**, where `n_eff = n / DEFF` and `DEFF = 1 + (m̄ − 1)·ICC` | **≥10 brands** | [index methodology](07-index-methodology.md) |
-| G3 | All four diversity floors hold: distinct authors ≥50, distinct subreddits ≥5, distinct threads above the floor set in 07, max single-thread share ≤20% of `n` | all four, per ranked brand | [index methodology](07-index-methodology.md) |
+| G3 | All four diversity floors hold: distinct authors ≥50, distinct subreddits ≥5, max single-thread share ≤20% of `n`, max single-author share ≤5% of `n` | all four, per ranked brand | [index methodology](07-index-methodology.md) |
 | G4 | Leave-one-subreddit-out rank stability | top 10 does not reorder beyond ties | [index methodology](07-index-methodology.md) |
 | G5 | Human concordance: 3 practitioners blind-rank the top 10 before seeing output, Spearman ρ vs the computed Love Index | **ρ ≥ 0.6** | threshold set here, not derived from the corpus |
 
 G2 gates on the **design-effect-corrected** count, not the raw one. Reddit mentions cluster inside a few mega-threads and within threads by author, so raw `n` overstates independent information. Both `n` and `n_eff` publish on every brand page, with intervals from a cluster bootstrap resampled by thread and by author.
 
-G1's threshold is a point estimate, not a tight one. On a 500-item held-out set an observed 0.97 carries a Wilson 95% interval of roughly [0.949, 0.980], so it cannot separate 0.97 from 0.95. Either the held-out set grows or the published claim states the interval rather than the point.
+G1's threshold is a point estimate, not a tight one. On a 500-item held-out set an observed 0.97 carries a Wilson 95% interval of **[0.9511, 0.9817]** (recomputed for this record). The lower bound sits just *above* 0.95, so the set separates the two — but by four tenths of a point, which is not a margin to build a gate on. G1 therefore gates on the **Wilson lower bound**, never the point estimate, per [05-entity-resolution.md](05-entity-resolution.md).
 
 G5 is the question the whole phase exists to answer. The ≥0.97 precision / 0.80–0.88 recall figure carried through the research is **inference, never measured on this data**.
 
@@ -236,7 +236,7 @@ Every box is green before the domain resolves publicly. These are build requirem
 Any one of these means the artifact is no longer defensible while it is live:
 
 - More than a handful of takedown demands in 90 days.
-- An audit cycle that fails its publish gate (>3 errors in 60 on a stratum sample).
+- An audit cycle that fails its publish gate (**more than 2 errors in 150**, the live rule in [05-entity-resolution.md](05-entity-resolution.md); the older ">3 errors in 60" rule was retired because its interval clears a brand whose true precision is 0.87).
 - The corrections desk falling behind its published SLA. Publishing is automated and daily, so the site keeps updating whether or not anyone is answering corrections — the failure is silent, and it has to be watched for rather than noticed.
 - Daily publishes running on a corpus the audit has not caught up with. If adjudicated coverage stops keeping pace with what is being published, pin the public scores to the last audited run rather than shipping unaudited movement.
 

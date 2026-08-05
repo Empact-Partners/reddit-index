@@ -35,11 +35,11 @@ Five stages. Each one is separately testable, and the confidence gate is the onl
 
 | # | Stage | What it does | Output |
 |---|---|---|---|
-| 1 | Candidate matching | Aho-Corasick automaton over the alias table plus a domain matcher, run on normalized comment text | Every span that could be a brand, recall ~0.95 |
-| 2 | Feature extraction | Builds the signal vector for each candidate span (see §3) | Feature row per candidate |
+| 1 | Candidate matching | Aho-Corasick automaton over the alias table plus a domain matcher, run on normalized document text | Every span that could be a brand, recall ~0.95 |
+| 2 | Feature extraction | Builds the signal vector for each candidate span (see §4) | Feature row per candidate |
 | 3 | Disambiguation classifier | Logistic regression or shallow GBM scoring P(this span is the vendor), fit on the gold set | Monotone score 0-1 |
 | 4 | Confidence gate | SAFE accept · AMBIGUOUS accept on ≥1 corroborating signal · HOSTILE requires score > τ; low-margin band goes to a Haiku-class LLM adjudicator, batched 20-40 spans with subreddit and a 300-char window | Accept / reject / exclude |
-| 5 | Human audit queue | Stratified sample per refresh, adjudicated against the source comment | Measured precision, publish or refuse |
+| 5 | Human audit queue | Stratified sample per refresh, adjudicated against the source document | Measured precision, publish or refuse |
 
 The ambiguity classes map straight onto the seed CSV: `low` = SAFE, `medium` = AMBIGUOUS, `high` = HOSTILE. Rules gate, a classifier scores, and an LLM only adjudicates the residual.
 
@@ -47,13 +47,25 @@ That split is deliberate. Rules alone cannot be tuned to a stated precision, and
 
 ---
 
-## 3. Disambiguation features
+## 3. Document parity and resolution unit
+
+A brand named in a post body (`selftext`) and a brand named in a comment are the same kind of evidence: both are counted identically and both are displayed. The unit of resolution is **(document × brand × category)**, where a document is either a comment or a post. Carry `doc_type` through every pipeline stage so the displayed card can label the source as a post or comment and link to its correct permalink.
+
+`doc_type` does not change order, prominence, scoring weight, or any other scoring treatment. The practical distinction is only for disambiguation: post bodies are longer and usually give more context per occurrence, so they are generally easier to resolve; a post title is weak evidence on its own.
+
+### Measured confirmation of ambiguity classes
+
+A naive substring pass over live comment pages produced the expected false matches: `Monday` matched the weekday in r/nfl and r/rugbyunion, `SAP` matched the fluid in r/worldbuilding, `Rippling` matched water, and `Sage` matched the herb. This is measured confirmation of the ambiguity classes in [data/brand-gazetteer-seed.csv](data/brand-gazetteer-seed.csv), specifically its `ambiguity_class` column. Word-boundary matching, together with restricting probe terms to the gazetteer's low-ambiguity brands, removed those false matches.
+
+---
+
+## 4. Disambiguation features
 
 The signal list is standard practice; the ranking by discriminative power is our inference, to be re-fit against the gold set.
 
 | Rank | Signal | Example | Strength |
 |---|---|---|---|
-| 1 | Domain or URL in the same comment | `monday.com`, `vercel.com` | Auto-accept, near-zero false positives |
+| 1 | Domain or URL in the same document | `monday.com`, `vercel.com` | Auto-accept, near-zero false positives |
 | 2 | Co-occurring confirmed brand within ~400 chars | "we moved from Asana to Monday" | Very strong |
 | 3 | Subreddit prior | r/ProductManagement, r/SaaS, r/webdev, r/nocode vs r/investing, r/running | Strong; learn per-brand × per-subreddit from the audit set |
 | 4 | Verb and possessive frames | `(use\|using\|switched to\|migrated to\|moved off\|on) X`, `X's (pricing\|API\|free tier\|board)` | Strong for monday, notion, linear |
@@ -68,7 +80,7 @@ Those numbers are the reason we gate rather than classify everything. Dedicated 
 
 ---
 
-## 4. Alias and surface-form handling
+## 5. Alias and surface-form handling
 
 ⚠️ Treat every surface form as its own row with its own learned precision prior. A surface form is never simply an alias that inherits the brand's confidence.
 
@@ -84,7 +96,7 @@ Those numbers are the reason we gate rather than classify everything. Dedicated 
 
 ---
 
-## 5. Precision doctrine
+## 6. Precision doctrine
 
 **False positives are categorically worse than false negatives, and the asymmetry is not close.** A brand's team can open one cited thread, find their name was never mentioned, and the entire ranking becomes anecdote.
 
@@ -120,7 +132,7 @@ Per published brand at n = 150: 0 errors gives [0.975, 1.000], 1 gives [0.963, 0
 
 The rule this replaces — 3 errors in 60 — carries the interval **[0.863, 0.983]**. It clears a brand whose true precision is 0.87, so it was never a gate at the stated bar.
 
-⚠️ These are audit sample sizes, not the eligibility gate. A brand's score publishes on `n_eff ≥ 400` opinionated mentions after the design-effect correction ([index methodology](07-index-methodology.md)). The sizes here govern the labelled sample that measures whether those mentions are attached to the right company.
+⚠️ These are audit sample sizes, not the eligibility gate. A brand's score publishes only when `n_eff` meets its category's `n_min` after the design-effect correction: Deep 600, Standard 400, or Thin 200 opinionated mentions ([index methodology](07-index-methodology.md)). The sizes here govern the labelled sample that measures whether those mentions are attached to the right company.
 
 Expected end-to-end performance is **precision 0.96-0.98, recall 0.80-0.88**, concentrated recall loss on HOSTILE names. That is inference, not a measurement: the 42-F1 WNUT ceiling covers open-vocabulary emerging entities, whereas a closed 113-name gazetteer with URL and co-occurrence evidence is a strictly easier problem.
 
@@ -128,7 +140,7 @@ An expected 0.97 is uncomfortably close to the bar. At p̂ = 0.97 even a 1,000-i
 
 ---
 
-## 6. Gold set and manual review budget
+## 7. Gold set and manual review budget
 
 | Item | Size | Effort | Frequency |
 |---|---|---|---|
@@ -138,11 +150,11 @@ An expected 0.97 is uncomfortably close to the bar. At p̂ = 0.97 even a 1,000-i
 
 Below these sizes the precision claim is unfalsifiable: a smaller sample fails to reject the target and gets read as confirming it. The gold set is also the training data for stage 3 — there is no other source of labels.
 
-The per-brand line is what does not scale. At Phase 1's 50 categories and roughly 15 published brands each it is 75K-150K adjudicated labels per cycle ([phasing](12-phasing.md)), which is why certification is rolling rather than weekly, and why audit labor rather than infrastructure is the binding constraint on how many brands can ship.
+The per-brand line is what does not scale. At a 50-category expansion and roughly 15 published brands each it is 75K-150K adjudicated labels per cycle ([phasing](12-phasing.md)), which is why certification is rolling rather than weekly, and why audit labor rather than infrastructure is the binding constraint on how many brands can ship.
 
 ---
 
-## 7. Where the brand list, aliases, and domains come from
+## 8. Where the brand list, aliases, and domains come from
 
 | Source | What it gives | Legality | Use |
 |---|---|---|---|
@@ -160,7 +172,7 @@ Curate the registry by hand. 113 brands is one afternoon of work, and Phase 2 sc
 
 ---
 
-## 8. What happens to a brand we cannot resolve
+## 9. What happens to a brand we cannot resolve
 
 It is excluded, not guessed. A brand whose mentions fail the confidence gate does not get a low count, an estimated count, or a footnote — it does not appear in that cycle's ranking at all.
 

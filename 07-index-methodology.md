@@ -5,9 +5,9 @@
 - Rank on an **empirical-Bayes Beta-Binomial posterior mean**, shrunk toward the category base rate. IMDb's weighted rating is the same estimator wearing a friendlier name ([IMDb Ratings FAQ](https://help.imdb.com/article/imdb/track-movies-tv/faq-for-imdb-ratings/G67Y87TFYYP6TWAV)).
 - **Fit the shrinkage constant from the data**, by method of moments or MLE on the observed spread of per-brand rates ([Robinson, Variance Explained](http://varianceexplained.org/r/empirical_bayes_baseball/)). A round number invites "your cutoff is arbitrary." A fitted one has an answer.
 - **The denominator is opinionated mentions only**, `N_op = pos + neg`. Scoring over all mentions makes rank a function of ubiquity, because widely-used tools accrue incidental references that carry no opinion.
-- **Two indexes, never one net score.** Love and hate are separable substrates, not poles of a single scale ([Cacioppo, Gardner & Berntson 1997](https://journals.sagepub.com/doi/10.1207/s15327957pspr0101_2)).
+- **One published metric: the Reddit Love Score.** It is `round(100·p̃)`, an integer from 0 to 100, using the empirical-Bayes estimator below. Sort it descending for the consolidated view: most loved is at the top and most hated is at the bottom.
 - **No upvote weighting in the headline index.** A single seeded upvote inflated final scores by 25% through herding ([Muchnik, Aral & Taylor, *Science*, 2013-08-09](https://www.science.org/doi/10.1126/science.1240466)).
-- **Eligibility gates on the effective sample size, `n_eff ≥ 400`, not raw `n`.** Mentions cluster inside mega-threads and inside threads by author, so the simple-random-sample derivation of 400 is a floor on an assumption this data does not meet ([design effect](https://en.wikipedia.org/wiki/Design_effect)). Four independence floors apply on top.
+- **The eligibility gate is category-scaled and runs on effective sample size, never raw `n`.** Deep, Standard, and Thin categories require `n_eff` of 600, 400, and 200 respectively; four diversity floors apply separately on top ([design effect](https://en.wikipedia.org/wiki/Design_effect)).
 - ⚠️ **The exposure confound cannot be fixed statistically.** Mention volume tracks company size and complaint rate tracks adoption model. The site must say so in plain language, on the page.
 
 ---
@@ -18,34 +18,35 @@ Rank on the posterior mean of a Beta-Binomial model, shrunk toward the category'
 
 ```
 N_op = pos + neg
-p̃    = (x + α₀) / (N_op + α₀ + β₀)
+p̃    = (x_pos + α₀) / (N_op + α₀ + β₀)
+Reddit Love Score = round(100·p̃)
 ```
 
 | Symbol | Meaning |
 |---|---|
-| `x` | opinionated mentions carrying the target label (positive for love, negative for hate) |
-| `N_op` | `pos + neg` for this brand in this category — the denominator for both indexes |
+| `x_pos` | positive opinionated mentions for this brand in this category |
+| `N_op` | `pos + neg` for this brand in this category — the denominator for the estimator |
 | `n` | all eligible mentions, opinionated or not; reported everywhere, never a denominator |
 | `α₀, β₀` | Beta prior fitted per category from the observed distribution of per-brand rates |
 | `m` | prior strength, `m = α₀ + β₀` — the number of "virtual" mentions the prior is worth |
 | `C` | category base rate, `C = α₀ / m` |
 
-**Why neutrals are excluded from the denominator.** Widely-adopted tools accrue large incidental-mention volume ("export it to X", "the X API") that carries no opinion at all. Scoring over every mention dilutes both indexes in proportion to how often a brand is merely referenced, so rank drifts toward ubiquity and away from sentiment.
+**Why neutrals are excluded from the denominator.** Widely-adopted tools accrue large incidental-mention volume ("export it to X", "the X API") that carries no opinion at all. Scoring over every mention dilutes the estimator in proportion to how often a brand is merely referenced, so rank drifts toward ubiquity and away from sentiment.
 
-Neutral and abstained mentions are still counted and still published. Because the ratio runs over a subset of `n`, every score ships with `neutral_share` and `abstain_share`. A score computed over 40% of a brand's mentions is a different claim from one computed over 90%, and the reader has to see which one they are looking at.
+Neutral and abstained mentions are still counted and still published. Because the ratio runs over a subset of `n`, the published Reddit Love Score ships with `neutral_share` and `abstain_share`. A score computed over 40% of a brand's mentions is a different claim from one computed over 90%, and the reader has to see which one they are looking at.
 
 Fit `α₀` and `β₀` by method of moments or MLE across every brand in the category, **leave-one-out** — a brand is excluded from the prior it is scored against, so the dominant brand is not pinned to its own mean ([Robinson, Variance Explained](http://varianceexplained.org/r/empirical_bayes_baseball/)). Laplace add-one is the degenerate `α₀ = β₀ = 1` case: far too weak a prior.
 
-**Derivation (mine, algebraically checkable — not a cited claim).** IMDb publishes `WR = v/(v+m)·R + m/(v+m)·C` ([IMDb Ratings FAQ](https://help.imdb.com/article/imdb/track-movies-tv/faq-for-imdb-ratings/G67Y87TFYYP6TWAV)). Substituting `α₀ = mC` and `β₀ = m(1−C)` into `p̃` yields `(x + mC)/(N_op + m)`, which for `R = x/N_op` and `v = N_op` is exactly `WR`. Same maths, better PR.
+**Derivation (mine, algebraically checkable — not a cited claim).** IMDb publishes `WR = v/(v+m)·R + m/(v+m)·C` ([IMDb Ratings FAQ](https://help.imdb.com/article/imdb/track-movies-tv/faq-for-imdb-ratings/G67Y87TFYYP6TWAV)). Substituting `α₀ = mC` and `β₀ = m(1−C)` into `p̃` yields `(x_pos + mC)/(N_op + m)`, which for `R = x_pos/N_op` and `v = N_op` is exactly `WR`. Same maths, better PR.
 
 **Worked check** (category prior C = 0.62, m = 400, so `α₀` = 248; arithmetic computed for this spec):
 
-| Brand | Opinionated split | `N_op` | Raw `L` | Shrunk `L̃` |
+| Brand | Opinionated split | `N_op` | Observed positive share | `p̃` |
 |---|---|---|---|---|
 | A | 5 positive, 1 negative | 6 | 0.833 | (248 + 5) / 406 = **0.623** |
 | B | 3,200 positive, 800 negative | 4,000 | 0.800 | (248 + 3,200) / 4,400 = **0.784** |
 
-B beats A by a wide margin, which is the correct behavior: a 5-of-6 split is not evidence of anything. A never reaches a board in any case — at `N_op` = 6 it fails the eligibility gate in §5 and publishes as **Not enough data**. Shrinkage does its real work on the brands that clear the gate and sit near it.
+B beats A by a wide margin, which is the correct behavior: a 5-of-6 split is not evidence of anything. A never reaches a board in any case — at `N_op` = 6 it fails the eligibility gate in §5 and publishes as **Below threshold**. Shrinkage does its real work on the brands that clear the gate and sit near it.
 
 ---
 
@@ -74,31 +75,25 @@ The reason not to rank on it stands. The size penalty is an artifact of the ques
 
 ---
 
-## 3. Two axes, never one
+## 3. One estimator, published once
 
-Love and hate are separable substrates rather than opposite ends of one scale ([Cacioppo, Gardner & Berntson 1997](https://journals.sagepub.com/doi/10.1207/s15327957pspr0101_2)), and brand hate is a distinct construct with its own antecedents ([Zarantonello et al.](https://www.sciencedirect.com/science/article/abs/pii/S0148296319302590)).
+Love and hate are separable substrates rather than simply the absence of the other ([Cacioppo, Gardner & Berntson 1997](https://journals.sagepub.com/doi/10.1207/s15327957pspr0101_2)), and brand hate has distinct antecedents ([Zarantonello et al.](https://www.sciencedirect.com/science/article/abs/pii/S0148296319302590)). That psychology is why the denominator remains opinionated mentions only: neutral references must not erase a positive or negative opinion merely because a brand is widely named.
 
-A net score collapses that. A brand whose opinionated mentions split evenly across 4,000 observations scores the same `net` as one that splits evenly across 40. The first is contested at scale, the second is noise, and a single number cannot say which is which.
+The former Love and Hate indexes used the shared denominator `N_op = pos + neg`. Before separate shrinkage, `H = neg/N_op = 1 − pos/N_op = 1 − L` exactly. The two indexes were therefore algebraically complementary; the redundancy was already recorded in the consequences of decisions/0004. The site publishes that estimator once, as the Reddit Love Score, rather than fitting the same split twice.
 
-**Data model.** Every mention carries `label ∈ {positive, negative, neutral, recommendation, abstain}` plus intensity and model confidence — see [06-sentiment.md](06-sentiment.md). Per brand, per category:
+This is not a net score over all mentions — the failure that a single-score warning would correctly identify. It remains the positive share of **opinionated** mentions, empirically shrunk toward the leave-one-out category prior as in §1. Sorting the published Reddit Love Score descending is the consolidated ordering. “Most Hated” names the lower position in that ordering; it is not a second fit.
 
-| Field | Definition | Ranked? |
+**Data model.** Every mention carries `label ∈ {positive, negative, neutral, recommendation, abstain}` plus intensity and model confidence — see [06-sentiment.md](06-sentiment.md). A mention in a post body and a mention in a comment are counted and scored identically. They remain distinct `doc_type` objects so the evidence card labels the object and links to its own permalink; neither type receives different size, order, prominence, or scoring weight. Per brand, per category:
+
+| Field | Definition | Role |
 |---|---|---|
-| `love_score` | shrunk `L = pos/N_op`, prior fitted on the category's positive rates | yes, descending — left column |
-| `hate_score` | shrunk `H = neg/N_op`, prior fitted on the category's negative rates | yes, descending — right column |
-| `polarization` | `2·min(L̃, H̃) / (L̃ + H̃)` — 1 when opinion splits evenly, 0 when it is one-sided | shown, not ranked |
-| `net` | `L̃ − H̃` | reported, never ranked on |
-| `n`, `n_eff` | raw and cluster-adjusted mention counts | shown side by side |
-| `neutral_share`, `abstain_share` | share of `n` that carries no opinion, so sits outside the ratio | shown beside every score |
-| `n_authors`, `n_subreddits` | independence evidence | shown |
+| `reddit_love_score` | `round(100·p̃)`, the published Reddit Love Score | ranked, descending |
+| `polarization` | `2·min(pos, neg) / N_op` — 1 when observed opinion splits evenly, 0 when it is one-sided | published evidence, not ranked |
+| `n`, `n_eff` | all eligible mentions and cluster-adjusted effective mentions | published evidence |
+| `neutral_share`, `abstain_share` | shares of `n` carrying no opinion, outside the estimator denominator | published evidence |
+| `n_authors`, `n_subreddits`, thread and author concentration | diversity evidence | published evidence |
 
-**Polarization has to survive independent shrinkage.** Raw `L` and `H` sum to 1 by construction over `N_op`, but the two shrunk values are fitted against separate category priors and are **not** guaranteed to sum to 1, so a bare `2·min(L̃, H̃)` can leave the unit interval. Dividing by `L̃ + H̃` normalises it: the metric reads as the balance of opinion and stays in [0, 1] whatever the two fits do.
-
-No rule in this spec may assume `L̃ + H̃ = 1`. Where a sum is needed, compute it; do not treat it as an invariant.
-
-**What the two boards can and cannot show.** Because the denominator is shared, love and hate are near-complements: within a category the Most Hated board runs close to the inverse of the Most Loved board, and a brand cannot sit near the top of both. The two-axis model still earns its place — it refuses the net collapse, and each row carries its own `n_eff`, interval and neutral share.
-
-**Polarization is where a contested brand actually shows up:** both shrunk rates near 0.5 while `neutral_share` is low, meaning a lot of people hold an opinion and they disagree. That is a different claim from "loved" or "hated", which is why it gets its own published column instead of being inferred from the two boards. Both facts belong on the methodology page.
+**How disagreement differs from being ignored.** An ignored brand fails the separate eligibility gate in §5 and never reaches a board. Among brands that clear it, a mid-scale Reddit Love Score together with a low `neutral_share` indicates genuine disagreement: many mentions contain opinions, split on both sides. `polarization` remains published to make that evidence explicit, but it no longer needs `2·min(L̃, H̃) / (L̃ + H̃)` because there is no second fit.
 
 ---
 
@@ -108,7 +103,7 @@ No rule in this spec may assume `L̃ + H̃ = 1`. Where a sum is needed, compute 
 
 **The case against, which wins:** Reddit fuzzes displayed vote counts by design to defeat reverse-engineering (exact mechanism **NOT VERIFIED** from a first-party page). Scores are power-law, subreddit-size and time-of-day dependent, and causally inflated — one seeded upvote raised final scores 25% ([Muchnik, Aral & Taylor, *Science*, 2013-08-09](https://www.science.org/doi/10.1126/science.1240466)).
 
-**Landing it:** votes are excluded from `love_score` and `hate_score` entirely. They are published as a separate, clearly labeled **salience** metric that never feeds the rank.
+**Landing it:** votes are excluded from the Reddit Love Score entirely. They are published as a separate, clearly labeled **salience** metric that never feeds the rank.
 
 If salience is ever blended in (not in v1), the only defensible shape is `v* = percentile_rank(log1p(score))` within subreddit × month, capped as `w = 1 + λ·v*`, λ ≤ 0.5 and published. No comment may exceed roughly twice another's weight.
 
@@ -119,17 +114,16 @@ If salience is ever blended in (not in v1), the only defensible shape is `v* = p
 Pick a published precision target and solve for the sample size. Do not pick a round number and back-fill a story.
 
 ```
-n_min = z²·p(1−p) / h²
+n_min = z²·0.25 / h²
 ```
 
-| Half-width `h` | z (95%) | p | `n_min` | Note |
-|---|---|---|---|---|
-| ±10 pp | 1.96 | 0.5 | 97 | too loose to defend |
-| ±7 pp | 1.96 | 0.5 | 196 | — |
-| **±5 pp** | **1.96** | **0.5** | **384 → 400** | the precision target, in **effective** observations |
-| ±3 pp | 1.96 | 0.5 | 1,068 | starves Phase 2 categories |
+| Tier | Half-width `h` | z (95%) | p | `n_min` | Precision target |
+|---|---|---|---|---|---|
+| Deep | ±4 pp | 1.96 | 0.5 | 600 | highest precision target, in **effective** observations |
+| Standard | ±5 pp | 1.96 | 0.5 | 400 | standard precision target, in **effective** observations |
+| Thin | ±7 pp | 1.96 | 0.5 | 200 | lower-volume category precision target, in **effective** observations |
 
-`p = 0.5` is the variance-maximizing worst case, so 400 is conservative at every real rate — **for independent draws.** Reddit mentions are not independent draws. They cluster inside a handful of mega-recommendation threads, and inside a thread the same authors repeat. 400 correlated mentions carry less information than 400 independent ones.
+`p = 0.5` is the variance-maximizing worst case, so each tier's threshold is conservative at every real rate — **for independent draws.** Tier assignment is mechanical from measured category volume and is frozen with the methodology version; it is never hand-picked per category or brand. Reddit mentions are not independent draws. They cluster inside a handful of mega-recommendation threads, and inside a thread the same authors repeat. Correlated mentions carry less information than independent ones.
 
 That makes the derivation above the *start* of the argument. Taken alone it is the wrong model for this data, and shipping it as the gate would hand a critic the objection it was meant to close.
 
@@ -144,14 +138,14 @@ n_eff = n / DEFF
 
 **Decision, marked as ours rather than cited:** compute `DEFF` twice — clustering by thread and clustering by author — and carry the larger of the two, so the gate is set by whichever dependence structure is worse for that brand.
 
-> **The gate is `n_eff ≥ 400`.** Raw `n` is never the gate. Both numbers are published on every brand page, and both appear in the downloadable counts.
+> **The separate eligibility gate is `n_eff ≥ n_min` for the category's frozen tier:** Deep `≥ 600`, Standard `≥ 400`, Thin `≥ 200`. Raw `n` is never the gate. Both numbers are published on every brand page, and both appear in the downloadable counts.
 
-**Worked check** (ICC = 0.08, illustrative — the real value is measured in Phase 0; arithmetic computed for this spec):
+**Worked check** (Standard tier; ICC = 0.08, illustrative — the real value is measured in Phase 0; arithmetic computed for this spec):
 
 | Brand | `n` | Threads | `m̄` | `DEFF` | `n_eff` | Verdict |
 |---|---|---|---|---|---|---|
 | C | 1,400 | 210 | 6.7 | 1.45 | **963** | ranked |
-| D | 900 | 45 | 20.0 | 2.52 | **357** | Not enough data |
+| D | 900 | 45 | 20.0 | 2.52 | **357** | Below threshold |
 | E | 2,600 | 130 | 20.0 | 2.52 | **1,032** | ranked |
 
 D clears the naive 400 twice over and still fails, because its 900 mentions live in 45 threads and 45 threads is not 900 independent observations. E is clustered exactly as hard and passes on volume. That gap is the whole reason the correction exists.
@@ -164,7 +158,7 @@ Clustered observations break the independence assumption behind Wilson and Beta 
 
 ### Diversity floors
 
-Shrinkage and `n_eff` still will not stop a coordinated push on their own, because a brigade can spread itself across threads. All four floors are mandatory, per brand, per category:
+Shrinkage and the separate `n_eff` eligibility gate still will not stop a coordinated push on their own, because a brigade can spread itself across threads. All four diversity floors are mandatory, per brand, per category, and do not scale with the category tier:
 
 | Floor | Value | Defends against |
 |---|---|---|
@@ -173,7 +167,7 @@ Shrinkage and `n_eff` still will not stop a coordinated push on their own, becau
 | Max share from one thread | ≤ 20% of `n` | one viral incident thread swamping years of ordinary sentiment |
 | Max share from one author | ≤ 5% of `n` | one prolific voice carried across many threads |
 
-A brand failing the `n_eff` gate or any floor is listed as **Not enough data**, with the failing test named. It is never silently omitted.
+A brand failing the `n_eff` gate or any diversity floor is listed as **Below threshold**, with the failing test named. It is never silently omitted. This is distinct from **Category cannot be ranked**: a category can fail its five-subreddit viability test even when an individual brand within it passes every brand-level test; that brand is not below threshold.
 
 ---
 
@@ -193,12 +187,14 @@ Category base rates differ structurally. Airlines, ISPs, and banks live at low p
 
 | Method | Behavior | Verdict |
 |---|---|---|
-| Raw `p̃` across categories | ranks categories, not brands | 🔴 never |
+| Published Reddit Love Score across categories, with a per-category cap | pooled discovery board; a maximum of five brands from any category appear in each list | 🟢 use for the pooled board, with an explicit on-page disclosure |
 | Z-score within category | assumes comparable variance; unstable when a category has few brands | 🟡 not for Phase 1 |
-| Within-category percentile of `p̃` | comparable by construction | 🟢 use for the all-categories board |
-| Category-demeaned `Δ = p̃ − C` | ranks "beats its own neighbors" | 🟢 use, label the claim precisely |
+| Within-category percentile of `p̃` | comparable by construction, but answers a category-standing question | ⚪ not used for the pooled board |
+| Category-demeaned `Δ = p̃ − C` | ranks "beats its own neighbors" | ⚪ not a published score or pooled-board rank |
 
-Publish every category's `C` alongside the board. State openly that a cross-category leaderboard answers a different question than a category page, and label it as such rather than as one universal ranking.
+The homepage pooled board takes the top 100 most loved and top 100 most hated from opposite ends of the one published-score ordering, subject to the maximum of five brands per category in each list. The lists are disjoint. If fewer than 200 brands qualify, each list contains at most `floor(N/2)` brands, and the page states the actual count rather than implying 100.
+
+Publish every category's `C` alongside the board. State openly that the pooled board answers a different question from a category page: it is a capped, cross-category discovery view, not a claim that categories have identical baselines. The per-category cap and that explicit disclosure are the mitigation for using the published Reddit Love Score across categories.
 
 ---
 
@@ -248,11 +244,11 @@ The fitted quantities are covered by the same discipline. `α₀`, `β₀`, and 
 | 3 | Sentiment labeling | model class, human-validated agreement rate, confusion matrix, sarcasm and negation handling |
 | 4 | Unit of analysis | comment vs thread vs author; deduplication and crosspost rules |
 | 5 | The formulas in full | estimator, the `N_op = pos + neg` denominator, per-category α₀/β₀ and how fitted, any λ, window |
-| 6 | Eligibility and derivation | the precision math, the design-effect correction, the `n_eff ≥ 400` gate, all four independence floors |
+| 6 | Eligibility and derivation | the category's frozen tier and precision target; the precision math; the design-effect correction; the corresponding `n_eff ≥ n_min` gate; all four diversity floors |
 | 7 | Uncertainty | 90% cluster-bootstrap interval on every score; overlapping ranks declared tied |
-| 8 | Category definitions | each category's `C`, assignment rules, appeal path for miscategorization |
+| 8 | Category definitions and pooled board | each category's `C`, assignment rules, appeal path for miscategorization, and the pooled board's maximum of five brands per category in each list |
 | 9 | Manipulation controls | that countermeasures exist, without publishing the evasion recipe |
-| 10 | What the index is NOT | not product quality, not a survey, not population-representative; Reddit skew stated; the two boards described as near-complements |
+| 10 | What the index is NOT | not product quality, not a survey, not population-representative; Reddit skew stated; Most Loved and Most Hated are opposite ends of one ordering |
 | 11 | Corrections and appeals | named contact, response SLA, public changelog with effective dates |
 | 12 | Reproducibility artifact | downloadable per-brand counts — pos, neg, neutral, abstain, `n`, `n_eff` — behind every score |
 

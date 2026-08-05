@@ -22,9 +22,9 @@ Built and operated by **Empact Partners**. Next.js on Vercel, Supabase for data.
 
 **The one number that reshapes the build: Reddit's API reaches roughly 3 to 8 days of history**, not years. So the API is a maintenance tool, and history comes from archive dumps. Everything downstream follows from that.
 
-**Only generalist subreddits score a brand.** Any subreddit named for a vendor or a product is out, r/salesforce and r/shopify included. That is **56 of the 156** subreddits measured and **76%** of the brand-bearing volume, given up so that two brands in a category are ranked on the same ground.
+**Only generalist subreddits score a brand.** Any subreddit named for a vendor or a product is out, r/salesforce and r/shopify included. That is **50 of the 232** subreddits measured, carrying **50%** of the brand-bearing volume, given up so that two brands in a category are ranked on the same ground. Another 56 are hostile to vendor talk by rule. **125 are scorable**, and widening the candidate lists by discovery rather than by hand took the categories clearing the five-subreddit floor from 12 of 20 to **20 of 20**.
 
-**What is unproven is trust, not feasibility.** Whether the ranking matches what a knowledgeable person would say is exactly what [Phase 0](12-phasing.md) tests, on **CRM**: 16 scorable generalist subreddits out of 23 candidates, the widest margin of any category measured.
+**What is unproven is trust, not feasibility.** Whether the ranking matches what a knowledgeable person would say is exactly what [Phase 0](12-phasing.md) tests, on **CRM**: 17 scorable generalist subreddits out of 26 candidates, the widest margin of any category measured.
 
 Two risks are priced and accepted rather than avoided — the Reddit-containing name and displaying full comment text. Both are recorded with their clause citations in [01-legal.md](01-legal.md) and [decisions/](decisions/). If a UDRP ever lands it costs the domain, not the pipeline or the index.
 
@@ -34,7 +34,7 @@ Two risks are priced and accepted rather than avoided — the Reddit-containing 
 
 1. **The API cannot backfill.** Every Reddit listing hard-caps at ~1,000 items. Measured live: `/r/SaaS/new` exhausted at 995 items, then `after=None`. Against r/SaaS's measured posting rate that is 3 to 8 days. History has to come from archive dumps.
 2. **Reddit search indexes posts, not comment bodies.** Brand opinion lives in comments, so per-brand search is a discovery tool, never a census. You must ingest whole subreddits and match locally.
-3. **Signal does not track subscriber count.** r/PasswordManagers (54,640 subscribers) runs **42%** brand-bearing comments. r/marketing (1,958,693) runs **0%**, because its rules delete exactly that content. Same story in CRM: r/CRM (55,275) at 12%, r/startups (2,107,067) at 0%.
+3. **Signal does not track subscriber count.** r/PasswordManagers (54,640 subscribers) runs **42%** brand-bearing comments. r/marketing (1,958,693) runs **0%**, because its rules delete exactly that content. Same story in CRM: r/CRM (55,275) at 12%, r/startups (2,107,067) at 0%. All four re-measured on 2026-08-05.
 4. **31% of software brands share a name with a common English word.** Notion, Slack, Monday, Linear, Stripe, Craft, Front, Ramp, Make, Segment, Loom. This is the hardest engineering problem in the project.
 5. **The corpus is smaller than intuition.** ~1,000 subreddits is 200-400M items: 0.5-1.5 TB as raw JSON, **50-150 GB** once stored as zstd-compressed Parquet. One machine, about $74/month.
 
@@ -68,7 +68,7 @@ Two risks are priced and accepted rather than avoided — the Reddit-containing 
 
 **On the eligibility gate.** The naive derivation `n = z²p(1−p)/h² = 384 → 400` assumes independent draws. Reddit mentions cluster inside a handful of mega-threads and within threads by author, so that assumption fails and the raw count overstates the information you have.
 
-The gate is therefore `n_eff = n / DEFF ≥ 400`, where `DEFF = 1 + (m̄ − 1)·ICC`. Both `n` and `n_eff` are published on every brand page, intervals come from a cluster bootstrap, and four diversity floors — authors, subreddits, threads, and max share from any one thread — apply on top ([07-index-methodology.md](07-index-methodology.md)).
+The gate is therefore `n_eff = n / DEFF ≥ n_min`, where `DEFF = 1 + (m̄ − 1)·ICC` and `n_min` is set by the category's published precision target — 600, 400 or 200 for the Deep, Standard and Thin tiers ([decisions/0009](decisions/0009-category-scaled-thresholds.md)). Both `n` and `n_eff` are published on every brand page, intervals come from a cluster bootstrap, and **four diversity floors — authors ≥ 50, subreddits ≥ 5, max share from one thread ≤ 20%, max share from one author ≤ 5% — apply on top and never scale** ([07-index-methodology.md](07-index-methodology.md)).
 
 ---
 
@@ -100,8 +100,12 @@ The gate is therefore `n_eff = n / DEFF ≥ 400`, where `DEFF = 1 + (m̄ − 1)�
 | 1 | Product is **Reddit Index** on `redditindex.com`. "Reddit" kept in the name deliberately, breaching [Data API Terms §4.1](https://www.redditinc.com/policies/data-api-terms) and [Developer Terms §5.3](https://www.redditinc.com/policies/developer-terms). The realistic enforcement is a UDRP filing, not a lawsuit, and losing one costs the domain rather than the project. | [0001](decisions/0001-name-reddit-index.md) |
 | 2 | Brand pages **display full comment text** with links back. Knowingly non-compliant, priced as a risk. | [0002](decisions/0002-display-full-mentions.md) |
 | 3 | **Derive the category spine**, do not copy Capterra's. | [0003](decisions/0003-g2-taxonomy-spine.md) |
-| 4 | **Two axes**, love and hate scored independently. | [0004](decisions/0004-two-axis-index.md) |
+| 4 | ~~Two axes, love and hate scored independently.~~ **Superseded by 6.** | [0004](decisions/0004-two-axis-index.md) |
 | 5 | Columns stay labelled **"Most Loved" and "Most Hated."** Owner-specified superlatives, priced as exposure, with the measured variable shown beside them. | [0005](decisions/0005-superlative-labels.md) |
+| 6 | **One published metric, the Reddit Love Score** (0-100). Sorting it descending *is* the consolidated view. Supersedes 4, whose two indices ran over a shared denominator and were therefore complementary by construction. | [0006](decisions/0006-single-reddit-love-score.md) |
+| 7 | **Flat URLs** — `/{category}/` and `/{company}/` share one namespace, with a build-time collision gate and frozen slugs. | [0007](decisions/0007-flat-url-namespace.md) |
+| 8 | **A unique colour and lucide icon per category**, generated under constraint so none can read as the loved or hated accent, and none is orange. | [0008](decisions/0008-category-identity-system.md) |
+| 9 | **Category-scaled thresholds** — the eligibility gate follows a published precision target per category. The diversity floors never scale. | [0009](decisions/0009-category-scaled-thresholds.md) |
 
 ⚠️ **Decisions 1 and 2 are priced risks, not solved problems.** The name breaches Reddit's trademark clauses and the brand pages display full comment text. Both were taken with the exposure in front of the owner, and neither is mitigated by anything built later.
 
@@ -115,6 +119,7 @@ Empact Partners operates it openly. The footer reads "Created by Empact Partners
 
 | Doc | What's in it |
 |---|---|
+| **[BUILD-PROMPT.md](BUILD-PROMPT.md)** | **The build prompt.** Paste it into a fresh session to start building. Four milestones, each with an acceptance gate. |
 | **[00-concept.md](00-concept.md)** | The product, page by page, and the live competitive field. Start here. |
 | **[13-algorithm.md](13-algorithm.md)** | **How it actually works.** Subreddit selection, the comment-stream discovery lane, mention detection, the continuous-ingest daily-publish loop. |
 | [01-legal.md](01-legal.md) | The clause-level risk register and the two priced decisions |
@@ -125,8 +130,10 @@ Empact Partners operates it openly. The footer reads "Created by Empact Partners
 | [06-sentiment.md](06-sentiment.md) | Targeted ABSA, the cascade, validation protocol |
 | **[07-index-methodology.md](07-index-methodology.md)** | The formulas. What a hostile CMO attacks first. |
 | [08-architecture.md](08-architecture.md) | Next.js on Vercel, Supabase, schema, daily refresh, cost table |
-| **[14-category-tests.md](14-category-tests.md)** | **20 categories measured live.** 156 subreddits, the generalist-only rule, what the data says and what it cannot say |
-| [09-design.md](09-design.md) | Empact brand applied — Syne, Public Sans, the palette |
+| **[14-category-tests.md](14-category-tests.md)** | **20 categories measured live.** 232 subreddits, the generalist-only rule, what the data says and what it cannot say |
+| [09-design.md](09-design.md) | Visual spec: trade dress, component inventory, accessibility |
+| [15-empact-brand.md](15-empact-brand.md) | The Empact brand system, transcribed from the style guide — and what this site refuses |
+| [16-design-system.md](16-design-system.md) | The implementation layer: tokens, shadcn/lucide map, the 20 category colours, build gates |
 | [10-seo-aeo.md](10-seo-aeo.md) | Indexation, schema, AI citation, what gets it killed |
 | [11-outreach-play.md](11-outreach-play.md) | The GTM motion and the email angles, ranked |
 | [12-phasing.md](12-phasing.md) | Phase 0 → 3, with kill criteria |
@@ -142,12 +149,14 @@ All CSV, one click each. Click the file, then **Download raw file**.
 
 | File | Rows | What's in it |
 |---|---:|---|
-| **[subreddit-measurements.csv](data/subreddit-measurements.csv)** | 156 | **Every subreddit measured**, with `is_vendor_sub` and `scorable`. Start here. |
-| **[category-tests-20.csv](data/category-tests-20.csv)** | 20 | Per category: candidates, hostile, vendor, scorable, floor verdict |
+| **[subreddit-measurements.csv](data/subreddit-measurements.csv)** | 232 | **Every subreddit measured**, with `is_vendor_sub` and `scorable`. Start here. |
+| **[category-tests-20.csv](data/category-tests-20.csv)** | 20 | Per category: candidates, hostile, vendor, scorable, floor verdict, threshold tier |
+| **[categories.csv](data/categories.csv)** | 20 | The shipping categories: slug, colour, lucide icon, threshold tier, `n_min` |
 | [phase1-categories.csv](data/phase1-categories.csv) | 50 | The Phase 1 spine |
 | [subreddit-map.csv](data/subreddit-map.csv) | 131 | The earlier category → subreddit map, superseded for scoring |
 | [brand-gazetteer-seed.csv](data/brand-gazetteer-seed.csv) | 113 | Seed brands with ambiguity classification |
 | [domain-availability.csv](data/domain-availability.csv) | 120 | The sweep behind the name, plus the live competitors |
+| [analyze.py](data/analyze.py) | — | Regenerates the three measurement CSVs from raw probe output |
 
 Column reference and regeneration: **[data/README.md](data/README.md)**
 
@@ -182,7 +191,7 @@ Column reference and regeneration: **[data/README.md](data/README.md)**
 
 **No gold set exists and no pipeline has been run.** Every accuracy figure — precision ≥0.97, recall 0.80-0.88, the sentiment cascade cost — is a target derived from published benchmarks, not a measurement of our own system.
 
-**The planned audit cannot prove the precision target tightly.** At p̂ = 0.97 on 400 items the Wilson 95% interval is roughly ±1.7pp, which cannot separate 0.97 from 0.95. Either the audit n rises or the published claim softens to what the sample supports ([06-sentiment.md](06-sentiment.md)).
+**The audit is sized to the claim.** At p̂ = 0.97 on 400 items the Wilson 95% interval runs roughly ±1.7pp, which cannot separate 0.97 from 0.95. The audit is therefore **1,000 items per cycle**, and precision publishes as a Wilson lower bound rather than a point estimate ([05-entity-resolution.md](05-entity-resolution.md)).
 
 **Reddit's commercial pricing is unknown.** No public rate card exists. The often-quoted $0.24 per 1,000 calls is the June 2023 announced developer rate, not a verified 2026 enterprise price.
 

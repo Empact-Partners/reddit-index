@@ -1,21 +1,21 @@
-category,candidates,ok,hostile,vendor_subs,scorable,live_bb_per_hour,live_bb_per_hour_ub95,seed_bb_3y,seed_bb_3y_ub95,meets_5_sub_floor
-CRM,23,23,3,4,16,0.85,4.44,22259,116689,True
-Project Management,18,18,6,5,10,0.29,7.54,7726,198037,True
-Accounting,11,11,6,2,3,0.01,0.99,367,26056,False
-HR and HRIS,10,10,4,0,6,0.21,7.02,5439,184474,True
-Email Marketing,14,14,5,4,6,0.1,1.09,2706,28659,True
-Marketing Automation,14,13,4,2,7,0.08,1.05,2128,27645,True
-Password Managers and Security,15,15,4,4,7,0.57,6.33,15111,166360,True
-Note-taking and Knowledge Management,17,17,11,6,4,0.03,2.21,735,58058,False
-Design and Prototyping,12,12,6,4,4,1.08,4.37,28356,114903,False
-Video Editing,14,14,7,5,3,0.34,1.68,8882,44026,False
-Help Desk and Customer Support,10,10,2,3,5,0.0,3.89,0,102168,True
-ERP,13,13,4,4,7,0.1,4.12,2733,108299,True
-Business Intelligence and Analytics,9,9,1,4,4,0.84,1.86,22075,48777,False
-eCommerce Platforms,13,13,7,5,3,0.0,0.76,0,20049,False
-Applicant Tracking and Recruiting,11,11,3,0,8,0.14,9.5,3652,249729,True
-Payroll,10,10,6,0,4,0.07,2.29,1787,60210,False
-Cloud Hosting and Infrastructure,12,12,2,4,6,0.14,6.45,3652,169573,True
-Team Collaboration and Chat,8,8,3,2,5,0.14,4.41,3652,115875,True
-Backup and Storage,9,9,1,2,6,0.54,6.83,14191,179474,True
-Payment Processing,11,11,6,3,3,0.0,0.64,105,16837,False
+category,candidates,ok,hostile,vendor_subs,scorable,live_bb_per_hour,live_bb_per_hour_ub95,seed_bb_3y,seed_bb_3y_ub95,meets_5_sub_floor,threshold_tier,precision_target_pp,n_min
+CRM,26,26,5,4,17,0.96,3.92,25224,102928,True,deep,4,600
+Project Management,20,20,4,5,11,0.36,7.11,9332,186840,True,standard,5,400
+Accounting,16,16,7,2,7,0.34,1.3,8870,34153,True,standard,5,400
+HR and HRIS,10,10,4,0,6,0.21,6.69,5419,175776,True,standard,5,400
+Email Marketing,17,17,6,3,8,0.11,1.16,2875,30548,True,thin,7,200
+Marketing Automation,22,21,6,2,13,0.89,1.79,23360,47138,True,deep,4,600
+Password Managers and Security,19,19,5,4,10,1.13,7.13,29657,187495,True,deep,4,600
+Note-taking and Knowledge Management,21,21,8,6,7,0.66,2.83,17395,74317,True,standard,5,400
+Design and Prototyping,26,26,7,3,16,2.05,4.73,53948,124241,True,deep,4,600
+Video Editing,23,23,9,4,10,2.19,3.31,57514,86968,True,deep,4,600
+Help Desk and Customer Support,11,11,2,3,6,0.17,4.06,4468,106636,True,thin,7,200
+ERP,13,13,2,4,7,0.1,3.98,2738,104600,True,thin,7,200
+Business Intelligence and Analytics,18,18,1,3,14,2.37,2.73,62412,71850,True,deep,4,600
+eCommerce Platforms,19,19,8,5,6,0.18,0.94,4720,24769,True,thin,7,200
+Applicant Tracking and Recruiting,11,11,3,0,8,0.14,9.23,3645,242585,True,thin,7,200
+Payroll,11,11,6,0,5,0.13,2.29,3416,60299,True,thin,7,200
+Cloud Hosting and Infrastructure,18,18,3,0,15,0.57,10.43,14964,274213,True,standard,5,400
+Team Collaboration and Chat,18,18,4,2,12,12.25,18.18,321854,477713,True,deep,4,600
+Backup and Storage,12,12,1,3,8,0.71,6.68,18627,175440,True,standard,5,400
+Payment Processing,16,16,6,4,6,4.71,5.34,123697,140364,True,deep,4,600
