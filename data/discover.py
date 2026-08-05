@@ -264,7 +264,14 @@ def queries_for(cat_name, brands):
 
 
 def discover_candidates(cat_name, brands, seeds, cap=34):
-    """Seeds always survive. Search fills the rest, largest communities first."""
+    """Seeds are never subject to the cap. Search fills whatever is left.
+
+    The first version ranked every candidate by subscriber count and truncated,
+    which dropped r/CRM from the CRM list behind r/technology and
+    r/sanfrancisco. 13-algorithm.md is explicit that a scoring subreddit is
+    "chosen by measured yield per call, never by subscriber count" — sorting the
+    CANDIDATE list that way reintroduced the same mistake one step earlier.
+    """
     fp = os.path.join(CACHE, "_cand_" + re.sub(r"[^a-z0-9]+", "-", cat_name.lower()) + ".json")
     if os.path.exists(fp):
         return json.load(open(fp))
@@ -284,10 +291,10 @@ def discover_candidates(cat_name, brands, seeds, cap=34):
                 continue
             found[name] = max(found.get(name, 0), d.get("subscribers") or 0)
 
-    for s in seeds:
-        found.setdefault(s, 10 ** 9)  # seeds sort first, never dropped
-
-    ranked = [n for n, _ in sorted(found.items(), key=lambda kv: -kv[1])][:cap]
+    seed_set = {s.lower() for s in seeds}
+    discovered = [n for n, _ in sorted(found.items(), key=lambda kv: -kv[1])
+                  if n.lower() not in seed_set]
+    ranked = list(seeds) + discovered[:max(0, cap - len(seeds))]
     json.dump(ranked, open(fp + ".tmp", "w"), indent=1)
     os.replace(fp + ".tmp", fp)
     return ranked

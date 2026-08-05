@@ -1,8 +1,11 @@
 worker/
 supabase/
-data/
+# data/ must NOT be ignored — gen-categories.mjs and the build gates read
+# data/categories.csv and data/brand-gazetteer-seed.csv at prebuild time.
+# The large CSVs (subreddit-measurements, category-subreddits) are inert.
 decisions/
 scripts/gates/__selftest__.mjs
 tests/
 *.md
 .codex_*
+data/.discover-cache/
