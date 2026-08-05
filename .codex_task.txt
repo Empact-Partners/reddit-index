@@ -1,43 +1,64 @@
-Fact-check the newest documentation in /Users/vladshvets/Projects/reddit-index against its own shipped data. READ-ONLY: do not edit any file.
+You are designing the UI for Reddit Index (redditindex.com): a public site that
+ranks software brands by what Reddit says about them. It is Empact Partners' property, built as a
+cold-outreach asset. The documentation repo is your working directory.
 
-DOCS TO CHECK:
-- 13-algorithm.md  (the pipeline; contains live endpoint measurements)
-- 14-category-tests.md  (the 20-category study)
-- 02-data-acquisition.md, 04-subreddit-mapping.md, 12-phasing.md, 08-architecture.md, README.md, data/README.md
+READ THESE FIRST — they are the authoritative spec:
+  00-concept.md              product and page-by-page UX
+  09-design.md               visual spec, trade-dress bans, component inventory, accessibility
+  07-index-methodology.md    the statistics behind the score
+  14-category-tests.md       the measured 20-category study
 
-GROUND TRUTH — every number in the prose must reconcile against these:
-- data/subreddit-measurements.csv  (132 rows, one per unique subreddit)
-- data/category-tests-20.csv  (20 rows, category rollup)
-- data/category-candidates-20.json  (the probe input)
+DECISIONS ALREADY TAKEN. Do not relitigate these; design within them.
+  * URLs are FLAT: redditindex.com/ , redditindex.com/{category}/ , redditindex.com/{company}/
+  * ONE published metric, named "Reddit Love Score", 0-100. Sorting it descending IS the
+    consolidated view: most loved at the top, most hated at the bottom. This SUPERSEDES the
+    two-axis Love/Hate model still written in 07-index-methodology.md and decisions/0004.
+  * Two headline metrics per row: Reddit Love Score, and total mention count.
+  * Homepage pools all categories: top 100 most loved + top 100 most hated, ordered by RAW
+    Reddit Love Score, capped at a maximum of 5 brands per category (cap disclosed on the page).
+    A third column names the brand's category.
+  * Category pages show Most Loved / Most Hated, plus a switcher to one consolidated list.
+  * A mention is a mention: a brand named in a post body and a brand named in a comment count
+    identically. Both are displayed.
+  * Stack: Next.js App Router (SSG + revalidateTag), shadcn/ui, lucide-react, Tailwind,
+    Supabase Postgres. A Railway worker refreshes data daily.
+  * Each of the 20 categories gets a unique colour and a lucide icon.
+  * Empact brand: Syne (headings), Public Sans (body). Sherpa Blue #02454F, Lucky Green #40C890
+    (= loved), Sugar Grape #A155FF (= hated), Virtual Goal #C6FF53, Space Black #171616,
+    Snowbelt #EEF1ED.
+  * Reddit trade dress is BANNED: no #FF4500, no orange anywhere, no Snoo, no Reddit Sans, no
+    speech-bubble mark, no vote arrows, no karma pills, no awards.
 
-YOUR JOB, in three parts.
+RULES FOR YOUR ANSWER:
+  - Be concrete and implementable. Name components, props, routes, files, CSS.
+  - Every recommendation states its cost or trade-off.
+  - If your analysis shows something in the existing spec is WRONG or now contradictory, say so
+    explicitly under a "SPEC DEFECTS FOUND" heading. This is valuable; hunt for it.
+  - No prose about why design matters. No filler. Tables and code over paragraphs.
 
-PART 1 — RECONCILE EVERY NUMBER. Recompute from the CSVs yourself with a script. Verify at minimum:
-- "48 of 131 hostile (37%)" and "48 of 132 single-product (36%)" — check the denominators are right and consistent; one uses 131 (reachable) and one uses 132 (all). Flag if the docs mix them.
-- "51 of 132 scorable"
-- "only 6 of 20 categories reach the 5-scorable-subreddit floor" — recount from category-tests-20.csv
-- "187 candidate slots collapse to 132 unique subreddits" and the "~29% ingest saving" — verify 187 from the candidates JSON and that the percentage is computed correctly
-- "r/Entrepreneur serves 7 categories" and every other overlap count
-- Every per-subreddit figure quoted in prose (r/Bitwarden 37%, r/paypal 50%, r/SAP 49%, r/salesforce 30%, r/ObsidianMD 21%, subscriber counts, comment rates)
-- Every row of the big category table in 14-category-tests.md §4 against category-tests-20.csv
-- The CRM Phase 0 claims in 12-phasing.md: 5 scorable subs, 2.02 bb/h, ~53,000 3-year point estimate
 
-PART 2 — ARITHMETIC AND UNITS.
-- The daily call model in 13-algorithm.md §8: does ~180/category/day × 50 reconcile with ~9,000/day, and does 9,000/day at 80 req/min reconcile with "under 2 hours"?
-- Is "~1,250/week" consistent with ~180/day?
-- The multireddit bucketing pseudocode: does it terminate, and does it actually achieve "roughly one page per poll interval"? Check the units — rates are comments/hour, PAGE/TARGET is 100/24 ≈ 4.17 comments/hour. Is the comparison dimensionally correct?
-- The adaptive cadence formula clamp(500/rate, 1, 24): with rate in comments/hour, does this give hours? Sanity-check against the measured r/SaaS 83/h, r/CRM 5/h, r/PasswordManagers 1.4/h.
-- The 3-year projections: bb/h × 8760 × 3. Verify a few.
-- density_ub95: the docs claim rule-of-three (3/n) where the observed count is zero. Verify that is what the CSV contains.
+YOUR TASK
+=========
+Empty, insufficient-signal, and below-threshold states.
 
-PART 3 — OVERCLAIM AND CONTRADICTION.
-- 14-category-tests.md insists the study cannot declare a category dead. Does any OTHER doc nonetheless treat a category as dead or unrankable on this evidence? In particular, older text said "ERP and Help Desk cannot be ranked" — Help Desk now PASSES the floor with 6 scorable subs. Flag any surviving contradiction.
-- Does any doc still say weekly refresh?
-- Does any doc still name Password Managers as the Phase 0 subject?
-- Is the Lane C external-index coverage claim honest everywhere it appears (opportunistic, coverage unknown, never a census)?
-- Any place a measured floor is presented as a point estimate, or an upper bound as a measurement.
+09-design.md makes the insufficient-signal state a first-class component. The measured study
+found several categories that cannot be ranked honestly.
 
-Quote doc text and the recomputed value side by side for every finding. Report only defects. An empty findings list is valid.
+1. Specify every state the site can be in, as a table: what triggers it, what renders, what the
+   user is told, what the onward link is. Cover at minimum: category cannot be ranked at all;
+   category ranks but a specific brand is below threshold; brand exists but has zero mentions in
+   the window; brand tracked in one category and below threshold in another; search finds
+   nothing; a company page for a brand that has just dropped below threshold.
+2. The wording. Write the actual strings. They must name the failing floor and the number, never
+   a vague "not enough data".
+3. Visual treatment: 09-design.md says the panel uses no accent hue. Confirm or challenge.
+4. A ranked category page still lists below-threshold brands. Where on the page, in what
+   container, expanded or collapsed by default.
+5. SEO: these pages are thin. Should they be indexable, noindex, or not exist? A page that
+   404s and a page that says "not enough signal" are very different for a brand searching for
+   itself. Recommend.
+6. The daily refresh can move a brand across the threshold in either direction. What does a
+   returning visitor or a stale Google result see.
 
-Write JSON to /private/tmp/claude-501/-Users-vladshvets--claude/f6928dd3-ec32-4042-ab81-563839239aff/scratchpad/codex-review/out_newdocs.json with shape:
-{"findings":[{"file":"...","doc_text":"...","recomputed":"...","type":"NUMBER_ERROR|ARITHMETIC|UNITS|CONTRADICTION|OVERCLAIM|STALE","severity":"critical|major|minor","fix":"..."}],"checks_run":<int>,"verdict":"..."}
+Write your complete answer as markdown to /private/tmp/claude-501/-Users-vladshvets--claude/f6928dd3-ec32-4042-ab81-563839239aff/scratchpad/ui_out/states.md
+That file is the deliverable. Create it even if you also print to stdout.

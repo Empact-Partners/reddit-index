@@ -1,0 +1,21 @@
+category,slug,icon,hex,oklch,contrast_space_black,contrast_snowbelt,dE_loved,dE_hated,dE_nearest_category
+CRM,crm,contact-round,#F8AAC1,oklch(0.820 0.095 0),9.92,1.6,0.2468,0.286,0.0974
+Project Management,project-management,square-kanban,#EB367F,oklch(0.630 0.220 2),4.6,3.45,0.3757,0.2376,0.0971
+Accounting,accounting,calculator,#D5788A,oklch(0.680 0.117 8),5.92,2.68,0.2616,0.2307,0.094
+HR and HRIS,hr,users-round,#9E8242,oklch(0.620 0.090 86),4.94,3.21,0.1948,0.3184,0.0974
+Email Marketing,email-marketing,mail,#E8B109,oklch(0.790 0.160 86),9.25,1.71,0.1919,0.4174,0.0937
+Marketing Automation,marketing-automation,megaphone,#BEA15B,oklch(0.720 0.095 88),7.26,2.18,0.1501,0.3382,0.0956
+Password Managers and Security,password-managers,key-round,#C5CA86,oklch(0.820 0.090 112),10.5,1.51,0.132,0.3825,0.0937
+Note-taking and Knowledge Management,note-taking,notebook-pen,#93DE04,oklch(0.820 0.220 130),10.93,1.45,0.1445,0.4977,0.1373
+Design and Prototyping,design,pen-tool,#6D9935,oklch(0.630 0.139 130),5.38,2.95,0.139,0.3771,0.0974
+Video Editing,video-editing,clapperboard,#1A999A,oklch(0.620 0.101 196),5.19,3.05,0.1502,0.2816,0.1194
+Help Desk and Customer Support,help-desk,headset,#79D4E4,oklch(0.820 0.090 210),10.66,1.49,0.1301,0.3218,0.0985
+ERP,erp,factory,#18B8FF,oklch(0.740 0.155 236),8.01,1.98,0.1802,0.2492,0.0982
+Business Intelligence and Analytics,business-intelligence,chart-column,#4C7AFF,oklch(0.620 0.204 266),4.77,3.33,0.3034,0.134,0.1207
+eCommerce Platforms,ecommerce,shopping-cart,#7A90CA,oklch(0.660 0.090 268),5.75,2.76,0.2075,0.1737,0.1194
+Applicant Tracking and Recruiting,recruiting,user-search,#9DB6F5,oklch(0.780 0.095 268),8.95,1.77,0.1958,0.2276,0.0982
+Payroll,payroll,banknote,#FE7AEE,oklch(0.770 0.209 332),7.92,2.0,0.3517,0.1931,0.0931
+Cloud Hosting and Infrastructure,cloud-hosting,server,#B169A7,oklch(0.620 0.122 332),4.66,3.4,0.2927,0.1507,0.0954
+Team Collaboration and Chat,team-chat,messages-square,#D68FCC,oklch(0.740 0.117 332),7.43,2.13,0.2591,0.1919,0.094
+Backup and Storage,backup-storage,hard-drive,#D245BF,oklch(0.630 0.220 334),4.6,3.45,0.3801,0.136,0.0982
+Payment Processing,payment-processing,credit-card,#FE65AD,oklch(0.720 0.198 354),6.61,2.4,0.3403,0.2236,0.0931

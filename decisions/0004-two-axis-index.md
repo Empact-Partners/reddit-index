@@ -1,6 +1,13 @@
 # 0004 — Love and hate are two axes, not one scale
 
-**Status:** Accepted · **Date:** 2026-08-04 · **Decided by:** Vlad Shvets, on the research
+**Status:** ⚠️ **Superseded** by [0006 — One published metric: the Reddit Love Score](0006-single-reddit-love-score.md) · **Date:** 2026-08-04 · **Superseded:** 2026-08-05 · **Decided by:** Vlad Shvets, on the research
+
+> **This record is retained for its reasoning, not as the current design.** The site publishes
+> **one** index. Because both scores here run over the shared denominator `N_op = pos + neg`,
+> they are algebraically complementary (`H = 1 − L` before shrinkage) — a redundancy this record
+> documents in its own Consequences section. Everything else below is still in force: the
+> opinionated denominator, the shrinkage, the leave-one-out priors, the cluster-bootstrap
+> intervals, the published `neutral_share`, and the exposure confound. See [0006](0006-single-reddit-love-score.md).
 
 ## Bottom line
 
