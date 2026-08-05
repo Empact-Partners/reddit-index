@@ -234,13 +234,19 @@ def main():
     batches = [todo[i:i + BATCH] for i in range(0, len(todo), BATCH)]
 
     def run(batch):
-        try:
-            return batch, topicality_batch(batch)
-        except Exception as e:
-            print(f"  batch failed: {e}", flush=True)
-            return batch, {}
+        for attempt in range(3):
+            try:
+                return batch, topicality_batch(batch)
+            except Exception as e:
+                if attempt == 2:
+                    print(f"  batch failed after 3 tries: {e}", flush=True)
+                    return batch, {}
+                time.sleep(3 * (attempt + 1))
+        return batch, {}
 
-    with ThreadPoolExecutor(max_workers=6) as ex:
+    # Two at a time. Six concurrent headless `claude -p` sessions from one
+    # environment return rc=1 — the classifier is fine, the concurrency is not.
+    with ThreadPoolExecutor(max_workers=2) as ex:
         for n, (batch, got) in enumerate(ex.map(run, batches), 1):
             for iid, *_ in batch:
                 t = got.get(iid)
