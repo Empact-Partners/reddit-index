@@ -27,6 +27,9 @@
     "react-dom": "19.2.0",
     "server-only": "0.0.1"
   },
+  "pnpm": {
+    "onlyBuiltDependencies": ["esbuild", "@esbuild/*"]
+  },
   "devDependencies": {
     "@fontsource/public-sans": "5.2.6",
     "@fontsource/syne": "5.2.6",

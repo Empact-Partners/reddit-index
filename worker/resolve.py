@@ -33,6 +33,12 @@ REPO = os.path.dirname(HERE)
 _CODE_BLOCK = re.compile(r'```[\s\S]*?```|`[^`]+`')
 _QUOTE_BLOCK = re.compile(r'^>.*$', re.MULTILINE)
 
+VERB_FRAME = re.compile(
+    r"\b(use|using|used|switch(?:ed)? to|migrat(?:e|ed|ing) to|mov(?:e|ed|ing) (?:off|from|to)|"
+    r"on|running|adopted|implemented|rolled out|ditch(?:ed)?|dropped|left|paying for|"
+    r"signed up for|trial(?:l)?ed|evaluated|we\'re on|deployed)\s+\S{0,3}$", re.I)
+
+
 def preprocess(text):
     text = _CODE_BLOCK.sub(' ', text)
     text = _QUOTE_BLOCK.sub(' ', text)
@@ -209,8 +215,12 @@ class Resolver:
                 })
                 continue
 
-            # Stop context check — hard reject (but only AFTER domain check)
-            if check_stop_context(norm, hit["pos"], slug, self.stops):
+            # Stop contexts veto a BARE token, never a qualified form.
+            # "Close the deal quickly using Close CRM" matched `Close CRM`, which
+            # is unambiguous, and the veto was firing on `close the deal` sitting
+            # in the same sentence. A qualified form carries its own evidence.
+            qualified = (" " in hit["alias"]) or ("." in hit["alias"])
+            if not qualified and check_stop_context(norm, hit["pos"], slug, self.stops):
                 continue
 
             # SAFE: accept
@@ -241,10 +251,13 @@ class Resolver:
                 if check_cooccurrence(norm, hit["pos"], slug, raw_hits):
                     signals += 1
                 # Subreddit prior: if the sub is in a category's seed list
-                if subreddit and thread_title:
-                    cat_nouns = _category_nouns_for_brand(slug)
-                    if any(n in (thread_title or "").lower() for n in cat_nouns):
-                        signals += 1
+                cat_nouns = _category_nouns_for_brand(slug)
+                if any(n in (thread_title or "").lower() for n in cat_nouns):
+                    signals += 1
+                if any(n in norm[max(0, hit["pos"] - 120):hit["pos"] + 120] for n in cat_nouns):
+                    signals += 1
+                if VERB_FRAME.search(norm[max(0, hit["pos"] - 40):hit["pos"]]):
+                    signals += 1
                 if signals >= 1:
                     accepted.append({
                         "brand_slug": slug,
@@ -255,13 +268,59 @@ class Resolver:
                     })
                 continue
 
-            # HOSTILE: excluded outright in this build
-            # 05 §9: "excluded, not guessed"
+            # HOSTILE: the frozen rule is >= 2 corroborating signals, and a
+            # stop-context veto has already run above. 05 §5: a bare
+            # high-ambiguity token "default-rejects unless two corroborating
+            # signals fire". Bare forms that no stop-context list can rescue
+            # (`close`, `make`, `square`) never reach here at all — they carry
+            # bare_disabled and are absent from the automaton.
+            if cls == "HOSTILE":
+                signals = 0
+                if check_cooccurrence(norm, hit["pos"], slug, raw_hits):
+                    signals += 1
+                cat_nouns = _category_nouns_for_brand(slug)
+                if any(n in (thread_title or "").lower() for n in cat_nouns):
+                    signals += 1
+                if any(n in norm[max(0, hit["pos"] - 120):hit["pos"] + 120]
+                       for n in cat_nouns):
+                    signals += 1
+                if VERB_FRAME.search(norm[max(0, hit["pos"] - 40):hit["pos"]]):
+                    signals += 1
+                if signals >= 2:
+                    accepted.append({
+                        "brand_slug": slug,
+                        "alias": hit["alias"],
+                        "pos": hit["pos"],
+                        "conf": 0.78,
+                        "rule_fired": f"hostile_corroborated_{signals}",
+                    })
             continue
 
-        # Dedupe: one mention per brand per document
-        final = {}
+        # A surface form shared by two brands resolves to ONE of them. "HubSpot"
+        # is the canonical name of `hubspot` and an alias of
+        # `hubspot-marketing-hub`; accepting both counts the company twice and
+        # inflates every figure downstream. The canonical name wins, because an
+        # alias inheriting a parent's evidence is exactly what 05 §5 forbids.
+        canonical = {b["slug"]: b["brand"].lower() for b in self.brands.values()} \
+            if isinstance(next(iter(self.brands.values()), {}), dict) else {}
+        by_pos = {}
         for a in accepted:
+            key = (a["pos"], a["alias"])
+            prev = by_pos.get(key)
+            if prev is None:
+                by_pos[key] = a
+                continue
+            a_is_canon = canonical.get(a["brand_slug"]) == a["alias"].lower()
+            p_is_canon = canonical.get(prev["brand_slug"]) == prev["alias"].lower()
+            if a_is_canon and not p_is_canon:
+                by_pos[key] = a
+            elif a_is_canon == p_is_canon and a["conf"] > prev["conf"]:
+                by_pos[key] = a
+
+        # Then one mention per brand per document: a comment naming a brand
+        # three times is ONE observation (13-algorithm.md §6).
+        final = {}
+        for a in by_pos.values():
             prev = final.get(a["brand_slug"])
             if not prev or a["conf"] > prev["conf"]:
                 final[a["brand_slug"]] = a
