@@ -44,14 +44,14 @@ abstain= 0
 N_op   = 3 + 7 = 10
 
 category prior, fitted leave-one-out over every other crm brand with N_op >= 30
-  alpha0 = 121.346
-  beta0  = 78.654
+  alpha0 = 120.501
+  beta0  = 79.499
 
 p_tilde = (x_pos + alpha0) / (N_op + alpha0 + beta0)
-        = (3 + 121.346) / (10 + 121.346 + 78.654)
-        = 124.3460 / 210.0000
-        = 0.592124
-Reddit Love Score = round(100 * 0.592124) = 59
+        = (3 + 120.501) / (10 + 120.501 + 79.499)
+        = 123.5010 / 210.0000
+        = 0.588100
+Reddit Love Score = round(100 * 0.588100) = 59
 ```
 
 ## Three independent computations of the same number
@@ -62,10 +62,10 @@ Reddit Love Score = round(100 * 0.592124) = 59
 | worker/score.py, same inputs | **59** |
 | Postgres, independent code path | **59** |
 
-Paste-able check: `=ROUND(100*(3+121.346)/(10+121.346+78.654),0)`
+Paste-able check: `=ROUND(100*(3+120.501)/(10+120.501+79.499),0)`
 
 ## The published figure, for contrast
 
-- whole in-window corpus: n = 147, N_op = 84, n_eff = 58.0
+- whole in-window corpus: n = 146, N_op = 83, n_eff = 56.6
 - eligible: **False**
-- failed test: **n_eff** — 58 observed against 600 required
+- failed test: **n_eff** — 57 observed against 600 required

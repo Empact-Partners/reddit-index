@@ -152,8 +152,11 @@ def main():
     ap.add_argument("--category", action="append")
     ap.add_argument("--all", action="store_true")
     ap.add_argument("--batch", type=int, default=12)
-    ap.add_argument("--workers", type=int, default=3,
-                    help="Six concurrent headless claude sessions return rc=1; three is safe.")
+    ap.add_argument("--workers", type=int, default=1,
+                    help="SERIAL by default. Concurrent headless `claude -p` sessions do not "
+                         "merely fail — they WEDGE: the processes stay alive, produce nothing, "
+                         "and the 300s timeout plus retries turns a five-minute category into "
+                         "an hour. Bigger batches amortise startup instead; that is the lever.")
     ap.add_argument("--max-mentions", type=int, default=0,
                     help="Cap the CLASSIFIED corpus. Selection is by thread, in qualification "
                          "order, so a thread is either wholly in or wholly out — never a "
