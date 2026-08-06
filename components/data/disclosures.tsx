@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CORRECTIONS_EMAIL } from "@/lib/env";
 import { METHODOLOGY_VERSION } from "@/lib/format";
 import type { CategoryView } from "@/lib/data/types";
 
@@ -98,8 +99,8 @@ export function CorrectionPath() {
   return (
     <p className="mt-[var(--section)]" style={{ fontSize: "var(--fs-body)", maxWidth: "70ch" }}>
       If anything on this page is wrong, or you want it removed, write to{" "}
-      <a href="mailto:corrections@redditindex.com" className="underline underline-offset-4">
-        corrections@redditindex.com
+      <a href={`mailto:${CORRECTIONS_EMAIL}`} className="underline underline-offset-4">
+        {CORRECTIONS_EMAIL}
       </a>
       . Corrections and removals are free, are never bundled with an offer of
       any kind, and do not require you to talk to anyone first.

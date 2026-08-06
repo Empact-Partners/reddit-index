@@ -10,7 +10,35 @@ Built and operated by **Empact Partners**. Next.js on Vercel, Supabase for data.
 
 **Last verified: 2026-08-05** · 12 research lanes, primary sources, live measurement
 
-> ⚠️ **Nothing is built yet.** This repo is the specification: how it works, how it is scored, and what it costs.
+> **It is built, and it is live at [redditindex.com](https://redditindex.com) — behind `noindex`.**
+> The site, the schema, the pipeline and eight blocking build gates all exist. What is
+> published so far is a SAMPLE, not a census, and no company clears its category's
+> eligibility gate on it: every one renders "below threshold" with the test it missed and
+> both numbers. That is the correct outcome, not a missing feature.
+>
+> Start at [HANDOFF.md](HANDOFF.md) — it records the nine defects building against these
+> documents exposed, and what changed in them as a result.
+
+## How to run it
+
+```bash
+pnpm install && pnpm build          # 8 gates run pre- and post-build; any one fails the build
+pnpm test                           # component + footer-slot-4 contracts
+node scripts/gates/__selftest__.mjs # proves each gate fails when violated
+node --test tests/resolve.test.mjs  # the documented false matches, pinned
+
+python3 data/discover.py            # category -> subreddit mapping, all 20, resumable
+python3 data/refine.py              # yield re-measure + topicality, so junk subs cannot score
+python3 worker/freeze_methodology.py  # before any ingest. 07 section 9
+python3 worker/harvest.py --all --depth thin --deep-category crm
+python3 worker/pipeline.py --max-mentions 200   # resolve -> classify -> score
+python3 worker/load.py --seed --mentions --scores
+python3 worker/verify.py            # the gate evidence, as checkable artefacts
+python3 worker/delete_sync.py       # purge what its author deleted, then revalidate
+```
+
+No metered API is touched anywhere. Classification runs through `claude -p` on a Claude
+Max subscription, locally.
 
 ---
 
@@ -22,7 +50,7 @@ Built and operated by **Empact Partners**. Next.js on Vercel, Supabase for data.
 
 **The one number that reshapes the build: Reddit's API reaches roughly 3 to 8 days of history**, not years. So the API is a maintenance tool, and history comes from archive dumps. Everything downstream follows from that.
 
-**Only generalist subreddits score a brand.** Any subreddit named for a vendor or a product is out, r/salesforce and r/shopify included. That is **50 of the 232** subreddits measured, carrying **50%** of the brand-bearing volume, given up so that two brands in a category are ranked on the same ground. Another 56 are hostile to vendor talk by rule. **125 are scorable**, and widening the candidate lists by discovery rather than by hand took the categories clearing the five-subreddit floor from 12 of 20 to **20 of 20**.
+**Only generalist subreddits score a brand.** Any subreddit named for a vendor or a product is out, r/salesforce and r/shopify included. That is **50 of the 232** subreddits measured, carrying **50%** of the brand-bearing volume, given up so that two brands in a category are ranked on the same ground. Another 56 are hostile to vendor talk by rule. **125 are scorable**, and widening the candidate lists by discovery rather than by hand took the categories clearing the five-subreddit floor from 12 of 20 to **20 of 20**. ⚠️ **That figure does not reproduce from what shipped.** `category-candidates-20.json` is the pre-widening list — 254 slots over 156 subreddits against the 347/232 quoted — and 76 measured subreddits have no category attribution at all, which puts the reproducible figure at **13 of 20**. The mapping was re-derived from Reddit into [data/category-subreddits.csv](data/category-subreddits.csv); once a topicality term is applied so that a jiu-jitsu subreddit cannot be a payments community, **16 of 20** field five scoring subreddits. The other four render the insufficient-signal panel. See [HANDOFF.md](HANDOFF.md) item 1.
 
 **What is unproven is trust, not feasibility.** Whether the ranking matches what a knowledgeable person would say is exactly what [Phase 0](12-phasing.md) tests, on **CRM**: 17 scorable generalist subreddits out of 26 candidates, the widest margin of any category measured.
 

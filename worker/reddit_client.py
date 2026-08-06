@@ -33,17 +33,31 @@ def stats():
                 calls_per_min=round(_stats["calls"] / el * 60, 1))
 
 
-def _access_token():
+def _access_token(tries=6):
+    """Refresh with backoff.
+
+    This sat outside `get()`'s try/except and took the whole harvest down on a
+    single DNS blip — `[Errno 8] nodename nor servname provided` — fourteen
+    categories in. Every other call retries; the one that authorises them all
+    did not.
+    """
     if _token["v"] and time.time() - _token["t"] < 3000:
         return _token["v"]
     basic = base64.b64encode(f"{CLIENT_ID}:{CLIENT_SECRET}".encode()).decode()
-    req = urllib.request.Request(
-        "https://www.reddit.com/api/v1/access_token",
-        data=urllib.parse.urlencode({"grant_type": "client_credentials"}).encode(),
-        headers={"User-Agent": USER_AGENT, "Authorization": "Basic " + basic})
-    _token["v"] = json.loads(urllib.request.urlopen(req, timeout=25).read())["access_token"]
-    _token["t"] = time.time()
-    return _token["v"]
+    last = None
+    for attempt in range(tries):
+        try:
+            req = urllib.request.Request(
+                "https://www.reddit.com/api/v1/access_token",
+                data=urllib.parse.urlencode({"grant_type": "client_credentials"}).encode(),
+                headers={"User-Agent": USER_AGENT, "Authorization": "Basic " + basic})
+            _token["v"] = json.loads(urllib.request.urlopen(req, timeout=25).read())["access_token"]
+            _token["t"] = time.time()
+            return _token["v"]
+        except Exception as e:
+            last = e
+            time.sleep(min(60, 3 * (attempt + 1) ** 2))
+    raise RuntimeError(f"could not obtain a Reddit token after {tries} attempts: {last}")
 
 
 def _cache_path(path, params, bucket):

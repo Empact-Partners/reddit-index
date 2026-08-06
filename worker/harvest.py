@@ -317,6 +317,7 @@ def main():
     ap.add_argument("--category", action="append", help="category slug; repeatable")
     ap.add_argument("--all", action="store_true")
     ap.add_argument("--depth", default="thin", choices=list(DEPTHS))
+    ap.add_argument("--force", action="store_true", help="re-harvest categories already on disk")
     ap.add_argument("--deep-category", default=None,
                     help="one category to harvest at depth=deep while the rest run thin")
     args = ap.parse_args()
@@ -336,8 +337,18 @@ def main():
             print(f"!! {slug}: no scoring subreddits, skipping\n")
             continue
         depth = "deep" if slug == args.deep_category else args.depth
+        out_fp = os.path.join(OUT, f"{slug}.json")
+        if os.path.exists(out_fp) and not args.force:
+            print(f"=== {cats[slug]} ({slug}) — already harvested, skipping")
+            continue
         print(f"=== {cats[slug]} ({slug}) — {len(subs)} scoring subreddits, depth={depth}")
-        harvest_category(slug, cats[slug], subs, brands.get(slug, []), depth)
+        try:
+            harvest_category(slug, cats[slug], subs, brands.get(slug, []), depth)
+        except Exception as e:
+            # Disk is the source of truth and every response is already cached,
+            # so a category that dies costs its parse, not its calls. Losing the
+            # remaining nineteen to one blip is the expensive failure.
+            print(f"!! {slug} failed: {type(e).__name__}: {e}\n", flush=True)
 
     s = rc.stats()
     print(f"\nDONE — {s['calls']} API calls, {s['cached']} cache hits, "
