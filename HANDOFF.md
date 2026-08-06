@@ -10,6 +10,35 @@ found by building against the documents rather than reading them, and each is
 recorded below with the resolution taken — per BUILD-PROMPT's rule that a
 contradiction is fixed rather than picked silently.
 
+## What the first full run produced
+
+| | |
+|---|---|
+| Categories harvested | 20 of 20 |
+| Documents harvested | ~85,000 comments and post bodies |
+| Mentions resolved | 9,709 in CRM alone; ~20,000 across all twenty |
+| Mentions classified | 4,925, capped by whole threads per category |
+| In-window mentions (trailing 12 months) | ~1,350 |
+| Companies with a score row | 145 brands, 190 (brand x category) rows |
+| Companies clearing their category's gate | **zero** |
+
+The largest is Salesforce at `n_eff` 31 against the 600 a Deep category
+requires. Every company renders **below threshold** with the test it missed and
+both numbers. That is what a sample corpus supports, and the site says so.
+
+Two categories collected no in-window mentions at all. **Payment Processing** is
+the instructive one: its discussion lives in vendor communities (r/shopify,
+r/stripe), which are excluded by rule, and in consumer marketplaces
+(r/hardwareswap, r/CreditCards) where "PayPal" is how people arrange a sale
+rather than a product anyone is evaluating. A category can be viable on the
+five-subreddit test and still have nothing to say.
+
+⚠️ **The classifier must run SERIALLY.** Concurrent headless `claude -p`
+sessions do not fail cleanly, they wedge: the processes stay alive, produce
+nothing, and the 300-second timeout plus retries turns a five-minute category
+into an hour. The lever is batch size — 100 items per call amortises the startup
+that actually costs the time — not parallelism.
+
 ## Bottom line
 
 - **Nothing here is a published ranking.** The site ships `noindex` behind one
