@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { CORRECTIONS_EMAIL } from "@/lib/env";
+import { NON_AFFILIATION } from "@/lib/legal";
 import { getMethodologyParams } from "@/lib/data/methodology";
 import { METHODOLOGY_VERSION } from "@/lib/format";
 
@@ -205,7 +206,14 @@ Reddit Love Score = round(100 · p̃)`}</Pre>
       </Section>
 
       <p className="mt-[var(--section)]" style={{ fontSize: "var(--fs-small)" }}>
+        {NON_AFFILIATION}
+      </p>
+      <p className="mt-6 pb-12" style={{ fontSize: "var(--fs-small)" }}>
         <Link href="/" className="underline underline-offset-4">Back to the index</Link>
+        {" · "}Created by{" "}
+        <a href="https://empact.partners" rel="noopener" className="underline underline-offset-4">
+          Empact Partners
+        </a>
       </p>
     </article>
   );

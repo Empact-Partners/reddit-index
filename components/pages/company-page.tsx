@@ -1,33 +1,21 @@
 import Link from "next/link";
-import { num, pct } from "@/lib/format";
-import { ScoreChip } from "@/components/data/score-chip";
+import { num } from "@/lib/format";
 import { MentionList } from "@/components/data/mention-card";
-import { QualificationBadge, EvidenceTable } from "@/components/data/states";
-import {
-  ExposureConfoundLine, MethodologyCallout, CorrectionPath,
-} from "@/components/data/disclosures";
 import { CategoryChip } from "@/components/category/category-identity";
 import { Breadcrumbs } from "@/components/site/breadcrumbs";
 import { CATEGORY_BY_SLUG } from "@/lib/generated/categories";
-import type { CompanyView, Snapshot } from "@/lib/data/types";
+import { CORRECTIONS_EMAIL } from "@/lib/env";
+import { NON_AFFILIATION } from "@/lib/legal";
+import type { CompanyView } from "@/lib/data/types";
 
 /**
- * ONE company, ONE page, listing every category it qualifies in.
- *
- * decisions/0007: the breadcrumb shows its PRIMARY category — the one where its
- * opinionated mention volume is highest — as navigation, never as a claim of
- * exclusivity.
- *
- * The score chip on this page carries tone="neutral". There is no Most Loved /
- * Most Hated heading above it here, so a green or grape fill would imply a
- * verdict the surrounding page never made.
+ * ONE company, ONE page: breadcrumb, name, the two headline numbers per
+ * category, and the receipts — every collected mention, quoted in full, each
+ * with a link to the original. The quiet footer here carries the methodology
+ * link, the correction path and the non-affiliation notice, because the
+ * homepage no longer has a footer to carry them.
  */
-export function CompanyPage({
-  company, snapshot,
-}: {
-  company: CompanyView;
-  snapshot: Snapshot;
-}) {
+export function CompanyPage({ company }: { company: CompanyView }) {
   const primary = company.primaryCategorySlug
     ? CATEGORY_BY_SLUG[company.primaryCategorySlug]
     : null;
@@ -43,79 +31,36 @@ export function CompanyPage({
         categorySlug={company.primaryCategorySlug}
       />
 
-      {/* No logo. 09-design.md bans brand logos on any ranking surface: it puts
-          a company's own mark under a claim it did not make. */}
+      {/* No logo — a company's own mark never sits under a claim it did not make. */}
       <h1 className="mt-8" style={{ fontSize: "var(--fs-h1)" }}>{company.name}</h1>
 
-      <MethodologyCallout />
-      <ExposureConfoundLine />
-
-      <section className="mt-[var(--section)]">
-        <h2 style={{ fontSize: "var(--fs-h3)" }}>Where this company is measured</h2>
+      <section className="mt-12">
         {company.scores.length === 0 ? (
-          <p className="mt-4" style={{ fontSize: "var(--fs-body)", maxWidth: "66ch" }}>
+          <p style={{ fontSize: "var(--fs-body)", maxWidth: "66ch" }}>
             No score has been computed for this company yet. Its collected
             mentions are published below.
           </p>
         ) : (
-          <ul className="mt-6 list-none p-0 m-0 grid gap-10">
-            {company.scores.map((s) => {
-              const cat = snapshot.categories.find((c) => c.slug === s.categorySlug);
-              return (
-                <li key={s.categorySlug} className="grid gap-3">
-                  <p className="flex flex-wrap items-baseline gap-3">
-                    <CategoryChip slug={s.categorySlug} />
-                    <span style={{ fontSize: "var(--fs-small)" }}>
-                      {num(s.n)} mentions collected
+          <ul className="list-none p-0 m-0 grid gap-6">
+            {company.scores.map((s) => (
+              <li key={s.categorySlug} className="flex flex-wrap items-baseline gap-x-6 gap-y-2">
+                <CategoryChip slug={s.categorySlug} />
+                {s.redditLoveScore !== null && (
+                  <span style={{ fontSize: "var(--fs-h3)", fontFamily: "var(--font-syne)" }}>
+                    {s.redditLoveScore}
+                    <span style={{ fontSize: "var(--fs-small)", fontFamily: "var(--font-sans)" }}>
+                      {" "}/ 100
                     </span>
-                  </p>
-
-                  {s.eligible && s.redditLoveScore !== null ? (
-                    <ScoreChip
-                      score={s.redditLoveScore}
-                      ciLow={s.ciLow as number}
-                      ciHigh={s.ciHigh as number}
-                      opinionatedMentions={s.nOp}
-                      nEff={s.nEff}
-                      windowStart={s.windowStart}
-                      windowEnd={s.windowEnd}
-                      tone="neutral"
-                    />
-                  ) : null}
-
-                  {/* neutral_share and abstain_share sit DIRECTLY under the chip,
-                      at the same size — not buried in the methodology. The score
-                      runs over a subset of n, and a reader is entitled to see how
-                      big that subset is. */}
-                  <p style={{ fontSize: "var(--fs-small)" }}>
-                    {pct(s.neutralShare)} of mentions name this company without an
-                    opinion about it, and {pct(s.abstainShare)} could not be
-                    classified. Neither enters the score.
-                  </p>
-
-                  <p>
-                    {cat && !cat.rankable ? (
-                      <span className="badge">
-                        Category cannot be ranked — {cat.scoringSubreddits} scoring
-                        subreddits found, {cat.requiredSubreddits} required
-                      </span>
-                    ) : (
-                      <QualificationBadge s={s} />
-                    )}
-                  </p>
-                </li>
-              );
-            })}
+                  </span>
+                )}
+                <span style={{ fontSize: "var(--fs-small)" }}>
+                  {num(s.n)} mentions
+                </span>
+              </li>
+            ))}
           </ul>
         )}
       </section>
-
-      {company.scores.length > 0 && (
-        <section className="mt-[var(--section)]">
-          <h2 style={{ fontSize: "var(--fs-h3)" }}>The evidence behind those numbers</h2>
-          <EvidenceTable scores={company.scores} />
-        </section>
-      )}
 
       <section className="mt-[var(--section)]">
         <h2 style={{ fontSize: "var(--fs-h3)" }}>
@@ -125,23 +70,29 @@ export function CompanyPage({
             : ""}
           )
         </h2>
-        <p className="mt-4" style={{ fontSize: "var(--fs-body)", maxWidth: "66ch" }}>
-          Newest first, quoted in full, each with a link to the original. A
-          comment deleted on Reddit disappears from here on the next nightly
-          sync — no placeholder holds its slot.
-        </p>
         <div className="mt-8">
           <MentionList mentions={company.mentions} />
         </div>
       </section>
 
-      <CorrectionPath />
-
-      <p className="mt-8" style={{ fontSize: "var(--fs-small)" }}>
-        <Link href="/" className="underline underline-offset-4">
-          Back to the index
-        </Link>
-      </p>
+      <footer
+        className="mt-[var(--section)] pt-8 pb-12"
+        style={{ borderTop: "1px solid var(--rule)", fontSize: "var(--fs-small)" }}
+      >
+        <p>
+          <Link href="/" className="underline underline-offset-4">Back to the index</Link>
+          {" · "}
+          <Link href="/methodology/" className="underline underline-offset-4">
+            How this is measured
+          </Link>
+          {" · "}
+          Corrections and removals are free and unconditional:{" "}
+          <a href={`mailto:${CORRECTIONS_EMAIL}`} className="underline underline-offset-4">
+            {CORRECTIONS_EMAIL}
+          </a>
+        </p>
+        <p className="mt-3">{NON_AFFILIATION}</p>
+      </footer>
     </>
   );
 }

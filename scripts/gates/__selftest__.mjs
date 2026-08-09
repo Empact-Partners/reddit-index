@@ -48,9 +48,6 @@ const firstCss = () => {
   return found[0];
 };
 
-const anyHtml = () =>
-  path.join(tmp, '.next', 'server', 'app', 'crm.html');
-
 /** gate, what we break, how */
 const CASES = [
   ['category-constraints', 'a hand-edited hex', () => {
@@ -76,11 +73,6 @@ const CASES = [
     const p = firstCss();
     fs.appendFileSync(p, '\n.mention-body{mask-image:linear-gradient(#000,transparent)}\n');
   }],
-  ['footer-slot4', 'a page that stopped rendering the notice', () => {
-    const p = anyHtml();
-    const html = fs.readFileSync(p, 'utf8');
-    fs.writeFileSync(p, html.replace(/Not affiliated with[^<]*/, 'Nothing to see here'));
-  }],
   ['slugs', 'a banned /brand/ route shape', () => {
     const p = path.join(tmp, '.next', 'prerender-manifest.json');
     const m = JSON.parse(fs.readFileSync(p, 'utf8'));
@@ -102,8 +94,6 @@ for (const [gate, what, breakIt] of CASES) {
   }
   const css = firstCss();
   const cssBefore = fs.readFileSync(css);
-  const html = anyHtml();
-  const htmlBefore = fs.existsSync(html) ? fs.readFileSync(html) : null;
 
   breakIt();
 
@@ -123,7 +113,6 @@ for (const [gate, what, breakIt] of CASES) {
   // restore
   for (const [p, buf] of snapshot) fs.writeFileSync(p, buf);
   fs.writeFileSync(css, cssBefore);
-  if (htmlBefore) fs.writeFileSync(html, htmlBefore);
 }
 
 fs.rmSync(tmp, { recursive: true, force: true });

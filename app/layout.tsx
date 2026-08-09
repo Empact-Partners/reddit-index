@@ -1,8 +1,5 @@
 import type { Metadata } from "next";
 import { syne, publicSans } from "./fonts";
-import { SiteHeader } from "@/components/site/site-header";
-import { SiteFooter } from "@/components/site/site-footer";
-import { ProvisionalBanner } from "@/components/site/provisional-banner";
 import { IS_PROVISIONAL } from "@/lib/site-stage";
 import { SITE_URL } from "@/lib/env";
 import "./globals.css";
@@ -21,14 +18,16 @@ export const metadata: Metadata = {
   ...(IS_PROVISIONAL ? { robots: { index: false, follow: false, nocache: true } } : {}),
 };
 
+/**
+ * No banner, no header bar, no footer. The homepage is title + controls +
+ * boards by explicit instruction; the pages that still owe a disclosure
+ * (/methodology, company pages) carry it in their own content instead.
+ */
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={`${syne.variable} ${publicSans.variable}`}>
       <body>
-        <ProvisionalBanner />
-        <SiteHeader />
         <main className="container-site">{children}</main>
-        <SiteFooter />
       </body>
     </html>
   );

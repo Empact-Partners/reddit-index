@@ -28,7 +28,7 @@ score. `neu` is a real judgment — the comment names the brand without an opini
 about it. `abstain` is the classifier declining. Collapsing either into the
 other changes the denominator and therefore the rank.
 """
-import argparse, hashlib, json, os, re, sys, time
+import argparse, datetime, hashlib, json, os, re, sys, time
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
 
@@ -102,6 +102,69 @@ def mark_target(body, form, offset, width=1200):
     return prefix + seg + suffix
 
 
+def load_known():
+    """Every label ever produced, keyed by item_id.
+
+    The batch cache is keyed by the SHA of the batch's item_id set, so any
+    change to corpus selection re-cuts the batches and misses every cached
+    result — re-classifying work that was already paid for. Merging the batch
+    files into one item-level dict makes classification incremental at item
+    granularity: only genuinely new (document x brand) pairs reach the model.
+    """
+    known = {}
+    for fn in os.listdir(CACHE):
+        if not fn.endswith(".json"):
+            continue
+        try:
+            known.update(json.load(open(os.path.join(CACHE, fn))))
+        except Exception:
+            pass
+    return known
+
+
+def select_mentions(mentions, window_days, window_only, max_mentions):
+    """Whole-thread selection, in-window threads first.
+
+    The first run took threads in qualification-score order alone, and the
+    budget was spent on strong-but-stale threads before recent ones were
+    reached — backup-storage classified 0 in-window mentions while 299 sat on
+    disk. Recency now outranks qualification score; qualification order is
+    preserved within each group. A thread stays wholly in or wholly out.
+    """
+    per_thread, order = defaultdict(list), []
+    for m in mentions:
+        tid = m.get("thread_id")
+        if tid not in per_thread:
+            order.append(tid)
+        per_thread[tid].append(m)
+
+    if window_days:
+        cutoff = datetime.date.today() - datetime.timedelta(days=window_days)
+
+        def in_window(tid):
+            for m in per_thread[tid]:
+                ts = m.get("created_utc")
+                if ts and datetime.datetime.utcfromtimestamp(float(ts)).date() >= cutoff:
+                    return True
+            return False
+
+        fresh = [t for t in order if in_window(t)]
+        stale = [] if window_only else [t for t in order if not in_window(t)]
+        order = fresh + stale
+
+    kept, taken = set(), 0
+    for tid in order:
+        group = per_thread[tid]
+        if max_mentions and taken + len(group) > max_mentions and taken > 0:
+            continue
+        for m in group:
+            kept.add(f"{m['doc_id']}:{m['brand_slug']}")
+        taken += len(group)
+        if max_mentions and taken >= max_mentions:
+            break
+    return kept
+
+
 def batch_key(items):
     h = hashlib.sha256()
     for i in items:
@@ -158,9 +221,16 @@ def main():
                          "and the 300s timeout plus retries turns a five-minute category into "
                          "an hour. Bigger batches amortise startup instead; that is the lever.")
     ap.add_argument("--max-mentions", type=int, default=0,
-                    help="Cap the CLASSIFIED corpus. Selection is by thread, in qualification "
-                         "order, so a thread is either wholly in or wholly out — never a "
-                         "per-brand sample, which would make n and the score disagree.")
+                    help="Cap the CLASSIFIED corpus. Selection is by thread, so a thread is "
+                         "either wholly in or wholly out — never a per-brand sample, which "
+                         "would make n and the score disagree.")
+    ap.add_argument("--window-days", type=int, default=0,
+                    help="Order selection in-window-first: threads with any mention newer "
+                         "than N days ago are budgeted before older threads.")
+    ap.add_argument("--window-only", action="store_true",
+                    help="With --window-days: skip threads with zero in-window mentions "
+                         "entirely. Scoring only reads the window, so out-of-window "
+                         "classification is spend without a score.")
     args = ap.parse_args()
 
     import csv
@@ -176,9 +246,21 @@ def main():
     if not slugs:
         ap.error("pass --category SLUG or --all")
 
+    known = load_known()
+    print(f"{len(known)} labels already on disk (item-level cache)", flush=True)
+
     for slug in slugs:
         payload = json.load(open(os.path.join(resolved_dir, slug + ".json")))
         mentions = payload["mentions"]
+
+        if args.max_mentions or args.window_days:
+            before = len(mentions)
+            kept_ids = select_mentions(mentions, args.window_days, args.window_only,
+                                       args.max_mentions)
+            mentions = [m for m in mentions if f"{m['doc_id']}:{m['brand_slug']}" in kept_ids]
+            print(f"  selection: {before} -> {len(mentions)} mentions over "
+                  f"{len({m.get('thread_id') for m in mentions})} whole threads", flush=True)
+
         items = []
         for m in mentions:
             items.append({
@@ -190,37 +272,18 @@ def main():
                                       m.get("char_offset", 0)),
             })
 
-        if args.max_mentions and len(items) > args.max_mentions:
-            # Whole threads, in the order the harvester ranked them, until the
-            # budget is spent. A thread is wholly in or wholly out — never a
-            # per-brand sample, which would leave `n` counting mentions nobody
-            # ever labelled and make the published count disagree with the score.
-            per_thread = defaultdict(list)
-            for m in mentions:
-                per_thread[m.get("thread_id")].append(m)
-            kept_ids, taken = set(), 0
-            for tid, group in per_thread.items():
-                if taken + len(group) > args.max_mentions and taken > 0:
-                    continue
-                for m in group:
-                    kept_ids.add(f"{m['doc_id']}:{m['brand_slug']}")
-                taken += len(group)
-                if taken >= args.max_mentions:
-                    break
-            before = len(items)
-            items = [it for it in items if it["item_id"] in kept_ids]
-            mentions = [m for m in mentions if f"{m['doc_id']}:{m['brand_slug']}" in kept_ids]
-            print(f"  corpus cap: {before} -> {len(items)} mentions over "
-                  f"{len({m.get('thread_id') for m in mentions})} whole threads", flush=True)
+        results = {it["item_id"]: known[it["item_id"]] for it in items
+                   if it["item_id"] in known}
+        todo = [it for it in items if it["item_id"] not in results]
+        batches = [todo[i:i + args.batch] for i in range(0, len(todo), args.batch)]
+        print(f"{slug}: {len(items)} (document x brand) pairs · {len(results)} cached · "
+              f"{len(todo)} to classify in {len(batches)} batches", flush=True)
 
-        batches = [items[i:i + args.batch] for i in range(0, len(items), args.batch)]
-        print(f"{slug}: {len(items)} (document x brand) pairs in {len(batches)} batches", flush=True)
-
-        results = {}
         with ThreadPoolExecutor(max_workers=args.workers) as ex:
             for n, got in enumerate(
                     ex.map(lambda b: classify_batch(b, brand_names), batches), 1):
                 results.update(got)
+                known.update(got)
                 if n % 10 == 0 or n == len(batches):
                     print(f"  {n}/{len(batches)} batches · {len(results)} labelled", flush=True)
 

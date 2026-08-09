@@ -9,7 +9,7 @@
     "dev": "next dev",
     "gen": "node scripts/gen-categories.mjs && node scripts/fetch-fonts.mjs --check",
     "gates:pre": "node scripts/gates/category-constraints.mjs && node scripts/gates/icons.mjs && node scripts/gates/contrast.mjs && node scripts/gates/fonts.mjs",
-    "gates:post": "node scripts/gates/trade-dress.mjs && node scripts/gates/slugs.mjs && node scripts/gates/footer-slot4.mjs && node scripts/gates/css-rules.mjs",
+    "gates:post": "node scripts/gates/trade-dress.mjs && node scripts/gates/slugs.mjs && node scripts/gates/css-rules.mjs",
     "gates:selftest": "node scripts/gates/__selftest__.mjs",
     "prebuild": "pnpm run gen && pnpm run gates:pre",
     "build": "next build",

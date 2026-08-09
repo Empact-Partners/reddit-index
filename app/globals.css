@@ -190,28 +190,81 @@
    scripts/gates/css-rules.mjs re-asserts them against the BUILT css. */
 @layer components {
 
-  /* Score chip — five fields, one line, Small, never truncated, never a
-     tooltip. Pill shape is reserved for sentiment and score surfaces; a
-     category tile is a 6px square, and that shape difference is the whole
-     separation between "identity" and "verdict". */
-  .score-chip {
-    display: inline-block;
-    font-size: var(--fs-small);
-    line-height: 1.5;
-    border-radius: var(--radius-chip);
-    padding: 8px 16px;
-    color: var(--space-black);
-    font-variant-numeric: tabular-nums;
-    max-width: none;
-    overflow: visible;
-    text-overflow: clip;
-    margin: 0;
+  /* ── The index board ─────────────────────────────────────────────────────
+     Controls row: category listbox left, view switcher right. Elevation is a
+     border on an opaque white panel — no shadows anywhere on this site. */
+  .board-controls {
+    display: flex; justify-content: space-between; align-items: center;
+    gap: 16px; flex-wrap: wrap;
   }
-  .score-chip .f { white-space: nowrap; }  /* wraps BETWEEN fields, never inside one */
-  .score-chip b  { font-weight: 600; }
-  .score-chip[data-tone="loved"]   { background: var(--loved-fill); }  /* 8.50:1 */
-  .score-chip[data-tone="hated"]   { background: var(--hated-fill); }  /* 4.52:1 */
-  .score-chip[data-tone="neutral"] { background: transparent; border: 1px solid var(--rule); }
+
+  .listbox { position: relative; }
+  .listbox-btn {
+    display: inline-flex; align-items: center; gap: 12px;
+    padding: 10px 16px;
+    font: inherit; font-size: var(--fs-body);
+    color: var(--fg);
+    background: var(--color-white);
+    border: 1px solid var(--rule);
+    border-radius: var(--radius-card);
+    cursor: pointer;
+  }
+  .listbox-pop {
+    position: absolute; z-index: 10; top: calc(100% + 4px); left: 0;
+    min-width: 100%; width: max-content; max-height: 60vh; overflow-y: auto;
+    margin: 0; padding: 4px; list-style: none;
+    background: var(--color-white);
+    border: 1px solid var(--rule);
+    border-radius: var(--radius-card);
+  }
+  .listbox-opt {
+    padding: 9px 12px;
+    border-radius: var(--radius-card);
+    font-size: var(--fs-body);
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .listbox-opt[data-active] { background: var(--snowbelt); }
+  .listbox-opt[aria-selected="true"] { font-weight: 600; }
+
+  .seg {
+    display: inline-flex;
+    border: 1px solid var(--rule);
+    border-radius: var(--radius-card);
+    overflow: hidden;
+  }
+  .seg button {
+    padding: 10px 16px;
+    border: 0; margin: 0;
+    background: var(--color-white);
+    font: inherit; font-size: var(--fs-small);
+    color: var(--fg);
+    cursor: pointer;
+  }
+  .seg button + button { border-left: 1px solid var(--rule); }
+  .seg button[aria-pressed="true"] {
+    background: var(--structure);
+    color: var(--snowbelt);
+  }
+
+  /* Each board column: heading over a 3px sentiment rule; the score column
+     takes the matching deep tint (contrast-gate-verified on Snowbelt). */
+  .board-head {
+    font-size: var(--fs-h3);
+    padding-top: 12px;
+    border-top: 3px solid var(--rule);
+  }
+  .board-col[data-tone="loved"] .board-head { border-top-color: var(--loved-fill); }
+  .board-col[data-tone="hated"] .board-head { border-top-color: var(--hated-fill); }
+  .board-col[data-tone="loved"] td.col-score { color: var(--loved-ink); }
+  .board-col[data-tone="hated"] td.col-score { color: var(--hated-ink); }
+  .board-col .table-scroll { margin-top: 16px; }
+
+  .rank-gap td {
+    text-align: center;
+    font-size: var(--fs-micro);
+    color: var(--sherpa-blue);
+  }
 
   /* Mention card */
   .mention-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 32px; }
@@ -308,9 +361,11 @@
     vertical-align: baseline;
   }
   .rank-table th { font-weight: 600; font-size: var(--fs-small); }
-  .rank-table td.col-rank  { font-size: var(--fs-micro); width: 1%; white-space: nowrap; }
-  .rank-table td.col-score { font-size: var(--fs-h4); font-family: var(--font-syne); }
+  .rank-table td.col-rank  { font-size: var(--fs-micro); width: 1%; white-space: nowrap; color: var(--sherpa-blue); }
+  .rank-table td.col-score { font-size: var(--fs-lead); font-family: var(--font-syne); white-space: nowrap; }
   .rank-table td.col-brand { font-size: var(--fs-body); }
+  .rank-table td.col-mentions { font-size: var(--fs-small); white-space: nowrap; }
+  .rank-table td.col-category { font-size: var(--fs-small); }
   /* Below 768px the table scrolls inside its OWN container. The page body never
      scrolls sideways, and no column is ever dropped — the dropped ones would be
      the diversity floors, which is the evidence a reader needs most when a

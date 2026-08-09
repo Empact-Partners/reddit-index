@@ -51,12 +51,16 @@ def resolve_one(slug):
     return payload
 
 
-def classify_one(slug, cap, batch, workers):
+def classify_one(slug, cap, batch, workers, window_days=0, window_only=False):
     out = os.path.join(SCORED, slug + ".json")
     if os.path.exists(out):
         return
     cmd = [sys.executable, "-u", os.path.join(HERE, "classify.py"),
            "--category", slug, "--batch", str(batch), "--workers", str(workers)]
+    if window_days:
+        cmd += ["--window-days", str(window_days)]
+    if window_only:
+        cmd += ["--window-only"]
     if cap:
         cmd += ["--max-mentions", str(cap)]
     print(f"  classify {slug} …", flush=True)
@@ -68,8 +72,12 @@ def classify_one(slug, cap, batch, workers):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--max-mentions", type=int, default=200)
-    ap.add_argument("--batch", type=int, default=40)
-    ap.add_argument("--workers", type=int, default=3)
+    ap.add_argument("--batch", type=int, default=100)
+    # SERIAL. Concurrent headless `claude -p` sessions wedge — alive, producing
+    # nothing, 300s timeout + retries. Batch size is the lever, never workers.
+    ap.add_argument("--workers", type=int, default=1)
+    ap.add_argument("--window-days", type=int, default=365)
+    ap.add_argument("--window-only", action="store_true")
     ap.add_argument("--watch", action="store_true",
                     help="keep looping while the harvester is still producing corpora")
     ap.add_argument("--expect", type=int, default=20)
@@ -84,7 +92,8 @@ def main():
                 continue
             try:
                 resolve_one(slug)
-                classify_one(slug, args.max_mentions, args.batch, args.workers)
+                classify_one(slug, args.max_mentions, args.batch, args.workers,
+                             args.window_days, args.window_only)
                 seen.add(slug)
             except Exception as e:
                 print(f"  !! {slug}: {type(e).__name__}: {e}", flush=True)

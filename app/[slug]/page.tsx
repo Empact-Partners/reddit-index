@@ -2,7 +2,8 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { getRegistry } from "@/lib/routing";
 import { getSnapshot } from "@/lib/data/snapshot";
-import { CategoryPage } from "@/components/pages/category-page";
+import { buildBoards } from "@/lib/data/boards";
+import { IndexPage } from "@/components/pages/index-page";
 import { CompanyPage } from "@/components/pages/company-page";
 import { CATEGORY_BY_SLUG, type CategorySlug } from "@/lib/generated/categories";
 
@@ -55,15 +56,15 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
   const hit = reg.bySlug.get(slug);
 
   if (hit?.tier === "category") {
-    const category = snap.categories.find((c: (typeof snap.categories)[number]) => c.slug === slug);
-    if (!category) notFound();
-    return <CategoryPage category={category} snapshot={snap} />;
+    // The same board as the homepage, preselected — ONE experience, not a
+    // second page design. The dropdown swaps scope in place from here too.
+    return <IndexPage data={buildBoards(snap)} scope={slug as CategorySlug} />;
   }
 
   if (hit?.tier === "company") {
     const company = snap.companies.get(slug);
     if (!company) notFound();
-    return <CompanyPage company={company} snapshot={snap} />;
+    return <CompanyPage company={company} />;
   }
 
   notFound();

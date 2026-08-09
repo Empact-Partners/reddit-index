@@ -1,38 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { render } from "@testing-library/react";
-import { ScoreChip } from "@/components/data/score-chip";
 import { MentionCard, type Mention } from "@/components/data/mention-card";
-
-describe("score chip", () => {
-  const props = {
-    score: 21, ciLow: 18, ciHigh: 24, opinionatedMentions: 1240, nEff: 412,
-    windowStart: "2026-01-01", windowEnd: "2026-06-30",
-  };
-
-  it("renders all five fields as text", () => {
-    const { container } = render(<ScoreChip {...props} />);
-    const t = container.textContent ?? "";
-    expect(t).toContain("21");
-    expect(t).toContain("90% CI");
-    expect(t).toContain("1,240 opinionated mentions");
-    expect(t).toContain("n_eff 412");
-    expect(t).toContain("Jan–Jun 2026");
-  });
-
-  it("refuses to render with a missing field", () => {
-    // decisions/0005 condition 1: the measured variable appears beside the
-    // superlative on every surface. A chip missing a field breaks the condition
-    // the whole naming decision ships under, so it fails loudly instead.
-    expect(() =>
-      render(<ScoreChip {...props} nEff={NaN as unknown as number} />),
-    ).toThrow(/nEff/);
-  });
-
-  it("never carries a category colour", () => {
-    const { container } = render(<ScoreChip {...props} tone="loved" />);
-    expect(container.querySelector("[data-category]")).toBeNull();
-  });
-});
 
 describe("mention card", () => {
   const long = "x".repeat(4000);

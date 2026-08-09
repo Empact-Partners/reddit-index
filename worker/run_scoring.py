@@ -15,10 +15,16 @@ from score import score_category, load_categories  # noqa: E402
 HERE = os.path.dirname(os.path.abspath(__file__))
 SCORED = os.path.join(HERE, ".cache", "scored")
 OUT = os.path.join(HERE, ".cache", "corpus", "_all_scores.json")
+# load.py --scores reads per-category files from .cache/index — the first run
+# produced them from a scratch script that never landed in the repo, leaving
+# run_scoring and load talking past each other. This writes them canonically.
+INDEX = os.path.join(HERE, ".cache", "index")
+os.makedirs(INDEX, exist_ok=True)
 WORD = {0: "neu", 1: "pos", 2: "neg", 3: "abstain"}
 
 cats = load_categories()
-cutoff = datetime.date.today() - datetime.timedelta(days=365)
+window_end = datetime.date.today()
+cutoff = window_end - datetime.timedelta(days=365)
 all_rows, summary = [], []
 
 for fn in sorted(os.listdir(SCORED)):
@@ -35,12 +41,22 @@ for fn in sorted(os.listdir(SCORED)):
             continue
         ms.append({**m, "label": WORD.get(m.get("label"), "abstain")})
     if not ms:
+        idx_fp = os.path.join(INDEX, slug + ".json")
+        json.dump({"category_slug": slug, "rows": [],
+                   "window_start": str(cutoff), "window_end": str(window_end)},
+                  open(idx_fp + ".tmp", "w"))
+        os.replace(idx_fp + ".tmp", idx_fp)
         summary.append((slug, 0, 0, 0))
         continue
     rows = score_category(slug, ms, cats)
     for r in rows:
         r.setdefault("category_slug", slug)
     all_rows.extend(rows)
+    idx_fp = os.path.join(INDEX, slug + ".json")
+    json.dump({"category_slug": slug, "rows": rows,
+               "window_start": str(cutoff), "window_end": str(window_end)},
+              open(idx_fp + ".tmp", "w"))
+    os.replace(idx_fp + ".tmp", idx_fp)
     elig = sum(1 for r in rows if r["eligible"])
     summary.append((slug, len(ms), len(rows), elig))
 
