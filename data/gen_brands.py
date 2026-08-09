@@ -318,14 +318,49 @@ def main():
         seen[key] = rec
         brands.append(rec)
 
+    # ── the fleet-enumerated seed for the expansion categories ──────────────
+    # data/brand-seed-new.csv is produced by data/enumerate_brands.py (fleet
+    # draft -> adversarial review -> deterministic gates). The hand dicts above
+    # stay the frozen source for the original 145 — this loader only APPENDS,
+    # and for an already-known brand only widens also_in.
+    new_fp = os.path.join(HERE, "brand-seed-new.csv")
+    if os.path.exists(new_fp):
+        for row in csv.DictReader(open(new_fp)):
+            key = row["brand"].lower()
+            row_cats = [row["primary_category_slug"]] + [
+                c for c in (row.get("also_in_category_slugs") or "").split(";") if c]
+            for c in row_cats:
+                if c not in cats:
+                    raise SystemExit(f"brand-seed-new references unknown category: {c}")
+            if key in seen:
+                rec = seen[key]
+                for c in row_cats:
+                    if c != rec["primary_category_slug"] and c not in rec["also_in"]:
+                        rec["also_in"].append(c)
+                continue
+            rec = {
+                "brand": row["brand"],
+                "primary_category_slug": row_cats[0],
+                "aliases": [a for a in (row.get("aliases") or "").split(";") if a],
+                "ambiguity_class": row["ambiguity_class"],
+                "ambiguity_note": row.get("ambiguity_note", ""),
+                "also_in": row_cats[1:],
+                "source": row.get("source") or "fleet-enum",
+                "_domains": [d for d in (row.get("domains") or "").split(";") if d],
+                "_stops": [x for x in (row.get("stop_contexts") or "").split(";") if x],
+                "_bare": {x.lower() for x in (row.get("bare_disabled_forms") or "").split(";") if x},
+            }
+            seen[key] = rec
+            brands.append(rec)
+
     CLASS = {"low": "SAFE", "medium": "AMBIGUOUS", "high": "HOSTILE"}
     MIN_CORROB = {"SAFE": 0, "AMBIGUOUS": 1, "HOSTILE": 2}
 
     brand_rows, alias_rows = [], []
     for b in brands:
         s = slugify(b["brand"])
-        doms = DOMAINS.get(b["brand"], [])
-        stops = STOP_CONTEXTS.get(b["brand"], [])
+        doms = b.get("_domains") or DOMAINS.get(b["brand"], [])
+        stops = b.get("_stops") or STOP_CONTEXTS.get(b["brand"], [])
         cls = CLASS[b["ambiguity_class"]]
         brand_rows.append({
             "brand": b["brand"],
@@ -355,7 +390,7 @@ def main():
             # `Close CRM` and `close.com` are unambiguous, `close` is not.
             qualified = ("." in form) or (len(form.split()) > 1)
             eff = "SAFE" if qualified else fcls
-            disabled = (not qualified) and fkey in BARE_DISABLED
+            disabled = (not qualified) and (fkey in BARE_DISABLED or fkey in b.get("_bare", set()))
             alias_rows.append({
                 "brand_slug": s,
                 "alias": form,

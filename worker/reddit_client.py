@@ -14,11 +14,22 @@ import base64, hashlib, json, os, time, urllib.error, urllib.parse, urllib.reque
 HERE = os.path.dirname(os.path.abspath(__file__))
 CACHE = os.environ.get("RI_CACHE") or os.path.join(HERE, ".cache")
 
-_cfg = json.load(open(os.path.expanduser("~/.claude.json")))
-_env = _cfg["projects"]["/Users/vladshvets/.claude"]["mcpServers"]["reddit"]["env"]
-CLIENT_ID = os.environ.get("REDDIT_CLIENT_ID") or _env["REDDIT_CLIENT_ID"]
-CLIENT_SECRET = os.environ.get("REDDIT_CLIENT_SECRET") or _env["REDDIT_CLIENT_SECRET"]
-USER_AGENT = os.environ.get("REDDIT_USER_AGENT") or _env["REDDIT_USER_AGENT"]
+def _local_cfg():
+    """Env-first: a container has no ~/.claude.json and must not crash for it."""
+    try:
+        cfg = json.load(open(os.path.expanduser("~/.claude.json")))
+        return cfg["projects"]["/Users/vladshvets/.claude"]["mcpServers"]["reddit"]["env"]
+    except Exception:
+        return {}
+
+
+_env = _local_cfg()
+CLIENT_ID = os.environ.get("REDDIT_CLIENT_ID") or _env.get("REDDIT_CLIENT_ID")
+CLIENT_SECRET = os.environ.get("REDDIT_CLIENT_SECRET") or _env.get("REDDIT_CLIENT_SECRET")
+USER_AGENT = os.environ.get("REDDIT_USER_AGENT") or _env.get("REDDIT_USER_AGENT")
+if not (CLIENT_ID and CLIENT_SECRET and USER_AGENT):
+    raise RuntimeError("Reddit credentials missing: set REDDIT_CLIENT_ID / "
+                       "REDDIT_CLIENT_SECRET / REDDIT_USER_AGENT")
 
 SLEEP = 0.75          # the floor between calls
 MAX_PER_MIN = 80      # run under the ~100 budget, never at it

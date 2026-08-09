@@ -55,28 +55,19 @@ INTENT_QUERIES = [
 ]
 
 # Category vocabulary, used for qualification and as a resolution feature.
-CATEGORY_NOUNS = {
-    "crm": ["crm", "pipeline", "deal", "lead", "contact"],
-    "project-management": ["project management", "pm tool", "kanban", "sprint", "task"],
-    "accounting": ["accounting", "bookkeeping", "invoice", "ledger", "expense"],
-    "hr": ["hris", "hr software", "onboarding", "payroll", "people ops"],
-    "email-marketing": ["email marketing", "newsletter", "esp", "campaign", "subscriber"],
-    "marketing-automation": ["marketing automation", "lead nurture", "drip", "lifecycle"],
-    "password-managers": ["password manager", "vault", "passkey", "2fa", "credential"],
-    "note-taking": ["note taking", "notes app", "second brain", "knowledge base", "wiki"],
-    "design": ["design tool", "prototyping", "wireframe", "ui design", "mockup"],
-    "video-editing": ["video editing", "editor", "timeline", "render", "footage"],
-    "help-desk": ["help desk", "ticketing", "support tool", "shared inbox", "sla"],
-    "erp": ["erp", "inventory", "manufacturing", "supply chain", "gl"],
-    "business-intelligence": ["bi tool", "dashboard", "analytics", "data viz", "warehouse"],
-    "ecommerce": ["ecommerce platform", "online store", "storefront", "checkout", "cart"],
-    "recruiting": ["ats", "applicant tracking", "recruiting software", "hiring", "candidate"],
-    "payroll": ["payroll", "paycheck", "contractor payments", "eor", "w2"],
-    "cloud-hosting": ["hosting", "deploy", "vps", "serverless", "infrastructure"],
-    "team-chat": ["team chat", "collaboration tool", "video call", "huddle", "channels"],
-    "backup-storage": ["backup", "cloud storage", "nas", "sync", "restore"],
-    "payment-processing": ["payment processor", "merchant account", "gateway", "chargeback", "payouts"],
-}
+def _load_nouns():
+    """Category vocabulary now lives in data/categories.csv (`nouns`, ;-joined)
+    so 100 categories don't mean a 100-entry dict in code. The first noun is
+    primary — queries_for() puts it into the intent templates."""
+    out = {}
+    with open(os.path.join(REPO, "data", "categories.csv")) as f:
+        for r in csv.DictReader(f):
+            nouns = [n.strip() for n in (r.get("nouns") or "").split(";") if n.strip()]
+            out[r["slug"]] = nouns or [r["category"].lower()]
+    return out
+
+
+CATEGORY_NOUNS = _load_nouns()
 
 DEPTHS = {
     # queries per sub, sorts, max threads to fetch trees for

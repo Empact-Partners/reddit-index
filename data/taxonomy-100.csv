@@ -1,0 +1,101 @@
+category,slug,nouns
+CRM,crm,crm;sales crm;crm software
+Project Management,project-management,project management tool;project management software;pm tool
+Accounting,accounting,accounting software;bookkeeping software;accounting tool
+HR and HRIS,hr,hris;hr software;hr system
+Email Marketing,email-marketing,email marketing tool;email marketing platform;newsletter tool
+Marketing Automation,marketing-automation,marketing automation;automation platform;drip campaign tool
+Password Managers and Security,password-managers,password manager;password vault;2fa app
+Note-taking and Knowledge Management,note-taking,note taking app;notes app;knowledge base
+Design and Prototyping,design,design tool;prototyping tool;ui design tool
+Video Editing,video-editing,video editor;video editing software;editing software
+Help Desk and Customer Support,help-desk,help desk;ticketing system;support software
+ERP,erp,erp;erp system;erp software
+Business Intelligence and Analytics,business-intelligence,bi tool;dashboard tool;analytics platform
+eCommerce Platforms,ecommerce,ecommerce platform;online store builder;shopping cart
+Applicant Tracking and Recruiting,recruiting,ats;applicant tracking system;recruiting software
+Payroll,payroll,payroll software;payroll provider;payroll service
+Cloud Hosting and Infrastructure,cloud-hosting,cloud hosting;cloud provider;vps
+Team Collaboration and Chat,team-chat,team chat;chat app;collaboration tool
+Backup and Storage,backup-storage,backup software;backup solution;backup tool
+Payment Processing,payment-processing,payment processor;payment gateway;merchant account
+VPN Services,vpn,vpn;vpn service;vpn provider
+Antivirus and Endpoint Security,antivirus,antivirus;endpoint protection;malware protection
+Web Hosting,web-hosting,web host;web hosting;wordpress hosting
+Domain Registrars,domain-registrars,domain registrar;domain name;dns provider
+Website Builders,website-builders,website builder;site builder;landing page builder
+SEO Tools,seo-tools,seo tool;keyword research tool;rank tracker
+Social Media Management,social-media-management,social media scheduler;social media management tool;posting tool
+Live Chat and Chatbots,live-chat,live chat;chatbot;chat widget
+VoIP and Business Phone,voip,voip;business phone system;virtual phone number
+Video Conferencing,video-conferencing,video conferencing;video call app;meeting software
+Webinar Platforms,webinars,webinar platform;webinar software;online event platform
+Learning Management Systems,lms,lms;learning management system;training platform
+Online Course Platforms,course-platforms,course platform;online course software;course builder
+Form Builders,form-builders,form builder;online form;form software
+Survey Tools,survey-tools,survey tool;survey software;feedback tool
+Scheduling and Appointments,scheduling,scheduling software;appointment scheduling;booking software
+Time Tracking,time-tracking,time tracking;time tracker;timesheet software
+Invoicing and Billing,invoicing,invoicing software;billing software;invoice generator
+Expense Management,expense-management,expense management;expense tracking;expense report software
+E-signature,esignature,e-signature;electronic signature;document signing
+Document Management,document-management,document management;dms;document storage
+PDF Tools,pdf-tools,pdf editor;pdf software;pdf converter
+Cloud Storage and File Sharing,cloud-storage,cloud storage;file sharing;file sync
+Photo Editing,photo-editing,photo editor;photo editing software;image editor
+3D and CAD,cad,cad software;3d modeling software;cad program
+Game Engines,game-engines,game engine;game development engine;gamedev engine
+Code Editors and IDEs,ides,ide;code editor;text editor
+Git and Code Hosting,code-hosting,git hosting;code hosting;repository hosting
+CI/CD,ci-cd,ci/cd;continuous integration;build pipeline
+Containers and Orchestration,containers,container orchestration;kubernetes distribution;container platform
+Infrastructure as Code,iac,infrastructure as code;iac tool;provisioning tool
+Monitoring and Observability,observability,monitoring tool;observability platform;metrics platform
+Error Tracking,error-tracking,error tracking;error monitoring;crash reporting
+Feature Flags and A/B Testing,feature-flags,feature flags;feature flag service;ab testing tool
+Product Analytics,product-analytics,product analytics;event analytics;user analytics
+Web Analytics,web-analytics,web analytics;website analytics;traffic analytics
+Session Replay and Heatmaps,session-replay,session replay;heatmap tool;user recording
+Data Warehouses,data-warehouses,data warehouse;cloud data warehouse;analytics database
+ETL and Data Pipelines,etl,etl tool;data pipeline;data integration
+Databases,databases,database;managed database;sql database
+API Tools,api-tools,api client;api testing tool;api platform
+Authentication and Identity,identity,sso;identity provider;authentication service
+Device Management,mdm,mdm;device management;mobile device management
+Remote Desktop and Access,remote-desktop,remote desktop;remote access;screen sharing
+RMM and MSP Tools,rmm,rmm;msp software;remote monitoring
+Firewalls and Network Security,network-security,firewall;network security;ngfw
+Email Providers,email-providers,email provider;email service;email hosting
+Transactional Email and SMS APIs,communication-apis,transactional email;sms api;email api
+Newsletter Platforms,newsletters,newsletter platform;paid newsletter;newsletter service
+Podcast Hosting,podcast-hosting,podcast hosting;podcast host;podcast platform
+Video Hosting and Streaming,video-hosting,video hosting;video platform;live streaming platform
+Screen Recording,screen-recording,screen recorder;screen recording;screen capture
+Presentation Software,presentations,presentation software;slide deck tool;presentation maker
+No-code App Builders,no-code,no-code app builder;no code platform;app builder
+Workflow Automation,workflow-automation,workflow automation;automation tool;integration platform
+Internal Tools and Admin Panels,internal-tools,internal tool builder;admin panel;internal dashboard
+Spreadsheet Software,spreadsheets,spreadsheet;spreadsheet software;spreadsheet app
+Whiteboards and Diagramming,diagramming,whiteboard tool;diagram tool;flowchart software
+Wikis and Knowledge Bases,wikis,wiki;team wiki;knowledge base software
+Translation and Localization,localization,translation software;localization platform;translation management
+Grammar and Writing Assistants,writing-assistants,grammar checker;writing assistant;proofreading tool
+AI Chat Assistants,ai-assistants,ai assistant;ai chatbot;llm
+AI Image Generation,ai-image,ai image generator;image generation;text to image
+AI Video Generation,ai-video,ai video generator;ai video;text to video
+AI Coding Assistants,ai-coding,ai coding assistant;code assistant;coding copilot
+Transcription and Meeting Notes,transcription,transcription software;meeting notes app;ai notetaker
+Field Service Management,field-service,field service software;field service management;dispatch software
+Construction Management,construction,construction software;construction management;job costing software
+Real Estate and Property Management,property-management,property management software;landlord software;rental management
+Restaurant POS and Management,restaurant-pos,restaurant pos;restaurant software;restaurant management system
+Retail POS,pos,pos system;point of sale;retail pos
+Inventory Management,inventory,inventory management;inventory software;stock management
+Shipping and Fulfillment,shipping,shipping software;fulfillment service;shipping label software
+Print on Demand,print-on-demand,print on demand;pod service;print provider
+Legal Practice Management,legal-practice,legal practice management;law firm software;legal software
+Nonprofit and Church Management,nonprofit,nonprofit software;donor management;church management software
+Event Management and Ticketing,event-management,event management software;ticketing platform;event registration
+Community Platforms,community-platforms,community platform;community software;membership community
+Personal Finance and Budgeting,budgeting,budgeting app;personal finance app;money app
+Tax Software,tax-software,tax software;tax filing;tax prep software

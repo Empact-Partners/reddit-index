@@ -124,6 +124,13 @@ def build_vendor_tokens():
             for t in tokenize(b):
                 if len(t) >= 3 and t not in VENDOR_STOPWORDS:
                     toks.add(t)
+    # the expansion brands (fleet-enumerated) are vendor-detectable too
+    bp = os.path.join(HERE, "brands.csv")
+    if os.path.exists(bp):
+        for row in csv.DictReader(open(bp)):
+            for t in tokenize(row["brand"]):
+                if len(t) >= 3 and t not in VENDOR_STOPWORDS:
+                    toks.add(t)
     return toks
 
 
@@ -309,13 +316,21 @@ def main():
     seeded = {c["category"]: c for c in
               json.load(open(os.path.join(HERE, "category-candidates-20.json")))}
 
+    # Seed brands for the expansion categories come from brands.csv (the fleet
+    # gazetteer), keeping one vocabulary; the original 20 keep their JSON seeds.
+    brands_by_cat = {}
+    bp = os.path.join(HERE, "brands.csv")
+    if os.path.exists(bp):
+        for row in csv.DictReader(open(bp)):
+            brands_by_cat.setdefault(row["primary_category_slug"], []).append(row["brand"])
+
     rows = []
     for ci, (cat_name, meta) in enumerate(cats_meta.items(), 1):
         seed = seeded.get(cat_name, {})
-        brands = seed.get("brands", [])
+        brands = seed.get("brands", []) or brands_by_cat.get(meta["slug"], [])[:8]
         seeds = seed.get("subreddits", [])
         cands = discover_candidates(cat_name, brands, seeds)
-        print(f"\n=== [{ci}/20] {cat_name} — {len(cands)} candidates "
+        print(f"\n=== [{ci}/{len(cats_meta)}] {cat_name} — {len(cands)} candidates "
               f"({len(seeds)} seeded) — {CALLS['n']} calls so far", flush=True)
 
         measured = []

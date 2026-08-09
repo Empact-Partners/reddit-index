@@ -27,6 +27,17 @@ window_end = datetime.date.today()
 cutoff = window_end - datetime.timedelta(days=365)
 all_rows, summary = [], []
 
+# A category ranks only brands that BELONG to it (primary or also_in) — the
+# fix for "Google Workspace tops the CRM board" (docs/methodology-review.md
+# §1). The mention stays in the corpus and on the brand's own page; it stops
+# occupying another category's leaderboard.
+import csv as _csv  # noqa: E402
+MEMBERSHIP = {}
+for _r in _csv.DictReader(open(os.path.join(os.path.dirname(HERE), "data", "brands.csv"))):
+    _cats = {_r["primary_category_slug"]}
+    _cats.update(c for c in (_r.get("also_in_category_slugs") or "").split(";") if c)
+    MEMBERSHIP[_r["slug"]] = _cats
+
 for fn in sorted(os.listdir(SCORED)):
     if not fn.endswith(".json"):
         continue
@@ -38,6 +49,8 @@ for fn in sorted(os.listdir(SCORED)):
         if not ts:
             continue
         if datetime.datetime.utcfromtimestamp(float(ts)).date() < cutoff:
+            continue
+        if slug not in MEMBERSHIP.get(m.get("brand_slug"), set()):
             continue
         ms.append({**m, "label": WORD.get(m.get("label"), "abstain")})
     if not ms:
