@@ -7,8 +7,8 @@ import "./globals.css";
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: "Reddit Index",
-    template: "%s · Reddit Index",
+    default: "Reddit Brand Index",
+    template: "%s · Reddit Brand Index",
   },
   description:
     "What Reddit actually says about software brands, measured and published with its method.",

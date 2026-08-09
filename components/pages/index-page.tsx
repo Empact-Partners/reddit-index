@@ -11,7 +11,7 @@ export function IndexPage({ data, scope }: { data: BoardData; scope: Scope }) {
     <div className="pb-[var(--section)]">
       <header className="bleed masthead">
         <h1>
-          <span className="swash">Reddit</span> Index
+          <span className="swash">Reddit</span> Brand Index
         </h1>
       </header>
       <IndexBoard data={data} initialScope={scope} />
