@@ -59,7 +59,9 @@ export function BoardTable({
           <tr>
             <th scope="col" aria-label="Rank">#</th>
             <th scope="col">Brand</th>
-            <th scope="col" className="col-score">Reddit Love Score</th>
+            <th scope="col" className="col-score">
+              Reddit <span aria-hidden="true">❤️</span><span className="sr-only">Love</span> Score
+            </th>
             <th scope="col">Mentions</th>
             {showCategory && <th scope="col">Category</th>}
           </tr>

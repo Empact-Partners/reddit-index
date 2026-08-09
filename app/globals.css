@@ -374,12 +374,19 @@
      and a wrappable category cell keep the table INSIDE the card instead of
      scrolling out of it. */
   .board-grid:not([data-view="list"]) .rank-table th,
-  .board-grid:not([data-view="list"]) .rank-table td { padding: 12px 10px; }
+  .board-grid:not([data-view="list"]) .rank-table td { padding: 12px 8px; }
   .board-grid:not([data-view="list"]) .rank-table th:first-child,
-  .board-grid:not([data-view="list"]) .rank-table td:first-child { padding-left: 16px; }
+  .board-grid:not([data-view="list"]) .rank-table td:first-child { padding-left: 14px; }
   .board-grid:not([data-view="list"]) .rank-table th:last-child,
-  .board-grid:not([data-view="list"]) .rank-table td:last-child { padding-right: 16px; }
-  .rank-table td.col-category .cat-chip { white-space: normal; }
+  .board-grid:not([data-view="list"]) .rank-table td:last-child { padding-right: 14px; }
+  .rank-table td.col-category { min-width: 150px; }
+  .rank-table td.col-category .cat-chip {
+    white-space: normal;
+    /* the swatch sits ON THE FIRST LINE of a wrapped name, never floating
+       beside the middle of a two-line block */
+    align-items: flex-start;
+  }
+  .rank-table td.col-category .cat-chip::before { margin-top: 0.32em; }
 
   /* Mention card */
   .mention-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 32px; }
@@ -474,7 +481,9 @@
   .rank-table caption { text-align: left; font-size: var(--fs-small); padding-bottom: 12px; }
   .rank-table th, .rank-table td {
     text-align: left; padding: 12px 16px; border-bottom: 1px solid var(--rule);
-    vertical-align: baseline;
+    /* middle, not baseline: a two-line category next to a one-line brand reads
+       ragged when everything hangs off the first baseline */
+    vertical-align: middle;
   }
   .rank-table th { font-weight: 600; font-size: var(--fs-small); white-space: nowrap; }
   .rank-table th.col-score, .rank-table td.col-score { text-align: center; }
