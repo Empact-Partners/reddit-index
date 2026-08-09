@@ -33,6 +33,7 @@ const CHECK = process.argv.includes('--check');
 // Reddit mention text fall through to the fallback stack, which is correct.
 const WANT = [
   { pkg: '@fontsource/syne', file: 'syne-latin-500-normal.woff2', out: 'Syne-Medium.woff2', family: 'Syne' },
+  { pkg: '@fontsource/syne', file: 'syne-latin-700-normal.woff2', out: 'Syne-Bold.woff2', family: 'Syne' },
   { pkg: '@fontsource/public-sans', file: 'public-sans-latin-400-normal.woff2', out: 'PublicSans-Regular.woff2', family: 'PublicSans' },
   { pkg: '@fontsource/public-sans', file: 'public-sans-latin-600-normal.woff2', out: 'PublicSans-SemiBold.woff2', family: 'PublicSans' },
 ];

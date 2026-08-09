@@ -9,7 +9,10 @@ import localFont from "next/font/local";
  * MANIFEST.json, which scripts/gates/fonts.mjs re-checks on every build.
  */
 export const syne = localFont({
-  src: [{ path: "./_fonts/Syne-Medium.woff2", weight: "500", style: "normal" }],
+  src: [
+    { path: "./_fonts/Syne-Medium.woff2", weight: "500", style: "normal" },
+    { path: "./_fonts/Syne-Bold.woff2", weight: "700", style: "normal" },
+  ],
   variable: "--font-syne",
   display: "swap",
   preload: true,

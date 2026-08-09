@@ -43,20 +43,22 @@ export function IndexBoard({
   const { loved, hated } = splitScope(board.rows);
 
   return (
-    <div className="mt-10">
-      <div className="board-controls">
-        <CategorySelect value={scope} onChange={changeScope} />
-        <ViewSwitcher value={view} onChange={setView} />
+    <>
+      <div className="bleed controls-band">
+        <div className="board-controls">
+          <CategorySelect value={scope} onChange={changeScope} />
+          <ViewSwitcher value={view} onChange={setView} />
+        </div>
       </div>
 
       {board.rows.length === 0 ? (
-        <p className="mt-12" style={{ fontSize: "var(--fs-body)" }}>
+        <p className="mt-14 text-center" style={{ fontSize: "var(--fs-body)" }}>
           No scored brands in this category yet.
         </p>
       ) : view === "boards" ? (
-        <div className="mt-12 grid gap-12 md:grid-cols-2 items-start">
-          <section className="board-col" data-tone="loved">
-            <h2 className="board-head">Most Loved</h2>
+        <div className="board-grid">
+          <section className="board-card" data-tone="loved" aria-label={`Most loved, ${scopeName}`}>
+            <h2>Most Loved</h2>
             <BoardTable
               rows={loved}
               tone="loved"
@@ -64,8 +66,8 @@ export function IndexBoard({
               caption={`Most loved brands, ${scopeName}`}
             />
           </section>
-          <section className="board-col" data-tone="hated">
-            <h2 className="board-head">Most Hated</h2>
+          <section className="board-card" data-tone="hated" aria-label={`Most hated, ${scopeName}`}>
+            <h2>Most Hated</h2>
             <BoardTable
               rows={hated}
               tone="hated"
@@ -75,16 +77,19 @@ export function IndexBoard({
           </section>
         </div>
       ) : (
-        <div className="mt-12">
-          <BoardTable
-            rows={board.rows}
-            tone="neutral"
-            showCategory={showCategory}
-            caption={`All ranked brands, ${scopeName}, most loved first`}
-            total={board.total}
-          />
+        <div className="board-grid" data-view="list">
+          <section className="board-card" data-tone="neutral" aria-label={`Full list, ${scopeName}`}>
+            <h2>Most Loved to Most Hated</h2>
+            <BoardTable
+              rows={board.rows}
+              tone="neutral"
+              showCategory={showCategory}
+              caption={`All ranked brands, ${scopeName}, most loved first`}
+              total={board.total}
+            />
+          </section>
         </div>
       )}
-    </div>
+    </>
   );
 }

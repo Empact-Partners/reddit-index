@@ -10,6 +10,14 @@
       "subset": "latin"
     },
     {
+      "file": "Syne-Bold.woff2",
+      "sha256": "0aad69416fc0ccf6f340647c46e759d5c6e4628d92576b279ec5ada0afbd9d35",
+      "sourcePkg": "@fontsource/syne",
+      "sourceVersion": "5.2.6",
+      "sourceFile": "syne-latin-700-normal.woff2",
+      "subset": "latin"
+    },
+    {
       "file": "PublicSans-Regular.woff2",
       "sha256": "36274b5787b4f03b27e65ae971d6c808a96838ccd60c9dabaee154889b6bba82",
       "sourcePkg": "@fontsource/public-sans",

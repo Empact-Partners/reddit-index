@@ -34,20 +34,35 @@ const T = {
   black: token('space-black'),
   snow: token('snowbelt'),
   greenDeep: token('green-deep'),
-  grapeDeep: token('grape-deep'),
-  grapeLight: token('grape-light'),
+  hatedFill: token('hated-fill'),
+  hatedInk: token('hated-ink'),
 };
+
+// srgb interpolation is per-channel on the gamma-encoded values, which is
+// exactly what color-mix(in srgb, …) computes — so the wash surfaces the
+// board cards actually paint are reproducible here and get measured too.
+function mix(hexA, hexB, wA) {
+  const a = hexA.slice(1).match(/../g).map((h) => parseInt(h, 16));
+  const b = hexB.slice(1).match(/../g).map((h) => parseInt(h, 16));
+  return '#' + a.map((v, i) => Math.round(v * wA + b[i] * (1 - wA))
+    .toString(16).padStart(2, '0')).join('');
+}
+const WHITE = '#FFFFFF';
+const lovedWashHover = mix(T.green, WHITE, 0.24);
+const hatedWashHover = mix(T.hatedFill, WHITE, 0.26);
 
 // [label, fg, bg, minimum, why]
 const PAIRS = [
   ['body text on page',            T.black,      T.snow,   4.5, 'WCAG 1.4.3'],
   ['structure on page',            T.sherpa,     T.snow,   4.5, 'nav, headings'],
   ['loved ink on page',            T.greenDeep,  T.snow,   4.5, 'loved text and icons'],
-  ['hated ink on page',            T.grapeDeep,  T.snow,   4.5, 'hated text and icons'],
-  ['text on loved fill',           T.black,      T.green,  4.5, 'score chip, sentiment chip'],
-  ['text on hated fill',           T.black,      T.grape,  4.5, 'score chip, sentiment chip'],
-  ['footer text on Sherpa',        T.snow,       T.sherpa, 4.5, 'slot 4 must be readable'],
-  ['hated accent on Sherpa',       T.grapeLight, T.sherpa, 4.5, 'the only on-dark accent'],
+  ['hated ink on page',            T.hatedInk,   T.snow,   4.5, 'hated text and icons'],
+  ['loved ink on deepest wash',    T.greenDeep,  lovedWashHover, 4.5, 'score text on hover rung'],
+  ['hated ink on deepest wash',    T.hatedInk,   hatedWashHover, 4.5, 'score text on hover rung'],
+  ['body text on deepest washes',  T.black,      hatedWashHover, 4.5, 'row text on hover rung'],
+  ['text on loved fill',           T.black,      T.green,  4.5, 'board header strip, chips'],
+  ['text on hated fill',           T.black,      T.hatedFill, 4.5, 'board header strip, chips'],
+  ['masthead text on Sherpa',      T.snow,       T.sherpa, 4.5, 'the title band'],
   ['focus ring on page',           T.grape,      T.snow,   3.0, 'WCAG 1.4.11 non-text'],
   ['focus ring on Sherpa',         T.goal,       T.sherpa, 3.0, 'WCAG 1.4.11 non-text'],
 ];

@@ -18,7 +18,7 @@
     /* ── Derived display tints. NOT palette additions. ──────────────────────
        Lucky Green is 1.87:1 on Snowbelt and Sugar Grape 3.51:1; neither can
        carry text, so text and icons use the darkened pair instead. */
-    --green-deep:  #267856;  /* 4.72:1 on Snowbelt — loved text and icons  */
+    --green-deep:  #226E4F;  /* 5.41:1 on Snowbelt, 5.14:1 on the deepest wash */
     --grape-deep:  #7940BF;  /* 5.59:1 on Snowbelt — hated text and icons  */
     --grape-light: #D0AAFF;  /* 5.53:1 on Sherpa   — hated accent on dark  */
 
@@ -29,12 +29,26 @@
     --fg:            var(--space-black);
     --structure:     var(--sherpa-blue);
     --rule:          rgb(2 69 79 / 0.12);
+    --paper:         #FFFFFF;
     --loved-fill:    var(--lucky-green);
     --loved-ink:     var(--green-deep);
-    --hated-fill:    var(--sugar-grape);
-    --hated-ink:     var(--grape-deep);
+    /* Hated moved from Sugar Grape to a warm tone on Vlad's 2026-08-09 ruling
+       ("most hated should be like orangy"). #F5A83C sits dE 0.19 in OKLab from
+       Reddit's #FF4500 — the trade-dress gate now asserts that distance, so a
+       drift toward the banned hue fails the build. Black on it: 9.07:1. */
+    --hated-fill:    #F5A83C;
+    --hated-ink:     #8F5100;  /* 5.51:1 on Snowbelt */
     --focus:         var(--sugar-grape);
     --focus-on-dark: var(--virtual-goal);
+
+    /* The wash ladder, MarketSplash-style: tints washed into paper, never
+       chromatic slabs. Rungs read hover > body. */
+    --loved-wash:       color-mix(in srgb, var(--lucky-green) 11%, var(--paper));
+    --loved-wash-hover: color-mix(in srgb, var(--lucky-green) 24%, var(--paper));
+    --loved-wash-deep:  color-mix(in srgb, var(--lucky-green) 20%, var(--paper));
+    --hated-wash:       color-mix(in srgb, var(--hated-fill) 11%, var(--paper));
+    --hated-wash-hover: color-mix(in srgb, var(--hated-fill) 26%, var(--paper));
+    --hated-wash-deep:  color-mix(in srgb, var(--hated-fill) 22%, var(--paper));
 
     /* ── Type scale — a DECLARED override of the Empact scale ────────────────
        Empact tops out at a 68px H1 and bottoms out at a 12px caption. Both are
@@ -82,7 +96,7 @@
   --color-space-black:  #171616;
   --color-snowbelt:     #EEF1ED;
   --color-white:        #FFFFFF;
-  --color-green-deep:   #267856;
+  --color-green-deep:   #226E4F;
   --color-grape-deep:   #7940BF;
   --color-grape-light:  #D0AAFF;
   --color-rule:         rgb(2 69 79 / 0.12);
@@ -120,6 +134,9 @@
   html {
     background: var(--bg);
     color: var(--fg);
+    /* .bleed bands are 100vw; on browsers with layout scrollbars that is a few
+       px wider than the viewport. Clip it — the page never scrolls sideways. */
+    overflow-x: clip;
     /* All numerals are tabular. A ranking table whose digits shift width is a
        ranking table nobody can scan down. */
     font-variant-numeric: tabular-nums;
@@ -190,35 +207,77 @@
    scripts/gates/css-rules.mjs re-asserts them against the BUILT css. */
 @layer components {
 
-  /* ── The index board ─────────────────────────────────────────────────────
-     Controls row: category listbox left, view switcher right. Elevation is a
-     border on an opaque white panel — no shadows anywhere on this site. */
+  /* ── The index board, MarketSplash rhythm on Empact ink ──────────────────
+     Full-bleed bands meeting at hairlines, tints washed into paper, one bold
+     masthead. Elevation is always a border on an opaque panel — no shadows. */
+
+  .bleed {
+    width: 100vw;
+    margin-left: calc(50% - 50vw);
+  }
+
+  .masthead {
+    background: var(--structure);
+    color: var(--snowbelt);
+    text-align: center;
+    padding: 56px var(--gutter) 48px;
+  }
+  .masthead h1 {
+    font-weight: 700;
+    font-size: var(--fs-display);
+    letter-spacing: -0.02em;
+    margin: 0;
+  }
+  /* The highlighter swash — MarketSplash's first-word coral, in Virtual Goal.
+     Single unbreakable word only; the span carries its own stacking context so
+     the swash paints behind the glyphs, never over them. */
+  .swash {
+    position: relative;
+    z-index: 0;
+    white-space: nowrap;
+  }
+  .swash::after {
+    content: "";
+    position: absolute;
+    left: -0.06em; right: -0.06em; bottom: 0.02em;
+    height: 0.30em;
+    background: var(--virtual-goal);
+    z-index: -1;
+  }
+
+  .controls-band {
+    background: var(--paper);
+    border-bottom: 1px solid var(--rule);
+    padding: 18px var(--gutter);
+  }
   .board-controls {
-    display: flex; justify-content: space-between; align-items: center;
-    gap: 16px; flex-wrap: wrap;
+    display: flex; justify-content: center; align-items: center;
+    gap: 20px; flex-wrap: wrap;
+    max-width: var(--container);
+    margin-inline: auto;
   }
 
   .listbox { position: relative; }
   .listbox-btn {
     display: inline-flex; align-items: center; gap: 12px;
-    padding: 10px 16px;
-    font: inherit; font-size: var(--fs-body);
+    padding: 12px 20px;
+    font: inherit; font-size: var(--fs-body); font-weight: 600;
     color: var(--fg);
-    background: var(--color-white);
+    background: var(--snowbelt);
     border: 1px solid var(--rule);
     border-radius: var(--radius-card);
     cursor: pointer;
   }
   .listbox-pop {
-    position: absolute; z-index: 10; top: calc(100% + 4px); left: 0;
+    position: absolute; z-index: 10; top: calc(100% + 6px); left: 0;
     min-width: 100%; width: max-content; max-height: 60vh; overflow-y: auto;
-    margin: 0; padding: 4px; list-style: none;
-    background: var(--color-white);
+    margin: 0; padding: 6px; list-style: none;
+    background: var(--paper);
     border: 1px solid var(--rule);
     border-radius: var(--radius-card);
   }
   .listbox-opt {
-    padding: 9px 12px;
+    padding: 10px 14px;
     border-radius: var(--radius-card);
     font-size: var(--fs-body);
     cursor: pointer;
@@ -232,12 +291,13 @@
     border: 1px solid var(--rule);
     border-radius: var(--radius-card);
     overflow: hidden;
+    background: var(--snowbelt);
   }
   .seg button {
-    padding: 10px 16px;
+    padding: 12px 20px;
     border: 0; margin: 0;
-    background: var(--color-white);
-    font: inherit; font-size: var(--fs-small);
+    background: transparent;
+    font: inherit; font-size: var(--fs-body); font-weight: 600;
     color: var(--fg);
     cursor: pointer;
   }
@@ -247,24 +307,79 @@
     color: var(--snowbelt);
   }
 
-  /* Each board column: heading over a 3px sentiment rule; the score column
-     takes the matching deep tint (contrast-gate-verified on Snowbelt). */
-  .board-head {
-    font-size: var(--fs-h3);
-    padding-top: 12px;
-    border-top: 3px solid var(--rule);
+  /* Board cards: bordered paper containers, a solid sentiment header strip,
+     the body washed in the strip's family. The two-column view is two cards;
+     the one-list view is a single centred card with rows tinted by position. */
+  .board-grid {
+    display: grid;
+    gap: 28px;
+    max-width: var(--container);
+    margin: 40px auto 0;
+    padding: 0 var(--gutter);
+    align-items: start;
   }
-  .board-col[data-tone="loved"] .board-head { border-top-color: var(--loved-fill); }
-  .board-col[data-tone="hated"] .board-head { border-top-color: var(--hated-fill); }
-  .board-col[data-tone="loved"] td.col-score { color: var(--loved-ink); }
-  .board-col[data-tone="hated"] td.col-score { color: var(--hated-ink); }
-  .board-col .table-scroll { margin-top: 16px; }
+  @media (min-width: 900px) {
+    .board-grid { grid-template-columns: 1fr 1fr; }
+  }
+  .board-grid[data-view="list"] {
+    display: block;
+    max-width: 920px;
+  }
+
+  .board-card {
+    border: 1px solid var(--rule);
+    border-radius: 8px;
+    overflow: hidden;
+    background: var(--paper);
+  }
+  .board-card > h2 {
+    margin: 0;
+    padding: 18px 22px;
+    font-weight: 700;
+    font-size: var(--fs-h3);
+    color: var(--space-black);
+  }
+  .board-card[data-tone="loved"] > h2 { background: var(--loved-fill); }
+  .board-card[data-tone="hated"] > h2 { background: var(--hated-fill); }
+  .board-card[data-tone="neutral"] > h2 {
+    background: var(--structure);
+    color: var(--snowbelt);
+  }
+  .board-card[data-tone="loved"] .rank-table tbody tr { background: var(--loved-wash); }
+  .board-card[data-tone="hated"] .rank-table tbody tr { background: var(--hated-wash); }
+  .board-card[data-tone="loved"] .rank-table tbody tr:hover { background: var(--loved-wash-hover); }
+  .board-card[data-tone="hated"] .rank-table tbody tr:hover { background: var(--hated-wash-hover); }
+  .board-card[data-tone="loved"] td.col-score { color: var(--loved-ink); }
+  .board-card[data-tone="hated"] td.col-score { color: var(--hated-ink); }
+
+  /* One-list: position is colour-coded — the loved end sits on the green wash,
+     the hated end on the warm wash, top-10 and bottom-10 a rung deeper. */
+  .board-card[data-tone="neutral"] .rank-table tr[data-end="loved"] { background: var(--loved-wash); }
+  .board-card[data-tone="neutral"] .rank-table tr[data-end="loved"][data-strong] { background: var(--loved-wash-deep); }
+  .board-card[data-tone="neutral"] .rank-table tr[data-end="loved"]:hover { background: var(--loved-wash-hover); }
+  .board-card[data-tone="neutral"] .rank-table tr[data-end="hated"] { background: var(--hated-wash); }
+  .board-card[data-tone="neutral"] .rank-table tr[data-end="hated"][data-strong] { background: var(--hated-wash-deep); }
+  .board-card[data-tone="neutral"] .rank-table tr[data-end="hated"]:hover { background: var(--hated-wash-hover); }
+  .board-card[data-tone="neutral"] tr[data-end="loved"] td.col-score { color: var(--loved-ink); }
+  .board-card[data-tone="neutral"] tr[data-end="hated"] td.col-score { color: var(--hated-ink); }
 
   .rank-gap td {
     text-align: center;
     font-size: var(--fs-micro);
     color: var(--sherpa-blue);
+    background: var(--paper);
   }
+
+  /* Split view: five columns inside a half-width card. Tighter cell padding
+     and a wrappable category cell keep the table INSIDE the card instead of
+     scrolling out of it. */
+  .board-grid:not([data-view="list"]) .rank-table th,
+  .board-grid:not([data-view="list"]) .rank-table td { padding: 12px 10px; }
+  .board-grid:not([data-view="list"]) .rank-table th:first-child,
+  .board-grid:not([data-view="list"]) .rank-table td:first-child { padding-left: 16px; }
+  .board-grid:not([data-view="list"]) .rank-table th:last-child,
+  .board-grid:not([data-view="list"]) .rank-table td:last-child { padding-right: 16px; }
+  .rank-table td.col-category .cat-chip { white-space: normal; }
 
   /* Mention card */
   .mention-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 32px; }
@@ -353,17 +468,19 @@
   }
   .cat-card-rule { border-top: 3px solid var(--cat); }
 
-  /* Tables are real tables, with a caption and scoped headers. Corners square. */
+  /* Tables are real tables, with a caption and scoped headers. Corners square.
+     The score column is CENTRED and its header never wraps — one line, always. */
   .rank-table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
   .rank-table caption { text-align: left; font-size: var(--fs-small); padding-bottom: 12px; }
   .rank-table th, .rank-table td {
-    text-align: left; padding: 12px 14px; border-bottom: 1px solid var(--rule);
+    text-align: left; padding: 12px 16px; border-bottom: 1px solid var(--rule);
     vertical-align: baseline;
   }
-  .rank-table th { font-weight: 600; font-size: var(--fs-small); }
+  .rank-table th { font-weight: 600; font-size: var(--fs-small); white-space: nowrap; }
+  .rank-table th.col-score, .rank-table td.col-score { text-align: center; }
   .rank-table td.col-rank  { font-size: var(--fs-micro); width: 1%; white-space: nowrap; color: var(--sherpa-blue); }
-  .rank-table td.col-score { font-size: var(--fs-lead); font-family: var(--font-syne); white-space: nowrap; }
-  .rank-table td.col-brand { font-size: var(--fs-body); }
+  .rank-table td.col-score { font-size: var(--fs-lead); font-family: var(--font-syne); font-weight: 700; white-space: nowrap; }
+  .rank-table td.col-brand { font-size: var(--fs-body); font-weight: 600; }
   .rank-table td.col-mentions { font-size: var(--fs-small); white-space: nowrap; }
   .rank-table td.col-category { font-size: var(--fs-small); }
   /* Below 768px the table scrolls inside its OWN container. The page body never

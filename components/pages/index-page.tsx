@@ -2,19 +2,18 @@ import { IndexBoard } from "@/components/board/index-board";
 import type { BoardData, Scope } from "@/lib/data/board-shapes";
 
 /**
- * The index. "Reddit Index" at the top, the controls, the boards — and NOTHING
- * else. No hero sentence, no methodology callout, no disclaimers, no footer.
+ * The index. A bold Sherpa masthead — "Reddit" carries the Virtual Goal
+ * highlighter swash — then the controls band, then the boards. Nothing else.
  * That bareness is the owner's explicit spec, not an omission.
  */
 export function IndexPage({ data, scope }: { data: BoardData; scope: Scope }) {
   return (
-    <div className="pt-14 pb-[var(--section)]">
-      <h1
-        className="tracking-tight"
-        style={{ fontSize: "var(--fs-display)", color: "var(--sherpa-blue)" }}
-      >
-        Reddit Index
-      </h1>
+    <div className="pb-[var(--section)]">
+      <header className="bleed masthead">
+        <h1>
+          <span className="swash">Reddit</span> Index
+        </h1>
+      </header>
       <IndexBoard data={data} initialScope={scope} />
     </div>
   );

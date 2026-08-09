@@ -60,7 +60,7 @@ const CASES = [
   }],
   ['contrast', 'a token that can no longer carry text', () => {
     const p = path.join(tmp, 'app', 'globals.css');
-    fs.writeFileSync(p, fs.readFileSync(p, 'utf8').replace('--green-deep:  #267856', '--green-deep:  #9FE7C4'));
+    fs.writeFileSync(p, fs.readFileSync(p, 'utf8').replace('--green-deep:  #226E4F', '--green-deep:  #9FE7C4'));
   }],
   ['fonts', 'a substituted font file', () => {
     fs.writeFileSync(path.join(tmp, 'app', '_fonts', 'Syne-Medium.woff2'), 'not a font');

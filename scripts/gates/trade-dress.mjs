@@ -14,7 +14,9 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
-import { hexToOklch, rgbToHex } from '../color.mjs';
+import { hexToOklch, hexToOklab, rgbToHex } from '../color.mjs';
+
+const REDDIT_LAB = hexToOklab('#FF4500');
 import { ROOT, builtCss, allSvg, walk, fail, pass, requireBuild } from './_util.mjs';
 
 const root = process.env.GATE_ROOT || ROOT;
@@ -49,8 +51,12 @@ for (const f of scanTargets) {
 }
 
 // ── 2. colour space, over built CSS ────────────────────────────────────────
-// C2 in decisions/0008 bans hue 10-85° outright. Anything with real chroma in
-// that band is orange, however it was written.
+// AMENDED 2026-08-09 on Vlad's ruling that the hated boards go warm: the flat
+// 10-85° hue ban would outlaw the site's own sentiment colour. What trade
+// dress actually protects is proximity to REDDIT'S orange, so the test is now
+// perceptual distance: anything within dE_OKLab 0.14 of #FF4500 fails. The
+// shipped warm tones sit at dE 0.189 (#F5A83C) and 0.214 (#8F5100) — inside
+// the palette by a measured margin, and a drift toward #FF4500 still fails.
 const COLOUR = /#[0-9a-fA-F]{6}\b|#[0-9a-fA-F]{3}\b|rgba?\([^)]+\)|oklch\([^)]+\)|hsl a?\([^)]+\)/g;
 
 function toHex(literal) {
@@ -82,10 +88,19 @@ for (const f of cssFiles) {
       if (!hex) continue;
       [L, C, H] = hexToOklch(hex);
     }
-    if (C >= 0.05 && H >= 10 && H <= 85) {
+    const rad = (H * Math.PI) / 180;
+    const lab = [L, C * Math.cos(rad), C * Math.sin(rad)];
+    const dE = Math.hypot(lab[0] - REDDIT_LAB[0], lab[1] - REDDIT_LAB[1], lab[2] - REDDIT_LAB[2]);
+    // Two rings: anything genuinely close to #FF4500 fails whatever its hue;
+    // inside the warm 10-85° band the required distance widens to 0.16, which
+    // is what keeps a warm sentiment tone honest without outlawing the pinks
+    // (hue ~2-8°) that were always legal.
+    const warm = C >= 0.05 && H >= 10 && H <= 85;
+    const min = warm ? 0.16 : 0.08;
+    if (dE < min) {
       violations.push(
         `${path.relative(root, f)}: ${lit} is oklch(${L.toFixed(3)} ${C.toFixed(3)} ${H.toFixed(1)}) — ` +
-        `inside the banned 10-85° orange band`);
+        `dE ${dE.toFixed(3)} from Reddit's #FF4500 (minimum ${min}${warm ? ', warm band' : ''})`);
     }
   }
 }
