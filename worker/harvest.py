@@ -204,8 +204,13 @@ def flatten_tree(listing, out):
             flatten_tree(replies, out)
 
 
-def harvest_category(cat_slug, cat_name, subs, brands, depth):
-    cfg = DEPTHS[depth]
+def harvest_category(cat_slug, cat_name, subs, brands, depth, trees_override=0):
+    cfg = dict(DEPTHS[depth])
+    if trees_override:
+        # More trees on the SAME cached queries: search replays free from disk,
+        # only the extra tree fetches spend calls. The lever for topping up a
+        # starved category without re-searching anything.
+        cfg["trees"] = trees_override
     alias_re = build_alias_re(brands)
     qs = queries_for(cat_slug, cat_name, brands, cfg["queries"])
 
@@ -320,6 +325,8 @@ def main():
     ap.add_argument("--force", action="store_true", help="re-harvest categories already on disk")
     ap.add_argument("--deep-category", default=None,
                     help="one category to harvest at depth=deep while the rest run thin")
+    ap.add_argument("--trees", type=int, default=0,
+                    help="override the depth's tree-fetch cap (search stays cached)")
     args = ap.parse_args()
 
     mapping = load_mapping()
@@ -343,7 +350,7 @@ def main():
             continue
         print(f"=== {cats[slug]} ({slug}) — {len(subs)} scoring subreddits, depth={depth}")
         try:
-            harvest_category(slug, cats[slug], subs, brands.get(slug, []), depth)
+            harvest_category(slug, cats[slug], subs, brands.get(slug, []), depth, args.trees)
         except Exception as e:
             # Disk is the source of truth and every response is already cached,
             # so a category that dies costs its parse, not its calls. Losing the

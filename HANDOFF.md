@@ -1,5 +1,53 @@
 # Handoff — open items
 
+## 2026-08-09 — the rebuild and the second corpus
+
+**The site was rebuilt to Vlad's original spec and the homepage doctrine is now
+his words verbatim, not the docs':** "Reddit Index" at the top and NOTHING else
+— no hero, no methodology callout, no exposure-confound line, no banner, no
+footer, no category grid. A dropdown (default All Categories), Most Loved left
+/ Most Hated right (top 100 each, opposite ends of one ordering), a switcher to
+one consolidated list capped at 200, two metric columns (Reddit Love Score +
+mentions, category third in the pooled scope). One client component
+(`components/board/index-board.tsx`) holds every scope's data; the dropdown
+swaps in place via history.replaceState. `/{category}/` renders the same board
+preselected. Company pages slimmed to name + numbers + receipts and carry the
+methodology link + non-affiliation notice in a quiet footer; the notice also
+closes /methodology. **The footer-slot4 gate was deleted with the footer** — 7
+gates remain, self-test proves each fails when violated.
+
+**Display floor replaced eligibility for VISIBILITY:** any (brand × category)
+row with a computed score and `n_op >= 3` is ranked (`lib/data/boards.ts`).
+The n_eff gates and diversity floors stay in the database untouched; they just
+no longer decide whether a brand appears. Pooled scope dedupes by brand — the
+max-`n_op` row is the brand's home row.
+
+**Classification moved to the Codex fleet** (`worker/classify_codex.py`,
+gpt-5.6-luna, 40-wide, disk-idempotent): same SYSTEM prompt, same label set,
+writes the SAME sentiment cache classify.py reads, so `classify.py --all`
+becomes a pure zero-model-call assembler. Measured agreement with the Claude
+labels: 81% exact on the 4-way set, 3 polarity flips in 80 — annotator-level.
+The mixed-engine corpus is recorded here deliberately: labels carry `_engine`
+in the cache. `claude -p` remains legal for classification but is the slow
+lane; if used, SERIAL only (`--workers 1`) — concurrent sessions still wedge.
+
+**The second corpus (this run):** in-window-first selection (the fix that
+unlocked backup-storage's 299 stranded mentions), a `--trees` top-up harvest
+for the 9 starved categories from already-discovered threads (2,465 calls,
+zero new searches, zero errors), then the fleet pass. Result: **8,924 in-window
+scored mentions over 412 (brand × category) rows, 20/20 categories populated;
+11,790 mentions and 412 score rows loaded; all gate_checks assertions zero
+rows; 200/200 sampled permalinks resolve.** Still zero companies past the
+formal n_eff gates — closest are hubspot (n_eff 400/600) and salesforce
+(298/600) — which now affects only badges, not visibility.
+
+Superseded below by this section: the first-run numbers, the provisional
+banner (deleted), the insufficient-signal panel (deleted with category-page.tsx),
+and the `redditbrandindex.com` item — **Vlad ruled the defensive domain is NOT
+happening; stop raising it.**
+
+---
+
 **State as of 2026-08-05, after the first build.** The repo is no longer
 documentation only: the schema, the pipeline, the site and its build gates
 exist, the method is frozen, and a sample corpus has been collected. What

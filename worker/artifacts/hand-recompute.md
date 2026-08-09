@@ -14,58 +14,58 @@ regenerating it produces exactly these twenty.
 
 | # | label | subreddit | author | matched | permalink |
 |---|---|---|---|---|---|
-| 1 | negative | r/CRM | u/No_Week_5798 | `hubspot` | https://www.reddit.com/r/CRM/comments/1nphjbg/trying_to_streamline_lead_handoffs_in_hubspot_and/ |
-| 2 | neutral | r/CRM | u/sardamit | `hubspot` | https://www.reddit.com/r/CRM/comments/1mzt3nu/crm_hubspot/namccxx/ |
-| 3 | neutral | r/CRM | u/Narrow_Goose8822 | `hubspot` | https://www.reddit.com/r/CRM/comments/1mrrwed/how_to_get_better_at_hubspot_crm_automations/ |
-| 4 | neutral | r/sales | u/Ferris80 | `hubspot` | https://www.reddit.com/r/sales/comments/173pe7l/thoughts_on_pipedrive_crm/k44yq6k/ |
-| 5 | neutral | r/sales | u/guywithalpha | `hubspot` | https://www.reddit.com/r/sales/comments/1bwjgk7/good_news_the_potential_death_of_salesforce/l8g3gh8/ |
-| 6 | neutral | r/CRM | u/OracleofFl | `hubspot` | https://www.reddit.com/r/CRM/comments/1n4p13n/controversial_isnt_opportunities_in_salesforce/nbnfjqq/ |
-| 7 | positive | r/CRM | u/attio | `hubspot` | https://www.reddit.com/r/CRM/comments/1pd8fde/im_the_cofounder_of_attio_crm_we_just_raised_a_50/ns3a3u6/ |
-| 8 | positive | r/CRM | u/dualfalchions | `hubspot` | https://www.reddit.com/r/CRM/comments/1ol784i/crm_recommendations_for_small_b2b_service/nmrt3zd/ |
-| 9 | neutral | r/SalesOperations | u/Cautious_Pen_674 | `hubspot` | https://www.reddit.com/r/SalesOperations/comments/1rmmna0/crm_hubspot_side_hustle/o93iuq8/ |
-| 10 | neutral | r/CRM | u/oasudoais7d987 | `hubspot` | https://www.reddit.com/r/CRM/comments/lasbqr/best_crm_w_marketing_automation_not_named/glucb32/ |
-| 11 | negative | r/sales | u/andrewbermudez | `hubspot` | https://www.reddit.com/r/sales/comments/77v3ax/anyone_pissed_about_hubspot_crm_price_increases/ |
-| 12 | neutral | r/CRM | u/CircuitForge | `hubspot` | https://www.reddit.com/r/CRM/comments/1g43xtz/best_voip_service_to_integrate_with_hubspot_crm/ |
-| 13 | negative | r/CRM | u/guillermeo | `hubspot` | https://www.reddit.com/r/CRM/comments/1such21/after_1_year_building_a_crm_for_travel_agencies/ |
-| 14 | negative | r/sales | u/EZeeZGeezy | `hubspot` | https://www.reddit.com/r/sales/comments/1bwjgk7/good_news_the_potential_death_of_salesforce/ky88993/ |
-| 15 | neutral | r/CRM | u/sandilya22 | `hubspot` | https://www.reddit.com/r/CRM/comments/103rhw9/anyone_here_integrating_multiple_crms_in_their/ |
-| 16 | negative | r/sales | u/Mrhood714 | `hubspot` | https://www.reddit.com/r/sales/comments/1bwjgk7/good_news_the_potential_death_of_salesforce/ky6u12t/ |
-| 17 | neutral | r/sales | u/djredcent | `hubspot` | https://www.reddit.com/r/sales/comments/5njxtp/hubspot_sales_crm_and_pipedrive_users/ |
-| 18 | positive | r/CRM | u/CoachAmber | `hubspot` | https://www.reddit.com/r/CRM/comments/1mrrwed/how_to_get_better_at_hubspot_crm_automations/na6c00f/ |
-| 19 | negative | r/CRM | u/TaleOfACat | `hubspot` | https://www.reddit.com/r/CRM/comments/1q8z7qh/which_crm_feels_closest_to_hubspot_in_usability/ |
-| 20 | negative | r/sales | u/gafana | `hubspot` | https://www.reddit.com/r/sales/comments/woh50m/good_crm_for_sales_to_replace_hubspot/ikbpb8i/ |
+| 1 | neutral | r/CRM | u/BasicsOnly | `hubspot` | https://www.reddit.com/r/CRM/comments/1l45o7l/anyone_here_whos_moved_from_hubspot_to_attio/mwamb82/ |
+| 2 | neutral | r/CRM | u/mujhekyamaitoaurathu | `hubspot` | https://www.reddit.com/r/CRM/comments/1uqf9cb/crm_for_small_business/p00wbnr/ |
+| 3 | neutral | r/CRM | u/Top-Wish-5520 | `hubspot` | https://www.reddit.com/r/CRM/comments/1sw7f9p/we_spent_800_month_on_clay_apollo_and_hubspot_and/omh9qvh/ |
+| 4 | positive | r/sales | u/TheGrowthMentor | `hubspot` | https://www.reddit.com/r/sales/comments/1lkjral/what_crm_should_we_use/n04txft/ |
+| 5 | positive | r/CRM | u/Marcelc | `hubspot` | https://www.reddit.com/r/CRM/comments/1ne8y3d/zoho_vs_hubspot_vs_salesforce/ndqik7c/ |
+| 6 | positive | r/sales | u/Choice_Breakfast435 | `hubspot` | https://www.reddit.com/r/sales/comments/1lkjral/what_crm_should_we_use/mzwr5o8/ |
+| 7 | positive | r/CRM | u/Adorable-Reindeer280 | `hubspot` | https://www.reddit.com/r/CRM/comments/1tvlwhb/best_startup_crm_for_2050_person_teams_were/oq7n787/ |
+| 8 | negative | r/CRM | u/Ok_Low_5480 | `hubspot` | https://www.reddit.com/r/CRM/comments/1l45o7l/anyone_here_whos_moved_from_hubspot_to_attio/mwad6ii/ |
+| 9 | positive | r/CRM | u/Ok-Prompt3555 | `hubspot` | https://www.reddit.com/r/CRM/comments/1oo696l/dynamics_365_sales_to_hubspot_migration/nn8b7pu/ |
+| 10 | positive | r/sales | u/Fit_Height_8490 | `hubspot` | https://www.reddit.com/r/sales/comments/1sa191f/hubspot_mm_ae_worth_it/odsjfy9/ |
+| 11 | negative | r/CRM | u/OriginalARG | `hubspot` | https://www.reddit.com/r/CRM/comments/1lvqqs8/help_me_avoid_800mo_hubspot_increase_pipedrive/ |
+| 12 | positive | r/sales | u/Desperate-Purpose342 | `hubspot` | https://www.reddit.com/r/sales/comments/1r2svmv/i_am_using_a_crm_and_i_feel_like_its_just_a/o4z4zy1/ |
+| 13 | positive | r/revops | u/cmullins70 | `hubspot` | https://www.reddit.com/r/revops/comments/1mvanz8/hubspot_alternatives/nuv5hhs/ |
+| 14 | negative | r/CRM | u/Mammoth_Savings3855 | `hubspot` | https://www.reddit.com/r/CRM/comments/1tk3b2l/need_help_choosing_and_setting_up_a_crm_for_my/ |
+| 15 | negative | r/CRM | u/GoodLifeExperience | `hubspot` | https://www.reddit.com/r/CRM/comments/1o1yxhz/hubspot_to_ghl_feedback/nlta5y0/ |
+| 16 | negative | r/CRM | u/Quick-Performer-4670 | `hubspot` | https://www.reddit.com/r/CRM/comments/1eytc08/attio_vs_folk_which_crm_can_grow_with_my_business/nrcmr1a/ |
+| 17 | negative | r/CRM | u/CurlyAce84 | `hubspot` | https://www.reddit.com/r/CRM/comments/1mwudbb/want_to_build_landing_pagesfunnel_hubspot_or_ghl/na09eq7/ |
+| 18 | neutral | r/CRM | u/Wrong-Mood9032 | `hubspot` | https://www.reddit.com/r/CRM/comments/1tfkgso/help_new_in_hubspot/ |
+| 19 | neutral | r/CRM | u/TheGrowthMentor | `hubspot` | https://www.reddit.com/r/CRM/comments/1k5qroz/zoho_vs_hubspot/mon68hm/ |
+| 20 | positive | r/CRM | u/South-Reference-8865 | `hubspot` | https://www.reddit.com/r/CRM/comments/1q57eah/top_crm_enrichment_tools_for_enterprise/ny3hb5b/ |
 
 ## The arithmetic, longhand
 ```
-x_pos  = 3
-x_neg  = 7
-neu    = 10     (counted and published, never in the denominator)
+x_pos  = 9
+x_neg  = 6
+neu    = 5     (counted and published, never in the denominator)
 abstain= 0
-N_op   = 3 + 7 = 10
+N_op   = 9 + 6 = 15
 
 category prior, fitted leave-one-out over every other crm brand with N_op >= 30
-  alpha0 = 120.501
-  beta0  = 79.499
+  alpha0 = 13.701
+  beta0  = 6.299
 
 p_tilde = (x_pos + alpha0) / (N_op + alpha0 + beta0)
-        = (3 + 120.501) / (10 + 120.501 + 79.499)
-        = 123.5010 / 210.0000
-        = 0.588100
-Reddit Love Score = round(100 * 0.588100) = 59
+        = (9 + 13.701) / (15 + 13.701 + 6.299)
+        = 22.7010 / 35.0000
+        = 0.648600
+Reddit Love Score = round(100 * 0.648600) = 65
 ```
 
 ## Three independent computations of the same number
 
 | route | value |
 |---|---|
-| longhand, above | **59** |
-| worker/score.py, same inputs | **59** |
-| Postgres, independent code path | **59** |
+| longhand, above | **65** |
+| worker/score.py, same inputs | **65** |
+| Postgres, independent code path | **65** |
 
-Paste-able check: `=ROUND(100*(3+120.501)/(10+120.501+79.499),0)`
+Paste-able check: `=ROUND(100*(9+13.701)/(15+13.701+6.299),0)`
 
 ## The published figure, for contrast
 
-- whole in-window corpus: n = 146, N_op = 83, n_eff = 56.6
+- whole in-window corpus: n = 1115, N_op = 805, n_eff = 400.2
 - eligible: **False**
-- failed test: **n_eff** — 57 observed against 600 required
+- failed test: **n_eff** — 400 observed against 600 required

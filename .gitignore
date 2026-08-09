@@ -26,3 +26,7 @@ worker/.cache/
 
 .env.local
 .env*.local
+worker/deepen-classify.log
+worker/topup-harvest.log
+worker/codex-classify.log
+worker/finalize.log
