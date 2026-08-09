@@ -1,0 +1,863 @@
+=== 1/8 gazetteer (brand-seed-new.csv -> brands.csv + aliases)
+wrote data/brands.csv  (1742 rows)
+wrote data/brand-aliases.csv  (6069 rows)
+
+1742 brands, 6069 surface forms
+dropped (no measured category): ['Zapier', 'Make', 'n8n', 'Airtable', 'Retool']
+  crm                      10  Attio, Bitrix24, Close, Freshsales, HubSpot, NetSuite, Pipedrive
+  project-management       10  Asana, Basecamp, ClickUp, Jira, Linear, Notion, Smartsheet
+  accounting               11  Bill.com, Brex, Chargebee, FreshBooks, Melio, QuickBooks, Ramp
+  hr                        9  ADP, BambooHR, Deel, Gusto, HiBob, Paycom, Paylocity
+  email-marketing           5  Beehiiv, Braze, Constant Contact, ConvertKit, Mailchimp
+  marketing-automation      5  ActiveCampaign, Customer.io, HubSpot Marketing Hub, Klaviyo, Marketo Engage
+  password-managers         7  1Password, Bitwarden, Dashlane, KeePass, LastPass, NordPass, Proton Pass
+  note-taking               7  Anytype, Craft, Evernote, Logseq, Obsidian, OneNote, Roam Research
+  design                    6  Adobe XD, Canva, Figma, Framer, Sketch, Webflow
+  video-editing             7  CapCut, DaVinci Resolve, Descript, Final Cut Pro, Loom, Motion, Premiere Pro
+  help-desk                 6  Freshdesk, Front, Help Scout, Intercom, ServiceNow, Zendesk
+  erp                       5  Acumatica, Microsoft Dynamics 365, Odoo, SAP, Sage Intacct
+  business-intelligence     8  Amplitude, Looker, Metabase, Mixpanel, Power BI, Qlik, Segment
+  ecommerce                 5  BigCommerce, Shopify, Squarespace, Wix, WooCommerce
+  recruiting                7  Ashby, Greenhouse, Lever, Lokala, Recruitee, SmartRecruiters, Workable
+  payroll                   5  Justworks, OnPay, Papaya Global, Paychex, Remote
+  cloud-hosting            11  Cloudflare, DigitalOcean, Fly.io, Heroku, Hetzner, Linode, Netlify
+  team-chat                 8  Confluence, Discord, Google Meet, Google Workspace, Microsoft Teams, Miro, Slack
+  backup-storage            7  Backblaze, Dropbox, Google Drive, Synology, Veeam, Wasabi, pCloud
+  payment-processing        6  Adyen, Braintree, Checkout.com, Mollie, PayPal, Square
+  vpn                      23  AdGuard VPN, AirVPN, Astrill VPN, CyberGhost VPN, ExpressVPN, HMA VPN, Hotspot Shield
+  antivirus                24  AVG Internet Security, Avast Premium Security, Avira Prime, Bitdefender GravityZone Business Security, Bitdefender Total Security, CrowdStrike Falcon, ESET HOME Security Premium
+  web-hosting              13  Bluehost, Cloudways, DreamHost, GreenGeeks, HostGator, Hostinger, InMotion Hosting
+  domain-registrars        21  123 Reg, Amazon Route 53, Dynadot, Gandi, GoDaddy, Hover, IONOS
+  website-builders         16  Beaver Builder, Breakdance, Bricks, Carrd, Divi, Duda, Durable
+  seo-tools                25  Ahrefs, All in One SEO, AnswerThePublic, Bing Webmaster Tools, Clearscope, Frase, Google Search Console
+  social-media-management  24  Agorapulse, Brandwatch, Buffer, ContentStudio, Hootsuite, Later, Loomly
+  live-chat                20  Ada, Botpress, Chatfuel, Chatwoot, Crisp, Freshdesk Omni, Gorgias
+  voip                     24  3CX, 8x8 Work, Aircall, CloudTalk, Dialpad Connect, FreePBX, FusionPBX
+  video-conferencing       13  Adobe Connect, BigBlueButton, Brave Talk, Dialpad Meetings, FreeConferenceCall.com, GoTo Meeting, Jitsi Meet
+  webinars                 22  Airmeet, BigMarker, ClickMeeting, Contrast, Crowdcast, Demio, EasyWebinar
+  lms                      15  Absorb LMS, Blackboard LMS, CYPHER Learning, Canvas LMS, Cornerstone Learning, D2L Brightspace, Docebo Learn
+  course-platforms         17  360Learning, Coursera, Docebo, Kajabi, LearnDash, LearnUpon, LearnWorlds
+  form-builders            22  Cognito Forms, Contact Form 7, Feathery, Fillout, Fluent Forms, Formaloo, Formester
+  survey-tools             13  Alchemer Survey, AskNicely, BlockSurvey, Formbricks, LimeSurvey, Mopinion, Qualtrics
+  scheduling               20  Acuity Scheduling, Booksy, Boulevard, Cal.com, Calendly, Doodle, Fresha
+  time-tracking            21  ActivityWatch, Clockify, DeskTime, Everhour, Hubstaff, Jibble, Kimai
+  invoicing                12  Bonsai, FreeAgent, Harvest, HoneyBook, Invoice Ninja, Invoice2go, Maxio
+  expense-management       15  Airbase, Airwallex Expense Management, Concur Expense, Dext, Emburse Expense Enterprise, ExpensePoint, Expensify
+  esignature               21  Adobe Acrobat Sign, Blueink, BoldSign, DigiSigner, DocHub, DocuSeal, Docusign eSignature
+  document-management      21  Alfresco, DEVONthink, Docspell, DocuWare, FileHold, Folderit, Laserfiche
+  pdf-tools                23  ABBYY FineReader PDF, Adobe Acrobat, Bluebeam Revu, FlexiPDF, Foxit PDF Editor, Master PDF Editor, Nitro PDF Pro
+  cloud-storage            17  Box, Filen, IDrive, Icedrive, Internxt Drive, Jottacloud, Koofr
+  photo-editing            25  ACDSee Photo Studio Ultimate, Adobe Lightroom, Adobe Photoshop, Affinity, Capture One Pro, DxO PhotoLab, Exposure X7
+  cad                      25  3ds Max, Alibre Design, Archicad, AutoCAD, Autodesk Fusion, Autodesk Inventor, Blender
+  game-engines             23  Babylon.js, Bevy, CRYENGINE, Clickteam Fusion 2.5, Cocos Creator, Construct 3, Defold
+  ides                     24  Android Studio, Apache NetBeans, BBEdit, CLion, Eclipse IDE, GNU Emacs, GoLand
+  code-hosting             19  Azure DevOps, Bitbucket, Codeberg, Forgejo, Gerrit Code Review, GitBucket, GitHub
+  ci-cd                    20  AWS CodePipeline, Argo CD, Azure Pipelines, Bamboo, Bitbucket Pipelines, Buddy, Buildkite Pipelines
+  containers               21  Amazon Elastic Container Service, Amazon Elastic Kubernetes Service, Azure Kubernetes Service, CRI-O, Docker Desktop, Docker Engine, Google Kubernetes Engine
+  iac                      18  AWS Cloud Development Kit, AWS CloudFormation, AWS Serverless Application Model, Azure Resource Manager, Bicep, Chef Infra, Crossplane
+  observability            24  Amazon CloudWatch, AppDynamics, Azure Monitor, Better Stack, Checkmk, Coralogix, Datadog
+  error-tracking           17  Airbrake, AppSignal, Backtrace, Bugsink, Bugsnag, Embrace, Firebase Crashlytics
+  feature-flags            19  AB Tasty, Adobe Target, ConfigCat, Convert Experiences, Crazy Egg, DevCycle, Dynamic Yield
+  product-analytics        17  Adobe Analytics, Contentsquare, Countly, Fullstory, Gainsight PX, Glassbox, Google Analytics
+  web-analytics            15  AWStats, Clicky, Fathom Analytics, GoSquared Analytics, GoatCounter, Matomo, Pirsch Analytics
+  session-replay            9  Browsee, Heatmap.com, Highlight.io, Inspectlet, Lucky Orange, OpenReplay, Plerdy
+  data-warehouses          20  Amazon Redshift, Apache Doris, Azure Synapse Analytics, BigQuery, ClickHouse Cloud, Databricks SQL, Dremio Cloud
+  etl                      19  AWS Glue, Airbyte, Apache Airflow, Apache NiFi, Azure Data Factory, Dagster, Dataflow
+  databases                22  Amazon Aurora, Amazon DynamoDB, Apache Cassandra, ClickHouse, Cloud Firestore, CockroachDB, Elasticsearch
+  api-tools                21  API Dash, Apidog, Bruno, HTTPie, Hoppscotch, Hurl, Insomnia
+  identity                 23  Amazon Cognito, Auth0, Authelia, Cisco Duo, Clerk, Descope, Firebase Authentication
+  mdm                      22  Addigy, BlackBerry UEM, FileWave, Fleet, Hexnode UEM, IBM MaaS360, Iru Endpoint Management
+  remote-desktop           22  AnyDesk, AnyViewer, Apache Guacamole, BeyondTrust Remote Support, Chrome Remote Desktop, ConnectWise ScreenConnect, DWService
+  rmm                      19  Action1, Atera, Barracuda RMM, ConnectWise Automate, ConnectWise RMM, Datto RMM, Domotz
+  network-security         24  AWS Network Firewall, Arista Edge Threat Management NG Firewall, Barracuda CloudGen Firewall, Cato SASE Cloud Platform, Check Point Quantum Firewall, Cisco Secure Firewall, Firewalla
+  email-providers          22  AOL Mail, Fastmail, GMX Mail, Gmail, HEY, Hushmail, Kolab Now
+  communication-apis       21  Amazon Simple Email Service, Bandwidth Messaging API, Bird, Brevo, ClickSend SMS API, Infobip SMS API, MailerSend
+  newsletters              15  AWeber, Buttondown, Campaign Monitor, EmailOctopus, Flodesk, GetResponse, Ghost
+  podcast-hosting          18  Acast, Audioboom, Ausha, Blubrry, Buzzsprout, Captivate, Castos
+  video-hosting            22  Brightcove, Bunny Stream, Dacast, Dailymotion, Gumlet, JW Player, Kaltura
+  screen-recording         19  Action!, Bandicam, Camtasia, CleanShot X, EaseUS RecExperts, Kooha, Movavi Screen Recorder
+  presentations            18  Beautiful.ai, Decktopus AI, Gamma, Genially, Google Slides, Keynote, LibreOffice Impress
+  no-code                  17  Adalo, AppSheet, Base44, Bolt.new, Bubble, Draftbit, FlutterFlow
+  workflow-automation      22  Activepieces, Automation 360, Automatisch, Bardeen, Boomi Enterprise Platform, Celigo integrator.io, Gumloop
+  internal-tools           18  ActiveAdmin, AdminJS, Appsmith, Avo, Budibase, DronaHQ, Forest Admin
+  spreadsheets             19  Airtable, Apache OpenOffice Calc, Coda, CryptPad Sheet, EtherCalc, Gnumeric, Google Sheets
+  diagramming              22  Cacoo, Creately, D2, EdrawMax, Eraser, Excalidraw, Freeform
+  wikis                    18  BookStack, Docmost, DokuWiki, GitBook, Guru, Heptabase, MediaWiki
+  localization             21  CafeTran Espresso, Crowdin, DeepL Translator, Google Translate, Linguee, Localazy, Lokalise
+  writing-assistants       22  Antidote, DeepL Write, Ginger, Grammarly, Hemingway Editor, InstaText, Jenni AI
+  ai-assistants            20  Brave Leo AI, Character.AI, ChatGPT, Claude, DeepSeek, Duck.ai, Gemini
+  ai-image                 22  Adobe Firefly, Artbreeder, Civitai, ComfyUI, Craiyon, DreamStudio, Flux
+  ai-video                 20  Arcads, Creatify, Dream Machine, Dreamina, Fliki, Google Flow, Hailuo AI
+  ai-coding                25  Aider, Amazon Q Developer, Amp, Augment Code, Bolt, Claude Code, Cline
+  transcription            21  Avoma, Fathom, Fireflies.ai, Gong, Grain, Granola, Happy Scribe
+  field-service            20  BuildOps, Commusoft, Dynamics 365 Field Service, FieldEdge, FieldPulse, GorillaDesk, Housecall Pro
+  construction             22  Archdesk, BuildBook, Buildertrend, Buildxact, CMiC, Contractor Foreman, Dalux
+  property-management      24  AppFolio Property Manager, Avail, Baselane, Buildium, DoorLoop, Entrata, Hemlane
+  restaurant-pos           18  7shifts, Aloha Cloud, CAKE POS, Clover for Restaurants, GoTab, HungerRush, Lavu
+  pos                      17  Clover, Cumulus Retail, ERPLY, Epos Now, GoDaddy Point of Sale, Hike POS, IT Retail
+  inventory                18  Brightpearl, Cin7 Core, Craftybase, ERPNext, Extensiv Order Manager, Finale Inventory, Fishbowl Inventory
+  shipping                 18  AfterShip, Amazon Multichannel Fulfillment, ClickShip, EasyPost, Easyship, Flexport Fulfillment, Fulfillment by Amazon
+  print-on-demand          25  Amazon Merch on Demand, Apliiq, CustomCat, Displate, Fine Art America, Fourthwall, Gelato
+  legal-practice           22  Actionstep, CARET Legal, CASEpeer, Centerbase, Clio, CloudLex, CosmoLex
+  nonprofit                20  Aplos, Blackbaud Raiser’s Edge NXT, Bloomerang, Bonterra EveryAction, ChMeetings, ChurchTrac, CiviCRM
+  event-management         24  AXS, Bizzabo, Cvent, DICE, Eventbrite, Eventzilla, Humanitix
+  community-platforms      17  Bettermode, BuddyBoss, Circle, Discourse, Flarum, Gainsight Customer Communities, Heartbeat
+  budgeting                20  Actual Budget, Banktivity, Buxfer, Copilot Money, Empower Personal Dashboard, EveryDollar, GnuCash
+  tax-software             20  1040.com, ATX, CCH Axcess Tax, CCH ProSystem fx Tax, Cash App Taxes, Drake Tax, FreeTaxUSA
+
+bare-disabled surface forms: 416
+categories with a brand list too thin to fit a prior (<4): none
+=== 2/8 subreddit discovery (100 categories, resumable)
+
+=== [1/100] CRM — 34 candidates (23 seeded) — 0 calls so far
+  r/CRM                        ok          posture=permissive vendor=False scorable=True  bb/h=0.9724
+  r/sales                      ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/salesforce                 ok          posture=permissive vendor=True  scorable=False bb/h=1.35
+  r/techsales                  ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/hubspot                    ok          posture=permissive vendor=True  scorable=False bb/h=0.6288
+  r/gohighlevel                ok          posture=permissive vendor=True  scorable=False bb/h=0.0
+  r/Zoho                       ok          posture=permissive vendor=True  scorable=False bb/h=0.3154
+  r/smallbusiness              ok          posture=hostile    vendor=False scorable=False bb/h=0.6593
+  r/Entrepreneur               ok          posture=hostile    vendor=False scorable=False bb/h=0.0
+  r/EntrepreneurRideAlong      ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/SaaS                       ok          posture=hostile    vendor=False scorable=False bb/h=0.0
+  r/msp                        ok          posture=capped     vendor=False scorable=True  bb/h=0.0
+  r/consulting                 ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/startups                   ok          posture=capped     vendor=False scorable=True  bb/h=0.0
+  r/agency                     ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/RealEstateTechnology       ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/InsuranceAgent             ok          posture=permissive vendor=False scorable=True  bb/h=0.0776
+  r/smallbusinessuk            ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/B2BSaaS                    ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/salesdevelopment           ok          posture=permissive vendor=False scorable=True  bb/h=0.0209
+  r/SalesOperations            ok          posture=permissive vendor=False scorable=True  bb/h=0.063
+  r/revops                     ok          posture=permissive vendor=False scorable=True  bb/h=0.0205
+  r/PPC                        ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/technology                 ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/wallstreetbets             ok          posture=hostile    vendor=False scorable=False bb/h=0.0
+  r/stocks                     ok          posture=permissive vendor=False scorable=True  bb/h=3.2582
+  r/india                      ok          posture=capped     vendor=False scorable=True  bb/h=0.0
+  r/thewalkingdead             ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/cscareerquestions          ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/marketing                  ok          posture=hostile    vendor=False scorable=False bb/h=0.0
+  r/privacy                    ok          posture=hostile    vendor=False scorable=False bb/h=0.0
+  r/developersIndia            ok          posture=permissive vendor=False scorable=True  bb/h=0.8912
+  r/sysadmin                   ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/IndiaSpeaks                ok          posture=hostile    vendor=False scorable=False bb/h=0.0
+
+=== [2/100] Project Management — 34 candidates (18 seeded) — 0 calls so far
+  r/projectmanagement          ok          posture=hostile    vendor=False scorable=False bb/h=0.5425
+  r/pmp                        ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/agile                      ok          posture=permissive vendor=False scorable=True  bb/h=0.1554
+  r/scrum                      ok          posture=hostile    vendor=False scorable=False bb/h=0.0
+  r/jira                       ok          posture=hostile    vendor=True  scorable=False bb/h=0.273
+  r/clickup                    ok          posture=permissive vendor=True  scorable=False bb/h=0.2016
+  r/trello                     ok          posture=unknown    vendor=True  scorable=False bb/h=0.002
+  r/Asana                      ok          posture=hostile    vendor=True  scorable=False bb/h=0.0369
+  r/Notion                     ok          posture=hostile    vendor=True  scorable=False bb/h=2.7027
+  r/productivity               ok          posture=hostile    vendor=False scorable=False bb/h=0.0
+  r/ExperiencedDevs            ok          posture=permissive vendor=False scorable=True  bb/h=0.1387
+  r/startups                   ok          posture=capped     vendor=False scorable=True  bb/h=0.0
+  r/consulting                 ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/agency                     ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/cscareerquestions          ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/ITManagers                 ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/sysadmin                   ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/msp                        ok          posture=capped     vendor=False scorable=True  bb/h=0.0
+  r/AskReddit                  ok          posture=hostile    vendor=True  scorable=False bb/h=0.0
+  r/todayilearned              ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/Showerthoughts             ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/LifeProTips                ok          posture=hostile    vendor=False scorable=False bb/h=0.0
+  r/WritingPrompts             ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/MadeMeSmile                ok          posture=hostile    vendor=False scorable=False bb/h=0.0
+  r/mildlyinfuriating          ok          posture=hostile    vendor=False scorable=False bb/h=0.0
+  r/stocks                     ok          posture=permissive vendor=False scorable=True  bb/h=3.2582
+  r/politics                   ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/Minecraft                  ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/programming                ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/unpopularopinion           ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/ProgrammerHumor            ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/yoga                       ok          posture=permissive vendor=False scorable=True  bb/h=0.8588
+  r/webdev                     ok          posture=hostile    vendor=False scorable=False bb/h=0.0
+  r/assholedesign              ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+
+=== [3/100] Accounting — 34 candidates (11 seeded) — 0 calls so far
+  r/Accounting                 ok          posture=hostile    vendor=False scorable=False bb/h=0.7658
+  r/QuickBooks                 ok          posture=permissive vendor=True  scorable=False bb/h=0.4179
+  r/Bookkeeping                ok          posture=hostile    vendor=False scorable=False bb/h=0.312
+  r/tax                        ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/CPA                        ok          posture=hostile    vendor=False scorable=False bb/h=0.0
+  r/smallbusiness              ok          posture=hostile    vendor=False scorable=False bb/h=0.6593
+  r/Netsuite                   ok          posture=permissive vendor=True  scorable=False bb/h=0.742
+  r/ERP                        ok          posture=permissive vendor=False scorable=True  bb/h=0.0138
+  r/Entrepreneur               ok          posture=hostile    vendor=False scorable=False bb/h=0.0
+  r/FinancialCareers           ok          posture=hostile    vendor=False scorable=False bb/h=1.8074
+  r/consulting                 ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/AskReddit                  ok          posture=hostile    vendor=True  scorable=False bb/h=0.0
+  r/todayilearned              ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/books                      ok          posture=permissive vendor=False scorable=True  bb/h=3.563
+  r/WritingPrompts             ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/politics                   ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/Bitcoin                    ok          posture=permissive vendor=False scorable=True  bb/h=1.2066
+  r/hiphopheads                ok          posture=permissive vendor=False scorable=True  bb/h=2.4393
+  r/Fantasy                    ok          posture=permissive vendor=False scorable=True  bb/h=0.7649
+  r/gameofthrones              ok          posture=permissive vendor=False scorable=True  bb/h=1.7166
+  r/harrypotter                ok          posture=permissive vendor=False scorable=True  bb/h=1.2022
+  r/Marvel                     ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/indieheads                 ok          posture=hostile    vendor=False scorable=False bb/h=0.401
+  r/suggestmeabook             ok          posture=hostile    vendor=False scorable=False bb/h=0.0
+  r/mac                        ok          posture=hostile    vendor=False scorable=False bb/h=0.0
+  r/FreeEBOOKS                 ok          posture=permissive vendor=False scorable=True  bb/h=0.0896
+  r/booksuggestions            ok          posture=hostile    vendor=False scorable=False bb/h=0.8496
+  r/sysadmin                   ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/Breadit                    ok          posture=hostile    vendor=False scorable=False bb/h=0.0
+  r/HollowKnight               ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/Ultralight                 ok          posture=hostile    vendor=False scorable=False bb/h=0.52
+  r/newzealand                 ok          posture=hostile    vendor=False scorable=False bb/h=0.0
+  r/AusFinance                 ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/GilmoreGirls               ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+
+=== [4/100] HR and HRIS — 34 candidates (10 seeded) — 0 calls so far
+  r/humanresources             ok          posture=hostile    vendor=False scorable=False bb/h=0.3866
+  r/AskHR                      ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/recruiting                 ok          posture=hostile    vendor=False scorable=False bb/h=0.0
+  r/Payroll                    ok          posture=permissive vendor=False scorable=True  bb/h=0.0675
+  r/smallbusiness              ok          posture=hostile    vendor=False scorable=False bb/h=0.6593
+  r/Entrepreneur               ok          posture=hostile    vendor=False scorable=False bb/h=0.0
+  r/ExperiencedDevs            ok          posture=permissive vendor=False scorable=True  bb/h=0.1387
+  r/antiwork                   ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/consulting                 ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/startups                   ok          posture=capped     vendor=False scorable=True  bb/h=0.0
+  r/AskReddit                  ok          posture=hostile    vendor=True  scorable=False bb/h=0.0
+  r/aww                        ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/memes                      ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/science                    ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/Showerthoughts             ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/interestingasfuck          ok          posture=hostile    vendor=False scorable=False bb/h=0.0
+  r/oddlysatisfying            ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/politics                   ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/woahdude                   ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/spaceporn                  ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/productivity               ok          posture=hostile    vendor=False scorable=False bb/h=0.0
+  r/teenagers                  ok          posture=hostile    vendor=False scorable=False bb/h=0.0
+  r/Philippines                ok          posture=permissive vendor=False scorable=True  bb/h=1.4352
+  r/3Dprinting                 ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/PeopleFuckingDying         ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/mexico                     ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/baseball                   ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/WhitePeopleTwitter         ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/jobs                       ok          posture=hostile    vendor=False scorable=False bb/h=0.0
+  r/cscareerquestions          ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/sewing                     ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/crochet                    ok          posture=hostile    vendor=False scorable=False bb/h=0.0
+  r/singapore                  ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/RedditPregunta             ok          posture=permissive vendor=True  scorable=False bb/h=0.0
+
+=== [5/100] Email Marketing — 34 candidates (14 seeded) — 0 calls so far
+  r/Emailmarketing             ok          posture=permissive vendor=False scorable=True  bb/h=0.103
+  r/ecommerce                  ok          posture=hostile    vendor=False scorable=False bb/h=0.0
+  r/shopify                    ok          posture=capped     vendor=True  scorable=False bb/h=0.2979
+  r/DigitalMarketing           ok          posture=hostile    vendor=False scorable=False bb/h=0.0
+  r/marketing                  ok          posture=hostile    vendor=False scorable=False bb/h=0.0
+  r/copywriting                ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/MailChimp                  ok          posture=hostile    vendor=True  scorable=False bb/h=0.0875
+  r/Klaviyo                    ok          posture=unknown    vendor=True  scorable=False bb/h=0.2684
+  r/SaaS                       ok          posture=hostile    vendor=False scorable=False bb/h=0.0
+  r/Substack                   ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/PPC                        ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/agency                     ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/B2BSaaS                    ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/startups                   ok          posture=capped     vendor=False scorable=True  bb/h=0.0
+  r/technology                 ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/CryptoCurrency             ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/politics                   ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/Entrepreneur               ok          posture=hostile    vendor=False scorable=False bb/h=0.0
+  r/DnD                        ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/webdev                     ok          posture=hostile    vendor=False scorable=False bb/h=0.0
+  r/assholedesign              ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/smallbusiness              ok          posture=hostile    vendor=False scorable=False bb/h=0.6593
+  r/conspiracy                 ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/CryptoMoonShots            ok          posture=capped     vendor=False scorable=True  bb/h=0.0
+  r/halo                       ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/sysadmin                   ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/web_design                 ok          posture=hostile    vendor=False scorable=False bb/h=0.0324
+  r/selfhosted                 ok          posture=hostile    vendor=False scorable=False bb/h=0.667
+  r/DMAcademy                  ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/forhire                    ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/Libertarian                ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/SandersForPresident        ok          posture=permissive vendor=True  scorable=False bb/h=0.0
+  r/csMajors                   ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/digital_marketing          ok          posture=permissive vendor=True  scorable=False bb/h=0.0
+
+=== [6/100] Marketing Automation — 34 candidates (14 seeded) — 0 calls so far
+  r/marketing                  ok          posture=hostile    vendor=False scorable=False bb/h=0.0
+  r/DigitalMarketing           ok          posture=hostile    vendor=False scorable=False bb/h=0.0
+  r/PPC                        ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/SEO                        ok          posture=hostile    vendor=False scorable=False bb/h=0.0
+  r/hubspot                    ok          posture=permissive vendor=True  scorable=False bb/h=0.6288
+  r/gohighlevel                ok          posture=permissive vendor=True  scorable=False bb/h=0.0
+  r/SaaS                       ok          posture=hostile    vendor=False scorable=False bb/h=0.0
+  r/bigseo                     ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/B2BForSales                unavailable posture=?          vendor=False scorable=False bb/h=0
+  r/agency                     ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/B2BSaaS                    ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/RevOps                     ok          posture=permissive vendor=False scorable=True  bb/h=0.0205
+  r/SalesOperations            ok          posture=permissive vendor=False scorable=True  bb/h=0.063
+  r/startups                   ok          posture=capped     vendor=False scorable=True  bb/h=0.0
+  r/politics                   ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/Entrepreneur               ok          posture=hostile    vendor=False scorable=False bb/h=0.0
+  r/DnD                        ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/smallbusiness              ok          posture=hostile    vendor=False scorable=False bb/h=0.6593
+  r/conspiracy                 ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/CryptoMoonShots            ok          posture=capped     vendor=False scorable=True  bb/h=0.0
+  r/gamedev                    ok          posture=hostile    vendor=False scorable=False bb/h=0.0
+  r/halo                       ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/bicycling                  ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/metalworking               ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/DMAcademy                  ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/sales                      ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/Plumbing                   ok          posture=hostile    vendor=False scorable=False bb/h=0.0
+  r/Welding                    ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/Libertarian                ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/SandersForPresident        ok          posture=permissive vendor=True  scorable=False bb/h=0.0
+  r/Unity3D                    ok          posture=hostile    vendor=True  scorable=False bb/h=0.0
+  r/csMajors                   ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/AI_Agents                  ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/digital_marketing          ok          posture=permissive vendor=True  scorable=False bb/h=0.0
+
+=== [7/100] Password Managers and Security — 34 candidates (15 seeded) — 0 calls so far
+  r/PasswordManagers           ok          posture=permissive vendor=False scorable=True  bb/h=0.362
+  r/Bitwarden                  ok          posture=permissive vendor=True  scorable=False bb/h=1.4393
+  r/1Password                  ok          posture=permissive vendor=True  scorable=False bb/h=0.621
+  r/ProtonPass                 ok          posture=permissive vendor=True  scorable=False bb/h=0.3045
+  r/KeePass                    ok          posture=permissive vendor=True  scorable=False bb/h=0.0025
+  r/privacy                    ok          posture=hostile    vendor=False scorable=False bb/h=0.0
+  r/cybersecurity              ok          posture=hostile    vendor=False scorable=False bb/h=1.081
+  r/netsec                     ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/sysadmin                   ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/selfhosted                 ok          posture=hostile    vendor=False scorable=False bb/h=0.667
+  r/ITManagers                 ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/msp                        ok          posture=capped     vendor=False scorable=True  bb/h=0.0
+  r/homelab                    ok          posture=capped     vendor=False scorable=True  bb/h=0.0
+  r/AskNetsec                  ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/techsupport                ok          posture=hostile    vendor=False scorable=False bb/h=0.0
+  r/worldnews                  ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/memes                      ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/IAmA                       ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/technology                 ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/WritingPrompts             ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/nba                        ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/nfl                        ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/politics                   ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/apple                      ok          posture=permissive vendor=True  scorable=False bb/h=0.0
+  r/FortniteBR                 ok          posture=hostile    vendor=False scorable=False bb/h=0.0
+  r/pokemongo                  ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/iphone                     ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/fantasyfootball            ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/Android                    ok          posture=hostile    vendor=True  scorable=False bb/h=0.0
+  r/assholedesign              ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/mac                        ok          posture=hostile    vendor=False scorable=False bb/h=0.0
+  r/hacking                    ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/CharacterAI                ok          posture=hostile    vendor=True  scorable=False bb/h=0.0
+  r/conspiracy                 ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+
+=== [8/100] Note-taking and Knowledge Management — 34 candidates (17 seeded) — 0 calls so far
+  r/NoteTaking                 ok          posture=hostile    vendor=False scorable=False bb/h=0.2686
+  r/Notion                     ok          posture=hostile    vendor=True  scorable=False bb/h=2.7027
+  r/ObsidianMD                 ok          posture=permissive vendor=True  scorable=False bb/h=13.2363
+  r/PKMS                       ok          posture=hostile    vendor=False scorable=False bb/h=0.3231
+  r/OneNote                    ok          posture=hostile    vendor=True  scorable=False bb/h=0.374
+  r/Evernote                   ok          posture=hostile    vendor=True  scorable=False bb/h=0.2236
+  r/logseq                     ok          posture=permissive vendor=True  scorable=False bb/h=0.1677
+  r/Zettelkasten               ok          posture=permissive vendor=False scorable=True  bb/h=0.0276
+  r/Anytype                    ok          posture=hostile    vendor=True  scorable=False bb/h=0.0136
+  r/productivity               ok          posture=hostile    vendor=False scorable=False bb/h=0.0
+  r/students                   ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/GradSchool                 ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/writing                    ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/selfhosted                 ok          posture=hostile    vendor=False scorable=False bb/h=0.667
+  r/DigitalMinimalism          ok          posture=hostile    vendor=False scorable=False bb/h=0.0
+  r/academia                   ok          posture=hostile    vendor=False scorable=False bb/h=0.0
+  r/ADHD                       ok          posture=hostile    vendor=False scorable=False bb/h=0.0
+  r/funny                      ok          posture=hostile    vendor=False scorable=False bb/h=0.0
+  r/AskReddit                  ok          posture=hostile    vendor=True  scorable=False bb/h=0.0
+  r/todayilearned              ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/pics                       ok          posture=hostile    vendor=False scorable=False bb/h=0.0
+  r/mildlyinteresting          ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/technology                 ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/WritingPrompts             ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/nfl                        ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/politics                   ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/Minecraft                  ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/apple                      ok          posture=permissive vendor=True  scorable=False bb/h=0.0
+  r/Sneakers                   ok          posture=hostile    vendor=False scorable=False bb/h=0.0
+  r/unpopularopinion           ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/GetStudying                ok          posture=hostile    vendor=False scorable=False bb/h=0.1862
+  r/Android                    ok          posture=hostile    vendor=True  scorable=False bb/h=0.0
+  r/atheism                    ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/college                    ok          posture=hostile    vendor=False scorable=False bb/h=0.0
+
+=== [9/100] Design and Prototyping — 34 candidates (12 seeded) — 0 calls so far
+  r/FigmaDesign                ok          posture=hostile    vendor=True  scorable=False bb/h=0.9633
+  r/UXDesign                   ok          posture=permissive vendor=False scorable=True  bb/h=0.99
+  r/UI_Design                  ok          posture=hostile    vendor=False scorable=False bb/h=0.0552
+  r/userexperience             ok          posture=hostile    vendor=False scorable=False bb/h=0.04
+  r/graphic_design             ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/web_design                 ok          posture=hostile    vendor=False scorable=False bb/h=0.0324
+  r/webdev                     ok          posture=hostile    vendor=False scorable=False bb/h=0.0
+  r/canva                      ok          posture=permissive vendor=True  scorable=False bb/h=1.095
+  r/webflow                    ok          posture=permissive vendor=True  scorable=False bb/h=0.0544
+  r/Adobe                      ok          posture=hostile    vendor=False scorable=False bb/h=0.0
+  r/Frontend                   ok          posture=permissive vendor=False scorable=True  bb/h=0.0891
+  r/forhire                    ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/pics                       ok          posture=hostile    vendor=False scorable=False bb/h=0.0
+  r/Art                        ok          posture=capped     vendor=True  scorable=False bb/h=1.773
+  r/mildlyinfuriating          ok          posture=hostile    vendor=False scorable=False bb/h=0.0
+  r/Minecraft                  ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/CrappyDesign               ok          posture=permissive vendor=True  scorable=False bb/h=0.0
+  r/drawing                    ok          posture=hostile    vendor=False scorable=False bb/h=1.3686
+  r/painting                   ok          posture=capped     vendor=False scorable=True  bb/h=0.0
+  r/Design                     ok          posture=hostile    vendor=True  scorable=False bb/h=0.1364
+  r/ArtPorn                    ok          posture=hostile    vendor=True  scorable=False bb/h=0.0361
+  r/3Dprinting                 ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/Guitar                     ok          posture=hostile    vendor=False scorable=False bb/h=0.0
+  r/zelda                      ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/learntodraw                ok          posture=hostile    vendor=False scorable=False bb/h=1.539
+  r/somethingimade             ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/AnimalCrossing             ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/javascript                 ok          posture=permissive vendor=False scorable=True  bb/h=0.0183
+  r/DesignPorn                 ok          posture=permissive vendor=True  scorable=False bb/h=0.0
+  r/BokuNoHeroAcademia         ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/gamedev                    ok          posture=hostile    vendor=False scorable=False bb/h=0.0
+  r/Hololive                   ok          posture=hostile    vendor=False scorable=False bb/h=0.0
+  r/HomeDecorating             ok          posture=hostile    vendor=True  scorable=False bb/h=0.0
+  r/electronics                ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+
+=== [10/100] Video Editing — 34 candidates (14 seeded) — 0 calls so far
+  r/VideoEditing               ok          posture=hostile    vendor=False scorable=False bb/h=0.384
+  r/editors                    ok          posture=permissive vendor=False scorable=True  bb/h=0.267
+  r/davinciresolve             ok          posture=permissive vendor=True  scorable=False bb/h=1.1466
+  r/premiere                   ok          posture=permissive vendor=True  scorable=False bb/h=1.2159
+  r/finalcutpro                ok          posture=permissive vendor=True  scorable=False bb/h=0.1781
+  r/AfterEffects               ok          posture=permissive vendor=False scorable=True  bb/h=0.709
+  r/videography                ok          posture=hostile    vendor=False scorable=False bb/h=0.1319
+  r/NewTubers                  ok          posture=hostile    vendor=False scorable=False bb/h=0.5261
+  r/CapCut                     ok          posture=hostile    vendor=True  scorable=False bb/h=1.5296
+  r/filmmakers                 ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/youtubers                  ok          posture=hostile    vendor=False scorable=False bb/h=0.0561
+  r/smallbusiness              ok          posture=hostile    vendor=False scorable=False bb/h=0.6593
+  r/freelance                  ok          posture=hostile    vendor=False scorable=False bb/h=0.0
+  r/editing                    ok          posture=permissive vendor=False scorable=True  bb/h=0.0712
+  r/todayilearned              ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/movies                     ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/videos                     ok          posture=hostile    vendor=False scorable=False bb/h=0.0
+  r/television                 ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/anime                      ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/nfl                        ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/politics                   ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/buildapc                   ok          posture=hostile    vendor=False scorable=False bb/h=1.4624
+  r/Fauxmoi                    ok          posture=hostile    vendor=False scorable=False bb/h=0.0
+  r/popculturechat             ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/apple                      ok          posture=permissive vendor=True  scorable=False bb/h=0.0
+  r/battlestations             ok          posture=permissive vendor=False scorable=True  bb/h=0.2101
+  r/marvelstudios              ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/shittymoviedetails         ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/blender                    ok          posture=permissive vendor=True  scorable=False bb/h=0.0
+  r/rupaulsdragrace            ok          posture=hostile    vendor=False scorable=False bb/h=0.0
+  r/KDRAMA                     ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/steak                      ok          posture=hostile    vendor=False scorable=False bb/h=0.0
+  r/GameDeals                  ok          posture=permissive vendor=True  scorable=False bb/h=0.0
+  r/survivor                   ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+
+=== [11/100] Help Desk and Customer Support — 34 candidates (10 seeded) — 0 calls so far
+  r/sysadmin                   ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/msp                        ok          posture=capped     vendor=False scorable=True  bb/h=0.0
+  r/ITManagers                 ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/CustomerSuccess            ok          posture=hostile    vendor=False scorable=False bb/h=0.0373
+  r/CustomerService            ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/servicenow                 ok          posture=permissive vendor=True  scorable=False bb/h=0.4356
+  r/helpdesk                   ok          posture=capped     vendor=False scorable=True  bb/h=0.0
+  r/Zendesk                    ok          posture=permissive vendor=True  scorable=False bb/h=0.0552
+  r/SaaS                       ok          posture=hostile    vendor=False scorable=False bb/h=0.0
+  r/shopify                    ok          posture=capped     vendor=True  scorable=False bb/h=0.2979
+  r/AskReddit                  ok          posture=hostile    vendor=True  scorable=False bb/h=0.0
+  r/gaming                     ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/DIY                        ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/mildlyinteresting          ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/wallstreetbets             ok          posture=hostile    vendor=False scorable=False bb/h=0.0
+  r/WritingPrompts             ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/pcmasterrace               ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/nfl                        ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/mildlyinfuriating          ok          posture=hostile    vendor=False scorable=False bb/h=0.0
+  r/battlestations             ok          posture=permissive vendor=False scorable=True  bb/h=0.2101
+  r/homeautomation             ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/motorcycles                ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/teslamotors                ok          posture=hostile    vendor=False scorable=False bb/h=0.0
+  r/audiophile                 ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/NewToReddit                ok          posture=capped     vendor=True  scorable=False bb/h=0.4296
+  r/headphones                 ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/2007scape                  ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/help                       ok          posture=permissive vendor=True  scorable=False bb/h=0.0
+  r/NoMansSkyTheGame           ok          posture=hostile    vendor=True  scorable=False bb/h=0.0
+  r/TalesFromTheFrontDesk      ok          posture=permissive vendor=True  scorable=False bb/h=0.0
+  r/Warframe                   ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/doordash                   ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/tf2                        ok          posture=hostile    vendor=False scorable=False bb/h=0.0
+  r/binance                    ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+
+=== [12/100] ERP — 34 candidates (13 seeded) — 0 calls so far
+  r/ERP                        ok          posture=permissive vendor=False scorable=True  bb/h=0.0138
+  r/Netsuite                   ok          posture=permissive vendor=True  scorable=False bb/h=0.742
+  r/SAP                        ok          posture=permissive vendor=True  scorable=False bb/h=1.6023
+  r/Odoo                       ok          posture=hostile    vendor=True  scorable=False bb/h=0.6834
+  r/Dynamics365                ok          posture=hostile    vendor=True  scorable=False bb/h=0.0989
+  r/supplychain                ok          posture=permissive vendor=False scorable=True  bb/h=0.0434
+  r/manufacturing              ok          posture=permissive vendor=False scorable=True  bb/h=0.047
+  r/BusinessIntelligence       ok          posture=hostile    vendor=False scorable=False bb/h=0.0028
+  r/Accounting                 ok          posture=hostile    vendor=False scorable=False bb/h=0.7658
+  r/consulting                 ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/ITManagers                 ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/sysadmin                   ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/msp                        ok          posture=capped     vendor=False scorable=True  bb/h=0.0
+  r/AdviceAnimals              ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/leagueoflegends            ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/PeopleFuckingDying         ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/smallbusiness              ok          posture=hostile    vendor=False scorable=False bb/h=0.6593
+  r/singapore                  ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/developersIndia            ok          posture=permissive vendor=False scorable=True  bb/h=0.8912
+  r/Python                     ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/EASportsFC                 ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/tf2                        ok          posture=hostile    vendor=False scorable=False bb/h=0.0
+  r/excel                      ok          posture=permissive vendor=True  scorable=False bb/h=0.0
+  r/mbti                       ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/sales                      ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/starcitizen                ok          posture=permissive vendor=False scorable=True  bb/h=11.7902
+  r/Unity3D                    ok          posture=hostile    vendor=True  scorable=False bb/h=0.0
+  r/southafrica                ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/SapphoAndHerFriend         ok          posture=permissive vendor=False scorable=True  bb/h=0.0166
+  r/shopify                    ok          posture=capped     vendor=True  scorable=False bb/h=0.2979
+  r/FifaCareers                ok          posture=hostile    vendor=False scorable=False bb/h=1.4956
+  r/traditionaltattoos         ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/OCD                        ok          posture=hostile    vendor=False scorable=False bb/h=0.0
+  r/Rainmeter                  ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+
+=== [13/100] Business Intelligence and Analytics — 34 candidates (9 seeded) — 0 calls so far
+  r/BusinessIntelligence       ok          posture=hostile    vendor=False scorable=False bb/h=0.0028
+  r/dataengineering            ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/datascience                ok          posture=capped     vendor=False scorable=True  bb/h=0.0193
+  r/analytics                  ok          posture=permissive vendor=False scorable=True  bb/h=0.7656
+  r/PowerBI                    ok          posture=permissive vendor=True  scorable=False bb/h=0.9078
+  r/tableau                    ok          posture=permissive vendor=True  scorable=False bb/h=0.1829
+  r/SQL                        ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/dataanalysis               ok          posture=permissive vendor=False scorable=True  bb/h=0.0552
+  r/MicrosoftFabric            ok          posture=permissive vendor=True  scorable=False bb/h=0.2694
+  r/aww                        ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/pics                       ok          posture=hostile    vendor=False scorable=False bb/h=0.0
+  r/dataisbeautiful            ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/Futurology                 ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/OldSchoolCool              ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/nba                        ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/pcmasterrace               ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/nfl                        ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/cats                       ok          posture=hostile    vendor=False scorable=False bb/h=0.0
+  r/boardgames                 ok          posture=hostile    vendor=False scorable=False bb/h=0.0
+  r/Entrepreneur               ok          posture=hostile    vendor=False scorable=False bb/h=0.0
+  r/pokemon                    ok          posture=hostile    vendor=False scorable=False bb/h=0.0
+  r/Baking                     ok          posture=hostile    vendor=False scorable=False bb/h=0.0
+  r/singularity                ok          posture=permissive vendor=True  scorable=False bb/h=0.0
+  r/Watches                    ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/hockey                     ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/france                     ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/business                   ok          posture=permissive vendor=True  scorable=False bb/h=0.0
+  r/smallbusiness              ok          posture=hostile    vendor=False scorable=False bb/h=0.6593
+  r/conspiracy                 ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/ArtificialInteligence      ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/microsoft                  ok          posture=hostile    vendor=True  scorable=False bb/h=0.0
+  r/artificial                 ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/Accounting                 ok          posture=hostile    vendor=False scorable=False bb/h=0.7658
+  r/excel                      ok          posture=permissive vendor=True  scorable=False bb/h=0.0
+
+=== [14/100] eCommerce Platforms — 34 candidates (13 seeded) — 0 calls so far
+  r/ecommerce                  ok          posture=hostile    vendor=False scorable=False bb/h=0.0
+  r/shopify                    ok          posture=capped     vendor=True  scorable=False bb/h=0.2979
+  r/woocommerce                ok          posture=hostile    vendor=True  scorable=False bb/h=0.333
+  r/BigCommerce                ok          posture=permissive vendor=True  scorable=False bb/h=0.0589
+  r/squarespace                ok          posture=permissive vendor=True  scorable=False bb/h=0.272
+  r/Wix                        ok          posture=hostile    vendor=True  scorable=False bb/h=0.6419
+  r/dropship                   ok          posture=hostile    vendor=False scorable=False bb/h=0.018
+  r/FulfillmentByAmazon        ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/smallbusiness              ok          posture=hostile    vendor=False scorable=False bb/h=0.6593
+  r/Entrepreneur               ok          posture=hostile    vendor=False scorable=False bb/h=0.0
+  r/agency                     ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/webdev                     ok          posture=hostile    vendor=False scorable=False bb/h=0.0
+  r/startups                   ok          posture=capped     vendor=False scorable=True  bb/h=0.0
+  r/wallstreetbets             ok          posture=hostile    vendor=False scorable=False bb/h=0.0
+  r/stocks                     ok          posture=permissive vendor=False scorable=True  bb/h=3.2582
+  r/politics                   ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/Bitcoin                    ok          posture=permissive vendor=False scorable=True  bb/h=1.2066
+  r/photography                ok          posture=permissive vendor=False scorable=True  bb/h=0.3672
+  r/podcasts                   ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/india                      ok          posture=capped     vendor=False scorable=True  bb/h=0.0
+  r/dogecoin                   ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/conspiracy                 ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/CryptoMoonShots            ok          posture=capped     vendor=False scorable=True  bb/h=0.0
+  r/singapore                  ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/btc                        ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/web_design                 ok          posture=hostile    vendor=False scorable=False bb/h=0.0324
+  r/selfhosted                 ok          posture=hostile    vendor=False scorable=False bb/h=0.667
+  r/forhire                    ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/Libertarian                ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/SEO                        ok          posture=hostile    vendor=False scorable=False bb/h=0.0
+  r/ValorantCompetitive        ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/Wordpress                  ok          posture=hostile    vendor=False scorable=False bb/h=1.088
+  r/dropshipping               ok          posture=permissive vendor=False scorable=True  bb/h=0.1151
+  r/Blogging                   ok          posture=hostile    vendor=False scorable=False bb/h=0.0
+
+=== [15/100] Applicant Tracking and Recruiting — 34 candidates (11 seeded) — 0 calls so far
+  r/recruiting                 ok          posture=hostile    vendor=False scorable=False bb/h=0.0
+  r/humanresources             ok          posture=hostile    vendor=False scorable=False bb/h=0.3866
+  r/AskHR                      ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/recruitinghell             ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/cscareerquestions          ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/talentacquisition          ok          posture=unknown    vendor=False scorable=True  bb/h=0
+  r/Entrepreneur               ok          posture=hostile    vendor=False scorable=False bb/h=0.0
+  r/ExperiencedDevs            ok          posture=permissive vendor=False scorable=True  bb/h=0.1387
+  r/startups                   ok          posture=capped     vendor=False scorable=True  bb/h=0.0
+  r/consulting                 ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/agency                     ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/worldnews                  ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/science                    ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/Futurology                 ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/nba                        ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/CryptoCurrency             ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/politics                   ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/gardening                  ok          posture=hostile    vendor=False scorable=False bb/h=0.0
+  r/Minecraft                  ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/woodworking                ok          posture=hostile    vendor=False scorable=False bb/h=0.0
+  r/bodyweightfitness          ok          posture=hostile    vendor=False scorable=False bb/h=0.2878
+  r/CFB                        ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/motorcycles                ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/homestead                  ok          posture=permissive vendor=False scorable=True  bb/h=0.3474
+  r/StardewValley              ok          posture=capped     vendor=False scorable=True  bb/h=0.0
+  r/frugalmalefashion          ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/baseball                   ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/whatisthisthing            ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/houseplants                ok          posture=hostile    vendor=False scorable=False bb/h=0.6356
+  r/australia                  ok          posture=permissive vendor=False scorable=True  bb/h=0.2783
+  r/jobs                       ok          posture=hostile    vendor=False scorable=False bb/h=0.0
+  r/AskEngineers               ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/crochet                    ok          posture=hostile    vendor=False scorable=False bb/h=0.0
+  r/MemeEconomy                ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+
+=== [16/100] Payroll — 34 candidates (10 seeded) — 0 calls so far
+  r/Payroll                    ok          posture=permissive vendor=False scorable=True  bb/h=0.0675
+  r/Accounting                 ok          posture=hostile    vendor=False scorable=False bb/h=0.7658
+  r/humanresources             ok          posture=hostile    vendor=False scorable=False bb/h=0.3866
+  r/smallbusiness              ok          posture=hostile    vendor=False scorable=False bb/h=0.6593
+  r/Bookkeeping                ok          posture=hostile    vendor=False scorable=False bb/h=0.312
+  r/Entrepreneur               ok          posture=hostile    vendor=False scorable=False bb/h=0.0
+  r/tax                        ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/AskHR                      ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/recruiting                 ok          posture=hostile    vendor=False scorable=False bb/h=0.0
+  r/consulting                 ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/science                    ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/personalfinance            ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/nba                        ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/interestingasfuck          ok          posture=hostile    vendor=False scorable=False bb/h=0.0
+  r/oddlysatisfying            ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/politics                   ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/Economics                  ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/woahdude                   ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/spaceporn                  ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/Philippines                ok          posture=permissive vendor=False scorable=True  bb/h=1.4352
+  r/legaladvice                ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/fantasyfootball            ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/3Dprinting                 ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/mexico                     ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/baseball                   ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/antiwork                   ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/france                     ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/sewing                     ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/crochet                    ok          posture=hostile    vendor=False scorable=False bb/h=0.0
+  r/RedditPregunta             ok          posture=permissive vendor=True  scorable=False bb/h=0.0
+  r/argentina                  ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/economy                    ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/pathofexile                ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/OffMyChestPH               ok          posture=permissive vendor=False scorable=True  bb/h=2.115
+
+=== [17/100] Cloud Hosting and Infrastructure — 34 candidates (12 seeded) — 0 calls so far
+  r/webdev                     ok          posture=hostile    vendor=False scorable=False bb/h=0.0
+  r/devops                     ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/selfhosted                 ok          posture=hostile    vendor=False scorable=False bb/h=0.667
+  r/aws                        ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/nextjs                     ok          posture=permissive vendor=False scorable=True  bb/h=0.0438
+  r/reactjs                    ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/sysadmin                   ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/homelab                    ok          posture=capped     vendor=False scorable=True  bb/h=0.0
+  r/kubernetes                 ok          posture=capped     vendor=False scorable=True  bb/h=0.0
+  r/node                       ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/ExperiencedDevs            ok          posture=permissive vendor=False scorable=True  bb/h=0.1387
+  r/startups                   ok          posture=capped     vendor=False scorable=True  bb/h=0.0
+  r/worldnews                  ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/Art                        ok          posture=capped     vendor=True  scorable=False bb/h=1.773
+  r/CryptoCurrency             ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/politics                   ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/programming                ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/learnprogramming           ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/javascript                 ok          posture=permissive vendor=False scorable=True  bb/h=0.0183
+  r/conspiracy                 ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/Python                     ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/Simulated                  ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/Conservative               ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/learnpython                ok          posture=hostile    vendor=False scorable=False bb/h=0.0
+  r/ukraine                    ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/SideProject                ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/SaaS                       ok          posture=hostile    vendor=False scorable=False bb/h=0.0
+  r/InfrastructurePorn         ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/CitiesSkylines             ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/fuckcars                   ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/UkrainianConflict          ok          posture=permissive vendor=False scorable=True  bb/h=6.0516
+  r/golang                     ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/CATpreparation             ok          posture=hostile    vendor=False scorable=False bb/h=0.0
+  r/NFTsMarketplace            ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+
+=== [18/100] Team Collaboration and Chat — 34 candidates (8 seeded) — 0 calls so far
+  r/sysadmin                   ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/ITManagers                 ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/msp                        ok          posture=capped     vendor=False scorable=True  bb/h=0.0
+  r/productivity               ok          posture=hostile    vendor=False scorable=False bb/h=0.0
+  r/remotework                 ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/ExperiencedDevs            ok          posture=permissive vendor=False scorable=True  bb/h=0.1387
+  r/Slack                      ok          posture=hostile    vendor=True  scorable=False bb/h=0.36
+  r/MicrosoftTeams             ok          posture=hostile    vendor=True  scorable=False bb/h=0.099
+  r/funny                      ok          posture=hostile    vendor=False scorable=False bb/h=0.0
+  r/aww                        ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/memes                      ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/pics                       ok          posture=hostile    vendor=False scorable=False bb/h=0.0
+  r/technology                 ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/wallstreetbets             ok          posture=hostile    vendor=False scorable=False bb/h=0.0
+  r/interestingasfuck          ok          posture=hostile    vendor=False scorable=False bb/h=0.0
+  r/ChatGPT                    ok          posture=permissive vendor=True  scorable=False bb/h=6.85
+  r/CryptoCurrency             ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/soccer                     ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/programming                ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/formula1                   ok          posture=hostile    vendor=False scorable=False bb/h=0.0
+  r/malefashionadvice          ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/FortniteBR                 ok          posture=hostile    vendor=False scorable=False bb/h=0.0
+  r/Sneakers                   ok          posture=hostile    vendor=False scorable=False bb/h=0.0
+  r/ProgrammerHumor            ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/kpop                       ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/comics                     ok          posture=permissive vendor=False scorable=True  bb/h=3.1031
+  r/MMA                        ok          posture=capped     vendor=False scorable=True  bb/h=0.0
+  r/teenagers                  ok          posture=hostile    vendor=False scorable=False bb/h=0.0
+  r/webdev                     ok          posture=hostile    vendor=False scorable=False bb/h=0.0
+  r/baseball                   ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/MachineLearning            ok          posture=hostile    vendor=True  scorable=False bb/h=0.0
+  r/antiwork                   ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/Twitch                     ok          posture=permissive vendor=True  scorable=False bb/h=0.6881
+  r/OpenAI                     ok          posture=permissive vendor=True  scorable=False bb/h=0.0
+
+=== [19/100] Backup and Storage — 34 candidates (9 seeded) — 0 calls so far
+  r/DataHoarder                ok          posture=permissive vendor=False scorable=True  bb/h=0.5398
+  r/selfhosted                 ok          posture=hostile    vendor=False scorable=False bb/h=0.667
+  r/sysadmin                   ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/homelab                    ok          posture=capped     vendor=False scorable=True  bb/h=0.0
+  r/backblaze                  ok          posture=permissive vendor=True  scorable=False bb/h=0.0748
+  r/synology                   ok          posture=permissive vendor=True  scorable=False bb/h=1.4146
+  r/msp                        ok          posture=capped     vendor=False scorable=True  bb/h=0.0
+  r/ITManagers                 ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/NAS                        ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/technology                 ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/pcmasterrace               ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/nfl                        ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/Minecraft                  ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/Bitcoin                    ok          posture=permissive vendor=False scorable=True  bb/h=1.2066
+  r/programming                ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/apple                      ok          posture=permissive vendor=True  scorable=False bb/h=0.0
+  r/woodworking                ok          posture=hostile    vendor=False scorable=False bb/h=0.0
+  r/photography                ok          posture=permissive vendor=False scorable=True  bb/h=0.3672
+  r/boardgames                 ok          posture=hostile    vendor=False scorable=False bb/h=0.0
+  r/iphone                     ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/hardware                   ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/google                     ok          posture=permissive vendor=True  scorable=False bb/h=0.0
+  r/fantasyfootball            ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/techsupport                ok          posture=hostile    vendor=False scorable=False bb/h=0.0
+  r/webdev                     ok          posture=hostile    vendor=False scorable=False bb/h=0.0
+  r/Android                    ok          posture=hostile    vendor=True  scorable=False bb/h=0.0
+  r/hockey                     ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/linux                      ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/privacy                    ok          posture=hostile    vendor=False scorable=False bb/h=0.0
+  r/GooglePixel                ok          posture=hostile    vendor=True  scorable=False bb/h=0.0
+  r/vagabond                   ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/ios                        ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/phinvest                   ok          posture=capped     vendor=False scorable=True  bb/h=0.0
+  r/jailbreak                  ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+
+=== [20/100] Payment Processing — 34 candidates (11 seeded) — 0 calls so far
+  r/stripe                     ok          posture=permissive vendor=True  scorable=False bb/h=0.7056
+  r/smallbusiness              ok          posture=hostile    vendor=False scorable=False bb/h=0.6593
+  r/Entrepreneur               ok          posture=hostile    vendor=False scorable=False bb/h=0.0
+  r/ecommerce                  ok          posture=hostile    vendor=False scorable=False bb/h=0.0
+  r/shopify                    ok          posture=capped     vendor=True  scorable=False bb/h=0.2979
+  r/SaaS                       ok          posture=hostile    vendor=False scorable=False bb/h=0.0
+  r/webdev                     ok          posture=hostile    vendor=False scorable=False bb/h=0.0
+  r/paypal                     ok          posture=hostile    vendor=True  scorable=False bb/h=3.215
+  r/Payments                   ok          posture=unknown    vendor=False scorable=True  bb/h=0.003
+  r/startups                   ok          posture=capped     vendor=False scorable=True  bb/h=0.0
+  r/agency                     ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/todayilearned              ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/pics                       ok          posture=hostile    vendor=False scorable=False bb/h=0.0
+  r/mildlyinteresting          ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/CryptoCurrency             ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/stocks                     ok          posture=permissive vendor=False scorable=True  bb/h=3.2582
+  r/Bitcoin                    ok          posture=permissive vendor=False scorable=True  bb/h=1.2066
+  r/Sneakers                   ok          posture=hostile    vendor=False scorable=False bb/h=0.0
+  r/FashionReps                ok          posture=hostile    vendor=False scorable=False bb/h=0.0
+  r/crochet                    ok          posture=hostile    vendor=False scorable=False bb/h=0.0
+  r/CreditCards                ok          posture=hostile    vendor=False scorable=False bb/h=0.4001
+  r/Shitty_Car_Mods            ok          posture=hostile    vendor=False scorable=False bb/h=0.0
+  r/SquaredCircle              ok          posture=permissive vendor=True  scorable=False bb/h=4.1523
+  r/btc                        ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/vexillology                ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/RedditLaqueristas          ok          posture=hostile    vendor=True  scorable=False bb/h=0.0
+  r/nyc                        ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/lawncare                   ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/bjj                        ok          posture=permissive vendor=False scorable=True  bb/h=1.628
+  r/boston                     ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/ValueInvesting             ok          posture=hostile    vendor=False scorable=False bb/h=0.0
+  r/StudentLoans               ok          posture=permissive vendor=False scorable=True  bb/h=0.5543
+  r/knitting                   ok          posture=hostile    vendor=False scorable=False bb/h=0.0
+  r/hardwareswap               ok          posture=permissive vendor=False scorable=True  bb/h=1.962
+
+=== [21/100] VPN Services — 31 candidates (0 seeded) — 5 calls so far
+  r/worldnews                  ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/technology                 ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/Bitcoin                    ok          posture=permissive vendor=False scorable=True  bb/h=1.2066
+  r/india                      ok          posture=capped     vendor=False scorable=True  bb/h=0.0
+  r/Piracy                     ok          posture=hostile    vendor=False scorable=False bb/h=0.0
+  r/privacy                    ok          posture=hostile    vendor=False scorable=False bb/h=0.0
+  r/sysadmin                   ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/btc                        ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/selfhosted                 ok          posture=hostile    vendor=False scorable=False bb/h=0.667
+  r/China                      ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/TOR                        ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/VPN                        ok          posture=hostile    vendor=True  scorable=False bb/h=0.0
+  r/eFreebies                  ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/ApksApps                   ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/vpnreviews                 ok          posture=permissive vendor=False scorable=True  bb/h=0.0021
+  r/ProtonVPN                  ok          posture=permissive vendor=True  scorable=False bb/h=0.1013
+  r/shanghai                   ok          posture=permissive vendor=False scorable=True  bb/h=0.0
+  r/nordvpn                    ok          posture=permissive vendor=True  scorable=False bb/h=0.0
+  r/qBittorrent                ok          posture=permissive vendor=False scorable=True  bb/h=0.037
+  r/WireGuard                  ok          posture=hostile    vendor=False scorable=False bb/h=0.0
+  r/mullvadvpn                 ok          posture=hostile    vendor=False scorable=False bb/h=0.0
+  r/Adguard                    ok          posture=permissive vendor=True  scorable=False bb/h=0.0192
+  r/ProtonPass                 ok          posture=permissive vendor=True  scorable=False bb/h=0.3045
+  r/Express_VPN                ok          posture=hostile    vendor=True  scorable=False bb/h=0.0368
+  r/vpnscore                   ok          posture=permissive vendor=False scorable=True  bb/h=0.0002
+  r/DeeperNetwork              ok          posture=hostile    vendor=True  scorable=False bb/h=0.0
+  r/IVPN                       ok          posture=permissive vendor=True  scorable=False bb/h=0.0
+  r/torguard                   ok          posture=permissive vendor=True  scorable=False bb/h=0.0
+  r/gluetun                    ok          posture=permissive vendor=False scorable=True  bb/h=0.0102
+  r/AirVPN                     ok          posture=permissive vendor=True  scorable=False bb/h=0.0341
+  r/CyberGhost                 ok          posture=permissive vendor=True  scorable=False bb/h=0.0

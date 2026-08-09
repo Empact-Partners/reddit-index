@@ -21,7 +21,8 @@ python3 -u data/refine.py
 echo "=== 5/8 thin harvest, new categories (existing 20 skip via corpus cache)"
 python3 -u worker/harvest.py --all --depth thin
 
-echo "=== 6/8 resolve (rules only)"
+echo "=== 6/8 resolve (rules only; EVERY corpus re-resolved against the new gazetteer)"
+rm -f worker/.cache/resolved/*.json worker/.cache/scored/*.json
 python3 - <<'EOF'
 import sys, os, csv
 sys.path.insert(0, "worker")

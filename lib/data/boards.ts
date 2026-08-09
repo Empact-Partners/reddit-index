@@ -13,6 +13,10 @@ import { consolidate, type BoardData, type BoardRow, type Scope } from "./board-
  */
 
 const MIN_N_OP = 3;
+/** The pooled boards call a brand most-loved/most-hated ACROSS the whole
+ *  index — that claim needs more than three annoyed comments
+ *  (docs/methodology-review.md §2). */
+const MIN_N_OP_POOLED = 10;
 
 function toRow(s: BrandScore): BoardRow {
   return {
@@ -43,7 +47,7 @@ export function buildBoards(snap: Snapshot): BoardData {
   // in two categories appears once, through the row with the most opinionated
   // mentions — its home turf, not its best look.
   const best = new Map<string, BrandScore>();
-  for (const s of floored) {
+  for (const s of floored.filter((x) => x.nOp >= MIN_N_OP_POOLED)) {
     const prev = best.get(s.brandSlug);
     if (
       !prev

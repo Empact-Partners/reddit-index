@@ -40,7 +40,10 @@ MAX_INFLIGHT = 40
 
 fleet = CodexFleet()
 
-EXISTING_SLUGS = {r["slug"] for r in csv.DictReader(open(os.path.join(HERE, "categories.csv")))}
+# "existing" = a category that already HAS brands (the original 20), not one
+# merely present in categories.csv — that file now carries all 100 rows.
+EXISTING_SLUGS = {r["primary_category_slug"] for r in
+                  csv.DictReader(open(os.path.join(HERE, "brands.csv")))}
 
 
 def load_words():

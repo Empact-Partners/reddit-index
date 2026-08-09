@@ -1,0 +1,16 @@
+node_modules/
+.next/
+worker/.cache/
+data/.discover-cache/
+data/.brand-enum/
+data/.topicality-fleet/
+.git/
+app/
+components/
+lib/
+tests/
+scripts/
+supabase/
+docs/
+decisions/
+*.md
