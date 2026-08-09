@@ -54,11 +54,22 @@ export function MentionCard({ m }: { m: Mention }) {
   const typeLabel = m.docType === "post_body" ? "Post body" : "Comment";
 
   return (
-    <article className="mention-card" aria-labelledby={headingId}>
+    <article className="mention-card" data-sentiment={m.sentiment} aria-labelledby={headingId}>
       <h3 id={headingId} className="sr-only">
         {typeLabel} mentioning {m.brandName} in r/{m.subreddit} by u/{m.author},{" "}
         {absoluteDate(m.createdUtc)}
       </h3>
+
+      {/* The header row: the verdict and WHERE the words came from — a post's
+          own body or a comment — at equal size and equal prominence. */}
+      <p className="mention-meta">
+        <span className="sentiment-chip" data-sentiment={m.sentiment}>
+          {SENTIMENT_WORD[m.sentiment]}
+        </span>
+        <span className="doc-type-tag" data-doc={m.docType}>
+          {typeLabel}
+        </span>
+      </p>
 
       {/* Fields 1-4, one Micro row, this order, on every card. */}
       <p className="mention-attribution">
@@ -85,14 +96,7 @@ export function MentionCard({ m }: { m: Mention }) {
         <time dateTime={m.createdUtc} title={m.createdUtc}>
           {absoluteDate(m.createdUtc)}
         </time>
-      </p>
-
-      {/* Field 5, plus the doc_type label and the "from Reddit" mark. */}
-      <p className="mention-meta">
-        <span className="sentiment-chip" data-sentiment={m.sentiment}>
-          {SENTIMENT_WORD[m.sentiment]}
-        </span>
-        <span className="doc-type">{typeLabel}</span>
+        <span aria-hidden="true"> · </span>
         <span className="from-reddit">from Reddit</span>
       </p>
 

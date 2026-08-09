@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { num } from "@/lib/format";
 import { MentionList } from "@/components/data/mention-card";
-import { CategoryChip } from "@/components/category/category-identity";
 import { Breadcrumbs } from "@/components/site/breadcrumbs";
 import { CATEGORY_BY_SLUG } from "@/lib/generated/categories";
 import { CORRECTIONS_EMAIL } from "@/lib/env";
@@ -9,11 +8,11 @@ import { NON_AFFILIATION } from "@/lib/legal";
 import type { CompanyView } from "@/lib/data/types";
 
 /**
- * ONE company, ONE page: breadcrumb, name, the two headline numbers per
- * category, and the receipts — every collected mention, quoted in full, each
- * with a link to the original. The quiet footer here carries the methodology
- * link, the correction path and the non-affiliation notice, because the
- * homepage no longer has a footer to carry them.
+ * ONE company, ONE page, under the persistent masthead: breadcrumb, the brand
+ * name in Syne Bold, one score TILE per category (category chip, the big
+ * centred score, the mention count), then the receipts — every collected
+ * mention quoted in full with a link to its source. The quiet footer carries
+ * the methodology link, correction path and non-affiliation notice.
  */
 export function CompanyPage({ company }: { company: CompanyView }) {
   const primary = company.primaryCategorySlug
@@ -32,29 +31,33 @@ export function CompanyPage({ company }: { company: CompanyView }) {
       />
 
       {/* No logo — a company's own mark never sits under a claim it did not make. */}
-      <h1 className="mt-8" style={{ fontSize: "var(--fs-h1)" }}>{company.name}</h1>
+      <h1 className="company-title mt-8">{company.name}</h1>
 
-      <section className="mt-12">
+      <section className="mt-10" aria-label="Scores by category">
         {company.scores.length === 0 ? (
           <p style={{ fontSize: "var(--fs-body)", maxWidth: "66ch" }}>
             No score has been computed for this company yet. Its collected
             mentions are published below.
           </p>
         ) : (
-          <ul className="list-none p-0 m-0 grid gap-6">
+          <ul className="score-tiles">
             {company.scores.map((s) => (
-              <li key={s.categorySlug} className="flex flex-wrap items-baseline gap-x-6 gap-y-2">
-                <CategoryChip slug={s.categorySlug} />
-                {s.redditLoveScore !== null && (
-                  <span style={{ fontSize: "var(--fs-h3)", fontFamily: "var(--font-syne)" }}>
-                    {s.redditLoveScore}
-                    <span style={{ fontSize: "var(--fs-small)", fontFamily: "var(--font-sans)" }}>
-                      {" "}/ 100
-                    </span>
+              <li key={s.categorySlug} className="score-tile">
+                <Link href={`/${s.categorySlug}/`} className="score-tile-cat">
+                  <span className="cat-chip" data-category={s.categorySlug}>
+                    {CATEGORY_BY_SLUG[s.categorySlug].name}
                   </span>
+                </Link>
+                {s.redditLoveScore !== null ? (
+                  <span className="score-tile-num">
+                    {s.redditLoveScore}
+                    <span className="score-tile-denom"> / 100</span>
+                  </span>
+                ) : (
+                  <span className="score-tile-num score-tile-nonum">—</span>
                 )}
-                <span style={{ fontSize: "var(--fs-small)" }}>
-                  {num(s.n)} mentions
+                <span className="score-tile-mentions">
+                  {num(s.n)} {s.n === 1 ? "mention" : "mentions"}
                 </span>
               </li>
             ))}
@@ -63,12 +66,14 @@ export function CompanyPage({ company }: { company: CompanyView }) {
       </section>
 
       <section className="mt-[var(--section)]">
-        <h2 style={{ fontSize: "var(--fs-h3)" }}>
-          What people said ({num(company.mentions.length)} shown
-          {company.totalMentions > company.mentions.length
-            ? ` of ${num(company.totalMentions)}`
-            : ""}
-          )
+        <h2 className="section-title">
+          What Reddit says
+          <span className="section-count">
+            {num(company.mentions.length)} shown
+            {company.totalMentions > company.mentions.length
+              ? ` of ${num(company.totalMentions)}`
+              : ""}
+          </span>
         </h2>
         <div className="mt-8">
           <MentionList mentions={company.mentions} />

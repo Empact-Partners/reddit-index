@@ -1,8 +1,28 @@
 import { Fragment } from "react";
 import Link from "next/link";
 import { num } from "@/lib/format";
-import { CATEGORY_BY_SLUG } from "@/lib/generated/categories";
+import { CATEGORY_BY_SLUG, type CategorySlug } from "@/lib/generated/categories";
 import { PER_LIST, type BoardRow } from "@/lib/data/board-shapes";
+
+/**
+ * Display-only short names so the category column stays ONE line inside a
+ * half-width card. The full name lives everywhere else (dropdown, tiles,
+ * breadcrumbs); this trims only the "and …" tails.
+ */
+const CATEGORY_SHORT: Partial<Record<CategorySlug, string>> = {
+  "password-managers": "Password Managers",
+  "note-taking": "Note-taking",
+  "help-desk": "Help Desk",
+  "business-intelligence": "Business Intelligence",
+  "recruiting": "Recruiting",
+  "cloud-hosting": "Cloud Hosting",
+  "team-chat": "Team Chat",
+  "backup-storage": "Backup & Storage",
+};
+
+function categoryLabel(slug: CategorySlug): string {
+  return CATEGORY_SHORT[slug] ?? CATEGORY_BY_SLUG[slug].name;
+}
 
 /**
  * One board. A real <table>, two metric columns — Reddit Love Score (centred,
@@ -62,7 +82,7 @@ export function BoardTable({
             <th scope="col" className="col-score">
               Reddit <span aria-hidden="true">❤️</span><span className="sr-only">Love</span> Score
             </th>
-            <th scope="col">Mentions</th>
+            <th scope="col" className="col-mentions">Mentions</th>
             {showCategory && <th scope="col">Category</th>}
           </tr>
         </thead>
@@ -88,7 +108,7 @@ export function BoardTable({
                 {showCategory && (
                   <td className="col-category">
                     <span className="cat-chip" data-category={r.categorySlug}>
-                      {CATEGORY_BY_SLUG[r.categorySlug].name}
+                      {categoryLabel(r.categorySlug)}
                     </span>
                   </td>
                 )}

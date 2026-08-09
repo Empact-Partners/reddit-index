@@ -216,17 +216,22 @@
     margin-left: calc(50% - 50vw);
   }
 
+  /* Persistent chrome: the same band on every route, rendered by the layout.
+     It is outside .container-site, so it needs no bleed trick. */
   .masthead {
     background: var(--structure);
     color: var(--snowbelt);
     text-align: center;
-    padding: 56px var(--gutter) 48px;
+    padding: 44px var(--gutter) 38px;
   }
-  .masthead h1 {
+  .masthead-link { text-decoration: none; }
+  .masthead-title {
+    display: inline-block;
+    font-family: var(--font-syne);
     font-weight: 700;
     font-size: var(--fs-display);
+    line-height: 1.05;
     letter-spacing: -0.02em;
-    margin: 0;
   }
   /* The highlighter swash — MarketSplash's first-word coral, in Virtual Goal.
      Single unbreakable word only; the span carries its own stacking context so
@@ -310,15 +315,22 @@
   /* Board cards: bordered paper containers, a solid sentiment header strip,
      the body washed in the strip's family. The two-column view is two cards;
      the one-list view is a single centred card with rows tinted by position. */
+  /* The grid escapes the 1200px content container: side-by-side boards need
+     the room, and stacking below 1360px keeps every row one line with no
+     internal scroll on laptops. */
+  .board-bleed {
+    width: 100vw;
+    margin-left: calc(50% - 50vw);
+  }
   .board-grid {
     display: grid;
     gap: 28px;
-    max-width: var(--container);
+    max-width: 1400px;
     margin: 40px auto 0;
     padding: 0 var(--gutter);
     align-items: start;
   }
-  @media (min-width: 900px) {
+  @media (min-width: 1360px) {
     .board-grid { grid-template-columns: 1fr 1fr; }
   }
   .board-grid[data-view="list"] {
@@ -374,32 +386,78 @@
      and a wrappable category cell keep the table INSIDE the card instead of
      scrolling out of it. */
   .board-grid:not([data-view="list"]) .rank-table th,
-  .board-grid:not([data-view="list"]) .rank-table td { padding: 12px 8px; }
+  .board-grid:not([data-view="list"]) .rank-table td { padding: 12px 6px; }
+  .board-grid:not([data-view="list"]) .rank-table th { font-size: var(--fs-micro); }
+  .board-grid:not([data-view="list"]) .rank-table td.col-category { font-size: var(--fs-micro); }
   .board-grid:not([data-view="list"]) .rank-table th:first-child,
-  .board-grid:not([data-view="list"]) .rank-table td:first-child { padding-left: 14px; }
+  .board-grid:not([data-view="list"]) .rank-table td:first-child { padding-left: 12px; }
   .board-grid:not([data-view="list"]) .rank-table th:last-child,
-  .board-grid:not([data-view="list"]) .rank-table td:last-child { padding-right: 14px; }
-  .rank-table td.col-category { min-width: 150px; }
-  .rank-table td.col-category .cat-chip {
-    white-space: normal;
-    /* the swatch sits ON THE FIRST LINE of a wrapped name, never floating
-       beside the middle of a two-line block */
-    align-items: flex-start;
+  .board-grid:not([data-view="list"]) .rank-table td:last-child { padding-right: 12px; }
+  .rank-table td.col-category .cat-chip { white-space: nowrap; }
+
+  /* ── Company page ────────────────────────────────────────────────────────
+     Title bold; one bordered paper tile per category with the big centred
+     score. Same card grammar as the boards. */
+  .company-title {
+    font-weight: 700;
+    font-size: var(--fs-h1);
+    letter-spacing: -0.01em;
   }
-  .rank-table td.col-category .cat-chip::before { margin-top: 0.32em; }
+  .section-title {
+    font-weight: 700;
+    font-size: var(--fs-h3);
+    display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap;
+  }
+  .section-count {
+    font-family: var(--font-sans);
+    font-weight: 400;
+    font-size: var(--fs-small);
+    color: var(--sherpa-blue);
+  }
+  .score-tiles {
+    list-style: none; margin: 0; padding: 0;
+    display: grid; gap: 16px;
+    grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  }
+  .score-tile {
+    border: 1px solid var(--rule);
+    border-radius: 8px;
+    background: var(--paper);
+    padding: 18px 20px 16px;
+    display: grid; gap: 8px;
+    justify-items: center;
+    text-align: center;
+  }
+  .score-tile-cat { text-decoration: none; }
+  .score-tile-cat .cat-chip { white-space: normal; align-items: flex-start; text-align: left; }
+  .score-tile-cat .cat-chip::before { margin-top: 0.32em; }
+  .score-tile-num {
+    font-family: var(--font-syne);
+    font-weight: 700;
+    font-size: var(--fs-h2);
+    line-height: 1.1;
+  }
+  .score-tile-nonum { color: var(--sherpa-blue); font-weight: 500; }
+  .score-tile-denom {
+    font-family: var(--font-sans);
+    font-weight: 400;
+    font-size: var(--fs-small);
+    color: var(--sherpa-blue);
+  }
+  .score-tile-mentions { font-size: var(--fs-small); color: var(--sherpa-blue); }
 
   /* Mention card */
-  .mention-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 32px; }
+  .mention-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 24px; }
   .mention-card {
     border: 1px solid var(--rule);
-    border-radius: var(--radius-card);
-    padding: 20px;
-    background: transparent;
+    border-radius: 8px;
+    padding: 20px 22px;
+    background: var(--paper);
   }
   .mention-attribution {
     font-size: var(--fs-micro);
     color: var(--sherpa-blue);
-    margin: 0 0 10px;
+    margin: 0 0 12px;
     display: flex; flex-wrap: wrap; align-items: center; gap: 2px;
   }
   /* WCAG 2.5.8 inline exception: 24x24 on inline attribution links. 44x44 on a
@@ -409,13 +467,14 @@
     padding-block: 4px; text-decoration: underline; text-underline-offset: 3px;
   }
   .mention-meta {
-    margin: 0 0 12px; display: flex; flex-wrap: wrap; align-items: center; gap: 10px;
-    font-size: var(--fs-micro); color: var(--sherpa-blue);
+    margin: 0 0 10px; display: flex; flex-wrap: wrap; align-items: center; gap: 10px;
   }
   .sentiment-chip {
     border-radius: var(--radius-chip);
-    padding: 4px 12px;
+    padding: 5px 14px;
     font-size: var(--fs-small);
+    line-height: 1.4;
+    font-weight: 600;
     color: var(--space-black);
   }
   .sentiment-chip[data-sentiment="pos"] { background: var(--loved-fill); }
@@ -423,22 +482,36 @@
   .sentiment-chip[data-sentiment="neu"],
   .sentiment-chip[data-sentiment="abstain"] { background: transparent; border: 1px solid var(--rule); }
 
-  /* Full text. No clamp, no mask, no max-height — all three are explicit. */
+  /* Where the words came from — a comment or the post's own body — at the
+     same size and weight as the verdict chip. 6px corners: pills stay
+     sentiment-only. */
+  .doc-type-tag {
+    border: 1px solid var(--structure);
+    border-radius: var(--radius-card);
+    padding: 4px 12px;
+    font-size: var(--fs-small);
+    line-height: 1.4;
+    font-weight: 600;
+    color: var(--structure);
+  }
+
+  /* Full text. No clamp, no mask, no max-height — all three are explicit.
+     No quotation marks either: every card already says it is a Reddit
+     comment or post, and the left rule carries the verdict's colour. */
   .mention-body {
     font-size: var(--fs-body);
     max-width: 68ch;
     border-left: 3px solid var(--rule);
     padding-left: 16px;
-    margin: 0 0 12px;
+    margin: 0 0 14px;
     overflow: visible;
     max-height: none;
     text-overflow: clip;
-    quotes: "\201C" "\201D";
   }
+  .mention-card[data-sentiment="pos"] .mention-body { border-left-color: var(--loved-fill); }
+  .mention-card[data-sentiment="neg"] .mention-body { border-left-color: var(--hated-fill); }
   .mention-body p { margin: 0 0 10px; }
   .mention-body p:last-child { margin-bottom: 0; }
-  .mention-body p:first-child::before { content: open-quote; }
-  .mention-body p:last-child::after   { content: close-quote; }
 
   /* WCAG 2.5.5 — the card's largest tap target. */
   .mention-permalink {
@@ -487,11 +560,12 @@
   }
   .rank-table th { font-weight: 600; font-size: var(--fs-small); white-space: nowrap; }
   .rank-table th.col-score, .rank-table td.col-score { text-align: center; }
+  .rank-table th.col-mentions, .rank-table td.col-mentions { text-align: center; }
   .rank-table td.col-rank  { font-size: var(--fs-micro); width: 1%; white-space: nowrap; color: var(--sherpa-blue); }
   .rank-table td.col-score { font-size: var(--fs-lead); font-family: var(--font-syne); font-weight: 700; white-space: nowrap; }
-  .rank-table td.col-brand { font-size: var(--fs-body); font-weight: 600; }
+  .rank-table td.col-brand { font-size: var(--fs-body); font-weight: 600; white-space: nowrap; }
   .rank-table td.col-mentions { font-size: var(--fs-small); white-space: nowrap; }
-  .rank-table td.col-category { font-size: var(--fs-small); }
+  .rank-table td.col-category { font-size: var(--fs-small); white-space: nowrap; }
   /* Below 768px the table scrolls inside its OWN container. The page body never
      scrolls sideways, and no column is ever dropped — the dropped ones would be
      the diversity floors, which is the evidence a reader needs most when a

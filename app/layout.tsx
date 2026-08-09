@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { syne, publicSans } from "./fonts";
 import { IS_PROVISIONAL } from "@/lib/site-stage";
 import { SITE_URL } from "@/lib/env";
@@ -19,14 +20,23 @@ export const metadata: Metadata = {
 };
 
 /**
- * No banner, no header bar, no footer. The homepage is title + controls +
- * boards by explicit instruction; the pages that still owe a disclosure
- * (/methodology, company pages) carry it in their own content instead.
+ * The masthead is PERSISTENT chrome — the same bold Sherpa band on every
+ * route, so opening a company page never feels like leaving the site. It is
+ * a link, not a heading: each page owns its own h1 (the homepage's is
+ * sr-only, a company page's is the brand name). No banner, no footer —
+ * the pages that owe a disclosure carry it in their own content.
  */
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={`${syne.variable} ${publicSans.variable}`}>
       <body>
+        <header className="masthead">
+          <Link href="/" className="masthead-link">
+            <span className="masthead-title">
+              <span className="swash">Reddit</span> Brand Index
+            </span>
+          </Link>
+        </header>
         <main className="container-site">{children}</main>
       </body>
     </html>

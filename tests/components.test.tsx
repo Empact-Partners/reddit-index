@@ -43,7 +43,9 @@ describe("mention card", () => {
     expect(c).toContain("Comment");
     expect(p).toContain("Post body");
     // Identical structure and classes: doc_type never changes size, order or
-    // prominence, only the visible label and the permalink target.
-    expect(c.replace(/comment/gi, "X")).toBe(p.replace(/post body/gi, "X").replace(/comment/gi, "X"));
+    // prominence, only the visible label, the data-doc value and the permalink.
+    const norm = (h: string) =>
+      h.replace(/post_body/g, "X").replace(/post body/gi, "X").replace(/comment/gi, "X");
+    expect(norm(c)).toBe(norm(p));
   });
 });

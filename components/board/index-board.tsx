@@ -56,6 +56,7 @@ export function IndexBoard({
           No scored brands in this category yet.
         </p>
       ) : view === "boards" ? (
+        <div className="board-bleed">
         <div className="board-grid">
           <section className="board-card" data-tone="loved" aria-label={`Most loved, ${scopeName}`}>
             <h2>Most Loved</h2>
@@ -75,6 +76,7 @@ export function IndexBoard({
               caption={`Most hated brands, ${scopeName}`}
             />
           </section>
+        </div>
         </div>
       ) : (
         <div className="board-grid" data-view="list">
