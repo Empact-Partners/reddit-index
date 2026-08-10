@@ -106,7 +106,7 @@ def tokenize(s):
 VENDOR_STOPWORDS = {
     "crm", "suite", "cloud", "sales", "com", "software", "app", "apps", "one",
     "pro", "plus", "team", "teams", "work", "desk", "book", "books", "box",
-    "base", "hub", "flow", "core", "data", "mail", "chat", "shop", "pay", "net",
+    "base", "hub", "flow", "core", "data", "mail", "chat", "shop", "pay", "net", "business",
 }
 
 
