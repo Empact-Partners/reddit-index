@@ -84,7 +84,8 @@ export function MentionCard({ m }: { m: Mention }) {
           <a
             className="mention-sub"
             href={`https://www.reddit.com/r/${m.subreddit}/`}
-            rel="nofollow ugc noopener"
+            target="_blank"
+            rel="nofollow ugc noopener noreferrer"
           >
             r/{m.subreddit}
           </a>
@@ -103,7 +104,7 @@ export function MentionCard({ m }: { m: Mention }) {
       {/* The permalink is the card's PRIMARY action: Sherpa-filled, bottom
           LEFT, biggest tap target. Attribution keeps its place quietly right. */}
       <p className="mention-foot">
-        <a className="mention-permalink" href={m.permalink} rel="nofollow ugc noopener">
+        <a className="mention-permalink" href={m.permalink} target="_blank" rel="nofollow ugc noopener noreferrer">
           View on Reddit
           <span className="sr-only">
             {" "}
@@ -118,7 +119,8 @@ export function MentionCard({ m }: { m: Mention }) {
           <a
             className="mention-user"
             href={`https://www.reddit.com/user/${m.author}/`}
-            rel="nofollow ugc noopener"
+            target="_blank"
+            rel="nofollow ugc noopener noreferrer"
           >
             u/{m.author}
           </a>

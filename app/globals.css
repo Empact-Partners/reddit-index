@@ -275,18 +275,25 @@
   }
   .listbox-pop {
     position: absolute; z-index: 10; top: calc(100% + 6px); left: 0;
-    min-width: 100%; width: max-content; max-height: 60vh; overflow-y: auto;
+    min-width: 100%; width: max-content;
+    /* never wider than the phone — long category names wrap instead */
+    max-width: calc(100vw - 2 * var(--gutter));
+    max-height: 60vh; overflow-y: auto;
     margin: 0; padding: 6px; list-style: none;
     background: var(--paper);
     border: 1px solid var(--rule);
     border-radius: var(--radius-card);
+  }
+  /* On phones the button sits centred, so a left-anchored popover pokes past
+     the right edge — centre it under the button instead. */
+  @media (max-width: 767px) {
+    .listbox-pop { left: 50%; transform: translateX(-50%); }
   }
   .listbox-opt {
     padding: 10px 14px;
     border-radius: var(--radius-card);
     font-size: var(--fs-body);
     cursor: pointer;
-    white-space: nowrap;
   }
   .listbox-opt[data-active] { background: var(--snowbelt); }
   .listbox-opt[aria-selected="true"] { font-weight: 600; }
@@ -324,6 +331,10 @@
   }
   .board-grid {
     display: grid;
+    /* minmax(0,…) everywhere: an auto track sizes to the table's one-line
+       max-content and blows past a phone viewport; a zero-minimum track
+       makes the card shrink and its table scroll inside .table-scroll. */
+    grid-template-columns: minmax(0, 1fr);
     gap: 28px;
     max-width: 1400px;
     margin: 40px auto 0;
@@ -331,8 +342,9 @@
     align-items: start;
   }
   @media (min-width: 1360px) {
-    .board-grid { grid-template-columns: 1fr 1fr; }
+    .board-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
   }
+  .board-grid > * { min-width: 0; }
   .board-grid[data-view="list"] {
     display: block;
     max-width: 920px;
@@ -464,8 +476,10 @@
   }
   .stat-tile-hero { background: var(--structure); border-color: var(--structure); }
   .stat-tile-hero .stat-num, .stat-tile-hero .stat-label { color: var(--snowbelt); }
-  /* The clickable tiles ARE the dashboard's navigation. */
-  .stat-tiles > li { display: contents; }
+  /* The clickable tiles ARE the dashboard's navigation. display:contents
+     ONLY on the lis that wrap a button — the hero li IS a .stat-tile and
+     must keep its own box (this rule once hit it and collapsed it to 0x0). */
+  .stat-tiles > li:not(.stat-tile) { display: contents; }
   button.stat-tile-btn {
     width: 100%; height: 100%;
     font: inherit; text-align: left; cursor: pointer;
@@ -711,7 +725,10 @@
      scrolls sideways, and no column is ever dropped — the dropped ones would be
      the diversity floors, which is the evidence a reader needs most when a
      claim looks wrong. */
-  .table-scroll { overflow-x: auto; }
+  /* position:relative is load-bearing: absolutely-positioned descendants
+     (sr-only spans) otherwise anchor OUTSIDE the scroller and extend the
+     document past the viewport on phones. */
+  .table-scroll { overflow-x: auto; position: relative; }
 
   .badge {
     display: inline-block; border-radius: var(--radius-card);
