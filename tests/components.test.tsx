@@ -1,12 +1,13 @@
 import { describe, it, expect } from "vitest";
 import { render } from "@testing-library/react";
-import { MentionCard, type Mention } from "@/components/data/mention-card";
+import { MentionCard, highlight, type Mention } from "@/components/data/mention-card";
 
 describe("mention card", () => {
-  const long = "x".repeat(4000);
+  const long = "x".repeat(4000) + " HubSpot helped. ";
   const m: Mention = {
     brandName: "HubSpot", brandSlug: "hubspot", subreddit: "sales", author: "someone",
     createdUtc: "2026-03-03T14:22:11.000Z", sentiment: "pos", docType: "comment",
+    matchedForm: "hubspot",
     body: long,
     permalink: "https://www.reddit.com/r/sales/comments/abc123/thread/def456/",
   };
@@ -23,10 +24,13 @@ describe("mention card", () => {
     expect(container.querySelector("time")?.getAttribute("title")).toBe(m.createdUtc);
   });
 
-  it("quotes the body in full, with no read-more", () => {
+  it("quotes the body in full, with no read-more, brand marked", () => {
     const { container } = render(<MentionCard m={m} />);
-    expect(container.querySelector(".mention-body")?.textContent).toContain(long);
+    expect(container.querySelector(".mention-body")?.textContent).toContain("x".repeat(4000));
     expect(container.textContent).not.toMatch(/read more|show more/i);
+    const marks = container.querySelectorAll(".mention-body mark.brand-mark");
+    expect(marks.length).toBeGreaterThan(0);
+    expect(marks[0]?.textContent).toBe("HubSpot");
   });
 
   it("carries no Reddit UI furniture", () => {
@@ -41,11 +45,37 @@ describe("mention card", () => {
     const c = render(<MentionCard m={m} />).container.innerHTML;
     const p = render(<MentionCard m={{ ...m, docType: "post_body" }} />).container.innerHTML;
     expect(c).toContain("Comment");
-    expect(p).toContain("Post body");
-    // Identical structure and classes: doc_type never changes size, order or
-    // prominence, only the visible label, the data-doc value and the permalink.
+    expect(p).toContain("Post");
     const norm = (h: string) =>
-      h.replace(/post_body/g, "X").replace(/post body/gi, "X").replace(/comment/gi, "X");
+      h.replace(/post_body/g, "X").replace(/post/gi, "X").replace(/comment/gi, "X");
     expect(norm(c)).toBe(norm(p));
+  });
+});
+
+describe("highlight", () => {
+  it("wraps word-boundary matches case-insensitively", () => {
+    const nodes = highlight("I love hubspot and HubSpot CRM.", ["HubSpot"]);
+    const marks = nodes.filter((n) => typeof n !== "string");
+    expect(marks).toHaveLength(2);
+  });
+
+  it("never matches inside a longer token", () => {
+    const nodes = highlight("pinstripe is not stripe adjacent", ["Stripe"]);
+    const marks = nodes.filter((n) => typeof n !== "string");
+    expect(marks).toHaveLength(1); // only the bare "stripe"
+  });
+
+  it("prefers the longer form over its substring", () => {
+    const nodes = highlight("see hubspot.com for hubspot", ["hubspot", "hubspot.com"]);
+    const marks = nodes.filter((n) => typeof n !== "string") as { props: { children: string } }[];
+    expect(marks.map((x) => x.props.children)).toEqual(["hubspot.com", "hubspot"]);
+  });
+
+  it("passes text through untouched when nothing matches", () => {
+    expect(highlight("nothing here", ["HubSpot"])).toEqual(["nothing here"]);
+  });
+
+  it("survives empty forms", () => {
+    expect(highlight("text", ["", "  "])).toEqual(["text"]);
   });
 });

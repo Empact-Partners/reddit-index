@@ -446,6 +446,99 @@
   }
   .score-tile-mentions { font-size: var(--fs-small); color: var(--sherpa-blue); }
 
+  /* ── The company dashboard ───────────────────────────────────────────────
+     Stat tiles (MarketSplash stat-tile grammar on Empact ink), the sentiment
+     bar (SOLID segments — gradients are banned), the clickable subreddit
+     ledger, and the filter bar. */
+  .stat-tiles {
+    list-style: none; margin: 0; padding: 0;
+    display: grid; gap: 14px;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  }
+  .stat-tile {
+    border: 1px solid var(--rule);
+    border-radius: 8px;
+    background: var(--paper);
+    padding: 16px 18px 14px;
+    display: grid; gap: 4px;
+  }
+  .stat-tile-hero { background: var(--structure); border-color: var(--structure); }
+  .stat-tile-hero .stat-num, .stat-tile-hero .stat-label { color: var(--snowbelt); }
+  .stat-num {
+    font-family: var(--font-syne);
+    font-weight: 700;
+    font-size: var(--fs-h2);
+    line-height: 1.05;
+  }
+  .stat-denom { font-family: var(--font-sans); font-weight: 400; font-size: var(--fs-small); }
+  .stat-label { font-size: var(--fs-micro); color: var(--sherpa-blue); }
+  .pos-ink { color: var(--loved-ink); }
+  .neg-ink { color: var(--hated-ink); }
+
+  .sentiment-bar {
+    display: flex; height: 14px; border-radius: 7px; overflow: hidden;
+    border: 1px solid var(--rule);
+  }
+  .sentiment-bar .bar-pos { background: var(--loved-fill); }
+  .sentiment-bar .bar-neg { background: var(--hated-fill); }
+  .sentiment-bar .bar-neu { background: rgb(2 69 79 / 0.14); }
+  .sentiment-bar-legend {
+    margin: 8px 0 0; display: flex; gap: 20px; flex-wrap: wrap;
+    font-size: var(--fs-small); color: var(--sherpa-blue);
+  }
+  .sentiment-bar-legend .dot {
+    display: inline-block; width: 10px; height: 10px; border-radius: 3px;
+    margin-right: 6px; vertical-align: baseline;
+  }
+  .dot-pos { background: var(--loved-fill); }
+  .dot-neg { background: var(--hated-fill); }
+  .dot-neu { background: rgb(2 69 79 / 0.14); border: 1px solid var(--rule); }
+
+  .sub-ledger tbody tr { cursor: pointer; }
+  .sub-ledger tbody tr:hover { background: var(--snowbelt); }
+  .sub-ledger tbody tr[data-active] { background: color-mix(in srgb, var(--lucky-green) 14%, var(--paper)); }
+  .sub-ledger-btn {
+    font: inherit; font-weight: 600; color: var(--fg);
+    background: transparent; border: 0; padding: 0; cursor: pointer;
+    text-decoration: underline; text-underline-offset: 4px;
+  }
+  .sub-ledger td.col-split { min-width: 220px; }
+  .mini-bar {
+    display: flex; width: 110px; height: 8px; border-radius: 4px;
+    overflow: hidden; border: 1px solid var(--rule);
+    vertical-align: middle; margin-right: 10px;
+  }
+  .mini-bar-pos { background: var(--loved-fill); }
+  .mini-bar-neg { background: var(--hated-fill); }
+  .mini-bar-neu { background: rgb(2 69 79 / 0.14); }
+  .mini-bar, .mini-bar-nums { display: inline-flex; align-items: center; }
+  .mini-bar-nums { font-size: var(--fs-micro); gap: 3px; }
+  .sub-ledger td.col-newest { font-size: var(--fs-micro); white-space: nowrap; color: var(--sherpa-blue); }
+
+  .filter-bar {
+    display: flex; gap: 14px; flex-wrap: wrap; align-items: center;
+  }
+  .seg .seg-count { font-weight: 400; font-size: var(--fs-micro); opacity: 0.75; margin-left: 2px; }
+  .filter-clear {
+    font: inherit; font-size: var(--fs-small); font-weight: 600;
+    padding: 10px 16px; cursor: pointer;
+    border: 1px solid var(--structure); border-radius: var(--radius-card);
+    background: var(--structure); color: var(--snowbelt);
+  }
+
+  /* The brand highlighted inside a quote, in the BRAND'S colour — its primary
+     category's --cat washed into paper. Contrast is safe by construction:
+     every category hex clears 4.5:1 on Space Black at FULL strength (palette
+     constraint C1), and washing toward paper only raises it. .brand-mark is
+     on the css-rules gate's --cat allowlist. */
+  .brand-mark {
+    background: color-mix(in srgb, var(--cat, var(--snowbelt)) 45%, var(--paper));
+    color: inherit;
+    font-weight: 600;
+    border-radius: 3px;
+    padding: 0 3px;
+  }
+
   /* Mention card */
   .mention-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 24px; }
   .mention-card {
@@ -457,8 +550,7 @@
   .mention-attribution {
     font-size: var(--fs-micro);
     color: var(--sherpa-blue);
-    margin: 0 0 12px;
-    display: flex; flex-wrap: wrap; align-items: center; gap: 2px;
+    display: inline-flex; flex-wrap: wrap; align-items: center; gap: 2px;
   }
   /* WCAG 2.5.8 inline exception: 24x24 on inline attribution links. 44x44 on a
      13px inline link is unimplementable; the permalink below carries 2.5.5. */
@@ -467,7 +559,18 @@
     padding-block: 4px; text-decoration: underline; text-underline-offset: 3px;
   }
   .mention-meta {
-    margin: 0 0 10px; display: flex; flex-wrap: wrap; align-items: center; gap: 10px;
+    margin: 0 0 12px; display: flex; flex-wrap: wrap; align-items: center; gap: 10px;
+  }
+  .mention-meta-right {
+    margin-left: auto; display: inline-flex; align-items: center; gap: 12px;
+    font-size: var(--fs-small); color: var(--sherpa-blue);
+  }
+  .mention-meta-right .mention-sub {
+    font-weight: 600; text-decoration: underline; text-underline-offset: 3px;
+  }
+  .mention-foot {
+    margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 12px;
+    justify-content: space-between;
   }
   .sentiment-chip {
     border-radius: var(--radius-chip);
@@ -524,7 +627,8 @@
   }
 
   /* Category identity. 6px square, never circular, never a pill — decisions/0008.
-     --cat is legal ONLY under these selectors, and the CSS gate enforces it. */
+     --cat is legal ONLY under these selectors plus .brand-mark (the
+     dashboard's in-quote brand highlight), and the CSS gate enforces it. */
   .cat-tile {
     width: 40px; height: 40px;
     border-radius: var(--radius-tile);

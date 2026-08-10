@@ -57,7 +57,7 @@ async function loadSnapshot(): Promise<Snapshot> {
   const t0 = Date.now();
   const s = db();
 
-  const [catRows, brandRows, scoreRows, subCounts, mentionRows] = await Promise.all([
+  const [catRows, brandRows, scoreRows, subCounts, mentionRows, mentionAgg] = await Promise.all([
     s`select id, slug, name, threshold_tier, precision_target_pp, n_min, base_rate_c, status
       from published.categories`,
     s`select id, slug, name, primary_category_id from published.brands`,
@@ -72,7 +72,15 @@ async function loadSnapshot(): Promise<Snapshot> {
         from published.mentions m
         join published.brands b on b.id = m.brand_id
         join published.subreddits sr on sr.id = m.subreddit_id
-      ) t where rn <= 50`,
+      ) t where rn <= 100`,
+    // The dashboard aggregates: TRUE totals over the whole table, per
+    // (brand x subreddit x label) — the stat tiles and the subreddit ledger
+    // must describe everything collected, not the 100 cards shown.
+    s`select m.brand_id, sr.name as subreddit, m.label,
+             count(*)::int as n, max(m.created_utc) as newest
+      from published.mentions m
+      join published.subreddits sr on sr.id = m.subreddit_id
+      group by 1, 2, 3`,
   ]);
 
   const catById = new Map(catRows.map((c) => [String(c.id), c]));
@@ -137,18 +145,48 @@ async function loadSnapshot(): Promise<Snapshot> {
     };
   });
 
+  // Aggregate rows -> per-brand sentiment totals + subreddit ledger.
+  // Labels: 0 neu, 1 pos, 2 neg, 3 abstain; null (unclassified yet) and
+  // abstain both fold into neu for DISPLAY — the dashboard's "Neutral" is
+  // "carried no verdict", which is what a reader means by it.
+  type Agg = { pos: number; neg: number; neu: number; subs: Map<string, {
+    pos: number; neg: number; neu: number; total: number; newest: string }> };
+  const aggByBrand = new Map<string, Agg>();
+  for (const r of mentionAgg) {
+    const bid = String(r.brand_id);
+    const a = aggByBrand.get(bid) ?? { pos: 0, neg: 0, neu: 0, subs: new Map() };
+    const label = r.label === null || r.label === undefined ? 3 : Number(r.label);
+    const bucket = label === 1 ? "pos" : label === 2 ? "neg" : "neu";
+    const n = Number(r.n);
+    a[bucket] += n;
+    const sub = String(r.subreddit);
+    const st = a.subs.get(sub) ?? { pos: 0, neg: 0, neu: 0, total: 0, newest: "" };
+    st[bucket] += n;
+    st.total += n;
+    const newest = new Date(r.newest as string).toISOString();
+    if (newest > st.newest) st.newest = newest;
+    a.subs.set(sub, st);
+    aggByBrand.set(bid, a);
+  }
+
   const companies = new Map<string, CompanyView>();
   for (const b of brandRows) {
     const slug = String(b.slug);
     const mine = scores.filter((x) => x.brandSlug === slug);
     const primary = b.primary_category_id ? catById.get(String(b.primary_category_id)) : null;
+    const agg = aggByBrand.get(String(b.id)) ?? { pos: 0, neg: 0, neu: 0, subs: new Map() };
     companies.set(slug, {
       slug,
       name: String(b.name),
       primaryCategorySlug: (primary?.slug ?? null) as CategorySlug | null,
       scores: mine,
       mentions: [],
-      totalMentions: mine.reduce((acc, x) => acc + x.n, 0),
+      totalMentions: agg.pos + agg.neg + agg.neu,
+      sentimentTotals: { pos: agg.pos, neg: agg.neg, neu: agg.neu },
+      subredditStats: [...agg.subs.entries()]
+        .map(([subreddit, st]) => ({ subreddit, total: st.total, pos: st.pos,
+                                     neg: st.neg, neu: st.neu, newest: st.newest }))
+        .sort((a2, b2) => b2.total - a2.total),
     });
   }
 
@@ -163,6 +201,7 @@ async function loadSnapshot(): Promise<Snapshot> {
       createdUtc: new Date(r.created_utc as string).toISOString(),
       sentiment: SENTIMENT[Number(r.label ?? 3)] ?? "abstain",
       docType: Number(r.doc_type) === 2 ? "post_body" : "comment",
+      matchedForm: String(r.matched_form ?? ""),
       body: String(r.body),
       permalink: String(r.permalink).startsWith("http")
         ? String(r.permalink)

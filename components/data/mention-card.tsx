@@ -11,6 +11,9 @@ export type Mention = {
   createdUtc: string;  // ISO 8601
   sentiment: Sentiment;
   docType: "post_body" | "comment";
+  /** The surface form the matcher fired on ("HubSpot", "hubspot.com") —
+   *  highlighted in the body alongside the display name. */
+  matchedForm: string;
   body: string;        // FULL text
   permalink: string;   // absolute reddit.com URL, copied from the API
 };
@@ -23,35 +26,45 @@ const SENTIMENT_WORD: Record<Sentiment, string> = {
 };
 
 /**
- * "This is the component the whole product rests on." Seven fields, none
- * optional, none conditional on width, position or sentiment:
+ * Wrap every occurrence of the brand's surface forms in <mark class="brand-mark">.
  *
- *   1 brand · 2 subreddit · 3 username · 4 timestamp · 5 sentiment label
- *   6 the full text · 7 the permalink
+ * React nodes, never injected HTML. Word-boundary, case-insensitive, longer
+ * forms matched first so "hubspot.com" never splits into a "hubspot" match
+ * plus a stray ".com". Pure and exported for tests.
+ */
+export function highlight(text: string, forms: string[]): React.ReactNode[] {
+  const clean = [...new Set(forms.map((f) => f.trim()).filter(Boolean))]
+    .sort((a, b) => b.length - a.length);
+  if (!clean.length || !text) return [text];
+  const pat = clean.map((f) => f.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|");
+  const re = new RegExp(`(?<![a-z0-9])(${pat})(?![a-z0-9])`, "gi");
+  const out: React.ReactNode[] = [];
+  let last = 0;
+  for (const m of text.matchAll(re)) {
+    const i = m.index ?? 0;
+    if (i > last) out.push(text.slice(last, i));
+    out.push(<mark className="brand-mark" key={`${i}`}>{m[0]}</mark>);
+    last = i + m[0].length;
+  }
+  if (last < text.length) out.push(text.slice(last));
+  return out.length ? out : [text];
+}
+
+/**
+ * "This is the component the whole product rests on." The seven mandatory
+ * fields stay: brand, subreddit, username, timestamp, sentiment, the FULL
+ * text, the permalink. v2 reorganises them for scanning:
  *
- * The rules that are easiest to break, and why each one is here:
+ *   header:  [sentiment pill] [Comment|Post]        [r/subreddit] [date]
+ *   body:    full text, brand highlighted in the brand's colour
+ *   footer:  u/author · from Reddit                 [View on Reddit]
  *
- *  · The USERNAME is real text in the DOM. Never an avatar, never an initial,
- *    never abbreviated. A quote without its source is not shippable.
- *  · The BODY is never truncated. No "read more", no fade mask, no line clamp.
- *    decisions/0002 prices displaying full comment text as an accepted risk —
- *    a half-quote would carry the same exposure and less of the honesty.
- *  · The PERMALINK is the card's largest tap target, 44x44 minimum, labelled
- *    "View on Reddit". It is never demoted to an icon and the timestamp does
- *    not compete with it — a 13px Micro timestamp link cannot meet 44x44, so it
- *    is not a link at all.
- *  · `docType` changes ONLY the visible label and which permalink is used.
- *    Never the size, order, prominence or scoring weight. A brand named in a
- *    post body and a brand named in a comment are the same observation.
- *  · Nothing here may let a reader mistake a Reddit user's words for the site's
- *    own: the left rule and the quotation marks do that work, and the text
- *    takes no site-copy weight, colour, or pull-quote treatment.
- *  · There is no vote arrow, karma pill, award or reply rail in this markup at
- *    all — they cannot regress because there is nothing to remove.
+ * Unchanged laws: the username is real text, the body is never truncated,
+ * the permalink is the biggest tap target, docType changes only its label.
  */
 export function MentionCard({ m }: { m: Mention }) {
   const headingId = `m-${m.permalink.split("/").filter(Boolean).pop()}`;
-  const typeLabel = m.docType === "post_body" ? "Post body" : "Comment";
+  const typeLabel = m.docType === "post_body" ? "Post" : "Comment";
 
   return (
     <article className="mention-card" data-sentiment={m.sentiment} aria-labelledby={headingId}>
@@ -60,8 +73,6 @@ export function MentionCard({ m }: { m: Mention }) {
         {absoluteDate(m.createdUtc)}
       </h3>
 
-      {/* The header row: the verdict and WHERE the words came from — a post's
-          own body or a comment — at equal size and equal prominence. */}
       <p className="mention-meta">
         <span className="sentiment-chip" data-sentiment={m.sentiment}>
           {SENTIMENT_WORD[m.sentiment]}
@@ -69,67 +80,64 @@ export function MentionCard({ m }: { m: Mention }) {
         <span className="doc-type-tag" data-doc={m.docType}>
           {typeLabel}
         </span>
+        <span className="mention-meta-right">
+          <a
+            className="mention-sub"
+            href={`https://www.reddit.com/r/${m.subreddit}/`}
+            rel="nofollow ugc noopener"
+          >
+            r/{m.subreddit}
+          </a>
+          <time dateTime={m.createdUtc} title={m.createdUtc}>
+            {absoluteDate(m.createdUtc)}
+          </time>
+        </span>
       </p>
 
-      {/* Fields 1-4, one Micro row, this order, on every card. */}
-      <p className="mention-attribution">
-        <Link href={`/${m.brandSlug}/`} className="mention-brand">
-          {m.brandName}
-        </Link>
-        <span aria-hidden="true"> · </span>
-        <a
-          className="mention-sub"
-          href={`https://www.reddit.com/r/${m.subreddit}/`}
-          rel="nofollow ugc noopener"
-        >
-          r/{m.subreddit}
-        </a>
-        <span aria-hidden="true"> · </span>
-        <a
-          className="mention-user"
-          href={`https://www.reddit.com/user/${m.author}/`}
-          rel="nofollow ugc noopener"
-        >
-          u/{m.author}
-        </a>
-        <span aria-hidden="true"> · </span>
-        <time dateTime={m.createdUtc} title={m.createdUtc}>
-          {absoluteDate(m.createdUtc)}
-        </time>
-        <span aria-hidden="true"> · </span>
-        <span className="from-reddit">from Reddit</span>
-      </p>
-
-      {/* Field 6. Full text. */}
       <blockquote className="mention-body" cite={m.permalink}>
         {m.body.split(/\n{2,}/).map((para, i) => (
-          <p key={i}>{para}</p>
+          <p key={i}>{highlight(para, [m.brandName, m.matchedForm])}</p>
         ))}
       </blockquote>
 
-      {/* Field 7. The card's primary link and its largest tap target. */}
-      <a className="mention-permalink" href={m.permalink} rel="nofollow ugc noopener">
-        View on Reddit
-        <span className="sr-only">
-          {" "}
-          — {typeLabel.toLowerCase()} by u/{m.author} in r/{m.subreddit}
+      <p className="mention-foot">
+        <span className="mention-attribution">
+          <Link href={`/${m.brandSlug}/`} className="mention-brand">
+            {m.brandName}
+          </Link>
+          <span aria-hidden="true"> · </span>
+          <a
+            className="mention-user"
+            href={`https://www.reddit.com/user/${m.author}/`}
+            rel="nofollow ugc noopener"
+          >
+            u/{m.author}
+          </a>
+          <span aria-hidden="true"> · </span>
+          <span className="from-reddit">from Reddit</span>
         </span>
-      </a>
+        <a className="mention-permalink" href={m.permalink} rel="nofollow ugc noopener">
+          View on Reddit
+          <span className="sr-only">
+            {" "}
+            — {typeLabel.toLowerCase()} by u/{m.author} in r/{m.subreddit}
+          </span>
+        </a>
+      </p>
     </article>
   );
 }
 
 /**
- * An ordered list so a screen reader announces position. Cards sort newest
- * first. A card whose source was deleted on Reddit simply is not in this list
- * after the next sync — no tombstone, no cached copy, no "[deleted]" holding
- * the slot.
+ * An ordered list so a screen reader announces position. The caller controls
+ * order (the dashboard sorts). A card whose source was deleted on Reddit is
+ * simply absent after the next sync — no tombstone.
  */
 export function MentionList({ mentions }: { mentions: Mention[] }) {
   if (mentions.length === 0) {
     return (
       <p style={{ fontSize: "var(--fs-body)" }}>
-        No mentions have been collected for this company yet.
+        No mentions match these filters.
       </p>
     );
   }

@@ -84,13 +84,26 @@ export type CategoryView = {
   scores: BrandScore[];
 };
 
+/** Per-subreddit sentiment breakdown — the dashboard's ledger rows. */
+export type SubredditStat = {
+  subreddit: string;
+  total: number;
+  pos: number;
+  neg: number;
+  neu: number;      // neu + abstain folded together for display
+  newest: string;   // ISO date of the newest mention in this subreddit
+};
+
 export type CompanyView = {
   slug: string;
   name: string;
   primaryCategorySlug: CategorySlug | null;
   scores: BrandScore[];
   mentions: Mention[];
+  /** TRUE full mention count from the aggregates, not the score-window n. */
   totalMentions: number;
+  sentimentTotals: { pos: number; neg: number; neu: number };
+  subredditStats: SubredditStat[];
 };
 
 export type Snapshot = {

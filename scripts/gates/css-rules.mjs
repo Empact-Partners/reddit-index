@@ -31,7 +31,7 @@ if (files.length === 0) fail('css law', 'no built CSS found under .next/static')
 const problems = [];
 let sawReducedMotion = false;
 
-const CAT_ALLOWED = ['.cat-tile', '.cat-chip', '.cat-header-rule', '.breadcrumb-cat', '.cat-card-rule'];
+const CAT_ALLOWED = ['.cat-tile', '.cat-chip', '.cat-header-rule', '.breadcrumb-cat', '.cat-card-rule', '.brand-mark'];
 
 for (const f of files) {
   const css = fs.readFileSync(f, 'utf8');
