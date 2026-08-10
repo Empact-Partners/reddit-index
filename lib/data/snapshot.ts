@@ -65,14 +65,16 @@ async function loadSnapshot(): Promise<Snapshot> {
       where week_start = (select max(week_start) from published.brand_category_scores)`,
     s`select cs.category_id, count(*)::int as n
       from published.category_subreddits cs where cs.is_scoring group by 1`,
-    // Newest first, capped per brand at the page size the company route renders.
+    // Newest first. The dashboard paginates client-side over the FULL set
+    // (Vlad's ruling: load all, 10 per page) — the 2000 ceiling is a safety
+    // rail far above today's biggest brand, not a display cap.
     s`select * from (
         select m.*, b.slug as brand_slug, b.name as brand_name, sr.name as subreddit,
                row_number() over (partition by m.brand_id order by m.created_utc desc) as rn
         from published.mentions m
         join published.brands b on b.id = m.brand_id
         join published.subreddits sr on sr.id = m.subreddit_id
-      ) t where rn <= 100`,
+      ) t where rn <= 2000`,
     // The dashboard aggregates: TRUE totals over the whole table, per
     // (brand x subreddit x label) — the stat tiles and the subreddit ledger
     // must describe everything collected, not the 100 cards shown.

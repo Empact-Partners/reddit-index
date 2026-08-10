@@ -100,7 +100,16 @@ export function MentionCard({ m }: { m: Mention }) {
         ))}
       </blockquote>
 
+      {/* The permalink is the card's PRIMARY action: Sherpa-filled, bottom
+          LEFT, biggest tap target. Attribution keeps its place quietly right. */}
       <p className="mention-foot">
+        <a className="mention-permalink" href={m.permalink} rel="nofollow ugc noopener">
+          View on Reddit
+          <span className="sr-only">
+            {" "}
+            — {typeLabel.toLowerCase()} by u/{m.author} in r/{m.subreddit}
+          </span>
+        </a>
         <span className="mention-attribution">
           <Link href={`/${m.brandSlug}/`} className="mention-brand">
             {m.brandName}
@@ -116,13 +125,6 @@ export function MentionCard({ m }: { m: Mention }) {
           <span aria-hidden="true"> · </span>
           <span className="from-reddit">from Reddit</span>
         </span>
-        <a className="mention-permalink" href={m.permalink} rel="nofollow ugc noopener">
-          View on Reddit
-          <span className="sr-only">
-            {" "}
-            — {typeLabel.toLowerCase()} by u/{m.author} in r/{m.subreddit}
-          </span>
-        </a>
       </p>
     </article>
   );

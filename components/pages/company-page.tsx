@@ -21,9 +21,6 @@ export function CompanyPage({ company }: { company: CompanyView }) {
   const primaryScore = primary
     ? company.scores.find((s) => s.categorySlug === primary.slug)?.redditLoveScore ?? null
     : null;
-  const t = company.sentimentTotals;
-  const opTotal = Math.max(1, company.totalMentions);
-  const pct = (n: number) => Math.round((n / opTotal) * 100);
 
   return (
     <div data-category={company.primaryCategorySlug ?? undefined}>
@@ -43,56 +40,19 @@ export function CompanyPage({ company }: { company: CompanyView }) {
         links back to real comments.
       </p>
 
-      <section className="mt-10" aria-label="Overview">
-        <ul className="stat-tiles">
-          <li className="stat-tile stat-tile-hero">
-            <span className="stat-num">
-              {primaryScore !== null ? primaryScore : "—"}
-              {primaryScore !== null && <span className="stat-denom"> / 100</span>}
-            </span>
-            <span className="stat-label">Reddit ❤️ Score{primary ? ` · ${primary.name}` : ""}</span>
-          </li>
-          <li className="stat-tile">
-            <span className="stat-num">{num(company.totalMentions)}</span>
-            <span className="stat-label">Mentions collected</span>
-          </li>
-          <li className="stat-tile">
-            <span className="stat-num pos-ink">{num(t.pos)}</span>
-            <span className="stat-label">Positive</span>
-          </li>
-          <li className="stat-tile">
-            <span className="stat-num neg-ink">{num(t.neg)}</span>
-            <span className="stat-label">Negative</span>
-          </li>
-          <li className="stat-tile">
-            <span className="stat-num">{num(t.neu)}</span>
-            <span className="stat-label">Neutral / no verdict</span>
-          </li>
-          <li className="stat-tile">
-            <span className="stat-num">{num(company.subredditStats.length)}</span>
-            <span className="stat-label">Subreddits</span>
-          </li>
-        </ul>
+      <CompanyDashboard
+        mentions={company.mentions}
+        subredditStats={company.subredditStats}
+        totals={company.sentimentTotals}
+        totalMentions={company.totalMentions}
+        heroScore={primaryScore}
+        heroLabel={`Reddit ❤️ Score${primary ? ` · ${primary.name}` : ""}`}
+      />
 
-        {company.totalMentions > 0 && (
-          <div className="sentiment-band mt-6" role="img"
-               aria-label={`Sentiment: ${pct(t.pos)}% positive, ${pct(t.neg)}% negative, ${pct(t.neu)}% neutral`}>
-            <div className="sentiment-bar" aria-hidden="true">
-              {t.pos > 0 && <span className="bar-pos" style={{ width: `${(t.pos / opTotal) * 100}%` }} />}
-              {t.neg > 0 && <span className="bar-neg" style={{ width: `${(t.neg / opTotal) * 100}%` }} />}
-              {t.neu > 0 && <span className="bar-neu" style={{ width: `${(t.neu / opTotal) * 100}%` }} />}
-            </div>
-            <p className="sentiment-bar-legend" aria-hidden="true">
-              <span><i className="dot dot-pos" />{pct(t.pos)}% positive</span>
-              <span><i className="dot dot-neg" />{pct(t.neg)}% negative</span>
-              <span><i className="dot dot-neu" />{pct(t.neu)}% neutral</span>
-            </p>
-          </div>
-        )}
-      </section>
-
-      {company.scores.length > 0 && (
-        <section className="mt-12" aria-label="Scores by category">
+      {/* Only when the brand genuinely scores in MORE than one category —
+          a single-category repeat of the hero tile is noise (Vlad). */}
+      {company.scores.length > 1 && (
+        <section className="mt-[var(--section)]" aria-label="Scores by category">
           <h2 className="section-title">Scores by category</h2>
           <ul className="score-tiles mt-6">
             {company.scores.map((s) => (
@@ -118,13 +78,6 @@ export function CompanyPage({ company }: { company: CompanyView }) {
           </ul>
         </section>
       )}
-
-      <CompanyDashboard
-        mentions={company.mentions}
-        subredditStats={company.subredditStats}
-        totals={company.sentimentTotals}
-        totalMentions={company.totalMentions}
-      />
 
       <footer
         className="mt-[var(--section)] pt-8 pb-12"

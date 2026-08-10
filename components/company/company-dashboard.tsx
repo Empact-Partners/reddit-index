@@ -1,24 +1,23 @@
 "use client";
 
-import { useId, useState } from "react";
+import { useRef, useState } from "react";
 import { num } from "@/lib/format";
 import { MentionList, type Mention, type Sentiment } from "@/components/data/mention-card";
 import type { SubredditStat } from "@/lib/data/types";
 
 /**
- * The interactive half of a company's dashboard: the subreddit ledger, the
- * filter bar, and the filtered mention cards.
+ * The dashboard. THE STAT TILES ARE THE NAVIGATION: "Mentions collected" is
+ * the default view (all mentions); Positive / Negative / Neutral are the
+ * same view filtered; "Subreddits" is a DIFFERENT view — the ledger replaces
+ * the cards, and clicking a subreddit drills back into mentions filtered to
+ * it. One island, props-only state (the board contract), no fetch.
  *
- * Same island contract as the boards (components/board/index-board.tsx):
- * every card arrives as props at build time, the default view is in the
- * prerendered HTML, state comes only from props/defaults — filtering is a
- * setState, no fetch, no URL reads.
+ * Pagination: everything is loaded, 10 cards per page.
  */
 
 type SentimentFilter = "all" | "pos" | "neg" | "neu";
-const SENTIMENT_LABEL: Record<SentimentFilter, string> = {
-  all: "All", pos: "Positive", neg: "Negative", neu: "Neutral",
-};
+type View = "mentions" | "subreddits";
+const PAGE_SIZE = 10;
 
 function bucket(s: Sentiment): Exclude<SentimentFilter, "all"> {
   return s === "pos" ? "pos" : s === "neg" ? "neg" : "neu";
@@ -29,16 +28,22 @@ export function CompanyDashboard({
   subredditStats,
   totals,
   totalMentions,
+  heroScore,
+  heroLabel,
 }: {
   mentions: Mention[];
   subredditStats: SubredditStat[];
   totals: { pos: number; neg: number; neu: number };
   totalMentions: number;
+  heroScore: number | null;
+  heroLabel: string;
 }) {
+  const [view, setView] = useState<View>("mentions");
   const [sentiment, setSentiment] = useState<SentimentFilter>("all");
   const [subreddit, setSubreddit] = useState<string>("all");
   const [order, setOrder] = useState<"newest" | "oldest">("newest");
-  const ledgerId = useId();
+  const [page, setPage] = useState(1);
+  const listTop = useRef<HTMLDivElement>(null);
 
   const filtered = mentions
     .filter((m) => sentiment === "all" || bucket(m.sentiment) === sentiment)
@@ -47,115 +52,198 @@ export function CompanyDashboard({
       ? b.createdUtc.localeCompare(a.createdUtc)
       : a.createdUtc.localeCompare(b.createdUtc));
 
-  const counts: Record<SentimentFilter, number> = {
-    all: totalMentions, pos: totals.pos, neg: totals.neg, neu: totals.neu,
-  };
+  const pages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const current = Math.min(page, pages);
+  const visible = filtered.slice((current - 1) * PAGE_SIZE, current * PAGE_SIZE);
 
-  function toggleSub(name: string) {
-    setSubreddit((cur) => (cur === name ? "all" : name));
+  function pickMentions(f: SentimentFilter) {
+    setView("mentions");
+    setSentiment(f);
+    setPage(1);
+  }
+  function pickSubreddits() {
+    setView("subreddits");
+  }
+  function drillIntoSub(name: string) {
+    setSubreddit(name);
+    setView("mentions");
+    setPage(1);
+  }
+  function goto(p: number) {
+    setPage(p);
+    if (typeof listTop.current?.scrollIntoView === "function") {
+      listTop.current.scrollIntoView({ block: "start" });
+    }
+  }
+
+  const opTotal = Math.max(1, totalMentions);
+  const pct = (n: number) => Math.round((n / opTotal) * 100);
+  const t = totals;
+
+  const tiles: { key: string; num: string; label: string; ink?: string;
+                 active: boolean; onClick: () => void }[] = [
+    { key: "all", num: num(totalMentions), label: "Mentions collected",
+      active: view === "mentions" && sentiment === "all",
+      onClick: () => pickMentions("all") },
+    { key: "pos", num: num(t.pos), label: "Positive", ink: "pos-ink",
+      active: view === "mentions" && sentiment === "pos",
+      onClick: () => pickMentions("pos") },
+    { key: "neg", num: num(t.neg), label: "Negative", ink: "neg-ink",
+      active: view === "mentions" && sentiment === "neg",
+      onClick: () => pickMentions("neg") },
+    { key: "neu", num: num(t.neu), label: "Neutral",
+      active: view === "mentions" && sentiment === "neu",
+      onClick: () => pickMentions("neu") },
+    { key: "subs", num: num(subredditStats.length), label: "Subreddits",
+      active: view === "subreddits",
+      onClick: pickSubreddits },
+  ];
+
+  // Windowed page numbers: 1 … around-current … last.
+  const pageNums: number[] = [];
+  for (let p = 1; p <= pages; p++) {
+    if (p === 1 || p === pages || Math.abs(p - current) <= 2) pageNums.push(p);
   }
 
   return (
     <>
-      <section className="mt-[var(--section)]" aria-labelledby={`${ledgerId}-h`}>
-        <h2 id={`${ledgerId}-h`} className="section-title">
-          Where the mentions live
-          <span className="section-count">
-            {subredditStats.length} subreddit{subredditStats.length === 1 ? "" : "s"} —
-            click one to filter
-          </span>
-        </h2>
-        <div className="table-scroll mt-6">
-          <table className="rank-table sub-ledger">
-            <caption className="sr-only">Mentions per subreddit with sentiment split</caption>
-            <thead>
-              <tr>
-                <th scope="col">Subreddit</th>
-                <th scope="col" className="col-mentions">Mentions</th>
-                <th scope="col">Sentiment</th>
-                <th scope="col">Newest</th>
-              </tr>
-            </thead>
-            <tbody>
-              {subredditStats.map((s) => {
-                const total = Math.max(1, s.total);
-                return (
-                  <tr
-                    key={s.subreddit}
-                    data-active={subreddit === s.subreddit || undefined}
-                    onClick={() => toggleSub(s.subreddit)}
-                  >
-                    <td className="col-brand">
-                      <button
-                        type="button"
-                        className="sub-ledger-btn"
-                        aria-pressed={subreddit === s.subreddit}
-                        onClick={(e) => { e.stopPropagation(); toggleSub(s.subreddit); }}
-                      >
-                        r/{s.subreddit}
-                      </button>
-                    </td>
-                    <td className="col-mentions">{num(s.total)}</td>
-                    <td className="col-split">
-                      <span className="mini-bar" aria-hidden="true">
-                        {s.pos > 0 && <span className="mini-bar-pos" style={{ width: `${(s.pos / total) * 100}%` }} />}
-                        {s.neg > 0 && <span className="mini-bar-neg" style={{ width: `${(s.neg / total) * 100}%` }} />}
-                        {s.neu > 0 && <span className="mini-bar-neu" style={{ width: `${(s.neu / total) * 100}%` }} />}
-                      </span>
-                      <span className="mini-bar-nums">
-                        <b className="pos-ink">{num(s.pos)}</b> / <b className="neg-ink">{num(s.neg)}</b> / {num(s.neu)}
-                      </span>
-                    </td>
-                    <td className="col-newest">{s.newest.slice(0, 10)}</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      <section className="mt-[var(--section)]">
-        <h2 className="section-title">
-          What people said
-          <span className="section-count">
-            showing {num(filtered.length)} of {num(mentions.length)} loaded
-            {totalMentions > mentions.length ? ` (${num(totalMentions)} collected)` : ""}
-          </span>
-        </h2>
-
-        <div className="filter-bar mt-6">
-          <div className="seg" role="group" aria-label="Filter by sentiment">
-            {(Object.keys(SENTIMENT_LABEL) as SentimentFilter[]).map((k) => (
+      <section className="mt-10" aria-label="Overview">
+        <ul className="stat-tiles">
+          <li className="stat-tile stat-tile-hero">
+            <span className="stat-num">
+              {heroScore !== null ? heroScore : "—"}
+              {heroScore !== null && <span className="stat-denom"> / 100</span>}
+            </span>
+            <span className="stat-label">{heroLabel}</span>
+          </li>
+          {tiles.map(({ key, num: n2, label, ink, active, onClick }) => (
+            <li key={key}>
               <button
-                key={k}
                 type="button"
-                aria-pressed={sentiment === k}
-                onClick={() => setSentiment(k)}
+                className="stat-tile stat-tile-btn"
+                aria-pressed={active}
+                onClick={onClick}
               >
-                {SENTIMENT_LABEL[k]} <span className="seg-count">{num(counts[k])}</span>
+                <span className={`stat-num${ink ? ` ${ink}` : ""}`}>{n2}</span>
+                <span className="stat-label">{label}</span>
               </button>
-            ))}
-          </div>
-          <div className="seg" role="group" aria-label="Sort order">
-            <button type="button" aria-pressed={order === "newest"} onClick={() => setOrder("newest")}>
-              Newest
-            </button>
-            <button type="button" aria-pressed={order === "oldest"} onClick={() => setOrder("oldest")}>
-              Oldest
-            </button>
-          </div>
-          {subreddit !== "all" && (
-            <button type="button" className="filter-clear" onClick={() => setSubreddit("all")}>
-              r/{subreddit} ✕
-            </button>
-          )}
-        </div>
+            </li>
+          ))}
+        </ul>
 
-        <div className="mt-8">
-          <MentionList mentions={filtered} />
-        </div>
+        {totalMentions > 0 && (
+          <div className="sentiment-band mt-6" role="img"
+               aria-label={`Sentiment: ${pct(t.pos)}% positive, ${pct(t.neg)}% negative, ${pct(t.neu)}% neutral`}>
+            <div className="sentiment-bar" aria-hidden="true">
+              {t.pos > 0 && <span className="bar-pos" style={{ width: `${(t.pos / opTotal) * 100}%` }} />}
+              {t.neg > 0 && <span className="bar-neg" style={{ width: `${(t.neg / opTotal) * 100}%` }} />}
+              {t.neu > 0 && <span className="bar-neu" style={{ width: `${(t.neu / opTotal) * 100}%` }} />}
+            </div>
+            <p className="sentiment-bar-legend" aria-hidden="true">
+              <span><i className="dot dot-pos" />{pct(t.pos)}% positive</span>
+              <span><i className="dot dot-neg" />{pct(t.neg)}% negative</span>
+              <span><i className="dot dot-neu" />{pct(t.neu)}% neutral</span>
+            </p>
+          </div>
+        )}
       </section>
+
+      <div ref={listTop} />
+
+      {view === "subreddits" ? (
+        <section className="mt-12" aria-label="Subreddits">
+          <h2 className="section-title">Where the mentions live</h2>
+          <div className="table-scroll mt-6">
+            <table className="rank-table sub-ledger">
+              <caption className="sr-only">Mentions per subreddit with sentiment split</caption>
+              <thead>
+                <tr>
+                  <th scope="col">Subreddit</th>
+                  <th scope="col" className="col-mentions">Mentions</th>
+                  <th scope="col">Sentiment</th>
+                  <th scope="col">Newest</th>
+                </tr>
+              </thead>
+              <tbody>
+                {subredditStats.map((s) => {
+                  const total = Math.max(1, s.total);
+                  return (
+                    <tr key={s.subreddit} onClick={() => drillIntoSub(s.subreddit)}>
+                      <td className="col-brand">
+                        <button
+                          type="button"
+                          className="sub-ledger-btn"
+                          onClick={(e) => { e.stopPropagation(); drillIntoSub(s.subreddit); }}
+                        >
+                          r/{s.subreddit}
+                        </button>
+                      </td>
+                      <td className="col-mentions">{num(s.total)}</td>
+                      <td className="col-split">
+                        <span className="mini-bar" aria-hidden="true">
+                          {s.pos > 0 && <span className="mini-bar-pos" style={{ width: `${(s.pos / total) * 100}%` }} />}
+                          {s.neg > 0 && <span className="mini-bar-neg" style={{ width: `${(s.neg / total) * 100}%` }} />}
+                          {s.neu > 0 && <span className="mini-bar-neu" style={{ width: `${(s.neu / total) * 100}%` }} />}
+                        </span>
+                        <span className="mini-bar-nums">
+                          <b className="pos-ink">{num(s.pos)}</b> / <b className="neg-ink">{num(s.neg)}</b> / {num(s.neu)}
+                        </span>
+                      </td>
+                      <td className="col-newest">{s.newest.slice(0, 10)}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      ) : (
+        <section className="mt-12" aria-label="Mentions">
+          <div className="filter-bar">
+            <h2 className="section-title" style={{ marginRight: "auto" }}>What people said</h2>
+            {subreddit !== "all" && (
+              <button type="button" className="filter-clear"
+                      onClick={() => { setSubreddit("all"); setPage(1); }}>
+                r/{subreddit} ✕
+              </button>
+            )}
+            <div className="seg" role="group" aria-label="Sort order">
+              <button type="button" aria-pressed={order === "newest"}
+                      onClick={() => { setOrder("newest"); setPage(1); }}>
+                Newest
+              </button>
+              <button type="button" aria-pressed={order === "oldest"}
+                      onClick={() => { setOrder("oldest"); setPage(1); }}>
+                Oldest
+              </button>
+            </div>
+          </div>
+
+          <div className="mt-8">
+            <MentionList mentions={visible} />
+          </div>
+
+          {pages > 1 && (
+            <nav className="pager mt-10" aria-label="Mention pages">
+              <button type="button" disabled={current === 1} onClick={() => goto(current - 1)}>
+                Previous
+              </button>
+              {pageNums.map((p, i) => (
+                <span key={p} className="pager-slot">
+                  {i > 0 && pageNums[i - 1] !== p - 1 && <span className="pager-gap">…</span>}
+                  <button type="button" aria-current={p === current ? "page" : undefined}
+                          onClick={() => goto(p)}>
+                    {p}
+                  </button>
+                </span>
+              ))}
+              <button type="button" disabled={current === pages} onClick={() => goto(current + 1)}>
+                Next
+              </button>
+            </nav>
+          )}
+        </section>
+      )}
     </>
   );
 }
