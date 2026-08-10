@@ -610,6 +610,9 @@
     overflow: visible;
     max-height: none;
     text-overflow: clip;
+    /* WRAP long unbreakable tokens (pasted URLs), never truncate them — a
+       700px-wide card on a 375px phone was the alternative. */
+    overflow-wrap: anywhere;
   }
   .mention-card[data-sentiment="pos"] .mention-body { border-left-color: var(--loved-fill); }
   .mention-card[data-sentiment="neg"] .mention-body { border-left-color: var(--hated-fill); }
