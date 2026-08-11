@@ -552,6 +552,26 @@
     background: var(--structure); color: var(--snowbelt);
   }
 
+  /* The thin venture bar — MarketSplash's bottom-bar attribution, verbatim.
+     One line, one link, hairline above, nothing else. */
+  .venture-foot {
+    border-top: 1px solid var(--rule);
+    margin-top: var(--section);
+    padding: 14px var(--gutter);
+    text-align: center;
+  }
+  .venture-foot p {
+    margin: 0;
+    font-size: var(--fs-micro);
+    color: var(--sherpa-blue);
+  }
+  .venture-foot a {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-weight: 600;
+    text-decoration: underline; text-underline-offset: 3px;
+  }
+  .empact-mark { width: 11px; height: 10px; display: inline-block; }
+
   /* The brand highlighted inside a quote, in the BRAND'S colour — its primary
      category's --cat washed into paper. Contrast is safe by construction:
      every category hex clears 4.5:1 on Space Black at FULL strength (palette

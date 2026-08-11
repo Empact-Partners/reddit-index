@@ -29,23 +29,45 @@ export async function generateMetadata(
   { params }: { params: Promise<{ slug: string }> },
 ): Promise<Metadata> {
   const { slug } = await params;
-  const reg = await getRegistry();
+  const [reg, snap] = await Promise.all([getRegistry(), getSnapshot()]);
   const hit = reg.bySlug.get(slug);
+
   if (hit?.tier === "category") {
     const c = CATEGORY_BY_SLUG[slug as CategorySlug];
+    const cat = snap.categories.find((x) => x.slug === slug);
+    const n = cat?.scores.length ?? 0;
+    const mentions = cat?.scores.reduce((a, s) => a + s.n, 0) ?? 0;
     return {
-      title: c.name,
-      description: `What Reddit says about ${c.name} software, measured over a stated window and published with its method.`,
+      title: `Most Loved & Hated ${c.name} On Reddit`,
+      description:
+        `${c.name} ranked by what Reddit actually says` +
+        (n > 0
+          ? `: ${n} brands scored from ${mentions.toLocaleString("en-US")} real ` +
+            `mentions. See which ${c.name} tools Reddit loves — ` +
+            `and which it can't stand.`
+          : `. Reddit ❤️ Scores computed from real comments, every one linked to its source.`),
       alternates: { canonical: `/${slug}/` },
     };
   }
-  const snap = await getSnapshot();
+
   const co = snap.companies.get(slug);
+  if (!co) {
+    return { title: "Not found", alternates: { canonical: `/${slug}/` } };
+  }
+  const t = co.sentimentTotals;
+  const primary = co.primaryCategorySlug ? CATEGORY_BY_SLUG[co.primaryCategorySlug] : null;
+  const score = primary
+    ? co.scores.find((s) => s.categorySlug === primary.slug)?.redditLoveScore ?? null
+    : null;
   return {
-    title: co?.name ?? "Not found",
-    description: co
-      ? `Every Reddit mention of ${co.name} we have collected, with its sentiment, its source and a link to the original.`
-      : undefined,
+    title: `${co.name} On Reddit: Reviews, Sentiment & Reddit ❤️ Score`,
+    description:
+      `What Reddit really thinks of ${co.name}: ` +
+      `${co.totalMentions.toLocaleString("en-US")} mentions ` +
+      `(${t.pos.toLocaleString("en-US")} positive, ${t.neg.toLocaleString("en-US")} negative) ` +
+      `across ${co.subredditStats.length} subreddits` +
+      (score !== null ? `. Reddit ❤️ Score: ${score}/100` : "") +
+      `. Every quote linked to its source.`,
     alternates: { canonical: `/${slug}/` },
   };
 }

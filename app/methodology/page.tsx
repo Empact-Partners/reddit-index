@@ -9,9 +9,11 @@ export const dynamic = "force-static";
 export const revalidate = 86400;
 
 export const metadata: Metadata = {
-  title: "Methodology",
+  title: "How The Reddit ❤️ Score Is Measured",
   description:
-    "How the Reddit Love Score is computed, what qualifies a company for a position, and what this index gets wrong.",
+    "The full method behind the Reddit Brand Index: how real Reddit comments " +
+    "become a 0-100 score, which subreddits count, what the index deliberately " +
+    "ignores, and what it gets wrong. Every constant frozen and published.",
   alternates: { canonical: "/methodology/" },
 };
 
