@@ -185,12 +185,16 @@ product names from the draft, values are objects
 Judge every entry. Do not print JSON to the console."""
 
 
-def run_fleet_phase(jobs, label, round_deadline=None):
+def run_fleet_phase(jobs, label, round_deadline=None, job_timeout=600):
     """jobs: list of (job_id, task, out_fp). Disk-idempotent, 3 rounds.
 
     round_deadline scales with fan-out width: a fixed 720s over ~95 deep sol
     jobs would expire mid-run and round 2 would RESUBMIT still-running jobs —
     duplicate submissions are disk-safe but burn quota for nothing.
+
+    job_timeout: deep-roster sol jobs run past the 600s default (the first
+    100-category run lost 54/95 jobs to exactly that), so expand-mode
+    enumeration passes 1500.
     """
     if round_deadline is None:
         round_deadline = max(720, 60 * len(jobs))
@@ -208,18 +212,27 @@ def run_fleet_phase(jobs, label, round_deadline=None):
                 try:
                     model = "gpt-5.6-sol" if label == "enum" else "gpt-5.6-terra"
                     r = fleet.submit(task, server=SERVER, mode="workspace-write",
-                                     model=model, workspace=RUN, timeout=600,
+                                     model=model, workspace=RUN, timeout=job_timeout,
                                      reasoning_effort="medium")
                     journal({"phase": label, "job": jid, "job_id": r["job_id"]})
                     break
                 except Exception:
                     time.sleep(10 * (attempt + 1))
         deadline = time.time() + round_deadline
+        last_done, last_change = -1, time.time()
         while time.time() < deadline:
             left = [1 for _, _, fp in pending if parse_out(fp) is None]
             done = len(jobs) - len([1 for _, _, fp in jobs if parse_out(fp) is None])
             print(f"  {done}/{len(jobs)} {label} done", flush=True)
             if not left:
+                break
+            if done != last_done:
+                last_done, last_change = done, time.time()
+            elif time.time() - last_change > 180 and (fleet_running() or 0) == 0:
+                # every remaining job is dead (timeout/error) — stop idling out
+                # the deadline and let the next round resubmit them now
+                print(f"  {label}: fleet idle, no progress 180s -> next round",
+                      flush=True)
                 break
             time.sleep(25)
 
@@ -280,7 +293,8 @@ def main():
             task = ENUM_PROMPT.format(name=c["category"], out_fp=fp)
         enum_jobs.append((c["slug"], task, fp))
     if args.phase in (0, 1):
-        run_fleet_phase(enum_jobs, "enum")
+        run_fleet_phase(enum_jobs, "enum",
+                        job_timeout=1500 if args.expand else 600)
     if args.phase == 1:
         return 0
 

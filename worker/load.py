@@ -16,24 +16,42 @@ REF = json.load(open(os.path.expanduser("~/.claude/.reddit-index.json")))["proje
 TOKEN = open(os.path.expanduser("~/.claude/.supabase-empact.token")).read().strip()
 
 
-def sql(query, label=""):
-    """Execute raw SQL via the Supabase Management API."""
-    req = urllib.request.Request(
-        f"https://api.supabase.com/v1/projects/{REF}/database/query",
-        data=json.dumps({"query": query}).encode(),
-        headers={"Authorization": f"Bearer {TOKEN}", "Content-Type": "application/json",
-                 "User-Agent": "Mozilla/5.0"},
-        method="POST")
-    try:
-        with urllib.request.urlopen(req, timeout=120) as f:
-            result = json.loads(f.read())
-        if isinstance(result, dict) and "message" in result:
-            print(f"  SQL ERROR ({label}): {result['message'][:200]}")
+def sql(query, label="", tries=8):
+    """Execute raw SQL via the Supabase Management API.
+
+    Retries 429/5xx with backoff: the 6k-brand gazetteer reload throttled at
+    ~batch 30 and every dropped batch was silent data loss (2,440 of 6,040
+    brands landed). A batch that still fails after all tries prints LOUDLY.
+    """
+    for attempt in range(tries):
+        req = urllib.request.Request(
+            f"https://api.supabase.com/v1/projects/{REF}/database/query",
+            data=json.dumps({"query": query}).encode(),
+            headers={"Authorization": f"Bearer {TOKEN}", "Content-Type": "application/json",
+                     "User-Agent": "Mozilla/5.0"},
+            method="POST")
+        try:
+            with urllib.request.urlopen(req, timeout=120) as f:
+                result = json.loads(f.read())
+            if isinstance(result, dict) and "message" in result:
+                print(f"  SQL ERROR ({label}): {result['message'][:200]}")
+                return None
+            return result
+        except urllib.error.HTTPError as e:
+            body = e.read().decode()[:200]
+            if e.code in (429, 500, 502, 503, 504) and attempt < tries - 1:
+                wait = min(60, 3 * 2 ** attempt)
+                print(f"  HTTP {e.code} ({label}) — retry in {wait}s", flush=True)
+                time.sleep(wait)
+                continue
+            print(f"  HTTP {e.code} ({label}) FINAL, batch LOST: {body}", flush=True)
             return None
-        return result
-    except urllib.error.HTTPError as e:
-        print(f"  HTTP {e.code} ({label}): {e.read().decode()[:200]}")
-        return None
+        except Exception as e:
+            if attempt < tries - 1:
+                time.sleep(min(60, 3 * 2 ** attempt))
+                continue
+            print(f"  {label} FINAL error, batch LOST: {str(e)[:200]}", flush=True)
+            return None
 
 
 def esc(s):
