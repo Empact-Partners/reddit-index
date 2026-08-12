@@ -1,5 +1,34 @@
 # Handoff — open items
 
+## 2026-08-12 — methodology 2.0.0: the prior was broken, now fixed + gated
+
+**The v1 prior inverted rankings.** Brand-rate method-of-moments over brands
+with n_op≥30, 200-pseudo-observation fallback with <4 qualifying brands —
+which at this depth was nearly every category. Porkbun (41 pos / 1 neg)
+published 20/100 while GoDaddy (4 pos / 111 neg) published 63/100: each was
+scored as the *other*. Every fitted strength in the table was ~200.
+
+**v2 (live, DB fully re-scored):** pooled LOO mention-rate prior at fixed
+K=10 (`worker/score.py::fit_prior_pooled`), bootstrap holds the prior fixed
+(correct under LOO-by-mention), and `worker/gate_calibration.py` runs inside
+`score_db.py` before load — Spearman(raw, score) ≥ 0.8 per category plus
+quartile containment, self-tested against the real v1 output (`--selftest`).
+Params frozen as version 2.0.0 (append-only; commit 58d7a02a). Also fixed:
+`load.py`'s upsert silently never updated alpha0/beta0/diagnostics/
+methodology_version — it does now.
+
+**Site:** company pages dropped the methodology link, corrections email, and
+Reddit trademark line; homepage description is Vlad's copy verbatim; all
+metas rewritten plain; `app/icon.svg` = Empact six-bar favicon (trade-dress
+allowlisted). `/methodology` discloses the v1→v2 change openly.
+
+**Depth (design only, NOT built):** `docs/depth-plan.md` — why the index is
+shallow (4,188 threads ever ≈ 20/sub; rosters capped ~25; 605/1,742 brands
+at zero mentions), and the budgeted path to 8-15k brands / 1.5-5M mentions:
+~0.6-1M Reddit requests ≈ 7-12 days fetch, ~60k luna jobs ≈ 2-4 weeks
+quota-paced, $0 cash except probable Supabase Pro ($25/mo). Route count
+passes ~5k → company pages must leave force-static (seam flagged there).
+
 ## 2026-08-09 (later) — 100 categories, the daily loop, and the scoring fix
 
 **Scoring correctness fix (visible on every board):** a category now ranks
