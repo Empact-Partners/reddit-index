@@ -232,7 +232,9 @@
     right: var(--gutter);
     top: 50%;
     transform: translateY(-50%);
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
     background: var(--virtual-goal);
     color: var(--space-black);
     font-family: var(--font-syne);
@@ -242,16 +244,22 @@
     text-decoration: none;
     padding: 11px 16px;
     border-radius: 4px;
-    max-width: 200px;
-    text-align: center;
+    max-width: 232px;
+    text-align: left;
   }
   .masthead-cta:hover {
     background: color-mix(in srgb, var(--virtual-goal) 82%, #fff);
   }
+  .cta-cal {
+    flex: none;
+    width: 18px;
+    height: 18px;
+    stroke-width: 2.25;
+  }
   /* The display-size title is wide: the pinned button collides with it well
-     above tablet widths (measured overlap at 1024), so it drops into the flow
-     early. */
-  @media (max-width: 1140px) {
+     above tablet widths (measured overlap at 1024; re-measured after the
+     calendar icon widened the button), so it drops into the flow early. */
+  @media (max-width: 1180px) {
     .masthead-cta {
       position: static;
       transform: none;

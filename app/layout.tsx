@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Calendar } from "lucide-react";
 import { syne, publicSans } from "./fonts";
 import { VentureFooter } from "@/components/site/venture-footer";
 import { IS_PROVISIONAL } from "@/lib/site-stage";
@@ -46,7 +47,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             target="_blank"
             rel="noopener"
           >
-            Want to improve your reputation? Let&apos;s talk
+            <span>Want to improve your reputation? Let&apos;s talk</span>
+            <Calendar className="cta-cal" aria-hidden focusable="false" />
           </a>
         </header>
         <main className="container-site">{children}</main>
