@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { CORRECTIONS_EMAIL } from "@/lib/env";
 import { NON_AFFILIATION } from "@/lib/legal";
 import { getMethodologyParams } from "@/lib/data/methodology";
 import { METHODOLOGY_VERSION } from "@/lib/format";
@@ -11,9 +10,8 @@ export const revalidate = 86400;
 export const metadata: Metadata = {
   title: "How The Reddit ❤️ Score Is Measured",
   description:
-    "The full method behind the Reddit Brand Index: how real Reddit comments " +
-    "become a 0-100 score, which subreddits count, what the index deliberately " +
-    "ignores, and what it gets wrong. Every constant frozen and published.",
+    "How the Reddit ❤️ Score is calculated, what counts as a mention, " +
+    "and what the method gets wrong. Every constant published.",
   alternates: { canonical: "/methodology/" },
 };
 
@@ -38,9 +36,10 @@ export default async function Methodology() {
       <h1 style={{ fontSize: "var(--fs-h1)" }}>Methodology</h1>
       <p className="mt-6" style={{ fontSize: "var(--fs-lead)" }}>
         Version {METHODOLOGY_VERSION}, frozen at commit{" "}
-        <code>{commit.slice(0, 12)}</code> before the first collection run. That
-        order matters: a method chosen after seeing where a named company landed
-        is not a method.
+        <code>{commit.slice(0, 12)}</code>. Version 1 was frozen before the
+        first collection run; version 2 corrects a mis-specified prior in it —
+        the change, the reason, and the numbers that forced it are documented
+        below, because a method quietly edited after the fact is not a method.
       </p>
 
       <Section title="What is measured">
@@ -61,6 +60,8 @@ export default async function Methodology() {
 
       <Section title="The number">
         <Pre>{`N_op = pos + neg
+p₀   = (pooled_pos + 5) / (pooled_op + 10)   over every OTHER company
+α₀   = 10·p₀        β₀ = 10·(1−p₀)
 p̃    = (x_pos + α₀) / (N_op + α₀ + β₀)
 Reddit Love Score = round(100 · p̃)`}</Pre>
         <p>
@@ -70,11 +71,21 @@ Reddit Love Score = round(100 · p̃)`}</Pre>
           opinion is not thereby liked.
         </p>
         <p>
-          α₀ and β₀ shrink each company toward its category&apos;s own base
-          rate, fitted across every <em>other</em> company in that category so
-          the biggest name is not pinned to its own average. The practical
-          effect: a company with six positive mentions does not outrank one with
-          four thousand.
+          The prior shrinks each company toward its category&apos;s pooled
+          positive rate, computed over every <em>other</em> company&apos;s
+          opinionated mentions, at a fixed weight of ten pseudo-observations.
+          Ten, so that a company with forty real opinions is about eighty
+          percent its own data — and a company with three is mostly the
+          category&apos;s base rate until it earns more.
+        </p>
+        <p>
+          Version 1 fitted the prior&apos;s weight from the data and let it
+          reach two hundred pseudo-observations. In a category with exactly two
+          well-covered companies, each was scored as the <em>other</em>: a
+          registrar with 41 positive and 1 negative mention published 20/100
+          while one with 4 positive and 111 negative published 63/100. That is
+          why version 2 exists, and why a calibration gate now refuses any
+          scoring run whose ordering contradicts its own raw counts.
         </p>
         <p>
           Sorting that number descending <em>is</em> the consolidated view. Most
@@ -164,13 +175,8 @@ Reddit Love Score = round(100 · p̃)`}</Pre>
 
       <Section title="Corrections">
         <p>
-          Write to{" "}
-          <a href={`mailto:${CORRECTIONS_EMAIL}`} className="underline underline-offset-4">
-            {CORRECTIONS_EMAIL}
-          </a>
-          . Corrections and removals are free, are never bundled with an offer
-          of any kind, and do not require a call. A comment deleted on Reddit
-          disappears from here on the next nightly sync.
+          A comment deleted on Reddit disappears from here on the next nightly
+          sync. Corrections and removals are free and unconditional.
         </p>
       </Section>
 

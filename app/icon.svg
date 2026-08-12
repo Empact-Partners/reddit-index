@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 638 590">
+  <!-- The Empact Partners logomark: six offset bars, Sherpa Blue. Same trace
+       as components/site/venture-footer.tsx. Served by the App Router as the
+       site favicon. -->
+  <g fill="#02454F">
+    <rect x="319" y="0" width="319" height="98.333"/>
+    <rect x="0" y="98.333" width="319" height="98.333"/>
+    <rect x="319" y="196.667" width="319" height="98.333"/>
+    <rect x="0" y="295" width="319" height="98.333"/>
+    <rect x="319" y="393.333" width="319" height="98.333"/>
+    <rect x="0" y="491.667" width="319" height="98.333"/>
+  </g>
+</svg>

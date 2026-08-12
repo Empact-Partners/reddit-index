@@ -40,12 +40,10 @@ export async function generateMetadata(
     return {
       title: `Most Loved & Hated ${c.name} On Reddit`,
       description:
-        `${c.name} ranked by what Reddit actually says` +
-        (n > 0
-          ? `: ${n} brands scored from ${mentions.toLocaleString("en-US")} real ` +
-            `mentions. See which ${c.name} tools Reddit loves — ` +
-            `and which it can't stand.`
-          : `. Reddit ❤️ Scores computed from real comments, every one linked to its source.`),
+        n > 0
+          ? `The most loved and most hated ${c.name} on Reddit: ` +
+            `${n} brands ranked from ${mentions.toLocaleString("en-US")} real mentions.`
+          : `The most loved and most hated ${c.name} on Reddit, ranked from real mentions.`,
       alternates: { canonical: `/${slug}/` },
     };
   }
@@ -62,12 +60,11 @@ export async function generateMetadata(
   return {
     title: `${co.name} On Reddit: Reviews, Sentiment & Reddit ❤️ Score`,
     description:
-      `What Reddit really thinks of ${co.name}: ` +
-      `${co.totalMentions.toLocaleString("en-US")} mentions ` +
-      `(${t.pos.toLocaleString("en-US")} positive, ${t.neg.toLocaleString("en-US")} negative) ` +
-      `across ${co.subredditStats.length} subreddits` +
-      (score !== null ? `. Reddit ❤️ Score: ${score}/100` : "") +
-      `. Every quote linked to its source.`,
+      `${co.name} on Reddit: ${co.totalMentions.toLocaleString("en-US")} mentions ` +
+      `across ${co.subredditStats.length} subreddits, ` +
+      `${t.pos.toLocaleString("en-US")} positive and ${t.neg.toLocaleString("en-US")} negative` +
+      (score !== null ? `, scored ${score}/100` : "") +
+      `.`,
     alternates: { canonical: `/${slug}/` },
   };
 }

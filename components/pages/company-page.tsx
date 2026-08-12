@@ -3,8 +3,6 @@ import { num } from "@/lib/format";
 import { CompanyDashboard } from "@/components/company/company-dashboard";
 import { Breadcrumbs } from "@/components/site/breadcrumbs";
 import { CATEGORY_BY_SLUG } from "@/lib/generated/categories";
-import { CORRECTIONS_EMAIL } from "@/lib/env";
-import { NON_AFFILIATION } from "@/lib/legal";
 import type { CompanyView } from "@/lib/data/types";
 
 /**
@@ -79,24 +77,6 @@ export function CompanyPage({ company }: { company: CompanyView }) {
         </section>
       )}
 
-      <footer
-        className="mt-[var(--section)] pt-8 pb-12"
-        style={{ borderTop: "1px solid var(--rule)", fontSize: "var(--fs-small)" }}
-      >
-        <p>
-          <Link href="/" className="underline underline-offset-4">Back to the index</Link>
-          {" · "}
-          <Link href="/methodology/" className="underline underline-offset-4">
-            How this is measured
-          </Link>
-          {" · "}
-          Corrections and removals are free and unconditional:{" "}
-          <a href={`mailto:${CORRECTIONS_EMAIL}`} className="underline underline-offset-4">
-            {CORRECTIONS_EMAIL}
-          </a>
-        </p>
-        <p className="mt-3">{NON_AFFILIATION}</p>
-      </footer>
     </div>
   );
 }

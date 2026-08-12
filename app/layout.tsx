@@ -13,10 +13,8 @@ export const metadata: Metadata = {
     default: "Reddit Brand Index: Most Loved & Hated Brands On Reddit",
     template: "%s · Reddit Brand Index",
   },
-  description:
-    "The most loved and most hated software brands, ranked by what Reddit " +
-    "actually says. Real comments, classified one mention at a time into a " +
-    "Reddit ❤️ Score across 100 software categories.",
+  // Vlad's copy, verbatim.
+  description: "An index of the most loved and hated brands on Reddit.",
   // One of three independent noindex layers while the site is provisional; the
   // others are app/robots.ts and the X-Robots-Tag header in next.config.ts.
   // They fail differently, and all three read lib/site-stage.ts.

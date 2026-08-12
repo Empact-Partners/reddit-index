@@ -288,7 +288,7 @@ def load_scores():
                     f"{n('rank_desc')}, {n('rank_asc')}, {bool(s['eligible'])}, "
                     f"{lit(s.get('failed_test'))}, {lit(s.get('failed_observed'))}, "
                     f"{lit(s.get('failed_required'))}, {lit(s['window_start'])}::date, "
-                    f"{lit(s['window_end'])}::date, '1.0.0-provisional')")
+                    f"{lit(s['window_end'])}::date, {lit(s.get('methodology_version', '2.0.0'))})")
             q = ("INSERT INTO brand_category_scores (brand_id, category_id, week_start, pos, neg, "
                  "neu, abstain, n, n_op, n_eff, deff, deff_thread, deff_author, icc_thread, "
                  "icc_author, icc_estimated, alpha0, beta0, reddit_love_score, polarization, "
@@ -312,10 +312,23 @@ def load_scores():
                  "ON CONFLICT (brand_id, category_id, week_start) DO UPDATE SET "
                  "reddit_love_score=EXCLUDED.reddit_love_score, eligible=EXCLUDED.eligible, "
                  "n=EXCLUDED.n, n_op=EXCLUDED.n_op, n_eff=EXCLUDED.n_eff, deff=EXCLUDED.deff, "
+                 "deff_thread=EXCLUDED.deff_thread, deff_author=EXCLUDED.deff_author, "
+                 "icc_thread=EXCLUDED.icc_thread, icc_author=EXCLUDED.icc_author, "
+                 "icc_estimated=EXCLUDED.icc_estimated, "
+                 "alpha0=EXCLUDED.alpha0, beta0=EXCLUDED.beta0, "
                  "pos=EXCLUDED.pos, neg=EXCLUDED.neg, neu=EXCLUDED.neu, abstain=EXCLUDED.abstain, "
+                 "polarization=EXCLUDED.polarization, neutral_share=EXCLUDED.neutral_share, "
+                 "abstain_share=EXCLUDED.abstain_share, "
+                 "n_authors=EXCLUDED.n_authors, n_subreddits=EXCLUDED.n_subreddits, "
+                 "n_threads=EXCLUDED.n_threads, max_thread_share=EXCLUDED.max_thread_share, "
+                 "max_author_share=EXCLUDED.max_author_share, "
+                 "max_subreddit_share=EXCLUDED.max_subreddit_share, "
                  "ci_low=EXCLUDED.ci_low, ci_high=EXCLUDED.ci_high, rank_desc=EXCLUDED.rank_desc, "
+                 "rank_asc=EXCLUDED.rank_asc, "
                  "failed_test=EXCLUDED.failed_test, failed_observed=EXCLUDED.failed_observed, "
-                 "failed_required=EXCLUDED.failed_required;")
+                 "failed_required=EXCLUDED.failed_required, "
+                 "window_start=EXCLUDED.window_start, window_end=EXCLUDED.window_end, "
+                 "methodology_version=EXCLUDED.methodology_version;")
             sql(q, "scores " + fn)
         total += len(rows)
     print(f"  {total} score rows loaded")

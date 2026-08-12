@@ -5,20 +5,38 @@ critical audit of it lives in [methodology-review.md](methodology-review.md);
 the original long-form design record is `07-index-methodology.md` and
 `13-algorithm.md` at the repo root.*
 
-## The score
+## The score (methodology 2.0.0)
 
 ```
 N_op  = pos + neg                      (opinionated mentions only)
+p₀    = (pooled_pos + 5) / (pooled_op + 10)   over every OTHER brand
+α₀    = 10·p₀        β₀ = 10·(1−p₀)
 p̃     = (pos + α₀) / (N_op + α₀ + β₀)
 score = round(100 · p̃)
 ```
 
-α₀/β₀ are an empirical-Bayes Beta prior fitted by method-of-moments over
-every **other** brand's positive rate in the same category (leave-one-out,
-so the dominant brand is not shrunk toward its own average). The practical
-meaning: a brand with a handful of mentions is pulled strongly toward its
-category's base rate, and a 6-mention darling cannot outrank a 4,000-mention
-incumbent by luck.
+The prior is the category's **pooled** positive rate over every *other*
+brand's opinionated mentions (leave-one-out by mention mass), at a **fixed
+strength of 10 pseudo-observations**, lightly smoothed toward 0.5 so a tiny
+pool degrades gracefully. A brand with 40 real opinions is ~80% its own
+data; a brand with 3 is mostly the category's base rate until it earns more.
+A 6-mention darling still cannot outrank a 4,000-mention incumbent by luck.
+
+### Why 2.0.0 exists (2026-08-12)
+
+v1 fitted the prior by method-of-moments over per-brand rates, only counting
+brands with n_op ≥ 30, and fell back to a **200-pseudo-observation** prior
+whenever fewer than 4 brands qualified — which at this corpus depth was
+nearly every category. In domain-registrars exactly two brands qualified, so
+each was scored against *the other's* rate at ~5× its own evidence:
+**Porkbun (41 pos / 1 neg) published 20/100 while GoDaddy (4 pos / 111 neg)
+published 63/100.** Every fitted strength in the shipped table was ~200, so
+every published score was 80-95% prior. v2 replaces the fit with the fixed
+pooled prior above, and `worker/gate_calibration.py` now refuses to load any
+scoring run where, within a category (brands with n_op ≥ 10), the rank
+correlation between raw rate and published score falls below 0.8 or an
+extreme raw rate lands on the opposite end of the board. The gate is
+self-tested against the real v1 output: it raises three violations on it.
 
 ## What counts
 
