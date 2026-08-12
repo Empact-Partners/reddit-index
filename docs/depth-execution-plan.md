@@ -26,18 +26,24 @@ it, stage by stage, with a report at every stage gate.*
   `worker/gate_calibration.py`). Daily loop: Railway cron 04:00 UTC fetch
   (`worker/daily.py`) + Mac launchd 03:30 classify/score/publish
   (`worker/daily_mac.sh`), classifier capped at 30k/night
-  (`CLASSIFY_DAILY_CAP`).
+  (`CLASSIFY_DAILY_CAP` — a safety cap on the UNSUPERVISED nightly job
+  only, never a schedule; supervised burns run until the backlog is empty).
 - A 90-day-scoped sweep engine can reuse `worker/sweep.py` (built, pilot-
   validated: listings + trees + per-sub disk state + resumability). It is
   currently ALL-TIME; Stage 3 retargets it.
+- **No deadlines, no pacing (Vlad's explicit instruction).** Every stage
+  runs continuously until it is DONE. Do not throttle a stage to fit a time
+  budget, do not defer work to "later windows", do not estimate-and-stop.
+  The only limits are the platforms' own standard ones.
 - Hard rules: **zero external API credits** (all LLM = Codex fleet on the
-  ChatGPT sub; Reddit = plain app-only OAuth within rate limits) · fleet
-  jobs go through the disk-idempotent pattern (out-files + journal, rounds
-  recomputed from disk) · fleet job timeout for deep jobs = **1500s** (54/95
-  died at the 600s default once) · Management-API SQL retries 429/5xx
-  (already in `worker/load.py::sql`) · classification batches of 25 on
-  `gpt-5.6-luna`, enumeration/judgment on `gpt-5.6-terra` · never raise
-  `REDDIT_QPM_CAP`-style limits; ~80 req/min sustained.
+  ChatGPT sub; Reddit = plain app-only OAuth) · **standard Reddit API
+  limits** — honor the rate-limit headers (~100 QPM for app-only OAuth),
+  never exceed them, and do not artificially sit far below them either ·
+  fleet jobs go through the disk-idempotent pattern (out-files + journal,
+  rounds recomputed from disk) · fleet job timeout for deep jobs =
+  **1500s** (54/95 died at the 600s default once) · Management-API SQL
+  retries 429/5xx (already in `worker/load.py::sql`) · classification
+  batches of 25 on `gpt-5.6-luna`, enumeration/judgment on `gpt-5.6-terra`.
 
 **Why the current sub list is thin (measured, not guessed):** the one-shot
 discovery generated ~34 candidates/category from one angle, then a top-8
@@ -122,15 +128,14 @@ Freeze the rule change: append methodology params `2.0.1` —
 `scoring_subreddit_selection: all_qualifying` (was top-8-by-worth) with the
 dated rationale, via `worker/freeze_methodology.py` (append-only).
 
-Budget: ~6-12k subs × 3-4 requests ≈ 20-45k Reddit requests ≈ **5-10h**;
-fleet ~100 terra enum + ~600-1,000 luna/terra judgment batches ≈ hours,
-overlapping the fetch.
+Scale: ~6-12k unique subs to qualify; fleet ~100 terra enumeration jobs +
+~600-1,000 judgment batches. Runs until done.
 
 **Gate 2 (report):** final scoring-sub counts per category (expect 20-50
 mainstream, 10-20 niche), the 38 starved categories' before/after, posture-
 rescue count, and the per-category sub lists for Vlad to eyeball. **Vlad
 approves before Stage 3 fetch starts** — this is the one human checkpoint,
-because Stage 3 spends days of fetch on this list.
+because Stage 3 spends the entire fetch on this list.
 
 ---
 
@@ -158,7 +163,7 @@ once and credited to all. After each category's subs finish:
 2. `worker/score_db.py` (calibration gate runs inside),
 3. publish (deploy hook / empty-commit push).
 So categories come online WHOLE, visibly deeper, one after another —
-not everything half-done for a week.
+never everything half-done at once.
 
 State/ops: per-sub disk state (existing), `--status` table extended to
 per-CATEGORY progress (subs done / threads / mentions / classified /
@@ -166,12 +171,13 @@ scored). Run under `nohup caffeinate -is`, kill-safe any time. The daily
 loop keeps running unchanged alongside (shared rate budget tolerated;
 Reddit 429s just slow both).
 
-Budget: listings ~2-4k unique subs ≈ 25-50k requests; trees est. 150-500k
-qualifying threads ≈ 150-500k requests → **3-7 days of unattended fetch**
-at ~80 req/min. Classification: est. 0.5-1.5M 90-day mentions ≈ 20-60k
-luna jobs — nightly 30k-mention capped runs + supervised daytime burns ≈
-**1-3 weeks**, front-loaded so the first categories publish within days.
-Cash: $0; watch Supabase storage/egress (Pro $25/mo likely at ~1M+ rows).
+Scale (scope, not schedule): listings over ~2-4k unique subs; trees for
+every qualifying 90-day thread (est. 150-500k); classification of every
+resulting mention (est. 0.5-1.5M ≈ 20-60k luna jobs). **It all runs at
+standard API rates, continuously, until done — however long that is.**
+Classification burns run supervised back-to-back until the backlog is
+empty; the nightly cap only bounds the unattended 03:30 job. Cash: $0;
+watch Supabase storage/egress (Pro $25/mo likely at ~1M+ rows).
 
 **Gate 3 (rolling report):** after each batch of ~10 categories, the
 per-category table + spot-check links.
