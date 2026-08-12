@@ -1,5 +1,6 @@
 import "server-only";
 import postgres from "postgres";
+import { METHODOLOGY_VERSION } from "@/lib/format";
 
 export type MethodologyParam = {
   version: string;
@@ -20,9 +21,12 @@ export async function getMethodologyParams(): Promise<MethodologyParam[]> {
   if (!url) return [];
   const sql = postgres(url, { prepare: false, max: 4, ssl: "require", onnotice: () => {} });
   try {
+    // The table is append-only across versions; the page renders exactly the
+    // set the running code uses.
     const rows = await sql`
       select version, scope, key, value, rationale, git_commit
       from published.methodology_params
+      where version = ${METHODOLOGY_VERSION}
       order by scope, key`;
     return rows.map((r) => ({
       version: String(r.version),

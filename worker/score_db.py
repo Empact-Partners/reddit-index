@@ -17,6 +17,7 @@ sys.path.insert(0, HERE)
 
 import db  # noqa: E402
 from score import score_category, load_categories  # noqa: E402
+from gate_calibration import check_rows  # noqa: E402
 
 INDEX = os.path.join(HERE, ".cache", "index")
 os.makedirs(INDEX, exist_ok=True)
@@ -39,6 +40,7 @@ def main():
     window_start = window_end - datetime.timedelta(days=365)
 
     total = 0
+    all_rows = []
     for slug in cats:
         with conn.cursor() as cur:
             cur.execute("""
@@ -72,9 +74,20 @@ def main():
                   open(fp + ".tmp", "w"))
         os.replace(fp + ".tmp", fp)
         total += len(rows_out)
+        all_rows.extend(rows_out)
         if rows_out:
             print(f"  {slug:24} {len(ms):>6} mentions -> {len(rows_out):>3} brands", flush=True)
     conn.close()
+
+    # The calibration gate: a run whose ordering contradicts its own raw data
+    # never reaches the database.
+    violations = check_rows(all_rows)
+    if violations:
+        print(f"\nCALIBRATION GATE FAILED — {len(violations)} violations, not loading:",
+              flush=True)
+        for v in violations:
+            print("  " + v, flush=True)
+        return 1
 
     print(f"\n{total} score rows across {len(cats)} categories; loading…", flush=True)
     subprocess.run([sys.executable, os.path.join(HERE, "load.py"), "--scores"], check=True)

@@ -23,9 +23,16 @@ REPO = os.path.dirname(HERE)
 # These match what freeze_methodology.py wrote to methodology_params.
 
 LABEL = {"neu": 0, "pos": 1, "neg": 2, "abstain": 3}
-PRIOR_MIN_N_OP = 30
-PRIOR_M_FALLBACK = 200
-PRIOR_M_CLIP = (20, 2000)
+# v2 prior (methodology 2.0.0): shrink toward the category's pooled opinionated
+# positive rate, leave-one-out by MENTION mass, at a fixed small strength. v1's
+# brand-rate method-of-moments fit collapsed to a 200-pseudo-observation prior
+# whenever fewer than 4 brands cleared n_op>=30 — in a 2-big-brand category each
+# brand was scored against the OTHER brand's rate at 5x its own evidence, which
+# is how Porkbun (41 pos / 1 neg) published 20 while GoDaddy (4 pos / 111 neg)
+# published 63.
+PRIOR_K = 10            # pseudo-observations the prior contributes, total
+PRIOR_P0_SMOOTH = 10    # Beta(5,5)-style smoothing inside p0 itself
+PRIOR_POOL_MIN = 30     # below this LOO pool, the row is flagged prior_fallback
 BOOTSTRAP_B = 1999
 CI_LEVEL = 0.90
 ICC_FLOOR = 0.10
@@ -51,27 +58,26 @@ def load_categories():
 
 # ── the leave-one-out prior ─────────────────────────────────────────────────
 
-def fit_prior_loo(brand_rates, exclude_slug):
-    """Method of moments Beta fit over every other brand's positive rate.
+def fit_prior_pooled(brand_counts, exclude_slug):
+    """The v2 prior: the category's pooled positive rate, excluding the brand.
 
-    07-index-methodology.md §1: the brand is excluded from the prior it is
-    scored against, so the dominant brand is not pinned to its own mean.
+    p0   = (pooled_pos + S/2) / (pooled_op + S)   with S = PRIOR_P0_SMOOTH,
+    prior = Beta(K*p0, K*(1-p0))                   with K = PRIOR_K.
+
+    Leave-one-out is by mention mass, not by brand: every other brand's
+    opinionated mentions vote in proportion to how many there are, so a
+    category with one big brand and ten small ones gets a prior all eleven
+    actually support. K is fixed and small — 10 pseudo-observations — so a
+    brand with 40 real opinions is ~80% its own data, never 17%.
+
+    brand_counts: [(slug, pos, n_op)] over every brand in the category.
+    Returns (alpha0, beta0, fallback) — fallback marks a LOO pool under
+    PRIOR_POOL_MIN, where p0 leans mostly on the 0.5-centered smoothing.
     """
-    rates = [r for slug, r in brand_rates if slug != exclude_slug and r is not None]
-    if len(rates) < 4:
-        mu = np.mean(rates) if rates else 0.5
-        return PRIOR_M_FALLBACK * mu, PRIOR_M_FALLBACK * (1 - mu), True
-
-    mu = np.mean(rates)
-    s2 = np.var(rates, ddof=1)
-
-    if s2 <= 0 or mu <= 0 or mu >= 1:
-        return PRIOR_M_FALLBACK * mu, PRIOR_M_FALLBACK * (1 - mu), True
-
-    m_hat = mu * (1 - mu) / s2 - 1
-    m_hat = max(PRIOR_M_CLIP[0], min(PRIOR_M_CLIP[1], m_hat))
-
-    return m_hat * mu, m_hat * (1 - mu), False
+    op = sum(p for slug, p, n in brand_counts if slug != exclude_slug)
+    on = sum(n for slug, p, n in brand_counts if slug != exclude_slug)
+    p0 = (op + PRIOR_P0_SMOOTH / 2) / (on + PRIOR_P0_SMOOTH)
+    return PRIOR_K * p0, PRIOR_K * (1 - p0), on < PRIOR_POOL_MIN
 
 
 # ── ICC and DEFF ────────────────────────────────────────────────────────────
@@ -123,11 +129,12 @@ def compute_deff(n_sizes, icc):
 
 # ── cluster bootstrap ──────────────────────────────────────────────────────
 
-def bootstrap_ci(y, cluster_ids, brand_rates, brand_slug, B=BOOTSTRAP_B, level=CI_LEVEL):
-    """Resample whole clusters and refit the prior inside each replicate.
+def bootstrap_ci(y, cluster_ids, alpha0, beta0, B=BOOTSTRAP_B, level=CI_LEVEL):
+    """Resample whole clusters; the prior is held fixed.
 
-    07 §2 criticises holding the prior fixed — it understates the spread, the
-    same way Wilson understates it by conditioning on n.
+    Under the v2 pooled prior that is correct, not a shortcut: the prior is
+    computed from every OTHER brand's mentions, and resampling this brand's
+    threads does not move it.
     """
     clusters = defaultdict(list)
     for yi, ci in zip(y, cluster_ids):
@@ -148,12 +155,7 @@ def bootstrap_ci(y, cluster_ids, brand_rates, brand_slug, B=BOOTSTRAP_B, level=C
         if n_op < 2:
             scores[b] = 0.5
             continue
-
-        # Refit the prior on the resampled data
-        rate_star = x_pos / n_op
-        other_rates = [(s, r) for s, r in brand_rates if s != brand_slug]
-        alpha, beta, _ = fit_prior_loo(other_rates + [(brand_slug, rate_star)], brand_slug)
-        scores[b] = (x_pos + alpha) / (n_op + alpha + beta)
+        scores[b] = (x_pos + alpha0) / (n_op + alpha0 + beta0)
 
     alpha_half = (1 - level) / 2
     lo = np.percentile(scores, alpha_half * 100)
@@ -175,14 +177,13 @@ def score_category(cat_slug, mentions, categories):
     for m in mentions:
         by_brand[m["brand_slug"]].append(m)
 
-    # Per-brand positive rates for the prior fit
-    brand_rates = []
+    # Per-brand opinionated counts for the pooled prior — every brand votes
+    # with its mention mass, no minimum.
+    brand_counts = []
     for slug, ms in by_brand.items():
-        op = [m for m in ms if m.get("label") in ("pos", "neg")]
-        if len(op) >= PRIOR_MIN_N_OP:
-            brand_rates.append((slug, sum(1 for m in op if m["label"] == "pos") / len(op)))
-        else:
-            brand_rates.append((slug, None))
+        p = sum(1 for m in ms if m.get("label") == "pos")
+        g = sum(1 for m in ms if m.get("label") == "neg")
+        brand_counts.append((slug, p, p + g))
 
     now = time.strftime("%Y-%m-%d")
     window_start = f"{int(now[:4]) - 1}{now[4:]}"  # trailing 12 months
@@ -257,7 +258,7 @@ def score_category(cat_slug, mentions, categories):
             failed_required = f"{DIVERSITY_FLOORS['author_share']:.0%}"
 
         # The score
-        alpha0, beta0, prior_fallback = fit_prior_loo(brand_rates, slug)
+        alpha0, beta0, prior_fallback = fit_prior_pooled(brand_counts, slug)
         if n_op > 0:
             p_tilde = (pos + alpha0) / (n_op + alpha0 + beta0)
             score = round(100 * p_tilde)
@@ -270,7 +271,7 @@ def score_category(cat_slug, mentions, categories):
         # Bootstrap CI
         ci_low, ci_high = None, None
         if eligible and n_op >= 10 and opinionated:
-            ci_low, ci_high = bootstrap_ci(opinionated, thread_ids, brand_rates, slug)
+            ci_low, ci_high = bootstrap_ci(opinionated, thread_ids, alpha0, beta0)
 
         results.append({
             "brand_slug": slug,
@@ -295,7 +296,7 @@ def score_category(cat_slug, mentions, categories):
             "failed_required": failed_required,
             "window_start": window_start,
             "window_end": now,
-            "methodology_version": "1.0.0-provisional",
+            "methodology_version": "2.0.0",
         })
 
     # Rank by score descending

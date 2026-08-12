@@ -23,7 +23,16 @@ with a dated changelog entry, never an edit.
 import json, os, subprocess, sys, urllib.request, datetime
 
 REF = "nrsyqcttpijxhwtdtoct"
-VERSION = "1.0.0-provisional"
+# 2.0.0 (2026-08-12): the v1 prior was mis-specified — brand-rate method of
+# moments over brands with n_op>=30, falling back to a 200-pseudo-observation
+# prior whenever fewer than 4 brands qualified. In a category with exactly two
+# big brands each was scored against the OTHER's rate at ~5x its own evidence
+# (Porkbun 41 pos/1 neg published 20; GoDaddy 4 pos/111 neg published 63).
+# v2 shrinks toward the category's pooled LOO mention rate at fixed strength
+# K=10, and a calibration gate refuses to load any run whose ordering
+# contradicts its own raw data. Params below are the complete v2 set;
+# the 1.0.0-provisional rows remain in the table untouched (append-only).
+VERSION = "2.0.0"
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.dirname(HERE)
@@ -43,19 +52,27 @@ PARAMS = [
     ("estimator", "global", "empirical_bayes_beta_binomial",
      "p_tilde = (x_pos + alpha0) / (N_op + alpha0 + beta0); Reddit Love Score = round(100 * p_tilde). "
      "One published number, 0-100 (decisions/0006)."),
-    ("prior_fit", "global", "method_of_moments_leave_one_out",
-     "alpha0 and beta0 are fitted per category across every OTHER brand in it, so the dominant "
-     "brand is not pinned to its own mean (07 §1)."),
-    ("prior_min_n_op", "global", 30,
-     "A brand contributes to the prior only above this many opinionated mentions. Below it a rate "
-     "is noise and destabilises the moment estimate. Never stated in the spec."),
-    ("prior_m_fallback", "global", 200,
-     "Prior strength used when the moment estimate is degenerate (variance <= 0, or fewer than 4 "
-     "contributing brands). A fallback that fires silently is the hidden knob 07 §6 warns about, "
-     "so it is named, published, and flagged per row when it fires."),
-    ("prior_m_clip", "global", [20, 2000],
-     "Bounds on the fitted prior strength. Method-of-moments on a handful of brands can return an "
-     "absurd value in either direction."),
+    ("prior_fit", "global", "pooled_loo_mention_rate_fixed_k",
+     "p0 = (pooled_pos + 5) / (pooled_op + 10) over every OTHER brand's opinionated mentions in "
+     "the category; alpha0 = K*p0, beta0 = K*(1-p0). Replaces v1's brand-rate method-of-moments "
+     "fit, which collapsed to a 200-pseudo-observation prior whenever fewer than 4 brands had "
+     "n_op>=30 and scored two-big-brand categories as each other (the Porkbun/GoDaddy swap)."),
+    ("prior_k", "global", 10,
+     "Total pseudo-observations the prior contributes, fixed. A brand with 40 real opinions is "
+     "~80% its own data; under v1's fitted strengths (~200) it was ~17%."),
+    ("prior_p0_smooth", "global", 10,
+     "Beta(5,5) smoothing inside p0 itself, so an empty or tiny leave-one-out pool degrades "
+     "gracefully toward 0.5 instead of an extreme anchor."),
+    ("prior_pool_min", "global", 30,
+     "Below this many LOO pooled opinionated mentions the row is flagged prior_fallback: p0 is "
+     "mostly the smoothing, not the category."),
+    ("calibration_gate", "global",
+     {"min_n_op": 10, "min_brands": 4, "spearman_min": 0.8,
+      "quartile_raw_hi": 0.75, "quartile_raw_lo": 0.25},
+     "A scoring run is refused before load if, within any category over brands with n_op>=10, "
+     "Spearman(raw rate, score) < 0.8, or a brand with raw rate >=0.75 lands in the bottom score "
+     "quartile (or <=0.25 in the top). Mechanized from the failure a reader caught that the "
+     "pipeline did not (worker/gate_calibration.py, self-tested against the v1 output)."),
 
     # ── the eligibility gate ────────────────────────────────────────────────
     ("n_eff_numerator", "global", "n_op",
@@ -92,10 +109,10 @@ PARAMS = [
      "Threads and authors are crossed rather than nested, so a single joint resample is not well "
      "defined. Resample each design separately and carry the wider interval, consistent with the "
      "max(DEFF) rule."),
-    ("bootstrap_refit_prior", "global", True,
-     "The prior is refitted inside every replicate. Holding it fixed produces an interval "
-     "CONDITIONAL on the fitted prior and understates the spread — the same criticism 07 §2 levels "
-     "at Wilson."),
+    ("bootstrap_refit_prior", "global", False,
+     "v2: the prior is held fixed inside replicates, and that is correct rather than a shortcut — "
+     "it is computed from every OTHER brand's mentions, and resampling this brand's threads does "
+     "not move it. v1 refitted per replicate because its prior depended on the brand's own rate."),
     ("tie_rule", "global", "overlapping_90pc_intervals",
      "Ranks whose intervals overlap are declared tied and rendered as ties. Decided on the "
      "unrounded score, never the displayed integer."),
@@ -135,11 +152,11 @@ PARAMS = [
     ("doc_type_encoding", "global", {"comment": 1, "post_body": 2},
      "A brand named in a post body and a brand named in a comment are counted identically and both "
      "displayed. doc_type selects the card label and the permalink target, never the weight."),
-    ("sentiment_engine", "global", "claude_cli_max_plan_local",
+    ("sentiment_engine", "global", "codex_fleet_local_subscription",
      "06 §3's eight-stage cascade exists to avoid a per-million API bill and depends on a "
-     "1,000-1,500 item gold set that does not exist. Classification runs locally through the "
-     "Claude Max subscription instead of any metered API, which removes both the cost argument and "
-     "an ML-training dependency from the critical path."),
+     "1,000-1,500 item gold set that does not exist. Classification runs on the local Codex "
+     "fleet (subscription compute, batched, disk-idempotent) instead of any metered API, which "
+     "removes both the cost argument and an ML-training dependency from the critical path."),
     ("sentiment_model_version", "global", "claude-cli-absa-1",
      "mention_sentiment.model_version. Re-scoring under a new version APPENDS a row, never "
      "overwrites — the primary key carries the version for that reason."),
