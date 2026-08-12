@@ -307,7 +307,7 @@ def discover_candidates(cat_name, brands, seeds, cap=34):
     return ranked
 
 
-SCORING_CAP = 8  # 13-algorithm.md caps a category at 8 scoring subreddits
+SCORING_CAP = 12  # was 8 (13-algorithm.md); raised for depth 2026-08-12 — see docs/depth-plan.md P1b
 
 
 def main():

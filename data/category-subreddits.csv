@@ -12,10 +12,10 @@ CRM,crm,EntrepreneurRideAlong,ok,717227,permissive,shipped,False,True,False,9.96
 CRM,crm,SaaS,ok,771500,hostile,shipped,False,False,False,78.73,0.0,0.0,49,2026-08-04T17:55:55Z,shipped,20260809T230716Z,0.0,1.0,0.0
 CRM,crm,msp,ok,245261,capped,shipped,False,True,True,5.27,0.0,0.0,25,2026-08-04T18:06:20Z,shipped,20260809T230716Z,0.0,0.5,0.0
 CRM,crm,consulting,ok,378485,permissive,shipped,False,True,True,5.46,0.01,0.0546,20,2026-08-05T17:42:53Z,shipped,20260809T230716Z,0.0,0.5,0.0273
-CRM,crm,startups,ok,2107067,capped,shipped,False,True,False,16.76,0.0,0.0,31,2026-08-05T17:43:02Z,shipped,20260809T230716Z,0.0,1.0,0.0
-CRM,crm,agency,ok,96594,permissive,shipped,False,True,False,4.38,0.0,0.0,47,2026-08-05T17:43:09Z,shipped,20260809T230716Z,0.0,0.5,0.0
-CRM,crm,RealEstateTechnology,ok,55112,permissive,shipped,False,True,False,3.54,0.0,0.0,39,2026-08-05T17:43:16Z,shipped,20260809T230716Z,0.0,1.0,0.0
-CRM,crm,InsuranceAgent,ok,46157,permissive,shipped,False,True,False,7.76,0.0,0.0,34,2026-08-05T17:43:22Z,shipped,20260809T230716Z,0.01,1.0,0.0
+CRM,crm,startups,ok,2107067,capped,shipped,False,True,True,16.76,0.0,0.0,31,2026-08-05T17:43:02Z,shipped,20260809T230716Z,0.0,1.0,0.0
+CRM,crm,agency,ok,96594,permissive,shipped,False,True,True,4.38,0.0,0.0,47,2026-08-05T17:43:09Z,shipped,20260809T230716Z,0.0,0.5,0.0
+CRM,crm,RealEstateTechnology,ok,55112,permissive,shipped,False,True,True,3.54,0.0,0.0,39,2026-08-05T17:43:16Z,shipped,20260809T230716Z,0.0,1.0,0.0
+CRM,crm,InsuranceAgent,ok,46157,permissive,shipped,False,True,True,7.76,0.0,0.0,34,2026-08-05T17:43:22Z,shipped,20260809T230716Z,0.01,1.0,0.0
 CRM,crm,smallbusinessuk,ok,76899,permissive,shipped,False,True,False,4.34,0.0,0.0,21,2026-08-05T17:43:29Z,shipped,20260809T230716Z,0.0,0.5,0.0
 CRM,crm,B2BSaaS,ok,26948,permissive,shipped,False,True,False,0.86,0.0,0.0,17,2026-08-05T17:43:36Z,shipped,20260809T230716Z,0.0,1.0,0.0
 CRM,crm,salesdevelopment,ok,22201,permissive,shipped,False,True,True,2.09,0.01,0.0209,29,2026-08-05T17:43:46Z,shipped,20260809T230716Z,0.01,1.0,0.0209
@@ -49,8 +49,8 @@ Project Management,project-management,consulting,ok,378485,permissive,shipped,Fa
 Project Management,project-management,agency,ok,96594,permissive,shipped,False,True,True,4.38,0.02,0.0876,47,2026-08-05T17:43:09Z,shipped,20260809T230716Z,0.0,0.5,0.0438
 Project Management,project-management,cscareerquestions,ok,2374167,permissive,shipped,False,True,True,64.4,0.0,0.0,29,2026-08-04T18:09:56Z,shipped,20260809T230716Z,0.0,0.5,0.0
 Project Management,project-management,ITManagers,ok,77193,permissive,shipped,False,True,True,6.51,0.01,0.0651,12,2026-08-04T18:02:16Z,shipped,20260809T230716Z,0.0,0.5,0.03255
-Project Management,project-management,sysadmin,ok,1307123,permissive,shipped,False,True,False,111.96,0.0,0.0,24,2026-08-04T18:02:01Z,shipped,20260809T230716Z,0.0,1.0,0.0
-Project Management,project-management,msp,ok,245261,capped,shipped,False,True,False,5.27,0.0,0.0,25,2026-08-04T18:06:20Z,shipped,20260809T230716Z,0.0,0.5,0.0
+Project Management,project-management,sysadmin,ok,1307123,permissive,shipped,False,True,True,111.96,0.0,0.0,24,2026-08-04T18:02:01Z,shipped,20260809T230716Z,0.0,1.0,0.0
+Project Management,project-management,msp,ok,245261,capped,shipped,False,True,True,5.27,0.0,0.0,25,2026-08-04T18:06:20Z,shipped,20260809T230716Z,0.0,0.5,0.0
 Project Management,project-management,AskReddit,ok,59332757,hostile,rules,True,False,False,5616.43,0.0,0.0,57,2026-08-05T20:31:38Z,measured,20260809T230716Z,0.0,0.0,0.0
 Project Management,project-management,todayilearned,ok,41573230,permissive,rules,False,True,False,353.92,0.0,0.0,21,2026-08-05T20:31:42Z,measured,20260809T230716Z,0.0,0.0,0.0
 Project Management,project-management,Showerthoughts,ok,34176852,permissive,rules,False,True,False,26.77,0.0,0.0,35,2026-08-05T20:31:45Z,measured,20260809T230716Z,0.0,0.0,0.0
@@ -61,7 +61,7 @@ Project Management,project-management,mildlyinfuriating,ok,12391722,hostile,rule
 Project Management,project-management,stocks,ok,9338222,permissive,rules,False,True,False,325.82,0.0,0.0,13,2026-08-05T20:30:55Z,measured,20260809T230716Z,0.01,0.0,0.0
 Project Management,project-management,politics,ok,9230904,permissive,rules,False,True,False,1200.88,0.0,0.0,48,2026-08-05T20:32:07Z,measured,20260809T230716Z,0.0,0.0,0.0
 Project Management,project-management,Minecraft,ok,8732564,permissive,rules,False,True,False,191.2,0.0,0.0,55,2026-08-05T20:32:11Z,measured,20260809T230716Z,0.0,0.0,0.0
-Project Management,project-management,programming,ok,6908004,permissive,rules,False,True,False,14.8,0.0,0.0,27,2026-08-05T20:32:15Z,measured,20260809T230716Z,0.0,1.0,0.0
+Project Management,project-management,programming,ok,6908004,permissive,rules,False,True,True,14.8,0.0,0.0,27,2026-08-05T20:32:15Z,measured,20260809T230716Z,0.0,1.0,0.0
 Project Management,project-management,unpopularopinion,ok,4963058,permissive,rules,False,True,False,776.52,0.0,0.0,16,2026-08-05T20:32:19Z,measured,20260809T230716Z,0.0,0.0,0.0
 Project Management,project-management,ProgrammerHumor,ok,4744181,permissive,rules,False,True,False,77.21,0.0,0.0,20,2026-08-05T20:32:23Z,measured,20260809T230716Z,0.0,0.0,0.0
 Project Management,project-management,yoga,ok,3358688,permissive,rules,False,True,False,42.94,0.0,0.0,3,2026-08-05T20:32:27Z,measured,20260809T230716Z,0.02,0.0,0.0
@@ -234,7 +234,7 @@ Password Managers and Security,password-managers,fantasyfootball,ok,3418715,perm
 Password Managers and Security,password-managers,Android,ok,3179436,hostile,rules,True,False,False,50.4,0.0,0.0,21,2026-08-05T20:38:29Z,measured,20260809T230716Z,0.0,0.5,0.0
 Password Managers and Security,password-managers,assholedesign,ok,3122950,permissive,rules,False,True,False,11.79,0.0,0.0,11,2026-08-05T20:32:31Z,measured,20260809T230716Z,0.0,0.0,0.0
 Password Managers and Security,password-managers,mac,ok,3046481,hostile,rules,False,False,False,48.7,0.0,0.0,30,2026-08-05T20:33:45Z,measured,20260809T230716Z,0.0,0.5,0.0
-Password Managers and Security,password-managers,hacking,ok,2981920,permissive,rules,False,True,False,2.29,0.0,0.0,36,2026-08-05T20:38:33Z,measured,20260809T230716Z,0.0,1.0,0.0
+Password Managers and Security,password-managers,hacking,ok,2981920,permissive,rules,False,True,True,2.29,0.0,0.0,36,2026-08-05T20:38:33Z,measured,20260809T230716Z,0.0,1.0,0.0
 Password Managers and Security,password-managers,CharacterAI,ok,2624572,hostile,rules,True,False,False,118.03,0.0,0.0,16,2026-08-05T20:38:37Z,measured,20260809T230716Z,0.0,0.0,0.0
 Password Managers and Security,password-managers,conspiracy,ok,2408472,permissive,rules,False,True,False,442.86,0.0,0.0,33,2026-08-05T20:36:19Z,measured,20260809T230716Z,0.0,0.0,0.0
 Note-taking and Knowledge Management,note-taking,NoteTaking,ok,63330,hostile,shipped,False,False,False,1.58,0.04,0.0632,28,2026-08-04T18:02:25Z,shipped,20260809T230716Z,0.17,1.0,0.0632
@@ -392,12 +392,12 @@ ERP,erp,PeopleFuckingDying,ok,3325054,permissive,rules,False,True,False,4.66,0.0
 ERP,erp,smallbusiness,ok,2515817,hostile,shipped,False,False,False,65.93,0.0,0.0,54,2026-08-04T17:55:28Z,shipped,20260809T230716Z,0.01,0.5,0.0
 ERP,erp,singapore,ok,1810683,permissive,rules,False,True,False,23.42,0.0,0.0,27,2026-08-05T20:35:51Z,measured,20260809T230716Z,0.0,0.0,0.0
 ERP,erp,developersIndia,ok,1579180,permissive,shipped,False,True,True,89.12,0.0,0.0,38,2026-08-05T18:52:36Z,shipped,20260809T230716Z,0.01,0.5,0.0
-ERP,erp,Python,ok,1502437,permissive,rules,False,True,False,12.12,0.0,0.0,15,2026-08-05T20:45:02Z,measured,20260809T230716Z,0.0,0.5,0.0
+ERP,erp,Python,ok,1502437,permissive,rules,False,True,True,12.12,0.0,0.0,15,2026-08-05T20:45:02Z,measured,20260809T230716Z,0.0,0.5,0.0
 ERP,erp,EASportsFC,ok,1371525,permissive,rules,False,True,False,60.48,0.0,0.0,28,2026-08-05T20:45:06Z,measured,20260809T230716Z,0.0,0.0,0.0
 ERP,erp,tf2,ok,958635,hostile,rules,False,False,False,68.25,0.0,0.0,49,2026-08-05T20:44:26Z,measured,20260809T230716Z,0.0,0.0,0.0
 ERP,erp,excel,ok,890352,permissive,rules,True,False,False,16.32,0.0,0.0,29,2026-08-05T20:44:34Z,measured,20260809T230716Z,0.0,0.5,0.0
 ERP,erp,mbti,ok,605450,permissive,rules,False,True,False,26.41,0.0,0.0,30,2026-08-05T20:45:10Z,measured,20260809T230716Z,0.0,0.0,0.0
-ERP,erp,sales,ok,594328,permissive,shipped,False,True,False,29.84,0.0,0.0,32,2026-08-04T17:54:39Z,shipped,20260809T230716Z,0.0,0.5,0.0
+ERP,erp,sales,ok,594328,permissive,shipped,False,True,True,29.84,0.0,0.0,32,2026-08-04T17:54:39Z,shipped,20260809T230716Z,0.0,0.5,0.0
 ERP,erp,starcitizen,ok,523496,permissive,rules,False,True,False,589.51,0.0,0.0,23,2026-08-05T20:45:14Z,measured,20260809T230716Z,0.02,0.0,0.0
 ERP,erp,Unity3D,ok,472605,hostile,rules,True,False,False,26.44,0.0,0.0,36,2026-08-05T20:37:27Z,measured,20260809T230716Z,0.0,0.5,0.0
 ERP,erp,southafrica,ok,407592,permissive,rules,False,True,False,12.7,0.0,0.0,27,2026-08-05T20:45:18Z,measured,20260809T230716Z,0.0,0.0,0.0
@@ -506,7 +506,7 @@ Applicant Tracking and Recruiting,recruiting,whatisthisthing,ok,3147428,permissi
 Applicant Tracking and Recruiting,recruiting,houseplants,ok,3005556,hostile,rules,False,False,False,63.56,0.0,0.0,42,2026-08-05T20:48:59Z,measured,20260809T230716Z,0.01,0.0,0.0
 Applicant Tracking and Recruiting,recruiting,australia,ok,2879254,permissive,rules,False,True,False,27.83,0.0,0.0,22,2026-08-05T20:49:04Z,measured,20260809T230716Z,0.01,0.0,0.0
 Applicant Tracking and Recruiting,recruiting,jobs,ok,2750327,hostile,rules,False,False,False,112.77,0.0,0.0,37,2026-08-05T20:35:39Z,measured,20260809T230716Z,0.0,1.0,0.0
-Applicant Tracking and Recruiting,recruiting,AskEngineers,ok,2739044,permissive,rules,False,True,False,41.13,0.0,0.0,14,2026-08-05T20:49:08Z,measured,20260809T230716Z,0.0,0.5,0.0
+Applicant Tracking and Recruiting,recruiting,AskEngineers,ok,2739044,permissive,rules,False,True,True,41.13,0.0,0.0,14,2026-08-05T20:49:08Z,measured,20260809T230716Z,0.0,0.5,0.0
 Applicant Tracking and Recruiting,recruiting,crochet,ok,1953912,hostile,rules,False,False,False,52.64,0.0,0.0,39,2026-08-05T20:35:47Z,measured,20260809T230716Z,0.0,0.0,0.0
 Applicant Tracking and Recruiting,recruiting,MemeEconomy,ok,1860226,permissive,rules,False,True,False,0.35,0.0,0.0,51,2026-08-05T20:49:12Z,measured,20260809T230716Z,0.0,0.0,0.0
 Payroll,payroll,Payroll,ok,34154,permissive,shipped,False,True,True,1.35,0.02,0.027,32,2026-08-04T17:59:02Z,shipped,20260809T230716Z,0.05,1.0,0.027
@@ -551,13 +551,13 @@ Cloud Hosting and Infrastructure,cloud-hosting,nextjs,ok,172408,permissive,shipp
 Cloud Hosting and Infrastructure,cloud-hosting,reactjs,ok,510388,permissive,shipped,False,True,True,3.01,0.05,0.1505,22,2026-08-04T18:10:39Z,shipped,20260809T230716Z,0.0,0.5,0.07525
 Cloud Hosting and Infrastructure,cloud-hosting,sysadmin,ok,1307123,permissive,shipped,False,True,True,111.96,0.0,0.0,24,2026-08-04T18:02:01Z,shipped,20260809T230716Z,0.0,1.0,0.0
 Cloud Hosting and Infrastructure,cloud-hosting,homelab,ok,1064059,capped,shipped,False,True,True,59.72,0.0,0.0,26,2026-08-04T18:10:45Z,shipped,20260809T230716Z,0.0,0.5,0.0
-Cloud Hosting and Infrastructure,cloud-hosting,kubernetes,ok,208463,capped,shipped,False,True,False,2.12,0.0,0.0,28,2026-08-04T18:10:52Z,shipped,20260809T230716Z,0.0,0.5,0.0
+Cloud Hosting and Infrastructure,cloud-hosting,kubernetes,ok,208463,capped,shipped,False,True,True,2.12,0.0,0.0,28,2026-08-04T18:10:52Z,shipped,20260809T230716Z,0.0,0.5,0.0
 Cloud Hosting and Infrastructure,cloud-hosting,node,ok,347784,permissive,sidebar,False,True,True,0.83,0.01,0.0083,26,2026-08-05T20:50:54Z,measured,20260809T230716Z,0.0,0.5,0.00415
-Cloud Hosting and Infrastructure,cloud-hosting,ExperiencedDevs,ok,408386,permissive,shipped,False,True,False,13.87,0.0,0.0,15,2026-08-04T17:57:26Z,shipped,20260809T230716Z,0.01,1.0,0.0
-Cloud Hosting and Infrastructure,cloud-hosting,startups,ok,2107067,capped,shipped,False,True,False,16.76,0.0,0.0,31,2026-08-05T17:43:02Z,shipped,20260809T230716Z,0.0,1.0,0.0
+Cloud Hosting and Infrastructure,cloud-hosting,ExperiencedDevs,ok,408386,permissive,shipped,False,True,True,13.87,0.0,0.0,15,2026-08-04T17:57:26Z,shipped,20260809T230716Z,0.01,1.0,0.0
+Cloud Hosting and Infrastructure,cloud-hosting,startups,ok,2107067,capped,shipped,False,True,True,16.76,0.0,0.0,31,2026-08-05T17:43:02Z,shipped,20260809T230716Z,0.0,1.0,0.0
 Cloud Hosting and Infrastructure,cloud-hosting,worldnews,ok,47508421,permissive,rules,False,True,False,735.82,0.0,0.0,23,2026-08-05T20:37:49Z,measured,20260809T230716Z,0.0,0.0,0.0
 Cloud Hosting and Infrastructure,cloud-hosting,Art,ok,22493099,capped,rules,True,False,False,35.46,0.0,0.0,42,2026-08-05T20:40:13Z,measured,20260809T230716Z,0.05,0.0,0.0
-Cloud Hosting and Infrastructure,cloud-hosting,CryptoCurrency,ok,10134642,permissive,rules,False,True,False,38.93,0.0,0.0,20,2026-08-05T20:36:11Z,measured,20260809T230716Z,0.0,0.5,0.0
+Cloud Hosting and Infrastructure,cloud-hosting,CryptoCurrency,ok,10134642,permissive,rules,False,True,True,38.93,0.0,0.0,20,2026-08-05T20:36:11Z,measured,20260809T230716Z,0.0,0.5,0.0
 Cloud Hosting and Infrastructure,cloud-hosting,politics,ok,9230904,permissive,rules,False,True,False,1200.88,0.0,0.0,48,2026-08-05T20:32:07Z,measured,20260809T230716Z,0.0,0.0,0.0
 Cloud Hosting and Infrastructure,cloud-hosting,programming,ok,6908004,permissive,rules,False,True,False,14.8,0.0,0.0,27,2026-08-05T20:32:15Z,measured,20260809T230716Z,0.0,0.5,0.0
 Cloud Hosting and Infrastructure,cloud-hosting,learnprogramming,ok,4395765,permissive,rules,False,True,False,29.79,0.0,0.0,30,2026-08-05T20:50:15Z,measured,20260809T230716Z,0.0,0.5,0.0
@@ -624,13 +624,13 @@ Backup and Storage,backup-storage,technology,ok,20452155,permissive,rules,False,
 Backup and Storage,backup-storage,pcmasterrace,ok,16223685,permissive,rules,False,True,True,519.99,0.0,0.0,50,2026-08-05T20:43:35Z,measured,20260809T230716Z,0.0,0.5,0.0
 Backup and Storage,backup-storage,nfl,ok,12793602,permissive,rules,False,True,False,411.42,0.0,0.0,33,2026-08-05T20:38:03Z,measured,20260809T230716Z,0.0,0.0,0.0
 Backup and Storage,backup-storage,Minecraft,ok,8732564,permissive,rules,False,True,False,191.2,0.0,0.0,55,2026-08-05T20:32:11Z,measured,20260809T230716Z,0.0,0.0,0.0
-Backup and Storage,backup-storage,Bitcoin,ok,8156861,permissive,rules,False,True,False,120.66,0.0,0.0,40,2026-08-05T20:33:13Z,measured,20260809T230716Z,0.01,0.5,0.0
-Backup and Storage,backup-storage,programming,ok,6908004,permissive,rules,False,True,False,14.8,0.0,0.0,27,2026-08-05T20:32:15Z,measured,20260809T230716Z,0.0,0.5,0.0
+Backup and Storage,backup-storage,Bitcoin,ok,8156861,permissive,rules,False,True,True,120.66,0.0,0.0,40,2026-08-05T20:33:13Z,measured,20260809T230716Z,0.01,0.5,0.0
+Backup and Storage,backup-storage,programming,ok,6908004,permissive,rules,False,True,True,14.8,0.0,0.0,27,2026-08-05T20:32:15Z,measured,20260809T230716Z,0.0,0.5,0.0
 Backup and Storage,backup-storage,apple,ok,6409592,permissive,rules,True,False,False,42.96,0.0,0.0,31,2026-08-05T20:38:08Z,measured,20260809T230716Z,0.0,0.5,0.0
 Backup and Storage,backup-storage,woodworking,ok,6176682,hostile,rules,False,False,False,46.19,0.0,0.0,30,2026-08-05T20:48:31Z,measured,20260809T230716Z,0.0,0.0,0.0
-Backup and Storage,backup-storage,photography,ok,5638290,permissive,rules,False,True,False,36.72,0.0,0.0,24,2026-08-05T20:47:40Z,measured,20260809T230716Z,0.01,0.5,0.0
+Backup and Storage,backup-storage,photography,ok,5638290,permissive,rules,False,True,True,36.72,0.0,0.0,24,2026-08-05T20:47:40Z,measured,20260809T230716Z,0.01,0.5,0.0
 Backup and Storage,backup-storage,boardgames,ok,5441848,hostile,rules,False,False,False,108.0,0.0,0.0,31,2026-08-05T20:46:26Z,measured,20260809T230716Z,0.0,0.0,0.0
-Backup and Storage,backup-storage,iphone,ok,4622754,permissive,rules,False,True,False,63.18,0.0,0.0,33,2026-08-05T20:38:20Z,measured,20260809T230716Z,0.0,0.5,0.0
+Backup and Storage,backup-storage,iphone,ok,4622754,permissive,rules,False,True,True,63.18,0.0,0.0,33,2026-08-05T20:38:20Z,measured,20260809T230716Z,0.0,0.5,0.0
 Backup and Storage,backup-storage,hardware,ok,4366640,permissive,rules,False,True,False,37.2,0.0,0.0,18,2026-08-05T20:52:21Z,measured,20260809T230716Z,0.0,0.5,0.0
 Backup and Storage,backup-storage,google,ok,3506218,permissive,rules,True,False,False,25.47,0.0,0.0,22,2026-08-05T20:52:25Z,measured,20260809T230716Z,0.0,0.0,0.0
 Backup and Storage,backup-storage,fantasyfootball,ok,3418715,permissive,rules,False,True,False,176.86,0.0,0.0,29,2026-08-05T20:38:25Z,measured,20260809T230716Z,0.0,0.0,0.0
@@ -717,15 +717,15 @@ Antivirus and Endpoint Security,antivirus,Showerthoughts,ok,34176852,permissive,
 Antivirus and Endpoint Security,antivirus,technology,ok,20452155,permissive,rules,False,True,True,810.1,0.02,16.202,23,2026-08-05T20:30:48Z,measured,20260809T230716Z,0.0,0.5,8.101
 Antivirus and Endpoint Security,antivirus,pcmasterrace,ok,16223685,permissive,rules,False,True,True,519.99,0.04,20.7996,50,2026-08-05T20:43:35Z,measured,20260809T230716Z,0.0,0.5,10.3998
 Antivirus and Endpoint Security,antivirus,buildapc,ok,8508764,hostile,shipped,False,False,False,146.24,0.05,7.312,39,2026-08-05T18:54:09Z,shipped,20260809T230716Z,0.01,0.5,3.656
-Antivirus and Endpoint Security,antivirus,homeautomation,ok,4585229,permissive,rules,False,True,False,12.01,0.01,0.1201,27,2026-08-05T20:43:39Z,measured,20260809T230716Z,0.0,0.5,0.06005
+Antivirus and Endpoint Security,antivirus,homeautomation,ok,4585229,permissive,rules,False,True,True,12.01,0.01,0.1201,27,2026-08-05T20:43:39Z,measured,20260809T230716Z,0.0,0.5,0.06005
 Antivirus and Endpoint Security,antivirus,techsupport,ok,3409767,hostile,shipped,False,False,False,62.83,0.02,1.2566,38,2026-08-05T17:44:18Z,shipped,20260809T230716Z,0.0,0.5,0.6283
 Antivirus and Endpoint Security,antivirus,assholedesign,ok,3122950,permissive,rules,False,True,False,11.79,0.02,0.2358,11,2026-08-05T20:32:31Z,measured,20260809T230716Z,0.0,0.0,0.0
 Antivirus and Endpoint Security,antivirus,softwaregore,ok,1959835,permissive,rules,False,True,False,12.92,0.0,0.0,37,2026-08-05T20:38:42Z,measured,20260809T230716Z,0.0,0.0,0.0
 Antivirus and Endpoint Security,antivirus,cybersecurity,ok,1499373,hostile,shipped,False,False,False,54.05,0.03,1.6215,31,2026-08-04T18:01:44Z,shipped,20260809T230716Z,0.02,0.5,0.81075
 Antivirus and Endpoint Security,antivirus,sysadmin,ok,1307123,permissive,shipped,False,True,True,111.96,0.05,5.598,24,2026-08-04T18:02:01Z,shipped,20260809T230716Z,0.0,0.5,2.799
-Antivirus and Endpoint Security,antivirus,netsec,ok,568429,permissive,shipped,False,True,False,0.65,0.08,0.052,29,2026-08-04T18:01:51Z,shipped,20260809T230716Z,0.0,0.5,0.026
+Antivirus and Endpoint Security,antivirus,netsec,ok,568429,permissive,shipped,False,True,True,0.65,0.08,0.052,29,2026-08-04T18:01:51Z,shipped,20260809T230716Z,0.0,0.5,0.026
 Antivirus and Endpoint Security,antivirus,Windows10,ok,499856,permissive,rules,False,True,False,0.69,0.07,0.0483,19,2026-08-09T23:09:04Z,measured,20260809T230716Z,0.0,0.5,0.02415
-Antivirus and Endpoint Security,antivirus,windows,ok,377983,permissive,rules,False,True,False,2.7,0.02,0.054,17,2026-08-09T23:09:08Z,measured,20260809T230716Z,0.0,0.5,0.027
+Antivirus and Endpoint Security,antivirus,windows,ok,377983,permissive,rules,False,True,True,2.7,0.02,0.054,17,2026-08-09T23:09:08Z,measured,20260809T230716Z,0.0,0.5,0.027
 Antivirus and Endpoint Security,antivirus,software,ok,368967,capped,shipped,False,True,True,14.84,0.01,0.1484,24,2026-08-05T18:51:08Z,shipped,20260809T230716Z,0.01,0.5,0.0742
 Antivirus and Endpoint Security,antivirus,AskNetsec,ok,260085,permissive,shipped,False,True,True,1.92,0.09,0.1728,41,2026-08-05T17:44:10Z,shipped,20260809T230716Z,0.0,0.5,0.0864
 Antivirus and Endpoint Security,antivirus,msp,ok,245261,capped,shipped,False,True,True,5.27,0.11,0.5797,25,2026-08-04T18:06:20Z,shipped,20260809T230716Z,0.0,0.5,0.28985
@@ -742,7 +742,7 @@ Antivirus and Endpoint Security,antivirus,opsec,ok,78849,permissive,rules,False,
 Antivirus and Endpoint Security,antivirus,CoveredCalls,ok,60814,permissive,sidebar,False,True,False,2.05,0.0,0.0,14,2026-08-09T23:09:44Z,measured,20260809T230716Z,0.0,0.0,0.0
 Antivirus and Endpoint Security,antivirus,darknetplan,ok,60259,permissive,sidebar,False,True,False,0.04,0.02,0.0008,24,2026-08-09T23:09:48Z,measured,20260809T230716Z,0.0,0.0,0.0
 Antivirus and Endpoint Security,antivirus,1Password,ok,56818,permissive,shipped,True,False,False,2.07,0.11,0.2277,22,2026-08-04T18:01:11Z,shipped,20260809T230716Z,0.3,0.5,0.11385
-Antivirus and Endpoint Security,antivirus,macsysadmin,ok,52768,permissive,rules,False,True,False,0.99,0.06,0.0594,29,2026-08-09T23:09:51Z,measured,20260809T230716Z,0.0,1.0,0.0594
+Antivirus and Endpoint Security,antivirus,macsysadmin,ok,52768,permissive,rules,False,True,True,0.99,0.06,0.0594,29,2026-08-09T23:09:51Z,measured,20260809T230716Z,0.0,1.0,0.0594
 Antivirus and Endpoint Security,antivirus,ComputerSecurity,ok,51737,permissive,sidebar,True,False,False,0.06,0.07,0.0042,20,2026-08-09T23:09:56Z,measured,20260809T230716Z,0.0,0.5,0.0021
 Web Hosting,web-hosting,technology,ok,20452155,permissive,rules,False,True,True,810.1,0.0,0.0,23,2026-08-05T20:30:48Z,measured,20260809T230716Z,0.0,0.5,0.0
 Web Hosting,web-hosting,politics,ok,9230904,permissive,rules,False,True,False,1200.88,0.0,0.0,48,2026-08-05T20:32:07Z,measured,20260809T230716Z,0.0,0.0,0.0
@@ -1073,7 +1073,7 @@ Online Course Platforms,course-platforms,learnmachinelearning,ok,668008,permissi
 Online Course Platforms,course-platforms,CanadianInvestor,ok,662166,hostile,rules,False,False,False,3.73,0.06,0.2238,19,2026-08-09T23:24:11Z,measured,20260809T230716Z,0.0,0.0,0.0
 Online Course Platforms,course-platforms,ITCareerQuestions,ok,565561,permissive,rules,False,True,True,20.31,0.12,2.4372,18,2026-08-09T23:24:14Z,measured,20260809T230716Z,0.0,0.5,1.2186
 Online Course Platforms,course-platforms,FundieSnarkUncensored,ok,235997,permissive,rules,False,True,False,251.44,0.03,7.5432,18,2026-08-09T23:24:18Z,measured,20260809T230716Z,0.0,0.0,0.0
-Online Course Platforms,course-platforms,dataanalysis,ok,224773,permissive,shipped,False,True,False,1.84,0.1,0.184,45,2026-08-04T18:08:42Z,shipped,20260809T230716Z,0.03,0.5,0.092
+Online Course Platforms,course-platforms,dataanalysis,ok,224773,permissive,shipped,False,True,True,1.84,0.1,0.184,45,2026-08-04T18:08:42Z,shipped,20260809T230716Z,0.03,0.5,0.092
 Online Course Platforms,course-platforms,PowerBI,ok,208597,permissive,shipped,True,False,False,5.34,0.13,0.6942,37,2026-08-04T18:08:16Z,shipped,20260809T230716Z,0.17,0.5,0.3471
 Online Course Platforms,course-platforms,bioinformatics,ok,163425,hostile,rules,False,False,False,2.41,0.06,0.1446,23,2026-08-09T23:24:22Z,measured,20260809T230716Z,0.01,0.5,0.0723
 Online Course Platforms,course-platforms,ThreadsApp,ok,143222,hostile,rules,False,False,False,1.55,0.12,0.186,38,2026-08-09T23:24:26Z,measured,20260809T230716Z,0.0,0.0,0.0
@@ -1087,13 +1087,13 @@ Online Course Platforms,course-platforms,SwiftUI,ok,62798,permissive,rules,False
 Online Course Platforms,course-platforms,instructionaldesign,ok,60318,permissive,shipped,False,True,True,4.51,0.08,0.3608,18,2026-08-05T18:49:01Z,shipped,20260809T230716Z,0.03,1.0,0.3608
 Online Course Platforms,course-platforms,OMSCS,ok,57686,permissive,rules,False,True,False,3.94,0.08,0.3152,18,2026-08-09T23:24:58Z,measured,20260809T230716Z,0.0,0.0,0.0
 Online Course Platforms,course-platforms,coursera,ok,40797,permissive,rules,True,False,False,0.38,0.24,0.0912,27,2026-08-09T23:25:02Z,measured,20260809T230716Z,0.2,1.0,0.0912
-Online Course Platforms,course-platforms,turkishlearning,ok,36417,permissive,rules,False,True,False,0.9,0.03,0.027,29,2026-08-09T23:25:06Z,measured,20260809T230716Z,0.0,0.5,0.0135
+Online Course Platforms,course-platforms,turkishlearning,ok,36417,permissive,rules,False,True,True,0.9,0.03,0.027,29,2026-08-09T23:25:06Z,measured,20260809T230716Z,0.0,0.5,0.0135
 Online Course Platforms,course-platforms,rhino,ok,34122,permissive,rules,True,False,False,1.83,0.08,0.1464,14,2026-08-09T23:25:10Z,measured,20260809T230716Z,0.0,0.0,0.0
 Online Course Platforms,course-platforms,MvC3,ok,26582,permissive,rules,False,True,False,0.38,0.05,0.019,26,2026-08-09T23:25:13Z,measured,20260809T230716Z,0.0,0.0,0.0
 Online Course Platforms,course-platforms,elearning,ok,25640,permissive,rules,False,True,True,0.65,0.2,0.13,31,2026-08-09T23:23:21Z,measured,20260809T230716Z,0.01,1.0,0.13
 Online Course Platforms,course-platforms,OnlineEducation,ok,20817,permissive,sidebar,True,False,False,0.05,0.13,0.0065,43,2026-08-09T23:25:17Z,measured,20260809T230716Z,0.01,0.5,0.00325
-Online Course Platforms,course-platforms,learncybersecurity,ok,19675,permissive,sidebar,False,True,False,1.48,0.02,0.0296,21,2026-08-09T23:25:21Z,measured,20260809T230716Z,0.0,0.5,0.0148
-Online Course Platforms,course-platforms,UoPeople,ok,17512,permissive,rules,False,True,False,1.76,0.06,0.1056,35,2026-08-09T23:25:25Z,measured,20260809T230716Z,0.02,0.5,0.0528
+Online Course Platforms,course-platforms,learncybersecurity,ok,19675,permissive,sidebar,False,True,True,1.48,0.02,0.0296,21,2026-08-09T23:25:21Z,measured,20260809T230716Z,0.0,0.5,0.0148
+Online Course Platforms,course-platforms,UoPeople,ok,17512,permissive,rules,False,True,True,1.76,0.06,0.1056,35,2026-08-09T23:25:25Z,measured,20260809T230716Z,0.02,0.5,0.0528
 Form Builders,form-builders,aww,ok,37846716,permissive,rules,False,True,False,130.65,0.0,0.0,18,2026-08-05T20:34:41Z,measured,20260809T230716Z,0.0,0.0,0.0
 Form Builders,form-builders,pics,ok,33499498,hostile,rules,False,False,False,109.63,0.0,0.0,28,2026-08-05T20:39:27Z,measured,20260809T230716Z,0.0,0.0,0.0
 Form Builders,form-builders,mildlyinteresting,ok,25317303,permissive,rules,False,True,False,476.83,0.0,0.0,28,2026-08-05T20:39:31Z,measured,20260809T230716Z,0.0,0.0,0.0
@@ -1347,11 +1347,11 @@ Document Management,document-management,LawFirm,ok,105932,permissive,rules,False
 Document Management,document-management,Endo,ok,104471,hostile,rules,False,False,False,8.58,0.15,1.287,43,2026-08-09T23:34:35Z,measured,20260809T230716Z,0.0,0.0,0.0
 Document Management,document-management,PKMS,ok,76439,hostile,shipped,False,False,False,3.59,0.33,1.1847,26,2026-08-04T18:02:43Z,shipped,20260809T230716Z,0.09,1.0,1.1847
 Document Management,document-management,Gotham,ok,68856,permissive,rules,False,True,False,0.51,0.08,0.0408,34,2026-08-09T23:34:39Z,measured,20260809T230716Z,0.0,0.0,0.0
-Document Management,document-management,technicalwriting,ok,49977,permissive,rules,False,True,False,0.88,0.18,0.1584,24,2026-08-09T23:34:43Z,measured,20260809T230716Z,0.0,0.5,0.0792
+Document Management,document-management,technicalwriting,ok,49977,permissive,rules,False,True,True,0.88,0.18,0.1584,24,2026-08-09T23:34:43Z,measured,20260809T230716Z,0.0,0.5,0.0792
 Document Management,document-management,sharepoint,ok,46502,permissive,rules,True,False,False,1.06,0.42,0.4452,23,2026-08-09T23:34:46Z,measured,20260809T230716Z,0.0,1.0,0.4452
 Document Management,document-management,Evernote,ok,27160,hostile,shipped,True,False,False,0.52,0.07,0.0364,23,2026-08-04T18:03:01Z,shipped,20260809T230716Z,0.43,1.0,0.0364
 Document Management,document-management,TheBlock,ok,26231,permissive,rules,True,False,False,11.13,0.07,0.7791,14,2026-08-09T23:34:50Z,measured,20260809T230716Z,0.0,0.0,0.0
-Document Management,document-management,NISTControls,ok,13366,permissive,rules,False,True,False,0.09,0.36,0.0324,17,2026-08-09T23:34:54Z,measured,20260809T230716Z,0.0,0.5,0.0162
+Document Management,document-management,NISTControls,ok,13366,permissive,rules,False,True,True,0.09,0.36,0.0324,17,2026-08-09T23:34:54Z,measured,20260809T230716Z,0.0,0.5,0.0162
 Document Management,document-management,devonthink,ok,3249,permissive,rules,True,False,False,0.02,0.37,0.0074,18,2026-08-09T23:34:58Z,measured,20260809T230716Z,0.26,1.0,0.0074
 Document Management,document-management,documentAutomation,ok,2022,permissive,rules,True,False,False,0.14,0.1,0.014,29,2026-08-09T23:35:02Z,measured,20260809T230716Z,0.0,1.0,0.014
 PDF Tools,pdf-tools,funny,ok,67544446,hostile,rules,False,False,False,261.43,0.0,0.0,15,2026-08-05T20:39:24Z,measured,20260809T230716Z,0.0,0.0,0.0
@@ -1373,11 +1373,11 @@ PDF Tools,pdf-tools,lawncare,ok,951489,permissive,rules,False,True,False,87.34,0
 PDF Tools,pdf-tools,SideProject,ok,799708,permissive,sidebar,False,True,True,53.63,0.0,0.0,41,2026-08-05T20:32:58Z,measured,20260809T230716Z,0.0,0.5,0.0
 PDF Tools,pdf-tools,LocalLLaMA,ok,795419,permissive,rules,False,True,False,53.71,0.0,0.0,39,2026-08-09T23:17:34Z,measured,20260809T230716Z,0.01,0.0,0.0
 PDF Tools,pdf-tools,MacOS,ok,614919,capped,rules,False,True,True,24.37,0.0,0.0,41,2026-08-09T23:35:13Z,measured,20260809T230716Z,0.0,0.5,0.0
-PDF Tools,pdf-tools,netsec,ok,568429,permissive,shipped,False,True,False,0.65,0.0,0.0,29,2026-08-04T18:01:51Z,shipped,20260809T230716Z,0.0,0.5,0.0
-PDF Tools,pdf-tools,opensource,ok,374254,permissive,rules,False,True,False,7.7,0.0,0.0,64,2026-08-09T23:34:11Z,measured,20260809T230716Z,0.0,0.5,0.0
-PDF Tools,pdf-tools,software,ok,368967,capped,shipped,False,True,False,14.84,0.0,0.0,24,2026-08-05T18:51:08Z,shipped,20260809T230716Z,0.01,1.0,0.0
+PDF Tools,pdf-tools,netsec,ok,568429,permissive,shipped,False,True,True,0.65,0.0,0.0,29,2026-08-04T18:01:51Z,shipped,20260809T230716Z,0.0,0.5,0.0
+PDF Tools,pdf-tools,opensource,ok,374254,permissive,rules,False,True,True,7.7,0.0,0.0,64,2026-08-09T23:34:11Z,measured,20260809T230716Z,0.0,0.5,0.0
+PDF Tools,pdf-tools,software,ok,368967,capped,shipped,False,True,True,14.84,0.0,0.0,24,2026-08-05T18:51:08Z,shipped,20260809T230716Z,0.01,1.0,0.0
 PDF Tools,pdf-tools,ObsidianMD,ok,350730,permissive,shipped,True,False,False,63.03,0.0,0.0,14,2026-08-04T18:02:34Z,shipped,20260809T230716Z,0.21,0.5,0.0
-PDF Tools,pdf-tools,msp,ok,245261,capped,shipped,False,True,False,5.27,0.0,0.0,25,2026-08-04T18:06:20Z,shipped,20260809T230716Z,0.0,0.5,0.0
+PDF Tools,pdf-tools,msp,ok,245261,capped,shipped,False,True,True,5.27,0.0,0.0,25,2026-08-04T18:06:20Z,shipped,20260809T230716Z,0.0,0.5,0.0
 PDF Tools,pdf-tools,macapps,ok,243340,capped,rules,False,True,False,22.6,0.0,0.0,22,2026-08-09T23:30:22Z,measured,20260809T230716Z,0.0,1.0,0.0
 PDF Tools,pdf-tools,MilwaukeeTool,ok,204097,hostile,rules,False,False,False,42.25,0.0,0.0,14,2026-08-09T23:35:17Z,measured,20260809T230716Z,0.0,0.0,0.0
 PDF Tools,pdf-tools,PrintedCircuitBoard,ok,100721,hostile,rules,False,False,False,3.19,0.0,0.0,17,2026-08-09T23:35:21Z,measured,20260809T230716Z,0.0,0.0,0.0
@@ -1412,8 +1412,8 @@ Cloud Storage and File Sharing,cloud-storage,sweden,ok,1041148,hostile,rules,Fal
 Cloud Storage and File Sharing,cloud-storage,ios,ok,990139,permissive,rules,False,True,True,26.39,0.06,1.5834,38,2026-08-05T20:38:50Z,measured,20260809T230716Z,0.0,0.5,0.7917
 Cloud Storage and File Sharing,cloud-storage,DataHoarder,ok,986173,permissive,shipped,False,True,True,26.99,0.02,0.5398,32,2026-08-04T18:11:36Z,shipped,20260809T230716Z,0.02,1.0,0.5398
 Cloud Storage and File Sharing,cloud-storage,selfhosted,ok,813099,hostile,shipped,False,False,False,66.7,0.02,1.334,33,2026-08-04T18:02:09Z,shipped,20260809T230716Z,0.01,1.0,1.334
-Cloud Storage and File Sharing,cloud-storage,ipad,ok,634133,permissive,rules,False,True,False,11.4,0.0,0.0,42,2026-08-09T23:36:07Z,measured,20260809T230716Z,0.0,0.5,0.0
-Cloud Storage and File Sharing,cloud-storage,MacOS,ok,614919,capped,rules,False,True,False,24.37,0.0,0.0,41,2026-08-09T23:35:13Z,measured,20260809T230716Z,0.0,0.5,0.0
+Cloud Storage and File Sharing,cloud-storage,ipad,ok,634133,permissive,rules,False,True,True,11.4,0.0,0.0,42,2026-08-09T23:36:07Z,measured,20260809T230716Z,0.0,0.5,0.0
+Cloud Storage and File Sharing,cloud-storage,MacOS,ok,614919,capped,rules,False,True,True,24.37,0.0,0.0,41,2026-08-09T23:35:13Z,measured,20260809T230716Z,0.0,0.5,0.0
 Cloud Storage and File Sharing,cloud-storage,androidapps,ok,568182,hostile,shipped,False,False,False,7.78,0.0,0.0,40,2026-08-05T18:54:46Z,shipped,20260809T230716Z,0.01,0.5,0.0
 Cloud Storage and File Sharing,cloud-storage,shortcuts,ok,564159,permissive,rules,False,True,True,3.59,0.08,0.2872,36,2026-08-09T23:36:12Z,measured,20260809T230716Z,0.01,0.5,0.1436
 Cloud Storage and File Sharing,cloud-storage,Watchexchange,ok,548887,permissive,rules,False,True,False,306.54,0.0,0.0,44,2026-08-09T23:36:16Z,measured,20260809T230716Z,0.25,0.0,0.0
@@ -1470,7 +1470,7 @@ Photo Editing,photo-editing,AdobeIllustrator,ok,241848,permissive,shipped,False,
 3D and CAD,cad,Hololive,ok,1514478,hostile,rules,False,False,False,47.62,0.43,20.4766,37,2026-08-05T20:41:13Z,measured,20260809T230716Z,0.0,0.0,0.0
 3D and CAD,cad,3Dmodeling,ok,1483992,hostile,rules,False,False,False,8.87,0.53,4.7011,45,2026-08-09T23:37:55Z,measured,20260809T230716Z,0.01,1.0,4.7011
 3D and CAD,cad,blender,ok,1434237,permissive,rules,True,False,False,51.2,0.4,20.48,44,2026-08-05T20:42:35Z,measured,20260809T230716Z,0.0,1.0,20.48
-3D and CAD,cad,Simulated,ok,1400310,permissive,rules,False,True,False,0.86,0.5,0.43,11,2026-08-05T20:50:18Z,measured,20260809T230716Z,0.0,0.5,0.215
+3D and CAD,cad,Simulated,ok,1400310,permissive,rules,False,True,True,0.86,0.5,0.43,11,2026-08-05T20:50:18Z,measured,20260809T230716Z,0.0,0.5,0.215
 3D and CAD,cad,3DS,ok,1173346,permissive,rules,True,False,False,49.29,0.5,24.645,23,2026-08-09T23:37:59Z,measured,20260809T230716Z,0.0,0.0,0.0
 3D and CAD,cad,EngineeringStudents,ok,1011514,permissive,shipped,False,True,True,30.8,0.58,17.864,27,2026-08-05T18:47:48Z,shipped,20260809T230716Z,0.01,0.5,8.932
 3D and CAD,cad,engineering,ok,743092,hostile,rules,False,False,False,0.33,0.54,0.1782,51,2026-08-09T23:38:03Z,measured,20260809T230716Z,0.0,0.5,0.0891
@@ -1531,11 +1531,11 @@ Code Editors and IDEs,ides,PeopleFuckingDying,ok,3325054,permissive,rules,False,
 Code Editors and IDEs,ides,webdev,ok,3291935,hostile,shipped,False,False,False,28.14,0.01,0.2814,49,2026-08-04T18:04:28Z,shipped,20260809T230716Z,0.0,0.5,0.1407
 Code Editors and IDEs,ides,Android,ok,3179436,hostile,rules,True,False,False,50.4,0.01,0.504,21,2026-08-05T20:38:29Z,measured,20260809T230716Z,0.0,0.0,0.0
 Code Editors and IDEs,ides,mac,ok,3046481,hostile,rules,False,False,False,48.7,0.0,0.0,30,2026-08-05T20:33:45Z,measured,20260809T230716Z,0.0,0.0,0.0
-Code Editors and IDEs,ides,javascript,ok,2446781,permissive,rules,False,True,False,1.83,0.0,0.0,37,2026-08-05T20:41:01Z,measured,20260809T230716Z,0.01,0.5,0.0
+Code Editors and IDEs,ides,javascript,ok,2446781,permissive,rules,False,True,True,1.83,0.0,0.0,37,2026-08-05T20:41:01Z,measured,20260809T230716Z,0.01,0.5,0.0
 Code Editors and IDEs,ides,Python,ok,1502437,permissive,rules,False,True,True,12.12,0.01,0.1212,15,2026-08-05T20:45:02Z,measured,20260809T230716Z,0.0,0.5,0.0606
 Code Editors and IDEs,ides,ClaudeAI,ok,1068447,permissive,rules,True,False,False,78.83,0.0,0.0,45,2026-08-09T23:40:26Z,measured,20260809T230716Z,0.0,1.0,0.0
 Code Editors and IDEs,ides,learnpython,ok,1046160,hostile,rules,False,False,False,10.07,0.04,0.4028,29,2026-08-05T20:50:27Z,measured,20260809T230716Z,0.0,0.5,0.2014
-Code Editors and IDEs,ides,arduino,ok,778009,permissive,rules,False,True,False,15.11,0.0,0.0,28,2026-08-09T23:18:59Z,measured,20260809T230716Z,0.0,0.5,0.0
+Code Editors and IDEs,ides,arduino,ok,778009,permissive,rules,False,True,True,15.11,0.0,0.0,28,2026-08-09T23:18:59Z,measured,20260809T230716Z,0.0,0.5,0.0
 Code Editors and IDEs,ides,hungary,ok,722445,permissive,rules,False,True,False,76.01,0.0,0.0,35,2026-08-09T23:40:31Z,measured,20260809T230716Z,0.0,0.0,0.0
 Code Editors and IDEs,ides,AmongUs,ok,612291,permissive,rules,False,True,False,79.98,0.0,0.0,23,2026-08-09T23:40:34Z,measured,20260809T230716Z,0.0,0.0,0.0
 Code Editors and IDEs,ides,androidapps,ok,568182,hostile,shipped,False,False,False,7.78,0.0,0.0,40,2026-08-05T18:54:46Z,shipped,20260809T230716Z,0.01,0.0,0.0
@@ -1544,8 +1544,8 @@ Code Editors and IDEs,ides,Unity3D,ok,472605,hostile,rules,True,False,False,26.4
 Code Editors and IDEs,ides,serbia,ok,472322,permissive,rules,False,True,False,63.85,0.0,0.0,30,2026-08-09T23:40:43Z,measured,20260809T230716Z,0.0,0.0,0.0
 Code Editors and IDEs,ides,croatia,ok,437454,hostile,rules,False,False,False,36.08,0.0,0.0,30,2026-08-09T23:40:47Z,measured,20260809T230716Z,0.0,0.0,0.0
 Code Editors and IDEs,ides,AndroidGaming,ok,418620,permissive,rules,True,False,False,11.48,0.0,0.0,32,2026-08-09T23:40:50Z,measured,20260809T230716Z,0.0,0.0,0.0
-Code Editors and IDEs,ides,rust,ok,416783,permissive,shipped,False,True,False,23.67,0.0,0.0,24,2026-08-05T18:53:37Z,shipped,20260809T230716Z,0.0,0.5,0.0
-Code Editors and IDEs,ides,java,ok,403583,permissive,rules,False,True,False,1.87,0.02,0.0374,16,2026-08-09T23:40:54Z,measured,20260809T230716Z,0.01,0.5,0.0187
+Code Editors and IDEs,ides,rust,ok,416783,permissive,shipped,False,True,True,23.67,0.0,0.0,24,2026-08-05T18:53:37Z,shipped,20260809T230716Z,0.0,0.5,0.0
+Code Editors and IDEs,ides,java,ok,403583,permissive,rules,False,True,True,1.87,0.02,0.0374,16,2026-08-09T23:40:54Z,measured,20260809T230716Z,0.01,0.5,0.0187
 Code Editors and IDEs,ides,godot,ok,362165,permissive,rules,True,False,False,36.65,0.0,0.0,45,2026-08-09T23:39:22Z,measured,20260809T230716Z,0.0,0.5,0.0
 Code Editors and IDEs,ides,cpp,ok,361660,permissive,rules,False,True,False,7.9,0.0,0.0,13,2026-08-09T23:40:58Z,measured,20260809T230716Z,0.0,0.5,0.0
 Code Editors and IDEs,ides,Slovakia,ok,333676,permissive,rules,False,True,False,42.21,0.0,0.0,37,2026-08-09T23:41:02Z,measured,20260809T230716Z,0.0,0.0,0.0
@@ -1558,7 +1558,7 @@ Code Editors and IDEs,ides,C_Programming,ok,235265,permissive,rules,False,True,T
 Code Editors and IDEs,ides,vscode,ok,221490,permissive,rules,False,True,True,1.84,0.2,0.368,33,2026-08-09T23:41:22Z,measured,20260809T230716Z,0.0,1.0,0.368
 Code Editors and IDEs,ides,esp32,ok,206409,permissive,rules,False,True,False,14.11,0.0,0.0,31,2026-08-09T23:41:26Z,measured,20260809T230716Z,0.0,0.5,0.0
 Code Editors and IDEs,ides,FlutterDev,ok,181029,hostile,rules,False,False,False,1.77,0.05,0.0885,29,2026-08-09T23:41:30Z,measured,20260809T230716Z,0.01,0.5,0.04425
-Git and Code Hosting,code-hosting,programming,ok,6908004,permissive,rules,False,True,False,14.8,0.27,3.996,27,2026-08-05T20:32:15Z,measured,20260809T230716Z,0.0,0.5,1.998
+Git and Code Hosting,code-hosting,programming,ok,6908004,permissive,rules,False,True,True,14.8,0.27,3.996,27,2026-08-05T20:32:15Z,measured,20260809T230716Z,0.0,0.5,1.998
 Git and Code Hosting,code-hosting,ProgrammerHumor,ok,4744181,permissive,rules,False,True,False,77.21,0.15,11.5815,20,2026-08-05T20:32:23Z,measured,20260809T230716Z,0.0,0.0,0.0
 Git and Code Hosting,code-hosting,learnprogramming,ok,4395765,permissive,rules,False,True,True,29.79,0.34,10.1286,30,2026-08-05T20:50:15Z,measured,20260809T230716Z,0.0,0.5,5.0643
 Git and Code Hosting,code-hosting,webdev,ok,3291935,hostile,shipped,False,False,False,28.14,0.46,12.9444,49,2026-08-04T18:04:28Z,shipped,20260809T230716Z,0.0,0.5,6.4722
@@ -1581,14 +1581,14 @@ Git and Code Hosting,code-hosting,golang,ok,372101,permissive,rules,False,True,T
 Git and Code Hosting,code-hosting,godot,ok,362165,permissive,rules,True,False,False,36.65,0.12,4.398,45,2026-08-09T23:39:22Z,measured,20260809T230716Z,0.0,0.5,2.199
 Git and Code Hosting,code-hosting,BuyFromEU,ok,360598,hostile,rules,False,False,False,10.14,0.14,1.4196,28,2026-08-09T23:36:28Z,measured,20260809T230716Z,0.01,0.0,0.0
 Git and Code Hosting,code-hosting,csharp,ok,326148,permissive,rules,False,True,False,5.24,0.28,1.4672,16,2026-08-09T23:41:06Z,measured,20260809T230716Z,0.0,0.5,0.7336
-Git and Code Hosting,code-hosting,brdev,ok,313347,permissive,rules,False,True,False,49.6,0.03,1.488,22,2026-08-09T23:41:58Z,measured,20260809T230716Z,0.0,0.5,0.744
+Git and Code Hosting,code-hosting,brdev,ok,313347,permissive,rules,False,True,True,49.6,0.03,1.488,22,2026-08-09T23:41:58Z,measured,20260809T230716Z,0.0,0.5,0.744
 Git and Code Hosting,code-hosting,PowerShell,ok,306897,hostile,rules,True,False,False,1.87,0.28,0.5236,13,2026-08-09T23:42:01Z,measured,20260809T230716Z,0.08,0.5,0.2618
 Git and Code Hosting,code-hosting,HollowKnightMemes,ok,275284,permissive,rules,False,True,False,24.48,0.24,5.8752,9,2026-08-09T23:42:05Z,measured,20260809T230716Z,0.0,0.0,0.0
-Git and Code Hosting,code-hosting,dotnet,ok,242181,permissive,rules,False,True,False,8.05,0.24,1.932,20,2026-08-09T23:42:09Z,measured,20260809T230716Z,0.05,0.5,0.966
+Git and Code Hosting,code-hosting,dotnet,ok,242181,permissive,rules,False,True,True,8.05,0.24,1.932,20,2026-08-09T23:42:09Z,measured,20260809T230716Z,0.05,0.5,0.966
 Git and Code Hosting,code-hosting,AZURE,ok,212511,hostile,rules,True,False,False,2.0,0.27,0.54,29,2026-08-09T23:42:13Z,measured,20260809T230716Z,0.01,0.5,0.27
 Git and Code Hosting,code-hosting,github,ok,207119,permissive,rules,True,False,False,6.99,0.41,2.8659,13,2026-08-09T23:42:16Z,measured,20260809T230716Z,0.26,1.0,2.8659
 Git and Code Hosting,code-hosting,learnjava,ok,194331,hostile,rules,False,False,False,1.67,0.31,0.5177,22,2026-08-09T23:42:20Z,measured,20260809T230716Z,0.14,0.5,0.25885
-Git and Code Hosting,code-hosting,kde,ok,183198,permissive,rules,False,True,False,12.32,0.14,1.7248,30,2026-08-09T23:42:24Z,measured,20260809T230716Z,0.0,0.5,0.8624
+Git and Code Hosting,code-hosting,kde,ok,183198,permissive,rules,False,True,True,12.32,0.14,1.7248,30,2026-08-09T23:42:24Z,measured,20260809T230716Z,0.0,0.5,0.8624
 Git and Code Hosting,code-hosting,NoFeeAC,ok,153500,hostile,rules,False,False,False,0.24,0.04,0.0096,13,2026-08-09T23:42:28Z,measured,20260809T230716Z,0.0,0.0,0.0
 Git and Code Hosting,code-hosting,Dodocodes,ok,141742,hostile,rules,False,False,False,21.16,0.02,0.4232,16,2026-08-09T23:42:32Z,measured,20260809T230716Z,0.0,0.0,0.0
 Git and Code Hosting,code-hosting,TurnipExchange,ok,141481,permissive,rules,False,True,False,1.8,0.04,0.072,9,2026-08-09T23:42:36Z,measured,20260809T230716Z,0.0,0.0,0.0
@@ -1609,7 +1609,7 @@ CI/CD,ci-cd,plantclinic,ok,889730,permissive,rules,False,True,False,32.55,0.0,0.
 CI/CD,ci-cd,selfhosted,ok,813099,hostile,shipped,False,False,False,66.7,0.02,1.334,33,2026-08-04T18:02:09Z,shipped,20260809T230716Z,0.01,0.5,0.667
 CI/CD,ci-cd,knitting,ok,609802,hostile,rules,False,False,False,47.11,0.0,0.0,39,2026-08-05T20:53:43Z,measured,20260809T230716Z,0.0,0.0,0.0
 CI/CD,ci-cd,devops,ok,505353,permissive,shipped,False,True,True,10.84,0.03,0.3252,29,2026-08-04T18:10:10Z,shipped,20260809T230716Z,0.0,1.0,0.3252
-CI/CD,ci-cd,dataengineering,ok,470587,permissive,shipped,False,True,False,10.11,0.0,0.0,20,2026-08-04T18:07:49Z,shipped,20260809T230716Z,0.0,0.5,0.0
+CI/CD,ci-cd,dataengineering,ok,470587,permissive,shipped,False,True,True,10.11,0.0,0.0,20,2026-08-04T18:07:49Z,shipped,20260809T230716Z,0.0,0.5,0.0
 CI/CD,ci-cd,minecraftsuggestions,ok,451715,permissive,rules,False,True,False,45.85,0.0,0.0,12,2026-08-09T23:13:45Z,measured,20260809T230716Z,0.0,0.0,0.0
 CI/CD,ci-cd,minecraftseeds,ok,435463,permissive,rules,False,True,False,4.64,0.0,0.0,55,2026-08-09T23:42:55Z,measured,20260809T230716Z,0.0,0.0,0.0
 CI/CD,ci-cd,rust,ok,416783,permissive,shipped,False,True,True,23.67,0.07,1.6569,24,2026-08-05T18:53:37Z,shipped,20260809T230716Z,0.0,0.5,0.82845
@@ -1617,7 +1617,7 @@ CI/CD,ci-cd,aws,ok,390926,permissive,sidebar,False,True,True,5.7,0.04,0.228,15,2
 CI/CD,ci-cd,csharp,ok,326148,permissive,rules,False,True,True,5.24,0.05,0.262,16,2026-08-09T23:41:06Z,measured,20260809T230716Z,0.0,0.5,0.131
 CI/CD,ci-cd,docker,ok,318511,permissive,rules,True,False,False,1.23,0.03,0.0369,21,2026-08-09T23:42:59Z,measured,20260809T230716Z,0.0,0.5,0.01845
 CI/CD,ci-cd,PowerShell,ok,306897,hostile,rules,True,False,False,1.87,0.03,0.0561,13,2026-08-09T23:42:01Z,measured,20260809T230716Z,0.08,0.5,0.02805
-CI/CD,ci-cd,androiddev,ok,290684,permissive,rules,False,True,False,6.21,0.01,0.0621,20,2026-08-09T23:41:10Z,measured,20260809T230716Z,0.05,0.5,0.03105
+CI/CD,ci-cd,androiddev,ok,290684,permissive,rules,False,True,True,6.21,0.01,0.0621,20,2026-08-09T23:41:10Z,measured,20260809T230716Z,0.05,0.5,0.03105
 CI/CD,ci-cd,embedded,ok,279531,hostile,rules,False,False,False,6.1,0.01,0.061,34,2026-08-09T23:41:14Z,measured,20260809T230716Z,0.0,0.5,0.0305
 CI/CD,ci-cd,shrimptank,ok,263118,permissive,rules,False,True,False,21.9,0.0,0.0,38,2026-08-09T23:43:03Z,measured,20260809T230716Z,0.0,0.0,0.0
 CI/CD,ci-cd,dotnet,ok,242181,permissive,rules,False,True,True,8.05,0.04,0.322,20,2026-08-09T23:42:09Z,measured,20260809T230716Z,0.05,0.5,0.161
@@ -1625,7 +1625,7 @@ CI/CD,ci-cd,AZURE,ok,212511,hostile,rules,True,False,False,2.0,0.01,0.02,29,2026
 CI/CD,ci-cd,kubernetes,ok,208463,capped,shipped,False,True,True,2.12,0.13,0.2756,28,2026-08-04T18:10:52Z,shipped,20260809T230716Z,0.0,0.5,0.1378
 CI/CD,ci-cd,reactnative,ok,187053,hostile,rules,False,False,False,1.95,0.05,0.0975,38,2026-08-09T23:43:07Z,measured,20260809T230716Z,0.0,0.5,0.04875
 CI/CD,ci-cd,FlutterDev,ok,181029,hostile,rules,False,False,False,1.77,0.03,0.0531,29,2026-08-09T23:41:30Z,measured,20260809T230716Z,0.01,0.5,0.02655
-CI/CD,ci-cd,django,ok,164930,permissive,rules,False,True,False,1.79,0.01,0.0179,16,2026-08-09T23:23:05Z,measured,20260809T230716Z,0.0,0.5,0.00895
+CI/CD,ci-cd,django,ok,164930,permissive,rules,False,True,True,1.79,0.01,0.0179,16,2026-08-09T23:23:05Z,measured,20260809T230716Z,0.0,0.5,0.00895
 Containers and Orchestration,containers,mildlyinteresting,ok,25317303,permissive,rules,False,True,False,476.83,0.05,23.8415,28,2026-08-05T20:39:31Z,measured,20260809T230716Z,0.0,0.0,0.0
 Containers and Orchestration,containers,mildlyinfuriating,ok,12391722,hostile,rules,False,False,False,1616.36,0.02,32.3272,39,2026-08-05T20:32:03Z,measured,20260809T230716Z,0.0,0.0,0.0
 Containers and Orchestration,containers,gardening,ok,8952417,hostile,rules,False,False,False,272.28,0.06,16.3368,24,2026-08-05T20:48:27Z,measured,20260809T230716Z,0.0,0.0,0.0
@@ -1679,7 +1679,7 @@ Infrastructure as Code,iac,AZURE,ok,212511,hostile,rules,True,False,False,2.0,0.
 Infrastructure as Code,iac,kubernetes,ok,208463,capped,shipped,False,True,True,2.12,0.42,0.8904,28,2026-08-04T18:10:52Z,shipped,20260809T230716Z,0.0,1.0,0.8904
 Infrastructure as Code,iac,48lawsofpower,ok,136470,hostile,rules,False,False,False,1.59,0.43,0.6837,21,2026-08-09T23:44:49Z,measured,20260809T230716Z,0.0,0.0,0.0
 Infrastructure as Code,iac,nocode,ok,135608,permissive,rules,False,True,True,2.35,0.45,1.0575,28,2026-08-09T23:44:52Z,measured,20260809T230716Z,0.0,0.5,0.52875
-Infrastructure as Code,iac,googlecloud,ok,96761,permissive,rules,False,True,False,1.09,0.35,0.3815,38,2026-08-09T23:44:56Z,measured,20260809T230716Z,0.0,0.5,0.19075
+Infrastructure as Code,iac,googlecloud,ok,96761,permissive,rules,False,True,True,1.09,0.35,0.3815,38,2026-08-09T23:44:56Z,measured,20260809T230716Z,0.0,0.5,0.19075
 Infrastructure as Code,iac,Terraform,ok,83703,permissive,sidebar,True,False,False,0.97,0.5,0.485,22,2026-08-09T23:45:00Z,measured,20260809T230716Z,0.04,1.0,0.485
 Infrastructure as Code,iac,ansible,ok,79795,permissive,rules,True,False,False,1.28,0.58,0.7424,18,2026-08-09T23:43:52Z,measured,20260809T230716Z,0.0,1.0,0.7424
 Infrastructure as Code,iac,programmingcirclejerk,ok,66980,permissive,rules,False,True,False,2.61,0.22,0.5742,12,2026-08-09T23:45:04Z,measured,20260809T230716Z,0.0,0.0,0.0
@@ -1691,7 +1691,7 @@ Infrastructure as Code,iac,volunteer,ok,28117,permissive,rules,False,True,False,
 Infrastructure as Code,iac,serverless,ok,14375,permissive,sidebar,True,False,False,0.03,0.49,0.0147,28,2026-08-09T23:45:28Z,measured,20260809T230716Z,0.0,0.5,0.00735
 Infrastructure as Code,iac,openshift,ok,11603,permissive,rules,True,False,False,0.1,0.46,0.046,21,2026-08-09T23:45:32Z,measured,20260809T230716Z,0.0,0.5,0.023
 Infrastructure as Code,iac,aws_cdk,ok,2070,permissive,sidebar,True,False,False,0.01,0.73,0.0073,27,2026-08-09T23:45:36Z,measured,20260809T230716Z,0.0,1.0,0.0073
-Infrastructure as Code,iac,AWSCloudFormation,ok,1644,permissive,sidebar,False,True,False,0.0,0.62,0.0,31,2026-08-09T23:45:39Z,measured,20260809T230716Z,0.01,1.0,0.0
+Infrastructure as Code,iac,AWSCloudFormation,ok,1644,permissive,sidebar,False,True,True,0.0,0.62,0.0,31,2026-08-09T23:45:39Z,measured,20260809T230716Z,0.01,1.0,0.0
 Monitoring and Observability,observability,worldnews,ok,47508421,permissive,rules,False,True,False,735.82,0.07,51.5074,23,2026-08-05T20:37:49Z,measured,20260809T230716Z,0.0,0.0,0.0
 Monitoring and Observability,observability,technology,ok,20452155,permissive,rules,False,True,False,810.1,0.11,89.111,23,2026-08-05T20:30:48Z,measured,20260809T230716Z,0.0,0.0,0.0
 Monitoring and Observability,observability,politics,ok,9230904,permissive,rules,False,True,False,1200.88,0.06,72.0528,48,2026-08-05T20:32:07Z,measured,20260809T230716Z,0.0,0.0,0.0
@@ -1718,14 +1718,14 @@ Monitoring and Observability,observability,appletv,ok,590789,permissive,rules,Fa
 Monitoring and Observability,observability,homeassistant,ok,579319,permissive,rules,False,True,True,31.33,0.13,4.0729,40,2026-08-09T23:46:05Z,measured,20260809T230716Z,0.0,0.5,2.03645
 Monitoring and Observability,observability,androidapps,ok,568182,hostile,shipped,False,False,False,7.78,0.18,1.4004,40,2026-08-05T18:54:46Z,shipped,20260809T230716Z,0.01,0.0,0.0
 Monitoring and Observability,observability,degoogle,ok,521635,permissive,shipped,False,True,False,54.97,0.04,2.1988,24,2026-08-05T18:47:27Z,shipped,20260809T230716Z,0.01,0.0,0.0
-Monitoring and Observability,observability,reactjs,ok,510388,permissive,shipped,False,True,False,3.01,0.1,0.301,22,2026-08-04T18:10:39Z,shipped,20260809T230716Z,0.0,0.5,0.1505
+Monitoring and Observability,observability,reactjs,ok,510388,permissive,shipped,False,True,True,3.01,0.1,0.301,22,2026-08-04T18:10:39Z,shipped,20260809T230716Z,0.0,0.5,0.1505
 Monitoring and Observability,observability,devops,ok,505353,permissive,shipped,False,True,True,10.84,0.11,1.1924,29,2026-08-04T18:10:10Z,shipped,20260809T230716Z,0.0,1.0,1.1924
 Monitoring and Observability,observability,dataengineering,ok,470587,permissive,shipped,False,True,True,10.11,0.11,1.1121,20,2026-08-04T18:07:49Z,shipped,20260809T230716Z,0.0,0.5,0.55605
 Monitoring and Observability,observability,stevenuniverse,ok,454963,permissive,rules,False,True,False,73.85,0.01,0.7385,21,2026-08-09T23:46:09Z,measured,20260809T230716Z,0.0,0.0,0.0
 Monitoring and Observability,observability,networking,ok,447394,hostile,rules,False,False,False,12.18,0.13,1.5834,20,2026-08-09T23:27:48Z,measured,20260809T230716Z,0.0,0.5,0.7917
 Monitoring and Observability,observability,AI_Agents,ok,415520,permissive,rules,False,True,True,35.16,0.2,7.032,48,2026-08-05T20:37:31Z,measured,20260809T230716Z,0.0,0.5,3.516
 Monitoring and Observability,observability,Gold,ok,415831,hostile,rules,False,False,False,35.35,0.03,1.0605,32,2026-08-09T23:46:13Z,measured,20260809T230716Z,0.0,0.0,0.0
-Monitoring and Observability,observability,aws,ok,390926,permissive,sidebar,False,True,False,5.7,0.16,0.912,15,2026-08-05T20:50:46Z,measured,20260809T230716Z,0.0,0.5,0.456
+Monitoring and Observability,observability,aws,ok,390926,permissive,sidebar,False,True,True,5.7,0.16,0.912,15,2026-08-05T20:50:46Z,measured,20260809T230716Z,0.0,0.5,0.456
 Error Tracking,error-tracking,worldnews,ok,47508421,permissive,rules,False,True,False,735.82,0.0,0.0,23,2026-08-05T20:37:49Z,measured,20260809T230716Z,0.0,0.0,0.0
 Error Tracking,error-tracking,technology,ok,20452155,permissive,rules,False,True,False,810.1,0.0,0.0,23,2026-08-05T20:30:48Z,measured,20260809T230716Z,0.0,0.0,0.0
 Error Tracking,error-tracking,europe,ok,11642130,permissive,rules,False,True,False,102.23,0.0,0.0,25,2026-08-09T23:31:28Z,measured,20260809T230716Z,0.0,0.0,0.0
@@ -1880,16 +1880,16 @@ Session Replay and Heatmaps,session-replay,23andme,ok,165190,hostile,rules,False
 Session Replay and Heatmaps,session-replay,bioinformatics,ok,163425,hostile,rules,False,False,False,2.41,0.01,0.0241,23,2026-08-09T23:24:22Z,measured,20260809T230716Z,0.01,0.0,0.0
 Session Replay and Heatmaps,session-replay,learndota2,ok,142800,permissive,rules,False,True,False,8.47,0.01,0.0847,25,2026-08-09T23:51:29Z,measured,20260809T230716Z,0.0,0.0,0.0
 Data Warehouses,data-warehouses,politics,ok,9230904,permissive,rules,False,True,False,1200.88,0.0,0.0,48,2026-08-05T20:32:07Z,measured,20260809T230716Z,0.0,0.0,0.0
-Data Warehouses,data-warehouses,programming,ok,6908004,permissive,rules,False,True,False,14.8,0.0,0.0,27,2026-08-05T20:32:15Z,measured,20260809T230716Z,0.0,0.5,0.0
+Data Warehouses,data-warehouses,programming,ok,6908004,permissive,rules,False,True,True,14.8,0.0,0.0,27,2026-08-05T20:32:15Z,measured,20260809T230716Z,0.0,0.5,0.0
 Data Warehouses,data-warehouses,CFB,ok,4493125,permissive,rules,False,True,False,239.58,0.0,0.0,25,2026-08-05T20:48:39Z,measured,20260809T230716Z,0.0,0.0,0.0
-Data Warehouses,data-warehouses,datascience,ok,2761030,capped,shipped,False,True,False,1.93,0.0,0.0,23,2026-08-04T18:07:57Z,shipped,20260809T230716Z,0.01,0.5,0.0
+Data Warehouses,data-warehouses,datascience,ok,2761030,capped,shipped,False,True,True,1.93,0.0,0.0,23,2026-08-04T18:07:57Z,shipped,20260809T230716Z,0.01,0.5,0.0
 Data Warehouses,data-warehouses,dataengineering,ok,470587,permissive,shipped,False,True,True,10.11,0.03,0.3033,20,2026-08-04T18:07:49Z,shipped,20260809T230716Z,0.0,1.0,0.3033
 Data Warehouses,data-warehouses,aws,ok,390926,permissive,sidebar,False,True,True,5.7,0.05,0.285,15,2026-08-05T20:50:46Z,measured,20260809T230716Z,0.0,0.5,0.1425
 Data Warehouses,data-warehouses,JordanPeterson,ok,302586,permissive,rules,False,True,False,7.97,0.0,0.0,15,2026-08-09T23:51:40Z,measured,20260809T230716Z,0.0,0.0,0.0
 Data Warehouses,data-warehouses,SQL,ok,286778,permissive,shipped,False,True,True,1.86,0.01,0.0186,26,2026-08-04T18:08:33Z,shipped,20260809T230716Z,0.0,0.5,0.0093
 Data Warehouses,data-warehouses,analytics,ok,277313,permissive,shipped,False,True,True,12.76,0.01,0.1276,17,2026-08-04T18:08:07Z,shipped,20260809T230716Z,0.06,0.5,0.0638
 Data Warehouses,data-warehouses,bigbangtheory,ok,239305,permissive,rules,False,True,False,16.41,0.0,0.0,29,2026-08-09T23:51:43Z,measured,20260809T230716Z,0.0,0.0,0.0
-Data Warehouses,data-warehouses,dataanalysis,ok,224773,permissive,shipped,False,True,False,1.84,0.01,0.0184,45,2026-08-04T18:08:42Z,shipped,20260809T230716Z,0.03,0.5,0.0092
+Data Warehouses,data-warehouses,dataanalysis,ok,224773,permissive,shipped,False,True,True,1.84,0.01,0.0184,45,2026-08-04T18:08:42Z,shipped,20260809T230716Z,0.03,0.5,0.0092
 Data Warehouses,data-warehouses,datasets,ok,221505,permissive,rules,False,True,False,0.71,0.0,0.0,48,2026-08-09T23:51:47Z,measured,20260809T230716Z,0.0,0.5,0.0
 Data Warehouses,data-warehouses,AZURE,ok,212511,hostile,rules,True,False,False,2.0,0.0,0.0,29,2026-08-09T23:42:13Z,measured,20260809T230716Z,0.01,0.5,0.0
 Data Warehouses,data-warehouses,PowerBI,ok,208597,permissive,shipped,True,False,False,5.34,0.02,0.1068,37,2026-08-04T18:08:16Z,shipped,20260809T230716Z,0.17,0.5,0.0534
@@ -1897,7 +1897,7 @@ Data Warehouses,data-warehouses,googlecloud,ok,96761,permissive,rules,False,True
 Data Warehouses,data-warehouses,tableau,ok,93897,permissive,shipped,True,False,False,0.59,0.0,0.0,16,2026-08-04T18:08:24Z,shipped,20260809T230716Z,0.31,0.5,0.0
 Data Warehouses,data-warehouses,Database,ok,88293,permissive,rules,True,False,False,0.62,0.02,0.0124,17,2026-08-09T23:51:51Z,measured,20260809T230716Z,0.02,0.5,0.0062
 Data Warehouses,data-warehouses,PostgreSQL,ok,86497,permissive,rules,True,False,False,1.2,0.01,0.012,17,2026-08-09T23:51:55Z,measured,20260809T230716Z,0.01,0.5,0.006
-Data Warehouses,data-warehouses,bigdata,ok,75531,permissive,rules,False,True,False,0.02,0.01,0.0002,53,2026-08-09T23:52:01Z,measured,20260809T230716Z,0.0,0.5,0.0001
+Data Warehouses,data-warehouses,bigdata,ok,75531,permissive,rules,False,True,True,0.02,0.01,0.0002,53,2026-08-09T23:52:01Z,measured,20260809T230716Z,0.0,0.5,0.0001
 Data Warehouses,data-warehouses,learnSQL,ok,67064,unknown,none,True,False,False,1.55,0.03,0.0465,17,2026-08-09T23:52:05Z,measured,20260809T230716Z,0.03,0.5,0.02325
 Data Warehouses,data-warehouses,SQLServer,ok,66254,permissive,rules,False,True,True,0.96,0.04,0.0384,18,2026-08-09T23:52:09Z,measured,20260809T230716Z,0.0,0.5,0.0192
 Data Warehouses,data-warehouses,learndatascience,ok,55033,permissive,rules,False,True,False,0.61,0.0,0.0,32,2026-08-09T23:52:14Z,measured,20260809T230716Z,0.0,0.5,0.0
@@ -1911,9 +1911,9 @@ Data Warehouses,data-warehouses,datamining,ok,16714,permissive,rules,False,True,
 Data Warehouses,data-warehouses,ETL,ok,12345,permissive,sidebar,False,True,True,0.34,0.11,0.0374,19,2026-08-09T23:52:33Z,measured,20260809T230716Z,0.11,1.0,0.0374
 Data Warehouses,data-warehouses,DataScienceMemes,ok,6199,permissive,sidebar,False,True,False,0.0,0.0,0.0,80,2026-08-09T23:52:37Z,measured,20260809T230716Z,0.0,0.0,0.0
 Data Warehouses,data-warehouses,AppEngine,ok,3347,permissive,sidebar,True,False,False,0.0,0.14,0.0,38,2026-08-09T23:52:41Z,measured,20260809T230716Z,0.01,0.0,0.0
-ETL and Data Pipelines,etl,programming,ok,6908004,permissive,rules,False,True,False,14.8,0.0,0.0,27,2026-08-05T20:32:15Z,measured,20260809T230716Z,0.0,0.5,0.0
+ETL and Data Pipelines,etl,programming,ok,6908004,permissive,rules,False,True,True,14.8,0.0,0.0,27,2026-08-05T20:32:15Z,measured,20260809T230716Z,0.0,0.5,0.0
 ETL and Data Pipelines,etl,MachineLearning,ok,3064209,hostile,rules,True,False,False,7.29,0.01,0.0729,21,2026-08-05T20:51:44Z,measured,20260809T230716Z,0.0,0.5,0.03645
-ETL and Data Pipelines,etl,datascience,ok,2761030,capped,shipped,False,True,False,1.93,0.0,0.0,23,2026-08-04T18:07:57Z,shipped,20260809T230716Z,0.01,0.5,0.0
+ETL and Data Pipelines,etl,datascience,ok,2761030,capped,shipped,False,True,True,1.93,0.0,0.0,23,2026-08-04T18:07:57Z,shipped,20260809T230716Z,0.01,0.5,0.0
 ETL and Data Pipelines,etl,cscareerquestions,ok,2374167,permissive,shipped,False,True,False,64.4,0.0,0.0,29,2026-08-04T18:09:56Z,shipped,20260809T230716Z,0.0,0.0,0.0
 ETL and Data Pipelines,etl,Python,ok,1502437,permissive,rules,False,True,False,12.12,0.0,0.0,15,2026-08-05T20:45:02Z,measured,20260809T230716Z,0.0,0.5,0.0
 ETL and Data Pipelines,etl,LocalLLaMA,ok,795419,permissive,rules,False,True,False,53.71,0.0,0.0,39,2026-08-09T23:17:34Z,measured,20260809T230716Z,0.01,0.0,0.0
@@ -1927,7 +1927,7 @@ ETL and Data Pipelines,etl,PowerBI,ok,208597,permissive,shipped,True,False,False
 ETL and Data Pipelines,etl,bioinformatics,ok,163425,hostile,rules,False,False,False,2.41,0.01,0.0241,23,2026-08-09T23:24:22Z,measured,20260809T230716Z,0.01,0.5,0.01205
 ETL and Data Pipelines,etl,Database,ok,88293,permissive,rules,True,False,False,0.62,0.0,0.0,17,2026-08-09T23:51:51Z,measured,20260809T230716Z,0.02,0.5,0.0
 ETL and Data Pipelines,etl,Dramione,ok,77138,hostile,rules,False,False,False,14.34,0.0,0.0,51,2026-08-09T23:52:59Z,measured,20260809T230716Z,0.0,0.0,0.0
-ETL and Data Pipelines,etl,bigdata,ok,75531,permissive,rules,False,True,False,0.02,0.01,0.0002,53,2026-08-09T23:52:01Z,measured,20260809T230716Z,0.0,0.5,0.0001
+ETL and Data Pipelines,etl,bigdata,ok,75531,permissive,rules,False,True,True,0.02,0.01,0.0002,53,2026-08-09T23:52:01Z,measured,20260809T230716Z,0.0,0.5,0.0001
 ETL and Data Pipelines,etl,lossprevention,ok,67264,permissive,rules,False,True,False,0.6,0.01,0.006,25,2026-08-09T23:53:03Z,measured,20260809T230716Z,0.0,0.0,0.0
 ETL and Data Pipelines,etl,SQLServer,ok,66254,permissive,rules,False,True,False,0.96,0.0,0.0,18,2026-08-09T23:52:09Z,measured,20260809T230716Z,0.0,0.5,0.0
 ETL and Data Pipelines,etl,Whiskyporn,ok,62577,permissive,sidebar,False,True,False,1.24,0.01,0.0124,22,2026-08-09T23:53:06Z,measured,20260809T230716Z,0.0,0.0,0.0
@@ -1938,7 +1938,7 @@ ETL and Data Pipelines,etl,dataengineersindia,ok,20939,permissive,rules,False,Tr
 ETL and Data Pipelines,etl,apachespark,ok,19137,unknown,none,False,True,True,0.16,0.03,0.0048,20,2026-08-09T23:53:14Z,measured,20260809T230716Z,0.01,1.0,0.0048
 ETL and Data Pipelines,etl,ETL,ok,12345,permissive,sidebar,False,True,True,0.34,0.11,0.0374,19,2026-08-09T23:52:33Z,measured,20260809T230716Z,0.11,1.0,0.0374
 ETL and Data Pipelines,etl,apache_airflow,ok,3054,permissive,sidebar,True,False,False,0.03,0.31,0.0093,26,2026-08-09T23:53:18Z,measured,20260809T230716Z,0.04,1.0,0.0093
-ETL and Data Pipelines,etl,AISystemsEngineering,ok,2676,permissive,rules,False,True,False,0.21,0.01,0.0021,23,2026-08-09T23:53:22Z,measured,20260809T230716Z,0.0,0.5,0.00105
+ETL and Data Pipelines,etl,AISystemsEngineering,ok,2676,permissive,rules,False,True,True,0.21,0.01,0.0021,23,2026-08-09T23:53:22Z,measured,20260809T230716Z,0.0,0.5,0.00105
 ETL and Data Pipelines,etl,DataBuildTool,ok,2544,permissive,sidebar,True,False,False,0.03,0.06,0.0018,26,2026-08-09T23:53:26Z,measured,20260809T230716Z,0.27,1.0,0.0018
 Databases,databases,technology,ok,20452155,permissive,rules,False,True,True,810.1,0.47,380.747,23,2026-08-05T20:30:48Z,measured,20260809T230716Z,0.0,0.5,190.3735
 Databases,databases,politics,ok,9230904,permissive,rules,False,True,False,1200.88,0.56,672.4928,48,2026-08-05T20:32:07Z,measured,20260809T230716Z,0.0,0.0,0.0
@@ -1962,17 +1962,17 @@ Databases,databases,tipofmyjoystick,ok,457485,permissive,rules,False,True,False,
 Databases,databases,leetcode,ok,449063,permissive,rules,False,True,True,13.17,0.5,6.585,46,2026-08-09T23:48:50Z,measured,20260809T230716Z,0.0,0.5,3.2925
 Databases,databases,rust,ok,416783,permissive,shipped,False,True,True,23.67,0.56,13.2552,24,2026-08-05T18:53:37Z,shipped,20260809T230716Z,0.0,0.5,6.6276
 Databases,databases,TrumpCriticizesTrump,ok,414309,permissive,rules,False,True,False,0.09,0.77,0.0693,69,2026-08-09T23:53:46Z,measured,20260809T230716Z,0.0,0.0,0.0
-Databases,databases,aws,ok,390926,permissive,sidebar,False,True,False,5.7,0.58,3.306,15,2026-08-05T20:50:46Z,measured,20260809T230716Z,0.0,0.5,1.653
+Databases,databases,aws,ok,390926,permissive,sidebar,False,True,True,5.7,0.58,3.306,15,2026-08-05T20:50:46Z,measured,20260809T230716Z,0.0,0.5,1.653
 Databases,databases,golang,ok,372101,permissive,rules,False,True,True,15.38,0.47,7.2286,16,2026-08-05T20:50:50Z,measured,20260809T230716Z,0.0,0.5,3.6143
-Databases,databases,node,ok,347784,permissive,sidebar,False,True,False,0.83,0.52,0.4316,26,2026-08-05T20:50:54Z,measured,20260809T230716Z,0.0,0.5,0.2158
-Databases,databases,SQL,ok,286778,permissive,shipped,False,True,False,1.86,0.77,1.4322,26,2026-08-04T18:08:33Z,shipped,20260809T230716Z,0.0,1.0,1.4322
+Databases,databases,node,ok,347784,permissive,sidebar,False,True,True,0.83,0.52,0.4316,26,2026-08-05T20:50:54Z,measured,20260809T230716Z,0.0,0.5,0.2158
+Databases,databases,SQL,ok,286778,permissive,shipped,False,True,True,1.86,0.77,1.4322,26,2026-08-04T18:08:33Z,shipped,20260809T230716Z,0.0,1.0,1.4322
 Databases,databases,Hue,ok,278334,hostile,rules,False,False,False,2.73,0.49,1.3377,23,2026-08-09T23:53:50Z,measured,20260809T230716Z,0.0,0.0,0.0
 Databases,databases,ironscape,ok,209118,hostile,rules,False,False,False,66.17,0.39,25.8063,38,2026-08-09T23:53:54Z,measured,20260809T230716Z,0.0,0.0,0.0
 Databases,databases,diablo2,ok,180997,permissive,rules,False,True,False,40.49,0.46,18.6254,25,2026-08-09T23:53:58Z,measured,20260809T230716Z,0.0,0.0,0.0
 Databases,databases,Scarymovies,ok,175580,permissive,rules,False,True,False,3.16,0.45,1.422,16,2026-08-09T23:54:01Z,measured,20260809T230716Z,0.0,0.0,0.0
 Databases,databases,House,ok,171783,permissive,rules,False,True,False,4.47,0.33,1.4751,29,2026-08-09T23:54:05Z,measured,20260809T230716Z,0.0,0.0,0.0
 Databases,databases,Mortgages,ok,167750,permissive,rules,False,True,False,34.81,0.59,20.5379,17,2026-08-09T23:54:09Z,measured,20260809T230716Z,0.0,0.0,0.0
-Databases,databases,django,ok,164930,permissive,rules,False,True,False,1.79,0.59,1.0561,16,2026-08-09T23:23:05Z,measured,20260809T230716Z,0.0,0.5,0.52805
+Databases,databases,django,ok,164930,permissive,rules,False,True,True,1.79,0.59,1.0561,16,2026-08-09T23:23:05Z,measured,20260809T230716Z,0.0,0.5,0.52805
 Databases,databases,VinylDeals,ok,163133,permissive,rules,False,True,False,2.28,0.32,0.7296,36,2026-08-09T23:54:13Z,measured,20260809T230716Z,0.0,0.0,0.0
 API Tools,api-tools,aww,ok,37846716,permissive,rules,False,True,False,130.65,0.0,0.0,18,2026-08-05T20:34:41Z,measured,20260809T230716Z,0.0,0.0,0.0
 API Tools,api-tools,Fitness,ok,12561298,permissive,rules,False,True,False,3.76,0.0,0.0,34,2026-08-09T23:54:26Z,measured,20260809T230716Z,0.03,0.0,0.0
@@ -2013,7 +2013,7 @@ Authentication and Identity,identity,WritingPrompts,ok,18869574,permissive,rules
 Authentication and Identity,identity,politics,ok,9230904,permissive,rules,False,True,False,1200.88,0.17,204.1496,48,2026-08-05T20:32:07Z,measured,20260809T230716Z,0.0,0.0,0.0
 Authentication and Identity,identity,programming,ok,6908004,permissive,rules,False,True,True,14.8,0.27,3.996,27,2026-08-05T20:32:15Z,measured,20260809T230716Z,0.0,0.5,1.998
 Authentication and Identity,identity,webdev,ok,3291935,hostile,shipped,False,False,False,28.14,0.2,5.628,49,2026-08-04T18:04:28Z,shipped,20260809T230716Z,0.0,0.5,2.814
-Authentication and Identity,identity,javascript,ok,2446781,permissive,rules,False,True,False,1.83,0.33,0.6039,37,2026-08-05T20:41:01Z,measured,20260809T230716Z,0.01,0.5,0.30195
+Authentication and Identity,identity,javascript,ok,2446781,permissive,rules,False,True,True,1.83,0.33,0.6039,37,2026-08-05T20:41:01Z,measured,20260809T230716Z,0.01,0.5,0.30195
 Authentication and Identity,identity,korea,ok,1415959,hostile,rules,False,False,False,22.67,0.31,7.0277,19,2026-08-09T23:55:49Z,measured,20260809T230716Z,0.0,0.0,0.0
 Authentication and Identity,identity,sysadmin,ok,1307123,permissive,shipped,False,True,True,111.96,0.24,26.8704,24,2026-08-04T18:02:01Z,shipped,20260809T230716Z,0.0,1.0,26.8704
 Authentication and Identity,identity,lgbt,ok,1288041,hostile,rules,False,False,False,50.52,0.28,14.1456,31,2026-08-09T23:55:54Z,measured,20260809T230716Z,0.0,0.0,0.0
@@ -2033,14 +2033,14 @@ Authentication and Identity,identity,NonBinary,ok,307035,hostile,rules,False,Fal
 Authentication and Identity,identity,dotnet,ok,242181,permissive,rules,False,True,True,8.05,0.3,2.415,20,2026-08-09T23:42:09Z,measured,20260809T230716Z,0.05,0.5,1.2075
 Authentication and Identity,identity,AsianMasculinity,ok,210902,permissive,rules,False,True,False,3.86,0.45,1.737,15,2026-08-09T23:56:10Z,measured,20260809T230716Z,0.0,0.0,0.0
 Authentication and Identity,identity,LawPH,ok,178196,permissive,rules,False,True,False,1.65,0.45,0.7425,29,2026-08-09T23:56:14Z,measured,20260809T230716Z,0.0,0.0,0.0
-Authentication and Identity,identity,nextjs,ok,172408,permissive,shipped,False,True,False,2.19,0.31,0.6789,29,2026-08-04T18:10:30Z,shipped,20260809T230716Z,0.02,0.5,0.33945
+Authentication and Identity,identity,nextjs,ok,172408,permissive,shipped,False,True,True,2.19,0.31,0.6789,29,2026-08-04T18:10:30Z,shipped,20260809T230716Z,0.02,0.5,0.33945
 Authentication and Identity,identity,Androgynoushotties,ok,171923,permissive,rules,False,True,False,1.65,0.25,0.4125,26,2026-08-09T23:56:17Z,measured,20260809T230716Z,0.0,0.0,0.0
-Authentication and Identity,identity,django,ok,164930,permissive,rules,False,True,False,1.79,0.29,0.5191,16,2026-08-09T23:23:05Z,measured,20260809T230716Z,0.0,0.5,0.25955
+Authentication and Identity,identity,django,ok,164930,permissive,rules,False,True,True,1.79,0.29,0.5191,16,2026-08-09T23:23:05Z,measured,20260809T230716Z,0.0,0.5,0.25955
 Authentication and Identity,identity,limbuscompany,ok,164473,permissive,rules,False,True,False,51.36,0.19,9.7584,43,2026-08-09T23:56:22Z,measured,20260809T230716Z,0.0,0.0,0.0
 Authentication and Identity,identity,miraculousladybug,ok,154847,hostile,rules,False,False,False,60.06,0.38,22.8228,48,2026-08-09T23:56:26Z,measured,20260809T230716Z,0.0,0.0,0.0
 Authentication and Identity,identity,vuejs,ok,134375,permissive,rules,False,True,False,1.13,0.25,0.2825,19,2026-08-09T23:56:29Z,measured,20260809T230716Z,0.0,0.5,0.14125
 Authentication and Identity,identity,unRAID,ok,118916,permissive,shipped,True,False,False,27.03,0.22,5.9466,14,2026-08-05T18:55:11Z,shipped,20260809T230716Z,0.01,0.0,0.0
-Authentication and Identity,identity,laravel,ok,110082,permissive,rules,False,True,False,0.96,0.36,0.3456,16,2026-08-09T23:56:33Z,measured,20260809T230716Z,0.0,0.5,0.1728
+Authentication and Identity,identity,laravel,ok,110082,permissive,rules,False,True,True,0.96,0.36,0.3456,16,2026-08-09T23:56:33Z,measured,20260809T230716Z,0.0,0.5,0.1728
 Authentication and Identity,identity,stupidpol,ok,109202,hostile,rules,False,False,False,34.03,0.36,12.2508,19,2026-08-09T23:56:37Z,measured,20260809T230716Z,0.0,0.0,0.0
 Device Management,mdm,news,ok,31498350,permissive,rules,False,True,False,365.16,0.0,0.0,14,2026-08-09T23:56:49Z,measured,20260809T230716Z,0.0,0.0,0.0
 Device Management,mdm,technology,ok,20452155,permissive,rules,False,True,True,810.1,0.0,0.0,23,2026-08-05T20:30:48Z,measured,20260809T230716Z,0.0,0.5,0.0
@@ -2103,11 +2103,11 @@ Remote Desktop and Access,remote-desktop,homelab,ok,1064059,capped,shipped,False
 Remote Desktop and Access,remote-desktop,TalesFromTheFrontDesk,ok,1047799,permissive,rules,True,False,False,18.89,0.0,0.0,13,2026-08-05T20:44:14Z,measured,20260809T230716Z,0.0,0.0,0.0
 Remote Desktop and Access,remote-desktop,guns,ok,937646,hostile,rules,False,False,False,59.59,0.01,0.5959,24,2026-08-09T23:29:11Z,measured,20260809T230716Z,0.0,0.0,0.0
 Remote Desktop and Access,remote-desktop,selfhosted,ok,813099,hostile,shipped,False,False,False,66.7,0.03,2.001,33,2026-08-04T18:02:09Z,shipped,20260809T230716Z,0.01,1.0,2.001
-Remote Desktop and Access,remote-desktop,OculusQuest,ok,669928,permissive,rules,False,True,False,84.93,0.0,0.0,15,2026-08-09T23:46:36Z,measured,20260809T230716Z,0.0,0.5,0.0
+Remote Desktop and Access,remote-desktop,OculusQuest,ok,669928,permissive,rules,False,True,True,84.93,0.0,0.0,15,2026-08-09T23:46:36Z,measured,20260809T230716Z,0.0,0.5,0.0
 Remote Desktop and Access,remote-desktop,audioengineering,ok,648917,hostile,rules,False,False,False,24.38,0.03,0.7314,16,2026-08-09T23:58:15Z,measured,20260809T230716Z,0.0,0.0,0.0
 Remote Desktop and Access,remote-desktop,ipad,ok,634133,permissive,rules,False,True,True,11.4,0.02,0.228,42,2026-08-09T23:36:07Z,measured,20260809T230716Z,0.0,0.5,0.114
-Remote Desktop and Access,remote-desktop,chromeos,ok,581234,permissive,rules,False,True,False,15.17,0.0,0.0,10,2026-08-05T20:52:49Z,measured,20260809T230716Z,0.0,0.5,0.0
-Remote Desktop and Access,remote-desktop,ITCareerQuestions,ok,565561,permissive,rules,False,True,False,20.31,0.0,0.0,18,2026-08-09T23:24:14Z,measured,20260809T230716Z,0.0,0.5,0.0
+Remote Desktop and Access,remote-desktop,chromeos,ok,581234,permissive,rules,False,True,True,15.17,0.0,0.0,10,2026-08-05T20:52:49Z,measured,20260809T230716Z,0.0,0.5,0.0
+Remote Desktop and Access,remote-desktop,ITCareerQuestions,ok,565561,permissive,rules,False,True,True,20.31,0.0,0.0,18,2026-08-09T23:24:14Z,measured,20260809T230716Z,0.0,0.5,0.0
 Remote Desktop and Access,remote-desktop,Windows10,ok,499856,permissive,rules,False,True,True,0.69,0.01,0.0069,19,2026-08-09T23:09:04Z,measured,20260809T230716Z,0.0,0.5,0.00345
 Remote Desktop and Access,remote-desktop,Smite,ok,477917,permissive,rules,False,True,False,31.36,0.0,0.0,27,2026-08-09T23:58:19Z,measured,20260809T230716Z,0.0,0.0,0.0
 RMM and MSP Tools,rmm,PS4,ok,5531080,permissive,rules,False,True,False,4.07,0.0,0.0,25,2026-08-09T23:58:33Z,measured,20260809T230716Z,0.0,0.0,0.0
@@ -2144,15 +2144,15 @@ RMM and MSP Tools,rmm,neckbeardRPG,ok,81233,permissive,rules,True,False,False,0.
 RMM and MSP Tools,rmm,creativecoding,ok,73129,permissive,rules,False,True,False,0.8,0.01,0.008,19,2026-08-09T23:59:51Z,measured,20260809T230716Z,0.0,0.0,0.0
 RMM and MSP Tools,rmm,RomanceMangaAnime,ok,64136,permissive,rules,False,True,False,2.19,0.0,0.0,23,2026-08-09T23:59:55Z,measured,20260809T230716Z,0.0,0.0,0.0
 RMM and MSP Tools,rmm,crowdstrike,ok,46986,permissive,rules,True,False,False,0.52,0.01,0.0052,23,2026-08-09T23:59:59Z,measured,20260809T230716Z,0.0,0.5,0.0026
-Firewalls and Network Security,network-security,technology,ok,20452155,permissive,rules,False,True,False,810.1,0.0,0.0,23,2026-08-05T20:30:48Z,measured,20260809T230716Z,0.0,0.5,0.0
+Firewalls and Network Security,network-security,technology,ok,20452155,permissive,rules,False,True,True,810.1,0.0,0.0,23,2026-08-05T20:30:48Z,measured,20260809T230716Z,0.0,0.5,0.0
 Firewalls and Network Security,network-security,howto,ok,3460518,hostile,rules,False,False,False,29.54,0.0,0.0,19,2026-08-10T00:00:14Z,measured,20260809T230716Z,0.0,0.0,0.0
-Firewalls and Network Security,network-security,hacking,ok,2981920,permissive,rules,False,True,False,2.29,0.0,0.0,36,2026-08-05T20:38:33Z,measured,20260809T230716Z,0.0,0.5,0.0
+Firewalls and Network Security,network-security,hacking,ok,2981920,permissive,rules,False,True,True,2.29,0.0,0.0,36,2026-08-05T20:38:33Z,measured,20260809T230716Z,0.0,0.5,0.0
 Firewalls and Network Security,network-security,cybersecurity,ok,1499373,hostile,shipped,False,False,False,54.05,0.01,0.5405,31,2026-08-04T18:01:44Z,shipped,20260809T230716Z,0.02,1.0,0.5405
 Firewalls and Network Security,network-security,sysadmin,ok,1307123,permissive,shipped,False,True,True,111.96,0.02,2.2392,24,2026-08-04T18:02:01Z,shipped,20260809T230716Z,0.0,1.0,2.2392
 Firewalls and Network Security,network-security,homelab,ok,1064059,capped,shipped,False,True,True,59.72,0.02,1.1944,26,2026-08-04T18:10:45Z,shipped,20260809T230716Z,0.0,0.5,0.5972
 Firewalls and Network Security,network-security,yugioh,ok,981540,permissive,rules,False,True,False,53.73,0.0,0.0,31,2026-08-10T00:00:18Z,measured,20260809T230716Z,0.0,0.0,0.0
 Firewalls and Network Security,network-security,HomeNetworking,ok,575180,permissive,shipped,False,True,True,33.13,0.04,1.3252,23,2026-08-05T18:53:29Z,shipped,20260809T230716Z,0.0,1.0,1.3252
-Firewalls and Network Security,network-security,netsec,ok,568429,permissive,shipped,False,True,False,0.65,0.0,0.0,29,2026-08-04T18:01:51Z,shipped,20260809T230716Z,0.0,1.0,0.0
+Firewalls and Network Security,network-security,netsec,ok,568429,permissive,shipped,False,True,True,0.65,0.0,0.0,29,2026-08-04T18:01:51Z,shipped,20260809T230716Z,0.0,1.0,0.0
 Firewalls and Network Security,network-security,ITCareerQuestions,ok,565561,permissive,rules,False,True,False,20.31,0.0,0.0,18,2026-08-09T23:24:14Z,measured,20260809T230716Z,0.0,0.5,0.0
 Firewalls and Network Security,network-security,Welding,ok,524830,permissive,rules,False,True,False,32.82,0.0,0.0,16,2026-08-05T20:37:23Z,measured,20260809T230716Z,0.0,0.0,0.0
 Firewalls and Network Security,network-security,networking,ok,447394,hostile,rules,False,False,False,12.18,0.05,0.609,20,2026-08-09T23:27:48Z,measured,20260809T230716Z,0.0,1.0,0.609
@@ -2165,7 +2165,7 @@ Firewalls and Network Security,network-security,msp,ok,245261,capped,shipped,Fal
 Firewalls and Network Security,network-security,AZURE,ok,212511,hostile,rules,True,False,False,2.0,0.0,0.0,29,2026-08-09T23:42:13Z,measured,20260809T230716Z,0.01,0.5,0.0
 Firewalls and Network Security,network-security,WGU,ok,181917,permissive,rules,False,True,False,29.1,0.0,0.0,21,2026-08-10T00:00:30Z,measured,20260809T230716Z,0.0,0.0,0.0
 Firewalls and Network Security,network-security,security,ok,164358,hostile,shipped,False,False,False,0.5,0.02,0.01,13,2026-08-05T18:47:19Z,shipped,20260809T230716Z,0.04,0.5,0.005
-Firewalls and Network Security,network-security,netsecstudents,ok,158888,permissive,rules,False,True,False,0.34,0.02,0.0068,24,2026-08-10T00:00:34Z,measured,20260809T230716Z,0.0,1.0,0.0068
+Firewalls and Network Security,network-security,netsecstudents,ok,158888,permissive,rules,False,True,True,0.34,0.02,0.0068,24,2026-08-10T00:00:34Z,measured,20260809T230716Z,0.0,1.0,0.0068
 Firewalls and Network Security,network-security,PFSENSE,ok,151705,permissive,rules,True,False,False,1.66,0.3,0.498,15,2026-08-10T00:00:37Z,measured,20260809T230716Z,0.0,1.0,0.498
 Firewalls and Network Security,network-security,Tronix,ok,139601,permissive,rules,False,True,False,0.15,0.0,0.0,29,2026-08-09T23:09:21Z,measured,20260809T230716Z,0.0,0.0,0.0
 Firewalls and Network Security,network-security,homedefense,ok,116559,permissive,rules,False,True,False,1.02,0.0,0.0,19,2026-08-10T00:00:41Z,measured,20260809T230716Z,0.0,0.0,0.0
@@ -2491,10 +2491,10 @@ Internal Tools and Admin Panels,internal-tools,devops,ok,505353,permissive,shipp
 Internal Tools and Admin Panels,internal-tools,SEO,ok,501629,hostile,shipped,False,False,False,29.66,0.0,0.0,32,2026-08-04T18:00:36Z,shipped,20260809T230716Z,0.0,0.5,0.0
 Internal Tools and Admin Panels,internal-tools,ARK,ok,497523,hostile,rules,False,False,False,22.27,0.0,0.0,33,2026-08-10T00:06:33Z,measured,20260809T230716Z,0.0,0.0,0.0
 Internal Tools and Admin Panels,internal-tools,AusLegal,ok,490512,permissive,rules,True,False,False,85.13,0.0,0.0,13,2026-08-10T00:12:05Z,measured,20260809T230716Z,0.0,0.0,0.0
-Internal Tools and Admin Panels,internal-tools,ExperiencedDevs,ok,408386,permissive,shipped,False,True,False,13.87,0.0,0.0,15,2026-08-04T17:57:26Z,shipped,20260809T230716Z,0.01,0.5,0.0
+Internal Tools and Admin Panels,internal-tools,ExperiencedDevs,ok,408386,permissive,shipped,False,True,True,13.87,0.0,0.0,15,2026-08-04T17:57:26Z,shipped,20260809T230716Z,0.01,0.5,0.0
 Internal Tools and Admin Panels,internal-tools,VeganFoodPorn,ok,408079,permissive,rules,False,True,False,6.02,0.0,0.0,27,2026-08-10T00:12:09Z,measured,20260809T230716Z,0.08,0.0,0.0
-Internal Tools and Admin Panels,internal-tools,node,ok,347784,permissive,sidebar,False,True,False,0.83,0.0,0.0,26,2026-08-05T20:50:54Z,measured,20260809T230716Z,0.0,0.5,0.0
-Internal Tools and Admin Panels,internal-tools,Frontend,ok,347264,permissive,shipped,False,True,False,0.99,0.0,0.0,22,2026-08-05T17:45:13Z,shipped,20260809T230716Z,0.09,0.5,0.0
+Internal Tools and Admin Panels,internal-tools,node,ok,347784,permissive,sidebar,False,True,True,0.83,0.0,0.0,26,2026-08-05T20:50:54Z,measured,20260809T230716Z,0.0,0.5,0.0
+Internal Tools and Admin Panels,internal-tools,Frontend,ok,347264,permissive,shipped,False,True,True,0.99,0.0,0.0,22,2026-08-05T17:45:13Z,shipped,20260809T230716Z,0.09,0.5,0.0
 Internal Tools and Admin Panels,internal-tools,PutAnEggOnIt,ok,323706,permissive,rules,True,False,False,0.45,0.0,0.0,20,2026-08-10T00:12:13Z,measured,20260809T230716Z,0.03,0.0,0.0
 Internal Tools and Admin Panels,internal-tools,Wordpress,ok,312222,hostile,shipped,False,False,False,27.2,0.0,0.0,27,2026-08-05T18:53:01Z,shipped,20260809T230716Z,0.04,0.5,0.0
 Internal Tools and Admin Panels,internal-tools,redditrequest,ok,293846,permissive,rules,False,True,False,14.73,0.0,0.0,53,2026-08-10T00:12:17Z,measured,20260809T230716Z,0.0,0.0,0.0
@@ -2602,7 +2602,7 @@ Wikis and Knowledge Bases,wikis,52book,ok,664216,permissive,rules,False,True,Fal
 Wikis and Knowledge Bases,wikis,stalker,ok,592593,permissive,rules,False,True,False,37.5,0.0,0.0,31,2026-08-10T00:08:01Z,measured,20260809T230716Z,0.02,0.0,0.0
 Wikis and Knowledge Bases,wikis,netsec,ok,568429,permissive,shipped,False,True,True,0.65,0.02,0.013,29,2026-08-04T18:01:51Z,shipped,20260809T230716Z,0.0,0.5,0.0065
 Wikis and Knowledge Bases,wikis,Guildwars2,ok,424997,permissive,rules,False,True,False,31.87,0.01,0.3187,26,2026-08-10T00:14:40Z,measured,20260809T230716Z,0.0,0.0,0.0
-Wikis and Knowledge Bases,wikis,rust,ok,416783,permissive,shipped,False,True,False,23.67,0.0,0.0,24,2026-08-05T18:53:37Z,shipped,20260809T230716Z,0.0,0.5,0.0
+Wikis and Knowledge Bases,wikis,rust,ok,416783,permissive,shipped,False,True,True,23.67,0.0,0.0,24,2026-08-05T18:53:37Z,shipped,20260809T230716Z,0.0,0.5,0.0
 Translation and Localization,localization,funny,ok,67544446,hostile,rules,False,False,False,261.43,0.01,2.6143,15,2026-08-05T20:39:24Z,measured,20260809T230716Z,0.0,0.0,0.0
 Translation and Localization,localization,memes,ok,35945324,permissive,rules,False,True,False,543.38,0.01,5.4338,25,2026-08-05T20:34:45Z,measured,20260809T230716Z,0.0,0.0,0.0
 Translation and Localization,localization,europe,ok,11642130,permissive,rules,False,True,False,102.23,0.04,4.0892,25,2026-08-09T23:31:28Z,measured,20260809T230716Z,0.0,0.0,0.0
@@ -2682,12 +2682,12 @@ AI Chat Assistants,ai-assistants,CharacterAI,ok,2624572,hostile,rules,True,False
 AI Chat Assistants,ai-assistants,ArtificialInteligence,ok,1894137,permissive,rules,False,True,False,46.01,0.0,0.0,36,2026-08-05T20:47:00Z,measured,20260809T230716Z,0.0,0.5,0.0
 AI Chat Assistants,ai-assistants,bleach,ok,1508833,hostile,rules,False,False,False,66.43,0.0,0.0,25,2026-08-10T00:16:41Z,measured,20260809T230716Z,0.0,0.0,0.0
 AI Chat Assistants,ai-assistants,GPT3,ok,1414221,hostile,rules,False,False,False,0.24,0.31,0.0744,41,2026-08-10T00:16:18Z,measured,20260809T230716Z,0.0,1.0,0.0744
-AI Chat Assistants,ai-assistants,artificial,ok,1319126,permissive,rules,False,True,False,33.89,0.02,0.6778,18,2026-08-05T20:47:08Z,measured,20260809T230716Z,0.0,0.5,0.3389
+AI Chat Assistants,ai-assistants,artificial,ok,1319126,permissive,rules,False,True,True,33.89,0.02,0.6778,18,2026-08-05T20:47:08Z,measured,20260809T230716Z,0.0,0.5,0.3389
 AI Chat Assistants,ai-assistants,technews,ok,1096455,permissive,rules,False,True,False,19.92,0.01,0.1992,5,2026-08-09T23:17:17Z,measured,20260809T230716Z,0.0,0.0,0.0
 AI Chat Assistants,ai-assistants,ClaudeAI,ok,1068447,permissive,rules,True,False,False,78.83,0.07,5.5181,45,2026-08-09T23:40:26Z,measured,20260809T230716Z,0.0,1.0,5.5181
 AI Chat Assistants,ai-assistants,StableDiffusion,ok,988844,permissive,rules,True,False,False,131.73,0.02,2.6346,46,2026-08-10T00:06:21Z,measured,20260809T230716Z,0.0,0.0,0.0
 AI Chat Assistants,ai-assistants,ChatGPTPromptGenius,ok,809530,permissive,rules,False,True,True,2.25,0.28,0.63,22,2026-08-10T00:16:45Z,measured,20260809T230716Z,0.27,1.0,0.63
-AI Chat Assistants,ai-assistants,SideProject,ok,799708,permissive,sidebar,False,True,False,53.63,0.01,0.5363,41,2026-08-05T20:32:58Z,measured,20260809T230716Z,0.0,0.5,0.26815
+AI Chat Assistants,ai-assistants,SideProject,ok,799708,permissive,sidebar,False,True,True,53.63,0.01,0.5363,41,2026-08-05T20:32:58Z,measured,20260809T230716Z,0.0,0.5,0.26815
 AI Chat Assistants,ai-assistants,LocalLLaMA,ok,795419,permissive,rules,False,True,True,53.71,0.04,2.1484,39,2026-08-09T23:17:34Z,measured,20260809T230716Z,0.01,1.0,2.1484
 AI Chat Assistants,ai-assistants,aiArt,ok,680342,hostile,rules,True,False,False,18.87,0.0,0.0,59,2026-08-10T00:07:57Z,measured,20260809T230716Z,0.0,0.0,0.0
 AI Chat Assistants,ai-assistants,ChatGPTPro,ok,603018,permissive,rules,False,True,True,2.37,0.25,0.5925,20,2026-08-10T00:16:49Z,measured,20260809T230716Z,0.23,1.0,0.5925
@@ -2699,10 +2699,10 @@ AI Chat Assistants,ai-assistants,ClaudeCode,ok,380416,permissive,rules,True,Fals
 AI Chat Assistants,ai-assistants,printSF,ok,361681,hostile,rules,False,False,False,17.61,0.0,0.0,20,2026-08-10T00:17:06Z,measured,20260809T230716Z,0.0,0.0,0.0
 AI Chat Assistants,ai-assistants,vibecoding,ok,334458,permissive,rules,False,True,True,76.47,0.01,0.7647,41,2026-08-09T23:44:37Z,measured,20260809T230716Z,0.0,1.0,0.7647
 AI Chat Assistants,ai-assistants,antiai,ok,276738,permissive,rules,False,True,False,304.68,0.0,0.0,43,2026-08-09T23:18:02Z,measured,20260809T230716Z,0.02,0.5,0.0
-AI Chat Assistants,ai-assistants,macapps,ok,243340,capped,rules,False,True,False,22.6,0.02,0.452,22,2026-08-09T23:30:22Z,measured,20260809T230716Z,0.0,0.5,0.226
+AI Chat Assistants,ai-assistants,macapps,ok,243340,capped,rules,False,True,True,22.6,0.02,0.452,22,2026-08-09T23:30:22Z,measured,20260809T230716Z,0.0,0.5,0.226
 AI Chat Assistants,ai-assistants,FireEmblemHeroes,ok,202973,permissive,rules,False,True,False,39.96,0.02,0.7992,22,2026-08-09T23:20:19Z,measured,20260809T230716Z,0.0,0.0,0.0
 AI Chat Assistants,ai-assistants,Anthropic,ok,198216,permissive,rules,False,True,True,21.92,0.07,1.5344,25,2026-08-10T00:17:10Z,measured,20260809T230716Z,0.26,1.0,1.5344
-AI Chat Assistants,ai-assistants,Professors,ok,196014,permissive,rules,False,True,False,39.36,0.01,0.3936,23,2026-08-09T23:23:02Z,measured,20260809T230716Z,0.0,0.5,0.1968
+AI Chat Assistants,ai-assistants,Professors,ok,196014,permissive,rules,False,True,True,39.36,0.01,0.3936,23,2026-08-09T23:23:02Z,measured,20260809T230716Z,0.0,0.5,0.1968
 AI Chat Assistants,ai-assistants,leopardgeckos,ok,171212,permissive,rules,False,True,False,19.56,0.0,0.0,36,2026-08-10T00:17:14Z,measured,20260809T230716Z,0.0,0.0,0.0
 AI Chat Assistants,ai-assistants,aiwars,ok,161186,permissive,rules,False,True,True,201.53,0.01,2.0153,34,2026-08-10T00:08:32Z,measured,20260809T230716Z,0.0,0.5,1.00765
 AI Image Generation,ai-image,technology,ok,20452155,permissive,rules,False,True,True,810.1,0.01,8.101,23,2026-08-05T20:30:48Z,measured,20260809T230716Z,0.0,0.5,4.0505
@@ -2737,7 +2737,7 @@ AI Image Generation,ai-image,grok,ok,215657,permissive,rules,True,False,False,69
 AI Image Generation,ai-image,RWBY,ok,207490,permissive,rules,False,True,False,17.48,0.0,0.0,22,2026-08-10T00:18:05Z,measured,20260809T230716Z,0.0,0.0,0.0
 AI Image Generation,ai-image,dalle2,ok,205793,permissive,rules,False,True,True,0.07,0.48,0.0336,50,2026-08-10T00:18:09Z,measured,20260809T230716Z,0.0,1.0,0.0336
 AI Image Generation,ai-image,comfyui,ok,204631,permissive,sidebar,True,False,False,25.55,0.22,5.621,35,2026-08-10T00:18:13Z,measured,20260809T230716Z,0.22,1.0,5.621
-AI Image Generation,ai-image,editors,ok,193221,permissive,shipped,False,True,False,5.34,0.0,0.0,21,2026-08-04T18:05:09Z,shipped,20260809T230716Z,0.05,0.5,0.0
+AI Image Generation,ai-image,editors,ok,193221,permissive,shipped,False,True,True,5.34,0.0,0.0,21,2026-08-04T18:05:09Z,shipped,20260809T230716Z,0.05,0.5,0.0
 AI Image Generation,ai-image,premiere,ok,184980,permissive,shipped,True,False,False,5.79,0.01,0.0579,24,2026-08-04T18:05:26Z,shipped,20260809T230716Z,0.21,0.5,0.02895
 AI Video Generation,ai-video,WritingPrompts,ok,18869574,permissive,rules,False,True,False,15.64,0.01,0.1564,49,2026-08-05T20:31:53Z,measured,20260809T230716Z,0.0,0.0,0.0
 AI Video Generation,ai-video,pcmasterrace,ok,16223685,permissive,rules,False,True,False,519.99,0.0,0.0,50,2026-08-05T20:43:35Z,measured,20260809T230716Z,0.0,0.0,0.0
@@ -3221,7 +3221,7 @@ Personal Finance and Budgeting,budgeting,AusFinance,ok,835054,permissive,rules,F
 Personal Finance and Budgeting,budgeting,selfhosted,ok,813099,hostile,shipped,False,False,False,66.7,0.01,0.667,33,2026-08-04T18:02:09Z,shipped,20260809T230716Z,0.01,0.0,0.0
 Personal Finance and Budgeting,budgeting,Money,ok,813743,hostile,rules,True,False,False,35.62,0.0,0.0,18,2026-08-10T00:34:32Z,measured,20260809T230716Z,0.0,1.0,0.0
 Personal Finance and Budgeting,budgeting,phinvest,ok,805150,capped,rules,False,True,True,16.74,0.01,0.1674,30,2026-08-05T20:52:37Z,measured,20260809T230716Z,0.0,0.5,0.0837
-Personal Finance and Budgeting,budgeting,personalfinanceindia,ok,601722,permissive,rules,False,True,False,19.4,0.0,0.0,24,2026-08-10T00:34:36Z,measured,20260809T230716Z,0.0,1.0,0.0
+Personal Finance and Budgeting,budgeting,personalfinanceindia,ok,601722,permissive,rules,False,True,True,19.4,0.0,0.0,24,2026-08-10T00:34:36Z,measured,20260809T230716Z,0.0,1.0,0.0
 Personal Finance and Budgeting,budgeting,FluentInFinance,ok,578333,hostile,rules,True,False,False,3.75,0.0,0.0,16,2026-08-10T00:23:51Z,measured,20260809T230716Z,0.0,0.5,0.0
 Personal Finance and Budgeting,budgeting,vosfinances,ok,429481,permissive,rules,False,True,True,6.58,0.01,0.0658,18,2026-08-10T00:34:40Z,measured,20260809T230716Z,0.0,1.0,0.0658
 Personal Finance and Budgeting,budgeting,ar15,ok,394390,permissive,rules,False,True,False,103.69,0.01,1.0369,31,2026-08-09T23:16:35Z,measured,20260809T230716Z,0.01,0.0,0.0
@@ -3233,8 +3233,8 @@ Personal Finance and Budgeting,budgeting,singaporefi,ok,264302,hostile,rules,Fal
 Personal Finance and Budgeting,budgeting,NYCapartments,ok,227321,permissive,rules,False,True,False,33.96,0.01,0.3396,37,2026-08-10T00:24:30Z,measured,20260809T230716Z,0.01,0.0,0.0
 Personal Finance and Budgeting,budgeting,ynab,ok,221407,hostile,rules,True,False,False,3.39,0.34,1.1526,20,2026-08-10T00:34:59Z,measured,20260809T230716Z,0.0,1.0,1.1526
 Personal Finance and Budgeting,budgeting,PowerBI,ok,208597,permissive,shipped,True,False,False,5.34,0.0,0.0,37,2026-08-04T18:08:16Z,shipped,20260809T230716Z,0.17,0.0,0.0
-Personal Finance and Budgeting,budgeting,DaveRamsey,ok,198951,permissive,rules,False,True,False,10.35,0.0,0.0,13,2026-08-10T00:35:03Z,measured,20260809T230716Z,0.0,1.0,0.0
-Personal Finance and Budgeting,budgeting,UKFrugal,ok,169048,permissive,rules,False,True,False,3.48,0.0,0.0,10,2026-08-10T00:35:07Z,measured,20260809T230716Z,0.0,1.0,0.0
+Personal Finance and Budgeting,budgeting,DaveRamsey,ok,198951,permissive,rules,False,True,True,10.35,0.0,0.0,13,2026-08-10T00:35:03Z,measured,20260809T230716Z,0.0,1.0,0.0
+Personal Finance and Budgeting,budgeting,UKFrugal,ok,169048,permissive,rules,False,True,True,3.48,0.0,0.0,10,2026-08-10T00:35:07Z,measured,20260809T230716Z,0.0,1.0,0.0
 Tax Software,tax-software,personalfinance,ok,21793986,permissive,rules,False,True,True,195.63,0.43,84.1209,36,2026-08-05T20:49:31Z,measured,20260809T230716Z,0.0,0.5,42.06045
 Tax Software,tax-software,technology,ok,20452155,permissive,rules,False,True,False,810.1,0.31,251.131,23,2026-08-05T20:30:48Z,measured,20260809T230716Z,0.0,0.0,0.0
 Tax Software,tax-software,pcmasterrace,ok,16223685,permissive,rules,False,True,False,519.99,0.34,176.7966,50,2026-08-05T20:43:35Z,measured,20260809T230716Z,0.0,0.0,0.0

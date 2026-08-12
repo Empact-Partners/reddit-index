@@ -23,6 +23,13 @@ The gates are what make a generated list trustworthy; the models only draft.
 Usage:
     python3 data/enumerate_brands.py            # all three phases
     python3 data/enumerate_brands.py --phase 1  # enumeration only
+
+Expansion mode (depth-plan P1a — uncapped rosters over ALL categories):
+    python3 data/enumerate_brands.py --expand --only crm,vpn   # pilot
+    python3 data/enumerate_brands.py --expand                  # all 100
+Expansion enumerates ADDITIONAL brands beyond the per-category known list
+(brands.csv is the exclusion set), runs in data/.brand-expand/, and writes
+data/brand-seed-expand.csv — same contract, same review, same gates.
 """
 import argparse, csv, json, os, re, sys, time, socket
 from concurrent.futures import ThreadPoolExecutor
@@ -33,7 +40,7 @@ sys.path.insert(0, os.path.join(REPO, "worker"))
 sys.path.insert(0, os.path.expanduser("~/.claude/api_helpers"))
 from codex_fleet import CodexFleet  # noqa: E402
 
-RUN = os.path.join(HERE, ".brand-enum")
+RUN = os.path.join(HERE, ".brand-enum")  # main() repoints this in --expand mode
 os.makedirs(RUN, exist_ok=True)
 SERVER = "local-mac"
 MAX_INFLIGHT = 40
@@ -130,6 +137,38 @@ For each product return an object:
 Write ONLY a JSON array of these objects to the file {out_fp} (create it).
 Do not print the JSON to the console. Do not write any other file."""
 
+EXPAND_PROMPT = """You are deepening a brand gazetteer for the software category "{name}".
+
+The gazetteer already covers these products — do NOT repeat any of them:
+{known}
+
+List up to {target} MORE real software products/services in this category that
+Reddit actually discusses: the mid-market tools, the niche and vertical
+players, the open-source alternatives, the regional leaders, the products a
+practitioner subreddit compares against the big names, the tools people
+migrate to and from. Only products that exist and ship today. If the category
+genuinely has fewer than {target} more, return fewer — omit rather than guess
+or pad. No generic terms, no features, no companies that merely have an
+adjacent product.
+
+For each product return an object:
+  name           canonical product name as written by its maker
+  domains        its primary domain(s), lowercase, no scheme (e.g. "notion.so")
+  aliases        OTHER surface forms people actually type in casual Reddit
+                 comments (abbreviations, old names, common shorthand).
+                 NOT the canonical name again. Empty list if none.
+  ambiguity      how confusable the BARE name is with ordinary English or
+                 other common meanings, one of: "low" (unmistakable, e.g.
+                 "QuickBooks"), "medium" (needs context, e.g. "Notion"),
+                 "high" (a common word/name, e.g. "Monday", "Bear")
+  stop_contexts  ONLY when ambiguity is medium or high: 5-12 short phrases
+                 where the bare word appears in its ORDINARY sense on Reddit
+                 (e.g. for "Bear": "bear market", "polar bear"). Else [].
+  note           one line on the ambiguity call.
+
+Write ONLY a JSON array of these objects to the file {out_fp} (create it).
+Do not print the JSON to the console. Do not write any other file."""
+
 REVIEW_PROMPT = """Review this draft brand list for the software category "{name}".
 For each entry judge: (a) is this a REAL, currently shipping product (not
 hallucinated, not discontinued, not a feature)? (b) is this category a
@@ -192,18 +231,47 @@ def resolve_domain(d):
 
 
 def main():
+    global RUN
     ap = argparse.ArgumentParser()
     ap.add_argument("--phase", type=int, default=0, help="0 = all")
+    ap.add_argument("--expand", action="store_true",
+                    help="depth expansion: ALL categories, known brands excluded")
+    ap.add_argument("--only", default="",
+                    help="comma-separated category slugs (expansion pilot)")
+    ap.add_argument("--target", type=int, default=60,
+                    help="expansion: max ADDITIONAL brands requested per category")
     args = ap.parse_args()
 
-    cats = new_categories()
-    print(f"{len(cats)} new categories", flush=True)
+    if args.expand:
+        RUN = os.path.join(HERE, ".brand-expand")
+        os.makedirs(RUN, exist_ok=True)
+        cats = taxonomy()
+        if args.only:
+            keep = {s.strip() for s in args.only.split(",") if s.strip()}
+            cats = [c for c in cats if c["slug"] in keep]
+        # Per-category known names (primary + also_in) — the exclusion list.
+        known_by_cat = {}
+        for r in csv.DictReader(open(os.path.join(HERE, "brands.csv"))):
+            slugs = {r["primary_category_slug"]}
+            slugs.update(c for c in (r.get("also_in_category_slugs") or "").split(";") if c)
+            for cs in slugs:
+                known_by_cat.setdefault(cs, []).append(r["brand"])
+        print(f"expansion over {len(cats)} categories", flush=True)
+    else:
+        cats = new_categories()
+        print(f"{len(cats)} new categories", flush=True)
 
     # ── phase 1: enumerate ──────────────────────────────────────────────────
     enum_jobs = []
     for c in cats:
         fp = os.path.join(RUN, f"out_{c['slug']}.json")
-        enum_jobs.append((c["slug"], ENUM_PROMPT.format(name=c["category"], out_fp=fp), fp))
+        if args.expand:
+            known = ", ".join(sorted(known_by_cat.get(c["slug"], []))) or "(none yet)"
+            task = EXPAND_PROMPT.format(name=c["category"], known=known,
+                                        target=args.target, out_fp=fp)
+        else:
+            task = ENUM_PROMPT.format(name=c["category"], out_fp=fp)
+        enum_jobs.append((c["slug"], task, fp))
     if args.phase in (0, 1):
         run_fleet_phase(enum_jobs, "enum")
     if args.phase == 1:
@@ -335,8 +403,10 @@ def main():
         if n < 4:
             print(f"  !! {c['slug']}: only {n} brands post-gates", flush=True)
 
-    # write brand-seed-new.csv
-    out_fp = os.path.join(HERE, "brand-seed-new.csv")
+    # write the seed CSV (same contract either mode)
+    out_fp = os.path.join(HERE, "brand-seed-expand.csv" if args.expand
+                          else "brand-seed-new.csv")
+    source_tag = "fleet-expand-2026-08" if args.expand else "fleet-enum-2026-08"
     with open(out_fp + ".tmp", "w", newline="") as f:
         w = csv.writer(f)
         w.writerow(["brand", "primary_category_slug", "also_in_category_slugs",
@@ -350,8 +420,20 @@ def main():
                 ";".join(r["aliases"]), r["amb"], r["note"],
                 ";".join(r["domains"]), ";".join(r["stops"]),
                 ";".join(sorted(bare_disabled.get(bslug, set()))),
-                "fleet-enum-2026-08",
+                source_tag,
             ])
+        # Existing brands seen in ANOTHER category's list: emit a widen-only
+        # row (gen_brands treats an already-known brand as also_in-widening,
+        # never a duplicate). This is how cross-category membership deepens.
+        for eslug in sorted(also_in):
+            er = existing_slugs[eslug]
+            have = {er["primary_category_slug"]}
+            have.update(c for c in (er.get("also_in_category_slugs") or "").split(";") if c)
+            extra = sorted(c for c in also_in[eslug] if c not in have)
+            if extra:
+                w.writerow([er["brand"], er["primary_category_slug"],
+                            ";".join(extra), "", er["ambiguity_class"], "",
+                            "", "", "", source_tag + "-widen"])
     os.replace(out_fp + ".tmp", out_fp)
 
     json.dump({"rejects": rejects,

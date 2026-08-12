@@ -1,0 +1,10 @@
+{"phase": "enum", "job": "crm", "round": 1, "t": 1786561479.055588}
+{"phase": "enum", "job": "crm", "job_id": "19c9365a1a084e8e"}
+{"phase": "enum", "job": "project-management", "round": 1, "t": 1786561480.743427}
+{"phase": "enum", "job": "project-management", "job_id": "34cd15b82e55446c"}
+{"phase": "enum", "job": "email-marketing", "round": 1, "t": 1786561484.2538571}
+{"phase": "enum", "job": "email-marketing", "job_id": "5d912efd0fca4845"}
+{"phase": "enum", "job": "marketing-automation", "round": 1, "t": 1786561488.56164}
+{"phase": "enum", "job": "marketing-automation", "job_id": "543538e0a9154c3a"}
+{"phase": "enum", "job": "vpn", "round": 1, "t": 1786561491.5470002}
+{"phase": "enum", "job": "vpn", "job_id": "b0ffb4df48784101"}

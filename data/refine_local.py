@@ -160,7 +160,7 @@ def main():
 
     for cat, rs in by_cat.items():
         pool = [r for r in rs if r["scorable"] == "True" and float(r["topicality"]) >= 0.5]
-        for r in sorted(pool, key=lambda x: -float(x["worth"]))[:8]:
+        for r in sorted(pool, key=lambda x: -float(x["worth"]))[:12]:
             r["is_scoring"] = "True"
 
     cols = list(rows[0].keys())

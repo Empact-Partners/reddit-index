@@ -323,8 +323,12 @@ def main():
     # draft -> adversarial review -> deterministic gates). The hand dicts above
     # stay the frozen source for the original 145 — this loader only APPENDS,
     # and for an already-known brand only widens also_in.
-    new_fp = os.path.join(HERE, "brand-seed-new.csv")
-    if os.path.exists(new_fp):
+    # brand-seed-expand.csv is the SAME contract from the uncapped depth
+    # expansion (enumerate_brands.py --expand) and loads through the same
+    # append-only rules, after seed-new so earlier layers keep priority.
+    seed_files = [os.path.join(HERE, "brand-seed-new.csv"),
+                  os.path.join(HERE, "brand-seed-expand.csv")]
+    for new_fp in [fp for fp in seed_files if os.path.exists(fp)]:
         for row in csv.DictReader(open(new_fp)):
             key = row["brand"].lower()
             row_cats = [row["primary_category_slug"]] + [
