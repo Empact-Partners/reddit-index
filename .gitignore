@@ -32,3 +32,5 @@ worker/codex-classify.log
 worker/finalize.log
 data/.brand-enum/
 data/.topicality-fleet/
+data/.brand-expand/
+data/.discover-v2/
