@@ -47,7 +47,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             target="_blank"
             rel="noopener"
           >
-            <span>Want to improve your reputation?</span>
+            <span>
+              Want to improve your
+              <br />
+              reputation?
+            </span>
             <Calendar className="cta-cal" aria-hidden focusable="false" />
           </a>
         </header>
