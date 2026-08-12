@@ -223,6 +223,43 @@
     color: var(--snowbelt);
     text-align: center;
     padding: 44px var(--gutter) 38px;
+    position: relative;
+  }
+  /* The calendar CTA — Virtual Goal like the swash, pinned top right on the
+     band; below 860px it flows under the title instead of colliding with it. */
+  .masthead-cta {
+    position: absolute;
+    right: var(--gutter);
+    top: 50%;
+    transform: translateY(-50%);
+    display: inline-block;
+    background: var(--virtual-goal);
+    color: var(--space-black);
+    font-family: var(--font-syne);
+    font-weight: 700;
+    font-size: 13px;
+    line-height: 1.2;
+    text-decoration: none;
+    padding: 11px 16px;
+    border-radius: 4px;
+    max-width: 200px;
+    text-align: center;
+  }
+  .masthead-cta:hover {
+    background: color-mix(in srgb, var(--virtual-goal) 82%, #fff);
+  }
+  /* The display-size title is wide: the pinned button collides with it well
+     above tablet widths (measured overlap at 1024), so it drops into the flow
+     early. */
+  @media (max-width: 1140px) {
+    .masthead-cta {
+      position: static;
+      transform: none;
+      display: block;
+      width: fit-content;
+      margin: 18px auto 0;
+      max-width: none;
+    }
   }
   .masthead-link { text-decoration: none; }
   .masthead-title {

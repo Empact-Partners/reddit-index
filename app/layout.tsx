@@ -38,6 +38,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <span className="swash">Reddit</span> Brand Index
             </span>
           </Link>
+          {/* The one conversion path on the site — same Virtual Goal as the
+              swash, straight to Vlad's calendar. */}
+          <a
+            className="masthead-cta"
+            href="https://calendly.com/vlad-shvets"
+            target="_blank"
+            rel="noopener"
+          >
+            Want to improve your reputation? Let&apos;s talk
+          </a>
         </header>
         <main className="container-site">{children}</main>
         <VentureFooter />
