@@ -119,20 +119,34 @@ def seed_category_subreddits():
         if k not in dedup or r["is_scoring"] == "True":
             dedup[k] = r
     rows = list(dedup.values())
-    q = ("INSERT INTO category_subreddits (category_id, subreddit_id, is_scoring, bb_per_hour) "
-         "SELECT c.id, s.id, v.is_scoring, v.bb_per_hour FROM (VALUES\n")
-    values = []
-    for r in rows:
-        values.append(f"  ({lit(r['category_slug'])}, {lit(r['subreddit'])}, "
-                      f"{r['is_scoring'] == 'True'}, {float(r.get('bb_per_hour') or 0)})")
-    q += ",\n".join(values)
-    q += ("\n) AS v(cat_slug, sub_name, is_scoring, bb_per_hour)\n"
-          "JOIN categories c ON c.slug = v.cat_slug\n"
-          "JOIN subreddits s ON s.name = v.sub_name\n"
-          "ON CONFLICT (category_id, subreddit_id) DO UPDATE SET "
-          "is_scoring=EXCLUDED.is_scoring, bb_per_hour=EXCLUDED.bb_per_hour;")
-    sql(q, "category_subreddits")
-    print(f"  {len(rows)} rows")
+    # Batched (was one statement for the whole CSV): a single Management-API
+    # 429/timeout on a 6-12k-row statement loses the entire mapping, and sql()
+    # returns None silently. The upsert key makes each batch idempotent, so a
+    # partial failure + full re-run converges. The lower() join closes the
+    # silent drop when a category row's casing differs from the casing that
+    # first landed in subreddits.
+    lost = []
+    batches = [rows[i:i + 50] for i in range(0, len(rows), 50)]
+    for i, batch in enumerate(batches):
+        values = []
+        for r in batch:
+            values.append(f"  ({lit(r['category_slug'])}, {lit(r['subreddit'])}, "
+                          f"{r['is_scoring'] == 'True'}, {float(r.get('bb_per_hour') or 0)})")
+        q = ("INSERT INTO category_subreddits (category_id, subreddit_id, is_scoring, bb_per_hour) "
+             "SELECT c.id, s.id, v.is_scoring, v.bb_per_hour FROM (VALUES\n"
+             + ",\n".join(values)
+             + "\n) AS v(cat_slug, sub_name, is_scoring, bb_per_hour)\n"
+             "JOIN categories c ON c.slug = v.cat_slug\n"
+             "JOIN subreddits s ON lower(s.name) = lower(v.sub_name)\n"
+             "ON CONFLICT (category_id, subreddit_id) DO UPDATE SET "
+             "is_scoring=EXCLUDED.is_scoring, bb_per_hour=EXCLUDED.bb_per_hour;")
+        if sql(q, f"category_subreddits b{i}") is None:
+            lost.append(f"b{i}")
+    if lost:
+        print(f"  LOST batches: {lost} — re-run --seed-subs (idempotent)", flush=True)
+        return len(lost)
+    print(f"  {len(rows)} rows in {len(batches)} batches")
+    return 0
 
 
 def seed_brands():
@@ -355,6 +369,8 @@ def load_scores():
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--seed", action="store_true")
+    ap.add_argument("--seed-subs", action="store_true",
+                    help="categories + subreddits + category_subreddits only (skips brands/aliases)")
     ap.add_argument("--scores", action="store_true")
     ap.add_argument("--mentions", action="store_true")
     ap.add_argument("--all", action="store_true")
@@ -363,9 +379,17 @@ def main():
     if args.seed or args.all:
         seed_categories()
         seed_subreddits()
-        seed_category_subreddits()
+        if seed_category_subreddits():
+            sys.exit(1)
         seed_brands()
         seed_aliases()
+    elif args.seed_subs:
+        # subreddits MUST land before category_subreddits: the seed joins
+        # subreddits by name and silently drops unknown subs.
+        seed_categories()
+        seed_subreddits()
+        if seed_category_subreddits():
+            sys.exit(1)
 
     if args.mentions or args.all:
         load_mentions()
