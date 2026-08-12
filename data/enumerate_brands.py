@@ -185,8 +185,15 @@ product names from the draft, values are objects
 Judge every entry. Do not print JSON to the console."""
 
 
-def run_fleet_phase(jobs, label):
-    """jobs: list of (job_id, task, out_fp). Disk-idempotent, 3 rounds."""
+def run_fleet_phase(jobs, label, round_deadline=None):
+    """jobs: list of (job_id, task, out_fp). Disk-idempotent, 3 rounds.
+
+    round_deadline scales with fan-out width: a fixed 720s over ~95 deep sol
+    jobs would expire mid-run and round 2 would RESUBMIT still-running jobs —
+    duplicate submissions are disk-safe but burn quota for nothing.
+    """
+    if round_deadline is None:
+        round_deadline = max(720, 60 * len(jobs))
     for rnd in range(1, 4):
         pending = [(jid, task, fp) for jid, task, fp in jobs if parse_out(fp) is None]
         if not pending:
@@ -207,7 +214,7 @@ def run_fleet_phase(jobs, label):
                     break
                 except Exception:
                     time.sleep(10 * (attempt + 1))
-        deadline = time.time() + 720
+        deadline = time.time() + round_deadline
         while time.time() < deadline:
             left = [1 for _, _, fp in pending if parse_out(fp) is None]
             done = len(jobs) - len([1 for _, _, fp in jobs if parse_out(fp) is None])

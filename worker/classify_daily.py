@@ -26,6 +26,12 @@ import hashlib  # noqa: E402
 
 REPO = os.path.dirname(HERE)
 WINDOW_DAYS = 400
+# The unsupervised nightly run is BOUNDED: the historical sweep (docs/
+# depth-plan.md P2) can dump six figures of unlabelled mentions at once, and
+# an uncapped anti-join would fire them all at the fleet at 03:30 with nobody
+# watching. Newest first, so the boards stay current while the backlog drains
+# across nights and supervised daytime burns.
+DAILY_CAP = int(os.environ.get("CLASSIFY_DAILY_CAP", "30000"))
 
 
 def fetch_unlabelled(conn):
@@ -41,7 +47,9 @@ def fetch_unlabelled(conn):
                    ON ms.doc_id = m.doc_id AND ms.brand_id = m.brand_id
             WHERE ms.doc_id IS NULL
               AND m.created_utc >= now() - make_interval(days => %s)
-        """, (WINDOW_DAYS,))
+            ORDER BY m.created_utc DESC
+            LIMIT %s
+        """, (WINDOW_DAYS, DAILY_CAP))
         return cur.fetchall()
 
 
