@@ -31,11 +31,30 @@ if not (CLIENT_ID and CLIENT_SECRET and USER_AGENT):
     raise RuntimeError("Reddit credentials missing: set REDDIT_CLIENT_ID / "
                        "REDDIT_CLIENT_SECRET / REDDIT_USER_AGENT")
 
-SLEEP = 0.75          # the floor between calls
+SLEEP = float(os.environ.get("RI_SLEEP", "0.75"))  # the floor between calls
 MAX_PER_MIN = 80      # run under the ~100 budget, never at it
+
+# Adaptive pacing: the app-level budget is SHARED across processes (the
+# Railway daily fetch and a Mac sweep use one client_id). Each process reads
+# x-ratelimit-remaining/reset and, when the shared budget runs low, spreads
+# its remaining calls over the reset window — so two concurrent processes
+# self-balance instead of tripping 429 bursts.
+_adaptive = [SLEEP]
 
 _token = {"v": None, "t": 0.0}
 _stats = {"calls": 0, "cached": 0, "errors": 0, "started": time.time()}
+
+
+def _read_ratelimit(headers):
+    try:
+        rem = headers.get("x-ratelimit-remaining")
+        if rem is None:
+            return
+        rem = float(rem)
+        rst = float(headers.get("x-ratelimit-reset") or 60.0)
+        _adaptive[0] = max(SLEEP, rst / max(rem, 1.0)) if rem < 30 else SLEEP
+    except (TypeError, ValueError):
+        pass
 
 
 def stats():
@@ -93,8 +112,8 @@ def get(path, params=None, bucket="misc", tries=3, use_cache=True):
 
     for attempt in range(tries):
         gap = time.time() - _last_call[0]
-        if gap < SLEEP:
-            time.sleep(SLEEP - gap)
+        if gap < _adaptive[0]:
+            time.sleep(_adaptive[0] - gap)
         url = "https://oauth.reddit.com" + path
         if params:
             url += "?" + urllib.parse.urlencode(params)
@@ -105,6 +124,7 @@ def get(path, params=None, bucket="misc", tries=3, use_cache=True):
             with urllib.request.urlopen(req, timeout=40) as f:
                 _last_call[0] = time.time()
                 _stats["calls"] += 1
+                _read_ratelimit(f.headers)
                 data = json.loads(f.read())
             tmp = fp + ".tmp"
             with open(tmp, "w") as f:
@@ -117,7 +137,12 @@ def get(path, params=None, bucket="misc", tries=3, use_cache=True):
                 _token["v"] = None
                 continue
             if e.code in (429, 500, 502, 503, 504):
-                time.sleep(3 * (attempt + 1))
+                reset = 0.0
+                try:
+                    reset = float(e.headers.get("x-ratelimit-reset") or 0)
+                except (TypeError, ValueError):
+                    pass
+                time.sleep(max(reset if e.code == 429 else 0.0, 3 * (attempt + 1)))
                 continue
             _stats["errors"] += 1
             return {"_err": e.code}

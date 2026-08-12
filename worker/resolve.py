@@ -162,6 +162,22 @@ class Resolver:
         self.domains = load_domains()
         self.automaton = build_automaton(self.aliases)
 
+    def has_alias(self, text):
+        """Recall-only qualification scan: ANY boundary-valid automaton hit.
+
+        No entity gating, no stop-contexts — this decides whether a thread is
+        worth one tree fetch, not whether a mention exists. A false qualify
+        costs one request; a false reject drops the thread forever. Extraction
+        still runs the full resolve() with entity gating, so a junk-qualified
+        thread yields zero mention rows.
+        """
+        norm = normalize(preprocess(text))
+        for end_idx, matches in self.automaton.iter(norm):
+            alias = matches[0][0]
+            if is_word_boundary(norm, end_idx - len(alias) + 1, end_idx + 1):
+                return True
+        return False
+
     def resolve(self, text, subreddit=None, thread_title=None):
         """Returns list of {brand_slug, alias, pos, conf, rule_fired}"""
         clean = preprocess(text)

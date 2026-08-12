@@ -71,6 +71,60 @@ def journal(rec):
         f.write(json.dumps(rec) + "\n")
 
 
+# ── burn lock ───────────────────────────────────────────────────────────────
+# A supervised burn and the 03:30 nightly classify share this RUN dir, compute
+# the same content-addressed batch ids over the same anti-join universe, and
+# both delete out_<bid>.json before resubmit — running them concurrently
+# mutually clobbers in-flight out-files. The burn takes this lock; the nightly
+# skips classification while it is fresh (score/publish still run).
+LOCK = os.path.join(RUN, "burn.lock")
+
+
+def burn_lock():
+    """Acquire (O_CREAT|O_EXCL). Returns True on success. Refresh each cycle
+    by calling again after burn_refresh()."""
+    try:
+        fd = os.open(LOCK, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+        os.write(fd, json.dumps({"pid": os.getpid(), "t": time.time()}).encode())
+        os.close(fd)
+        return True
+    except FileExistsError:
+        if burn_active():
+            return False
+        os.remove(LOCK)  # stale — dead pid or >2h old
+        return burn_lock()
+
+
+def burn_refresh():
+    try:
+        with open(LOCK, "w") as f:
+            json.dump({"pid": os.getpid(), "t": time.time()}, f)
+    except Exception:
+        pass
+
+
+def burn_release():
+    try:
+        os.remove(LOCK)
+    except FileNotFoundError:
+        pass
+
+
+def burn_active():
+    """True when a live burn holds the lock (fresh + pid alive)."""
+    try:
+        rec = json.load(open(LOCK))
+    except Exception:
+        return False
+    if time.time() - (rec.get("t") or 0) > 7200:
+        return False
+    try:
+        os.kill(int(rec.get("pid") or 0), 0)
+        return True
+    except (OSError, ValueError):
+        return False
+
+
 def batch_task(items, brand_names, out_fp):
     lines = []
     for it in items:
