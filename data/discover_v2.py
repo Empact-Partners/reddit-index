@@ -857,40 +857,63 @@ def stage_qualify(dry_run=False):
         if i % 250 == 0:
             print(f"  probe/alive {i}/{len(subs)}", flush=True)
 
-    # q3a: posture fill for any sub still without a verdict
-    missing_posture = [name for k, name in subs.items()
-                       if posture_verdict(name) is None
-                       and measure_v2(name).get("status") == "ok"]
-    if missing_posture:
-        print(f"  {len(missing_posture)} subs missing posture -> rescue", flush=True)
-        stage_rescue(cands)
+    # cheap bars first — topicality (fleet) is only DECISIVE for pairs that
+    # pass everything else, and posture (fleet + rules fetch) only matters for
+    # subs that are open and alive. At a sibling-expanded universe (~17k subs,
+    # ~82k pairs) this ordering is the difference between ~3,200 luna batches
+    # and ~1,000.
+    was_scoring_subs = {r["subreddit"].lower() for r in rows if r["is_scoring"] == "True"}
 
-    # q3b: topicality fill for open-sub pairs only (dead subs need no judgment)
-    open_pairs = [(slug, name) for (slug, k), name in pairs.items()
-                  if measure_v2(name).get("status") == "ok"]
-    topicality_fill(open_pairs, cat_names)
-
-    # q4: evaluate the six bars
-    out_rows, report, drops = [], collections.defaultdict(lambda: [0, 0]), []
-    for (slug, k), name in sorted(pairs.items()):
+    def cheap_bars(slug, k, name):
         m = measure_v2(name)
         q = qual_rec(name) or {}
-        verdict = posture_verdict(name)
-        t = topicality_of(slug, name)
-        ev = evidence_state(slug)["tally"].get(k, 0)
-
         open_ok = (m.get("status") == "ok"
                    and m.get("subreddit_type") in (None, "public")
                    and not m.get("over18") and not m.get("quarantine"))
         alive_ok = (q.get("alive_n14") or 0) >= 4
+        ev = evidence_state(slug)["tally"].get(k, 0)
+        mm = matcher(slug, terms_map, nouns_map)
+        evidence_ok = ev >= 1 or bool(mm and open_ok and (
+            any(mm.search(b) for b in bodies_of(name))
+            or any(mm.search(ti) for ti in q.get("titles", []))))
+        return m, q, open_ok, alive_ok, ev, evidence_ok
+
+    # q3a: posture fill — only subs that are open AND (alive or historically
+    # scoring); a dead or dormant sub needs no rules judgment
+    missing_posture = [name for k, name in subs.items()
+                       if posture_verdict(name) is None
+                       and measure_v2(name).get("status") == "ok"
+                       and ((qual_rec(name) or {}).get("alive_n14", 0) >= 4
+                            or k in was_scoring_subs)]
+    if missing_posture:
+        print(f"  {len(missing_posture)} open+alive subs missing posture -> rescue",
+              flush=True)
+        stage_rescue(cands)
+
+    # q3b: topicality fill — only pairs where every cheap bar already passes
+    # (for anything else topicality cannot change the outcome)
+    need_topic = []
+    for (slug, k), name in pairs.items():
+        if topicality_of(slug, name) is not None:
+            continue
+        m, q, open_ok, alive_ok, ev, evidence_ok = cheap_bars(slug, k, name)
+        verdict = posture_verdict(name)
+        if (open_ok and alive_ok and evidence_ok and not vendor_of(name, verdict)
+                and (verdict or {}).get("posture_v2") in ("allow", "restricted")):
+            need_topic.append((slug, name))
+    topicality_fill(need_topic, cat_names)
+
+    # q4: evaluate the six bars
+    out_rows, report, drops = [], collections.defaultdict(lambda: [0, 0]), []
+    for (slug, k), name in sorted(pairs.items()):
+        m, q, open_ok, alive_ok, ev, evidence_ok = cheap_bars(slug, k, name)
+        verdict = posture_verdict(name)
+        t = topicality_of(slug, name)
+
         vendor = vendor_of(name, verdict)
         posture = (verdict or {}).get("posture_v2")
         posture_ok = posture in ("allow", "restricted")
         topic_ok = (t or 0.0) >= 0.5
-        mm = matcher(slug, terms_map, nouns_map)
-        evidence_ok = ev >= 1 or bool(mm and (
-            any(mm.search(b) for b in bodies_of(name))
-            or any(mm.search(ti) for ti in q.get("titles", []))))
 
         qualified = all([open_ok, alive_ok, not vendor, posture_ok, topic_ok, evidence_ok])
         prev = existing.get((slug, k))
