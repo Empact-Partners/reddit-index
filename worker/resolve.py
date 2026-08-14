@@ -125,16 +125,23 @@ _TECH_EXEMPT = {"aws", "sap", "ibm", "gcp", "sas", "php", "sql", "vim", "git",
 
 
 def _is_plain_english(alias):
-    """True when every token of the alias is an ordinary English word — 'app',
-    'pieces', 'my time', 'spot on'. Such a form must never be accepted bare:
-    it is what produced 'Pieces for Developers' from the word pieces. The
-    alias stays in the automaton but is forced to require corroboration, so a
-    real reference (near a domain or another confirmed brand) still resolves.
+    """True when a SINGLE-token alias is an ordinary English word — 'pieces',
+    'piece', 'edge'. Such a form must never be accepted bare: it is what
+    produced 'Pieces for Developers' from the word pieces. The alias stays in
+    the automaton but is forced to require corroboration, so a real reference
+    (near a domain or another confirmed brand) still resolves.
+
+    MULTI-WORD forms are deliberately exempt even when every token is a
+    dictionary word: "adobe acrobat", "affinity photo" and "amazon ses" are
+    ordinary words in sequence and are unmistakably brand references — the
+    same reasoning that already exempts qualified forms from the stop-context
+    veto. An earlier version of this guard classified them as English and
+    would have thrown away every multi-word brand in the gazetteer.
     """
     if not _ENGLISH:
         return False
     toks = [t for t in re.split(r"[^a-z0-9]+", alias.lower()) if t]
-    if not toks or any(t in _TECH_EXEMPT for t in toks):
+    if len(toks) != 1 or any(t in _TECH_EXEMPT for t in toks):
         return False
 
     def known(t):
