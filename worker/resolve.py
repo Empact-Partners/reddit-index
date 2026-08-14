@@ -167,6 +167,10 @@ class Resolver:
         # measured at 136 ms/comment, i.e. ~40 s of CPU for one 300-comment
         # tree. Same semantics exactly: plain substring containment, no word
         # boundary (a domain inside a URL must still match).
+        # Canonical name per brand, built once — this dict comprehension over
+        # 6,040 brands used to run inside resolve() on every comment.
+        self._canonical = {b["slug"]: b["brand"].lower()
+                           for b in self.brands.values() if isinstance(b, dict)}
         self._domain_ac = None
         pairs = [(d.lower(), slug) for slug, doms in self.domains.items() for d in doms if d]
         if pairs:
@@ -334,8 +338,7 @@ class Resolver:
         # `hubspot-marketing-hub`; accepting both counts the company twice and
         # inflates every figure downstream. The canonical name wins, because an
         # alias inheriting a parent's evidence is exactly what 05 §5 forbids.
-        canonical = {b["slug"]: b["brand"].lower() for b in self.brands.values()} \
-            if isinstance(next(iter(self.brands.values()), {}), dict) else {}
+        canonical = self._canonical
         by_pos = {}
         for a in accepted:
             key = (a["pos"], a["alias"])
@@ -360,18 +363,27 @@ class Resolver:
         return list(final.values())
 
 
+_NOUNS_BY_BRAND = None
+
+
 def _category_nouns_for_brand(brand_slug):
-    """Quick lookup of what category a brand lives in, for the subreddit prior."""
-    # Import here to avoid circular — the harvest module has the vocabulary
-    try:
-        from harvest import CATEGORY_NOUNS
-        brands = load_brands()
-        b = brands.get(brand_slug)
-        if b:
-            return CATEGORY_NOUNS.get(b["primary_category_slug"], [])
-    except Exception:
-        pass
-    return []
+    """Quick lookup of what category a brand lives in, for the subreddit prior.
+
+    Built ONCE. This used to call load_brands() — a full re-parse of the
+    6,040-row brands.csv — on every invocation, which profiled as 16.5M csv
+    row reads across 6,000 comments and was the single largest cost in the
+    whole pipeline.
+    """
+    global _NOUNS_BY_BRAND
+    if _NOUNS_BY_BRAND is None:
+        try:
+            from harvest import CATEGORY_NOUNS
+            _NOUNS_BY_BRAND = {
+                slug: CATEGORY_NOUNS.get(b["primary_category_slug"], [])
+                for slug, b in load_brands().items()}
+        except Exception:
+            _NOUNS_BY_BRAND = {}
+    return _NOUNS_BY_BRAND.get(brand_slug, [])
 
 
 # ── CLI for testing ─────────────────────────────────────────────────────────
