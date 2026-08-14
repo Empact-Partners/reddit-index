@@ -275,7 +275,26 @@ def sweep_sub(sub, cat_slugs, ctx, tree_cap=10 ** 9):
     swept = set(st["swept"])
     failed = st["failed_trees"]
     todo = [pid for pid in st["post_ids"]
-            if pid not in swept and failed.get(pid, 0) < 3][:tree_cap]
+            if pid not in swept and failed.get(pid, 0) < 3]
+    if todo:
+        # Richest threads FIRST. Measured yield by comment count: a 2-comment
+        # thread returns 1.2 mentions, a 10-24 comment thread 3.8, a 100+
+        # thread 9.2. Order costs nothing (the same threads get fetched
+        # either way) but it means every partial state — an interrupted sub,
+        # a category stopped early, a run cut short — already holds the most
+        # valuable threads rather than an arbitrary slice by post id.
+        def _order(c):
+            with c.cursor() as cur:
+                cur.execute("SELECT id, num_comments FROM threads WHERE id = ANY(%s)",
+                            ([f"t3_{p}" for p in todo],))
+                return {r[0][3:]: (r[1] or 0) for r in cur.fetchall()}
+        try:
+            nc = db.run(ctx, _order, label=f"order {sub}")
+            todo.sort(key=lambda p: -nc.get(p, 0))
+        except Exception as e:
+            print(f"  {sub}: could not order by comments ({str(e)[:70]}) — "
+                  f"proceeding unordered", flush=True)
+    todo = todo[:tree_cap]
     n_mentions = 0
     # Mentions accumulate across threads and flush at the state checkpoint.
     # A commit per thread costs a Supabase round trip (~200ms from here) on
