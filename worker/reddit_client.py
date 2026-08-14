@@ -120,9 +120,12 @@ def get(path, params=None, bucket="misc", tries=3, use_cache=True):
         req = urllib.request.Request(
             url, headers={"User-Agent": USER_AGENT,
                           "Authorization": "Bearer " + _access_token()})
+        # Pace start-to-start, not end-to-start: request latency (~0.6s from
+        # Chile) used to stack on top of the floor, so a 0.75s floor produced
+        # ~44 req/min against a ~100 QPM budget. The floor is a PERIOD.
+        _last_call[0] = time.time()
         try:
             with urllib.request.urlopen(req, timeout=40) as f:
-                _last_call[0] = time.time()
                 _stats["calls"] += 1
                 _read_ratelimit(f.headers)
                 data = json.loads(f.read())
