@@ -63,15 +63,29 @@ def state_path(sub):
     return os.path.join(STATE_DIR, sub.lower() + ".json")
 
 
+def mode_key(mode):
+    """The STABLE identity of a collection mode.
+
+    Deliberately excludes cutoff_ts: it is recomputed from time.time() on
+    every invocation, so comparing whole mode dicts would invalidate every
+    state file on every restart and re-run all listings — the opposite of
+    resumable. The stored cutoff_ts stays in state as the record of what a
+    sub was actually collected against.
+    """
+    return [mode["days"], mode["min_comments"], mode["matcher"]]
+
+
 def load_state(sub, mode):
     """State schema v2. A file whose mode differs from the invocation keeps
     its swept set (mentions are ON CONFLICT-safe) but re-runs listings under
-    the new mode — this migrates the 5 all-time pilot files in place."""
+    the new mode — this migrates the all-time pilot files in place."""
     try:
         st = json.load(open(state_path(sub)))
     except Exception:
         st = {}
-    if st.get("schema") != 2 or st.get("mode") != mode:
+    if st.get("schema") != 2 or mode_key(st.get("mode") or {"days": None,
+                                                            "min_comments": None,
+                                                            "matcher": None}) != mode_key(mode):
         st = {"schema": 2, "mode": mode, "listings_done": False,
               "coverage": "complete", "new_oldest_ts": None,
               "post_ids": st.get("post_ids", []), "swept": st.get("swept", []),
@@ -333,7 +347,9 @@ def sub_complete(sub, mode):
         st = json.load(open(state_path(sub)))
     except Exception:
         return False
-    if st.get("schema") != 2 or st.get("mode") != mode or not st.get("listings_done"):
+    if (st.get("schema") != 2 or not st.get("listings_done")
+            or mode_key(st.get("mode") or {"days": None, "min_comments": None,
+                                           "matcher": None}) != mode_key(mode)):
         return False
     swept = set(st.get("swept", []))
     failed = st.get("failed_trees", {})
