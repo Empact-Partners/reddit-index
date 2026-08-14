@@ -58,6 +58,11 @@ node scripts/gates/__selftest__.mjs   # prove each gate fails when violated
 worker/backfill_100.sh                # the full backfill chain (resumable)
 worker/daily_mac.sh                   # the Mac half of the daily loop, manually
 python3 worker/daily.py --dry-run --only sysadmin   # test the fetch, write nothing
+
+python3 data/discover_v2.py --stage status    # subreddit discovery/qualification
+python3 worker/depth_run.py --days 90         # the 90-day depth sweep, all categories
+python3 worker/depth_run.py --status          # per-category progress table
+python3 worker/sweep.py --days 90 --only crm  # one subreddit, by hand
 ```
 
 Everything verbatim lives in Supabase at all times: mention bodies, authors,

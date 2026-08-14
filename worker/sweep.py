@@ -260,6 +260,24 @@ def sweep_sub(sub, cat_slugs, ctx, tree_cap=10 ** 9):
     todo = [pid for pid in st["post_ids"]
             if pid not in swept and failed.get(pid, 0) < 3][:tree_cap]
     n_mentions = 0
+    # Mentions accumulate across threads and flush at the state checkpoint.
+    # A commit per thread costs a Supabase round trip (~200ms from here) on
+    # top of the 0.75s API floor — measured 34 trees/min against the ~80/min
+    # the rate limit allows, i.e. the pipeline was round-trip bound, not
+    # API bound. Flushing on the same boundary as the state save keeps crash
+    # recovery consistent: whatever is lost is also not marked swept, and a
+    # re-fetch re-inserts it (mentions PK is ON CONFLICT DO NOTHING).
+    pending_rows = []
+
+    def flush(force=False):
+        nonlocal pending_rows
+        if not pending_rows and not force:
+            return
+        with conn.cursor() as cur:
+            insert_mentions(cur, pending_rows)
+            conn.commit()
+        pending_rows = []
+
     for i, pid in enumerate(todo, 1):
         tid = f"t3_{pid}"
         tree = rc.get(f"/comments/{pid}",
@@ -290,18 +308,18 @@ def sweep_sub(sub, cat_slugs, ctx, tree_cap=10 ** 9):
                               doc.get("permalink") or "", doc.get("score") or 0,
                               body, h["conf"], h["alias"], h["rule_fired"],
                               RUN_ID, h["brand_slug"]))
-        with conn.cursor() as cur:
-            ins, _rej = insert_mentions(cur, mrows)
-            conn.commit()
+        pending_rows.extend(mrows)
         n_mentions += len(mrows)
         swept.add(pid)
         failed.pop(pid, None)
         if i % 20 == 0 or i == len(todo):
+            flush()
             st["swept"] = sorted(swept)
             st["failed_trees"] = failed
             save_state(sub, st)
             print(f"  {sub}: {len(swept)}/{len(st['post_ids'])} trees, "
                   f"+{n_mentions} mentions", flush=True)
+    flush()
     st["swept"] = sorted(swept)
     st["failed_trees"] = failed
     save_state(sub, st)
