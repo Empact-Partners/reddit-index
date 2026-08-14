@@ -161,6 +161,24 @@ class Resolver:
         self.stops = load_stop_contexts()
         self.domains = load_domains()
         self.automaton = build_automaton(self.aliases)
+        # Domain lookup as an automaton, not a scan. The scan it replaces was
+        # `for slug, doms in self.domains.items(): for d in doms: d.lower() in norm`
+        # — 6,123 substring searches plus 6,123 .lower() calls PER COMMENT,
+        # measured at 136 ms/comment, i.e. ~40 s of CPU for one 300-comment
+        # tree. Same semantics exactly: plain substring containment, no word
+        # boundary (a domain inside a URL must still match).
+        self._domain_ac = None
+        pairs = [(d.lower(), slug) for slug, doms in self.domains.items() for d in doms if d]
+        if pairs:
+            A = ahocorasick.Automaton()
+            for d, slug in pairs:
+                cur = A.get(d, None)
+                if cur is None:
+                    A.add_word(d, [slug])
+                elif slug not in cur:
+                    cur.append(slug)
+            A.make_automaton()
+            self._domain_ac = A
 
     def has_alias(self, text):
         """Recall-only qualification scan: ANY boundary-valid automaton hit.
@@ -185,10 +203,9 @@ class Resolver:
 
         # Phase 1: domain scan first — strongest signal
         domain_hits = set()
-        for brand_slug, doms in self.domains.items():
-            for d in doms:
-                if d.lower() in norm:
-                    domain_hits.add(brand_slug)
+        if self._domain_ac is not None:
+            for _end, slugs in self._domain_ac.iter(norm):
+                domain_hits.update(slugs)
 
         # Phase 2: Aho-Corasick
         raw_hits = []
