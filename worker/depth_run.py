@@ -111,21 +111,25 @@ def publish(allow_git):
         print("  no deploy_hook and --allow-git-publish not set — publish skipped",
               flush=True)
         return False
-    dirty = subprocess.run(["git", "-C", REPO, "status", "--porcelain"],
-                           capture_output=True, text=True).stdout.strip()
-    if dirty:
-        print("  working tree dirty — git publish skipped (never stash a "
-              "session's work from a nohup process)", flush=True)
-        return False
-    for cmd in (["git", "-C", REPO, "pull", "--ff-only", "--quiet"],
-                ["git", "-C", REPO, "commit", "--allow-empty", "-q", "-m",
-                 f"depth publish {time.strftime('%F %H:%M')}"],
-                ["git", "-C", REPO, "push", "-q"]):
-        r = subprocess.run(cmd, capture_output=True, text=True)
-        if r.returncode != 0:
-            print(f"  git publish failed at {' '.join(cmd[3:5])}: "
-                  f"{(r.stderr or '').strip()[:160]}", flush=True)
+    try:
+        dirty = _git(["status", "--porcelain"], timeout=60).stdout.strip()
+        if dirty:
+            print("  working tree dirty — git publish skipped (never stash a "
+                  "session's work from a nohup process)", flush=True)
             return False
+        for args in (["pull", "--ff-only", "--quiet"],
+                     ["commit", "--allow-empty", "-q", "-m",
+                      f"depth publish {time.strftime('%F %H:%M')}"],
+                     ["push", "-q"]):
+            r = _git(args)
+            if r.returncode != 0:
+                print(f"  git publish failed at {args[0]}: "
+                      f"{(r.stderr or '').strip()[:160]}", flush=True)
+                return False
+    except subprocess.TimeoutExpired as e:
+        print(f"  git publish TIMED OUT at {e.cmd[2] if len(e.cmd) > 2 else '?'} — "
+              f"skipped; data is safe in Supabase", flush=True)
+        return False
     print("  published (git empty-commit)", flush=True)
     return True
 
@@ -138,9 +142,24 @@ def classify_burn(slug):
     return r.returncode == 0
 
 
+def _git(args, timeout=300):
+    """git with a TIMEOUT. Without one, a stalled HTTPS transfer (the publish
+    does a real pull+push every category) blocks the single-threaded run
+    forever with no watchdog — the sweep simply stops, silently, mid-run."""
+    return subprocess.run(["git", "-C", REPO] + args, capture_output=True,
+                          text=True, timeout=timeout)
+
+
 def score_and_publish(run_state, allow_git):
-    r = subprocess.run([sys.executable, "-u", os.path.join(HERE, "score_db.py")],
-                       cwd=HERE)
+    try:
+        r = subprocess.run([sys.executable, "-u", os.path.join(HERE, "score_db.py")],
+                           cwd=HERE, timeout=7200)
+    except subprocess.TimeoutExpired:
+        print("  score_db exceeded 2h — killed; publish blocked, sweep continues",
+              flush=True)
+        run_state["publish_blocked"] = True
+        atomic_json(RUN_FP, run_state)
+        return False
     if r.returncode != 0:
         # calibration gate refusal — a report item, never a silent retry
         print("  score_db FAILED (calibration gate?) — publish blocked, "
@@ -309,15 +328,22 @@ def main():
                   f"({len(subs) - len(pending)} already complete)", flush=True)
             complete = sweep_category(slug, subs, ctx)
 
-            if slug not in run_state["classified"]:
-                if classify_burn(slug):
+            burned = slug in run_state["classified"]
+            if not burned:
+                burned = classify_burn(slug)
+                if burned:
                     run_state["classified"].append(slug)
                     atomic_json(RUN_FP, run_state)
                 else:
-                    print(f"  {slug}: classify burn failed — will publish without it, "
-                          f"nightly picks up the rest", flush=True)
+                    print(f"  {slug}: classify burn failed — category stays "
+                          f"open so a later pass re-drives it", flush=True)
 
-            if complete:
+            # done requires BOTH: the sweep finished AND the mentions were
+            # labelled. Marking done on sweep alone meant a burn killed by an
+            # outage was never retried — the resume guard skips the whole
+            # block — and score_db inner-joins mention_sentiment, so those
+            # mentions would be silently absent from the published score.
+            if complete and burned:
                 run_state["done"].append(slug)
             else:
                 print(f"  {slug}: left INCOMPLETE — not marked done, a later "
@@ -355,8 +381,7 @@ def main():
         print(f"\nsecond pass over {len(leftovers)} incomplete categories", flush=True)
         for slug in leftovers:
             try:
-                if sweep_category(slug, by_cat[slug], ctx):
-                    classify_burn(slug)
+                if sweep_category(slug, by_cat[slug], ctx) and classify_burn(slug):
                     if slug not in run_state["done"]:
                         run_state["done"].append(slug)
                     atomic_json(RUN_FP, run_state)

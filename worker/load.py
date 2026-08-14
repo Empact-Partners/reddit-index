@@ -291,14 +291,15 @@ def load_scores():
     """brand_category_scores from worker/.cache/index/*.json."""
     idx = os.path.join(HERE, ".cache", "index")
     if not os.path.isdir(idx):
-        print("  no index"); return
+        print("  no index"); return 0
     today = time.strftime("%Y-%m-%d")
     total = 0
+    lost = []
     for fn in sorted(os.listdir(idx)):
         if not fn.endswith(".json"):
             continue
         rows = json.load(open(os.path.join(idx, fn)))["rows"]
-        for batch in [rows[i:i + 12] for i in range(0, len(rows), 12)]:
+        for i, batch in enumerate([rows[j:j + 12] for j in range(0, len(rows), 12)]):
             vals = []
             for s in batch:
                 n = lambda k: (s[k] if s.get(k) is not None else "NULL")  # noqa: E731
@@ -361,9 +362,18 @@ def load_scores():
                  "failed_required=EXCLUDED.failed_required, "
                  "window_start=EXCLUDED.window_start, window_end=EXCLUDED.window_end, "
                  "methodology_version=EXCLUDED.methodology_version;")
-            sql(q, "scores " + fn)
+            # A dropped batch here is NOT cosmetic: score_db prunes every
+            # older week_start straight afterwards, so a silent loss deletes
+            # the last good published scores and ships a half-empty index.
+            # The seed lane already tracks losses this way; the scores lane
+            # did not, which is exactly how that gap survived.
+            if sql(q, "scores " + fn) is None:
+                lost.append(f"{fn}:{i}")
         total += len(rows)
+    if lost:
+        print(f"  LOST score batches: {lost[:10]}{'…' if len(lost) > 10 else ''}")
     print(f"  {total} score rows loaded")
+    return len(lost)
 
 
 def main():
@@ -395,7 +405,10 @@ def main():
         load_mentions()
 
     if args.scores or args.all:
-        load_scores()
+        if load_scores():
+            print("  score load INCOMPLETE — refusing to report success",
+                  flush=True)
+            return 1
 
     # Verify
     print("\nverifying…")
@@ -409,4 +422,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main() or 0)

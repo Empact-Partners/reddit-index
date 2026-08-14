@@ -96,7 +96,15 @@ def main():
         return 1
 
     print(f"\n{total} score rows across {len(cats)} categories; loading…", flush=True)
-    subprocess.run([sys.executable, os.path.join(HERE, "load.py"), "--scores"], check=True)
+    loaded = subprocess.run([sys.executable, os.path.join(HERE, "load.py"), "--scores"])
+    if loaded.returncode != 0:
+        # NEVER prune after an incomplete load. week_start is stamped with
+        # today's date, so a partial load moves max(week_start) forward and
+        # the prune below would then delete the last COMPLETE published set —
+        # leaving categories with no scores at all on the live site.
+        print("  score load incomplete — skipping the prune and refusing to "
+              "publish; the previous complete set stays live", flush=True)
+        return 1
 
     # the no-history rule: one truthful week, nothing older
     prune_state = {"conn": db.connect()}

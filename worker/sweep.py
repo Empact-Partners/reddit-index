@@ -307,16 +307,20 @@ def sweep_sub(sub, cat_slugs, ctx, tree_cap=10 ** 9):
                       {"depth": 6, "limit": TREE_LIMIT, "raw_json": 1, "sort": "top"},
                       bucket="sweep", use_cache=False)
         if isinstance(tree, dict) and "_err" in tree:
-            if tree["_err"] == "network":
-                # The link is down, not the thread. Spending an attempt here
-                # would permanently drop threads over a wifi blip, so stop the
-                # sub cleanly instead: state is saved below and the
-                # orchestrator's next pass picks it up untouched.
-                print(f"  {sub}: network down — pausing this sub with "
-                      f"{len(todo) - i + 1} trees left", flush=True)
+            err = tree["_err"]
+            # ONLY a definitive answer about THIS thread may spend the
+            # permanent 3-strike budget. Everything upstream-transient —
+            # a dead link, a 5xx, a Cloudflare 52x, an exhausted retry — is
+            # about the route, not the thread, and pauses the sub instead.
+            # Without this, a few minutes of 503s silently drops threads
+            # forever: the failure reason is never persisted, so no later
+            # pass can tell "gone" from "was unreachable at the time".
+            if err == "network" or not isinstance(err, int) or err >= 500 or err == 429:
+                print(f"  {sub}: upstream unavailable ({err}) — pausing this sub "
+                      f"with {len(todo) - i + 1} trees left", flush=True)
                 break
-            # a rate-limited or otherwise errored tree is NOT swept — recorded
-            # and retried (<=3)
+            # 403/404 and friends: a real answer about this thread (removed,
+            # private, quarantined). Retried a couple of times, then dropped.
             failed[pid] = failed.get(pid, 0) + 1
             continue
         docs, title = tree_docs(tree)

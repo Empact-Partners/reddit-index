@@ -158,10 +158,12 @@ def classify_rows(conn, rows, brand_names):
               for v in vals])
         conn.commit()
     print(f"labelled {len(vals)} (+{dropped} entity-rejected) of {len(items)}", flush=True)
-    # return INSERTED only: entity-rejected mentions never get a sentiment row,
-    # so the anti-join refetches them every cycle — a loop keyed on processed
-    # count would spin forever on that residue
-    return len(vals)
+    # (inserted, entity_rejected). Both matter: entity-rejected mentions never
+    # get a sentiment row, so the anti-join refetches them forever — a loop
+    # keyed on inserted alone would spin on that residue, while treating
+    # inserted==0 as failure would mean a category of pure rejections could
+    # never complete. The caller needs to tell the two apart.
+    return len(vals), dropped
 
 
 def main():
@@ -191,6 +193,7 @@ def main():
     try:
         total = 0
         stalls = 0
+        failed_empty = False
         while True:
             # Both the read and the write ride through a dropped link: the
             # fleet work between them is expensive, and losing a cycle to a
@@ -202,8 +205,9 @@ def main():
                 print(f"backlog empty — {total} labelled this run", flush=True)
                 break
             try:
-                done = db.run(state, lambda c: classify_rows(c, rows, brand_names),
-                              label="classify_rows")
+                done, rejected = db.run(
+                    state, lambda c: classify_rows(c, rows, brand_names),
+                    label="classify_rows")
             except Exception as e:
                 print(f"cycle failed ({type(e).__name__}: {str(e)[:120]}) — "
                       f"retrying once after 60s", flush=True)
@@ -211,6 +215,7 @@ def main():
                 stalls += 1
                 if stalls >= 3:
                     print("three consecutive failed cycles — stopping", flush=True)
+                    failed_empty = True
                     break
                 continue
             stalls = 0
@@ -220,8 +225,21 @@ def main():
             if not args.loop:
                 break
             if done == 0:
-                # a full cycle produced nothing (fleet down?) — do not spin
-                print("cycle labelled 0 — stopping loop", flush=True)
+                if rejected:
+                    # everything left was an ENTITY decision, not a failure:
+                    # those rows legitimately never get a sentiment row
+                    print(f"cycle: {rejected} entity-rejected, nothing else "
+                          f"pending — done", flush=True)
+                    break
+                # Nothing labelled and nothing rejected while rows were
+                # pending. The fleet is a LOOPBACK service, so a WAN outage
+                # still lets submit() succeed and completion is read from
+                # disk — no out-file ever appears and the burn quietly does
+                # nothing. Exiting 0 would let the orchestrator record the
+                # category as classified and never re-drive it.
+                print(f"cycle labelled 0 of {len(rows)} pending, 0 rejected — "
+                      f"fleet not producing; failing so it is retried", flush=True)
+                failed_empty = True
                 break
     finally:
         if supervised:
@@ -230,7 +248,9 @@ def main():
             state["conn"].close()
         except Exception:
             pass
-    return 0
+    # a non-zero exit tells depth_run the category was NOT classified, so it
+    # stays open for a later pass instead of being recorded as done
+    return 1 if failed_empty else 0
 
 
 if __name__ == "__main__":

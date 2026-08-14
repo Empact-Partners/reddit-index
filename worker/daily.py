@@ -83,13 +83,25 @@ def set_watermark(cur, sub, wm, n_threads):
 
 
 def fetch_new(sub, watermark_ts):
-    """Newest posts, watermark-bounded. 100/page, at most 3 pages."""
-    posts, after = [], None
+    """Newest posts, watermark-bounded. 100/page, at most 3 pages.
+
+    Returns (posts, ok). ok=False when any page failed: an error response used
+    to collapse into an empty page, indistinguishable from a clean end of
+    listing, and the caller then advanced the watermark past posts it had
+    never seen — a permanent, unrecorded gap (reproduced: a drop on page 2 of
+    250 new posts skipped 150 forever, and the next healthy run returned
+    nothing because the watermark had moved). The sweep learned this same
+    lesson; the daily lane must not repeat it.
+    """
+    posts, after, ok = [], None, True
     for _ in range(3):
         r = rc.get(f"/r/{sub}/new", {"limit": 100, "raw_json": 1,
                                      **({"after": after} if after else {})},
                    bucket="stream", use_cache=False)
-        kids = r.get("data", {}).get("children", []) if "_err" not in r else []
+        if "_err" in r:
+            ok = False
+            break
+        kids = r.get("data", {}).get("children", [])
         if not kids:
             break
         page = [k["data"] for k in kids if k.get("kind") == "t3"]
@@ -100,7 +112,7 @@ def fetch_new(sub, watermark_ts):
             break
     if watermark_ts is not None:
         posts = [p for p in posts if (p.get("created_utc") or 0) > watermark_ts]
-    return posts
+    return posts, ok
 
 
 def content_qualify(p, cat_slugs, alias_re):
@@ -185,7 +197,7 @@ def main():
                 wmv = get_watermark(cur, sub)
                 wm = wmv.timestamp() if hasattr(wmv, "timestamp") else (float(wmv) if wmv else None)
 
-            posts = fetch_new(sub, wm)
+            posts, listing_ok = fetch_new(sub, wm)
             qual = [p for p in posts if content_qualify(p, cat_slugs, alias_re)]
             newest = max([p.get("created_utc") or 0 for p in posts], default=wm or 0)
 
@@ -230,9 +242,15 @@ def main():
             if cur and mrows:
                 ins, rej = insert_mentions(cur, mrows)
             if cur:
-                if newest:
+                # Only advance the watermark when the listing was COMPLETE.
+                # Advancing after a partial fetch buries every post the
+                # failed pages would have carried: the next run starts above
+                # them and they are unreachable forever.
+                if newest and listing_ok:
                     set_watermark(cur, sub, datetime.datetime.fromtimestamp(
                         newest, datetime.timezone.utc), len(qual))
+                elif not listing_ok:
+                    print(f"  {sub}: listing incomplete — watermark held", flush=True)
                 conn.commit()
                 cur.close()
             tot_threads += len(qual)
