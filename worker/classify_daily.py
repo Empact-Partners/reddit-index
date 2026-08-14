@@ -187,15 +187,33 @@ def main():
     brand_names = {r["slug"]: r["brand"] for r in
                    csv.DictReader(open(os.path.join(REPO, "data", "brands.csv")))}
     cap = args.cap if args.cap else (CYCLE_MAX if args.loop else DAILY_CAP)
-    conn = db.connect()
+    state = {"conn": db.connect()}
     try:
         total = 0
+        stalls = 0
         while True:
-            rows = fetch_unlabelled(conn, slugs=args.category, cap=cap)
+            # Both the read and the write ride through a dropped link: the
+            # fleet work between them is expensive, and losing a cycle to a
+            # network blip would re-spend model calls (the label cache makes
+            # a retry free, but the round trip is not).
+            rows = db.run(state, lambda c: fetch_unlabelled(c, slugs=args.category, cap=cap),
+                          label="fetch_unlabelled")
             if not rows:
                 print(f"backlog empty — {total} labelled this run", flush=True)
                 break
-            done = classify_rows(conn, rows, brand_names)
+            try:
+                done = db.run(state, lambda c: classify_rows(c, rows, brand_names),
+                              label="classify_rows")
+            except Exception as e:
+                print(f"cycle failed ({type(e).__name__}: {str(e)[:120]}) — "
+                      f"retrying once after 60s", flush=True)
+                time.sleep(60)
+                stalls += 1
+                if stalls >= 3:
+                    print("three consecutive failed cycles — stopping", flush=True)
+                    break
+                continue
+            stalls = 0
             total += done
             if supervised:
                 burn_refresh()
@@ -208,7 +226,10 @@ def main():
     finally:
         if supervised:
             burn_release()
-        conn.close()
+        try:
+            state["conn"].close()
+        except Exception:
+            pass
     return 0
 
 

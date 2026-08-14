@@ -91,7 +91,8 @@ def deploy_hook():
 def publish(allow_git):
     hook = deploy_hook()
     if hook:
-        for attempt in range(3):
+        err = None
+        for attempt in range(5):
             try:
                 req = urllib.request.Request(hook, data=b"", method="POST")
                 with urllib.request.urlopen(req, timeout=30) as f:
@@ -99,9 +100,12 @@ def publish(allow_git):
                 print("  published (deploy hook)", flush=True)
                 return True
             except Exception as e:
-                time.sleep(10 * (attempt + 1))
                 err = e
-        print(f"  publish hook FAILED after 3 tries: {err}", flush=True)
+                time.sleep(min(120, 10 * 2 ** attempt))
+        # A missed publish is cosmetic: the data is in Supabase and the next
+        # category's publish (or the nightly) renders it.
+        print(f"  publish hook FAILED after 5 tries: {err} — data is safe in "
+              f"Supabase, next publish picks it up", flush=True)
         return False
     if not allow_git:
         print("  no deploy_hook and --allow-git-publish not set — publish skipped",
@@ -293,31 +297,73 @@ def main():
     for i, slug in enumerate(order, 1):
         if slug in run_state["done"]:
             continue
-        subs = by_cat[slug]
-        pending = [s for s in subs if not sweep.sub_complete(s, ctx["mode"])]
-        print(f"\n[{i}/{len(order)}] {slug}: {len(subs)} subs "
-              f"({len(subs) - len(pending)} already complete)", flush=True)
-        sweep_category(slug, subs, ctx)
+        # One category must never take the run down. Anything unhandled here
+        # (a link that stayed down past every retry, a Supabase blip that
+        # outlasted the reconnect ladder) is logged and the run moves on;
+        # the category is NOT marked done, so a later pass redoes it and the
+        # on-disk sweep state means it resumes rather than restarts.
+        try:
+            subs = by_cat[slug]
+            pending = [s for s in subs if not sweep.sub_complete(s, ctx["mode"])]
+            print(f"\n[{i}/{len(order)}] {slug}: {len(subs)} subs "
+                  f"({len(subs) - len(pending)} already complete)", flush=True)
+            complete = sweep_category(slug, subs, ctx)
 
-        if slug not in run_state["classified"]:
-            if classify_burn(slug):
-                run_state["classified"].append(slug)
-                atomic_json(RUN_FP, run_state)
+            if slug not in run_state["classified"]:
+                if classify_burn(slug):
+                    run_state["classified"].append(slug)
+                    atomic_json(RUN_FP, run_state)
+                else:
+                    print(f"  {slug}: classify burn failed — will publish without it, "
+                          f"nightly picks up the rest", flush=True)
+
+            if complete:
+                run_state["done"].append(slug)
             else:
-                print(f"  {slug}: classify burn failed — will publish without it, "
-                      f"nightly picks up the rest", flush=True)
-
-        run_state["done"].append(slug)
-        atomic_json(RUN_FP, run_state)
-        since_publish += 1
-        if since_publish >= args.publish_every:
-            print(f"  scoring + publishing after {slug}…", flush=True)
-            score_and_publish(run_state, args.allow_git_publish)
-            run_state["published_through"] = slug
+                print(f"  {slug}: left INCOMPLETE — not marked done, a later "
+                      f"pass will finish it", flush=True)
+                run_state.setdefault("incomplete", [])
+                if slug not in run_state["incomplete"]:
+                    run_state["incomplete"].append(slug)
             atomic_json(RUN_FP, run_state)
-            since_publish = 0
+            since_publish += 1
+            if since_publish >= args.publish_every:
+                print(f"  scoring + publishing after {slug}…", flush=True)
+                score_and_publish(run_state, args.allow_git_publish)
+                run_state["published_through"] = slug
+                atomic_json(RUN_FP, run_state)
+                since_publish = 0
+        except KeyboardInterrupt:
+            raise
+        except Exception as e:
+            print(f"  {slug}: UNHANDLED {type(e).__name__}: "
+                  f"{str(e).splitlines()[0][:160]} — continuing", flush=True)
+            try:
+                ctx["conn"] = db.connect()
+            except Exception:
+                pass
+            time.sleep(30)
 
     if since_publish:
+        score_and_publish(run_state, args.allow_git_publish)
+
+    # A second pass over anything left incomplete (subs that were mid-outage
+    # the first time round). Cheap: everything already done is skipped from
+    # disk state.
+    leftovers = [s for s in order if s not in run_state["done"]]
+    if leftovers:
+        print(f"\nsecond pass over {len(leftovers)} incomplete categories", flush=True)
+        for slug in leftovers:
+            try:
+                if sweep_category(slug, by_cat[slug], ctx):
+                    classify_burn(slug)
+                    if slug not in run_state["done"]:
+                        run_state["done"].append(slug)
+                    atomic_json(RUN_FP, run_state)
+            except KeyboardInterrupt:
+                raise
+            except Exception as e:
+                print(f"  {slug}: second pass failed: {str(e)[:120]}", flush=True)
         score_and_publish(run_state, args.allow_git_publish)
     print("\nDEPTH RUN COMPLETE", flush=True)
     ctx["conn"].close()

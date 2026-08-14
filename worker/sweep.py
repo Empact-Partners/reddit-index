@@ -227,7 +227,7 @@ def collect_listings(sub, cat_slugs, st, ctx):
 
 
 def sweep_sub(sub, cat_slugs, ctx, tree_cap=10 ** 9):
-    conn, sub_ids = ctx["conn"], ctx["sub_ids"]
+    sub_ids = ctx["sub_ids"]  # every write goes through db.run(ctx, …)
     st = load_state(sub, ctx["mode"])
     sid = sub_ids.get(sub)
     if sid is None:
@@ -237,25 +237,28 @@ def sweep_sub(sub, cat_slugs, ctx, tree_cap=10 ** 9):
     # ── listings (once per sub; retried while any lane errored) ─────────────
     if not st["listings_done"]:
         qual, ok = collect_listings(sub, cat_slugs, st, ctx)
-        with conn.cursor() as cur:
-            if qual:
-                # first_seen_at backdated for old threads so the sweep does
-                # not hijack the daily loop's 72h revisit budget
-                cur.executemany(
-                    "INSERT INTO threads (id, subreddit_id, link_title, permalink, "
-                    "created_utc, num_comments, archived, score, first_seen_at) "
-                    "VALUES (%s,%s,%s,%s,to_timestamp(%s),%s,%s,%s, "
-                    "CASE WHEN to_timestamp(%s) < now() - interval '72 hours' "
-                    "THEN to_timestamp(%s) ELSE now() END) "
-                    "ON CONFLICT (id) DO UPDATE SET num_comments=EXCLUDED.num_comments, "
-                    "score=EXCLUDED.score",
-                    [(f"t3_{p['id']}", sid, (p.get("title") or "")[:500],
-                      "https://www.reddit.com" + (p.get("permalink") or ""),
-                      p.get("created_utc") or 0, p.get("num_comments") or 0,
-                      bool(p.get("archived")), p.get("score") or 0,
-                      p.get("created_utc") or 0, p.get("created_utc") or 0)
-                     for p in qual])
-            conn.commit()
+
+        def _insert_threads(c):
+            with c.cursor() as cur:
+                if qual:
+                    # first_seen_at backdated for old threads so the sweep does
+                    # not hijack the daily loop's 72h revisit budget
+                    cur.executemany(
+                        "INSERT INTO threads (id, subreddit_id, link_title, permalink, "
+                        "created_utc, num_comments, archived, score, first_seen_at) "
+                        "VALUES (%s,%s,%s,%s,to_timestamp(%s),%s,%s,%s, "
+                        "CASE WHEN to_timestamp(%s) < now() - interval '72 hours' "
+                        "THEN to_timestamp(%s) ELSE now() END) "
+                        "ON CONFLICT (id) DO UPDATE SET num_comments=EXCLUDED.num_comments, "
+                        "score=EXCLUDED.score",
+                        [(f"t3_{p['id']}", sid, (p.get("title") or "")[:500],
+                          "https://www.reddit.com" + (p.get("permalink") or ""),
+                          p.get("created_utc") or 0, p.get("num_comments") or 0,
+                          bool(p.get("archived")), p.get("score") or 0,
+                          p.get("created_utc") or 0, p.get("created_utc") or 0)
+                         for p in qual])
+                c.commit()
+        db.run(ctx, _insert_threads, label=f"threads {sub}")
         st["post_ids"] = sorted({p["id"] for p in qual} | set(st["post_ids"]))
         if ok:
             st["listings_done"] = True
@@ -287,9 +290,15 @@ def sweep_sub(sub, cat_slugs, ctx, tree_cap=10 ** 9):
         nonlocal pending_rows
         if not pending_rows and not force:
             return
-        with conn.cursor() as cur:
-            insert_mentions(cur, pending_rows)
-            conn.commit()
+        rows = pending_rows
+
+        def _do(c):
+            with c.cursor() as cur:
+                insert_mentions(cur, rows)
+                c.commit()
+        # Reconnects and retries if the link died mid-write. Rows are
+        # ON CONFLICT DO NOTHING, so a retry after a partial commit is safe.
+        db.run(ctx, _do, label=f"flush {sub}")
         pending_rows = []
 
     for i, pid in enumerate(todo, 1):
@@ -298,7 +307,16 @@ def sweep_sub(sub, cat_slugs, ctx, tree_cap=10 ** 9):
                       {"depth": 6, "limit": TREE_LIMIT, "raw_json": 1, "sort": "top"},
                       bucket="sweep", use_cache=False)
         if isinstance(tree, dict) and "_err" in tree:
-            # a rate-limited tree is NOT swept — recorded and retried (<=3)
+            if tree["_err"] == "network":
+                # The link is down, not the thread. Spending an attempt here
+                # would permanently drop threads over a wifi blip, so stop the
+                # sub cleanly instead: state is saved below and the
+                # orchestrator's next pass picks it up untouched.
+                print(f"  {sub}: network down — pausing this sub with "
+                      f"{len(todo) - i + 1} trees left", flush=True)
+                break
+            # a rate-limited or otherwise errored tree is NOT swept — recorded
+            # and retried (<=3)
             failed[pid] = failed.get(pid, 0) + 1
             continue
         docs, title = tree_docs(tree)
@@ -364,11 +382,14 @@ def prepare(days):
     brands = load_brands()  # {category_slug: [brand rows]}
     ctx["alias_re"] = build_alias_re([b for bs in brands.values() for b in bs])
     ctx["conn"] = db.connect()
-    with ctx["conn"].cursor() as cur:
-        ensure_partitions(cur)
-        ctx["conn"].commit()
-        cur.execute("SELECT name, id FROM subreddits")
-        ctx["sub_ids"] = dict(cur.fetchall())
+
+    def _boot(c):
+        with c.cursor() as cur:
+            ensure_partitions(cur)
+            c.commit()
+            cur.execute("SELECT name, id FROM subreddits")
+            return dict(cur.fetchall())
+    ctx["sub_ids"] = db.run(ctx, _boot, label="boot")
     ctx["mapping"] = load_scoring_map()
     return ctx
 
@@ -386,10 +407,21 @@ def run_subs(subs, ctx, tree_cap=10 ** 9):
             raise
         except Exception as e:
             print(f"  {sub}: ERROR {str(e).splitlines()[0][:160]}", flush=True)
+            # Recover the connection for the NEXT sub no matter which way this
+            # one died. db.connect() itself retries through an outage, and a
+            # failure here must not escape the loop and kill a multi-day run.
             try:
                 ctx["conn"].rollback()
             except Exception:
-                ctx["conn"] = db.connect()
+                try:
+                    ctx["conn"].close()
+                except Exception:
+                    pass
+                try:
+                    ctx["conn"] = db.connect()
+                except Exception as ce:
+                    print(f"  reconnect failed: {str(ce).splitlines()[0][:120]} — "
+                          f"continuing; the next sub retries", flush=True)
         if i % 10 == 0:
             mins = (time.time() - t0) / 60
             print(f"[{i}/{len(subs)}] {tot_trees} trees, {tot_m} mentions, "

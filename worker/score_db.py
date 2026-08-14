@@ -35,15 +35,20 @@ def main():
         also_in[r["slug"]] = cats
 
     cats = load_categories()
-    conn = db.connect()
+    state = {"conn": db.connect()}
+    conn = state["conn"]
     window_end = datetime.date.today()
     window_start = window_end - datetime.timedelta(days=365)
 
     total = 0
     all_rows = []
     for slug in cats:
-        with conn.cursor() as cur:
-            cur.execute("""
+        # Scoring reads 100 categories in a row; a dropped link partway
+        # through must reconnect and re-read that category, not abort the run
+        # and block the publish.
+        def _read(c, _slug=slug):
+            with c.cursor() as cur:
+                cur.execute("""
                 SELECT b.slug, m.doc_id, m.doc_type, m.thread_id, m.author,
                        s.name, extract(epoch from m.created_utc), ms.label
                 FROM mentions m
@@ -56,8 +61,9 @@ def main():
                 JOIN categories c ON c.id = cs.category_id
                 WHERE c.slug = %s
                   AND m.created_utc >= now() - interval '365 days'
-            """, (slug,))
-            rows = cur.fetchall()
+            """, (_slug,))
+                return cur.fetchall()
+        rows = db.run(state, _read, label=f"score read {slug}")
         ms = []
         for bslug, doc_id, doc_type, thread_id, author, sub, epoch, label in rows:
             if slug not in also_in.get(bslug, set()):
@@ -93,13 +99,21 @@ def main():
     subprocess.run([sys.executable, os.path.join(HERE, "load.py"), "--scores"], check=True)
 
     # the no-history rule: one truthful week, nothing older
-    conn = db.connect()
-    with conn.cursor() as cur:
-        cur.execute("DELETE FROM brand_category_scores WHERE week_start < "
-                    "(SELECT max(week_start) FROM brand_category_scores)")
-        print(f"pruned {cur.rowcount} superseded score rows", flush=True)
-        conn.commit()
-    conn.close()
+    prune_state = {"conn": db.connect()}
+
+    def _prune(c):
+        with c.cursor() as cur:
+            cur.execute("DELETE FROM brand_category_scores WHERE week_start < "
+                        "(SELECT max(week_start) FROM brand_category_scores)")
+            n = cur.rowcount
+            c.commit()
+            return n
+    print(f"pruned {db.run(prune_state, _prune, label='prune')} superseded score rows",
+          flush=True)
+    try:
+        prune_state["conn"].close()
+    except Exception:
+        pass
     return 0
 
 

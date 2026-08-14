@@ -9,7 +9,25 @@ run resumes without re-spending a single call and a parser bug never costs a
 re-harvest. Write to `path.tmp`, then `os.replace` — the atomic form, so a kill
 mid-write leaves the previous file rather than half a file.
 """
-import base64, hashlib, json, os, time, urllib.error, urllib.parse, urllib.request
+import base64, hashlib, http.client, json, os, socket, ssl, time
+import urllib.error, urllib.parse, urllib.request
+
+# How long a single call will ride out a network outage before giving up and
+# returning {"_err": "network"}. The run is days long and every byte of
+# progress is already on disk, so waiting is always cheaper than failing:
+# a caller that gives up marks work as attempted, and attempts are a budget
+# that must never be spent on "the wifi dropped".
+NET_MAX_WAIT = float(os.environ.get("RI_NET_MAX_WAIT", "3600"))
+
+
+def _is_network_error(e):
+    """A dead link, not a bad request. An HTTPError is a real answer from
+    Reddit and is NOT network loss, so it is deliberately excluded."""
+    if isinstance(e, urllib.error.HTTPError):
+        return False
+    return isinstance(e, (urllib.error.URLError, socket.timeout, socket.gaierror,
+                          ConnectionError, TimeoutError, ssl.SSLError,
+                          http.client.HTTPException, OSError))
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 CACHE = os.environ.get("RI_CACHE") or os.path.join(HERE, ".cache")
@@ -75,7 +93,9 @@ def _access_token(tries=6):
         return _token["v"]
     basic = base64.b64encode(f"{CLIENT_ID}:{CLIENT_SECRET}".encode()).decode()
     last = None
-    for attempt in range(tries):
+    attempt = 0
+    deadline = time.time() + NET_MAX_WAIT
+    while True:
         try:
             req = urllib.request.Request(
                 "https://www.reddit.com/api/v1/access_token",
@@ -86,8 +106,16 @@ def _access_token(tries=6):
             return _token["v"]
         except Exception as e:
             last = e
-            time.sleep(min(60, 3 * (attempt + 1) ** 2))
-    raise RuntimeError(f"could not obtain a Reddit token after {tries} attempts: {last}")
+            attempt += 1
+            # A network outage waits for the link to come back; a real
+            # rejection (bad credentials) still gives up after `tries`.
+            net = _is_network_error(e)
+            if not net and attempt >= tries:
+                break
+            if net and time.time() >= deadline:
+                break
+            time.sleep(min(60, 3 * min(attempt, 4) ** 2))
+    raise RuntimeError(f"could not obtain a Reddit token after {attempt} attempts: {last}")
 
 
 def _cache_path(path, params, bucket):
@@ -101,7 +129,14 @@ _last_call = [0.0]
 
 
 def get(path, params=None, bucket="misc", tries=3, use_cache=True):
-    """One authenticated GET. Cached on disk by (path, params)."""
+    """One authenticated GET. Cached on disk by (path, params).
+
+    `tries` bounds HTTP-level retries (429/5xx). Network failure is NOT
+    counted against it: a dead link retries with capped backoff until
+    NET_MAX_WAIT, because the alternative is telling the caller "this thread
+    failed" when the truth is "the wifi dropped", and callers spend a
+    permanent attempt budget on that answer.
+    """
     fp = _cache_path(path, params, bucket)
     if use_cache and os.path.exists(fp):
         try:
@@ -110,7 +145,10 @@ def get(path, params=None, bucket="misc", tries=3, use_cache=True):
         except Exception:
             pass
 
-    for attempt in range(tries):
+    attempt = 0
+    net_attempt = 0
+    net_deadline = None
+    while attempt < tries:
         gap = time.time() - _last_call[0]
         if gap < _adaptive[0]:
             time.sleep(_adaptive[0] - gap)
@@ -136,7 +174,8 @@ def get(path, params=None, bucket="misc", tries=3, use_cache=True):
             return data
         except urllib.error.HTTPError as e:
             _last_call[0] = time.time()
-            if e.code == 401 and attempt == 0:
+            attempt += 1
+            if e.code == 401 and attempt == 1:
                 _token["v"] = None
                 continue
             if e.code in (429, 500, 502, 503, 504):
@@ -145,13 +184,30 @@ def get(path, params=None, bucket="misc", tries=3, use_cache=True):
                     reset = float(e.headers.get("x-ratelimit-reset") or 0)
                 except (TypeError, ValueError):
                     pass
-                time.sleep(max(reset if e.code == 429 else 0.0, 3 * (attempt + 1)))
+                time.sleep(max(reset if e.code == 429 else 0.0, 3 * attempt))
                 continue
             _stats["errors"] += 1
             return {"_err": e.code}
-        except Exception:
+        except Exception as e:
             _last_call[0] = time.time()
-            time.sleep(2)
+            if not _is_network_error(e):
+                attempt += 1
+                time.sleep(2)
+                continue
+            # Link is down. Wait it out — do NOT spend an attempt.
+            if net_deadline is None:
+                net_deadline = time.time() + NET_MAX_WAIT
+            if time.time() >= net_deadline:
+                _stats["errors"] += 1
+                print(f"  network down > {NET_MAX_WAIT / 60:.0f} min, giving up on "
+                      f"{path} (state is on disk; a re-run resumes)", flush=True)
+                return {"_err": "network"}
+            net_attempt += 1
+            wait = min(120, 5 * 2 ** min(net_attempt, 5))
+            if net_attempt in (1, 3) or net_attempt % 10 == 0:
+                print(f"  network unreachable ({type(e).__name__}) — waiting {wait}s, "
+                      f"attempt {net_attempt}", flush=True)
+            time.sleep(wait)
     _stats["errors"] += 1
     return {"_err": "fail"}
 
