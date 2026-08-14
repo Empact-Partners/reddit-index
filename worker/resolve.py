@@ -91,6 +91,66 @@ def load_domains():
 
 # ── build the automaton ─────────────────────────────────────────────────────
 
+# A bare one- or two-character token is never a brand reference in casual
+# prose — it is "or", "me", "as", "re", "am". The gazetteer's English-word
+# gate only screened dictionary words of length 3-12, so two-letter forms were
+# never examined and shipped as SAFE with min_corroborating=0. Once the sweep
+# actually started reading comments (it had been extracting none), those five
+# aliases alone produced 35,000 of 42,000 mentions in the pilot category.
+# Enforced HERE as well as in the data, because a regenerated gazetteer must
+# not be able to reintroduce the class.
+MIN_BARE_LEN = 3
+
+
+def _english_words():
+    """The system dictionary, lowercased. Absent on a bare container, in which
+    case the guard below simply does not fire (the length rule still does)."""
+    words = set()
+    try:
+        with open("/usr/share/dict/words") as f:
+            for w in f:
+                w = w.strip().lower()
+                if len(w) >= 2:
+                    words.add(w)
+    except FileNotFoundError:
+        pass
+    return words
+
+
+_ENGLISH = _english_words()
+# Deliberately NOT treated as ordinary words: short forms that are overwhelmingly
+# product references in software talk even though a dictionary lists them.
+_TECH_EXEMPT = {"aws", "sap", "ibm", "gcp", "sas", "php", "sql", "vim", "git",
+                "npm", "aix", "erp", "crm", "api", "ios", "mac", "pdf"}
+
+
+def _is_plain_english(alias):
+    """True when every token of the alias is an ordinary English word — 'app',
+    'pieces', 'my time', 'spot on'. Such a form must never be accepted bare:
+    it is what produced 'Pieces for Developers' from the word pieces. The
+    alias stays in the automaton but is forced to require corroboration, so a
+    real reference (near a domain or another confirmed brand) still resolves.
+    """
+    if not _ENGLISH:
+        return False
+    toks = [t for t in re.split(r"[^a-z0-9]+", alias.lower()) if t]
+    if not toks or any(t in _TECH_EXEMPT for t in toks):
+        return False
+
+    def known(t):
+        # the system dictionary lists singulars, so 'pieces' misses while
+        # 'piece' hits — an alias that is a plain plural is just as ordinary
+        if t in _ENGLISH:
+            return True
+        for suf, base in (("s", ""), ("es", ""), ("ies", "y")):
+            if t.endswith(suf) and len(t) > len(suf) + 1:
+                if t[: -len(suf)] + base in _ENGLISH:
+                    return True
+        return False
+
+    return all(known(t) for t in toks)
+
+
 def build_automaton(aliases):
     """One Aho-Corasick automaton over all surface forms. Linear in text length.
 
@@ -100,8 +160,11 @@ def build_automaton(aliases):
     """
     A = ahocorasick.Automaton()
     for alias, brand_slug, cls, min_c, disabled in aliases:
-        if disabled:
+        if disabled or len(alias.strip()) < MIN_BARE_LEN:
             continue
+        if cls == "SAFE" and _is_plain_english(alias):
+            # an ordinary English word is never self-evidently a brand
+            cls, min_c = "AMBIGUOUS", max(int(min_c or 0), 1)
         existing = A.get(alias, [])
         existing.append((alias, brand_slug, cls, min_c))
         A.add_word(alias, existing)
