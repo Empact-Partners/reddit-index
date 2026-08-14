@@ -175,8 +175,9 @@ def score_and_publish(run_state, allow_git):
 
 def sweep_category(slug, subs, ctx):
     """Re-pass with backoff until every sub is complete or stuck."""
+    cap = ctx.get("tree_cap")
     for rnd in range(len(BACKOFFS) + 1):
-        incomplete = [s for s in subs if not sweep.sub_complete(s, ctx["mode"])]
+        incomplete = [s for s in subs if not sweep.sub_complete(s, ctx["mode"], cap)]
         if not incomplete:
             return True
         if rnd > 0:
@@ -184,8 +185,8 @@ def sweep_category(slug, subs, ctx):
             print(f"  {slug}: {len(incomplete)} subs incomplete — retry in {wait}s",
                   flush=True)
             time.sleep(wait)
-        sweep.run_subs(incomplete, ctx)
-    left = [s for s in subs if not sweep.sub_complete(s, ctx["mode"])]
+        sweep.run_subs(incomplete, ctx, cap or 10 ** 9)
+    left = [s for s in subs if not sweep.sub_complete(s, ctx["mode"], cap)]
     if left:
         print(f"  {slug}: giving up on {len(left)} subs this pass: "
               f"{', '.join(left[:8])}", flush=True)
@@ -193,7 +194,7 @@ def sweep_category(slug, subs, ctx):
 
 
 def cmd_status(days, list_approx=False):
-    mapping = sweep.load_scoring_map()
+    mapping = sweep.load_scoring_map(True)
     by_cat = cat_subs(mapping)
     mode = sweep.make_mode(days)
     run_state = load_run()
@@ -267,6 +268,10 @@ def cmd_status(days, list_approx=False):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--days", type=int, default=90)
+    ap.add_argument("--core", action="store_true",
+                    help="sweep only the CORE subreddits (data/select_core_subs.py)")
+    ap.add_argument("--tree-cap", type=int, default=0,
+                    help="max threads per subreddit; the richest are taken first")
     ap.add_argument("--category", action="append", help="restrict to slug(s)")
     ap.add_argument("--order", help="comma-separated slug order override")
     ap.add_argument("--publish-every", type=int, default=1,
@@ -279,7 +284,8 @@ def main():
     if args.status or args.list_approximate:
         return cmd_status(args.days, args.list_approximate)
 
-    ctx = sweep.prepare(args.days)
+    ctx = sweep.prepare(args.days, args.core)
+    ctx["tree_cap"] = args.tree_cap or 10 ** 9
     mapping = ctx["mapping"]
     by_cat = cat_subs(mapping)
 
@@ -323,7 +329,7 @@ def main():
         # on-disk sweep state means it resumes rather than restarts.
         try:
             subs = by_cat[slug]
-            pending = [s for s in subs if not sweep.sub_complete(s, ctx["mode"])]
+            pending = [s for s in subs if not sweep.sub_complete(s, ctx["mode"], ctx.get("tree_cap"))]
             print(f"\n[{i}/{len(order)}] {slug}: {len(subs)} subs "
                   f"({len(subs) - len(pending)} already complete)", flush=True)
             complete = sweep_category(slug, subs, ctx)

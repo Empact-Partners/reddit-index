@@ -370,9 +370,15 @@ def sweep_sub(sub, cat_slugs, ctx, tree_cap=10 ** 9):
     return len(todo), n_mentions
 
 
-def sub_complete(sub, mode):
+def sub_complete(sub, mode, tree_cap=None):
     """True when listings finished under THIS mode and every tree is swept
-    or given up (3 failures)."""
+    or given up (3 failures).
+
+    tree_cap makes completion cap-aware: under a per-sub budget the sweep
+    deliberately takes only the richest N threads, so a capped sub would
+    otherwise never read as complete and would block its whole category
+    forever.
+    """
     try:
         st = json.load(open(state_path(sub)))
     except Exception:
@@ -381,6 +387,8 @@ def sub_complete(sub, mode):
             or mode_key(st.get("mode") or {"days": None, "min_comments": None,
                                            "matcher": None}) != mode_key(mode)):
         return False
+    if tree_cap and len(st.get("swept", [])) >= min(tree_cap, len(st.get("post_ids", []))):
+        return True
     swept = set(st.get("swept", []))
     failed = st.get("failed_trees", {})
     return all(pid in swept or failed.get(pid, 0) >= 3 for pid in st.get("post_ids", []))
@@ -395,7 +403,7 @@ def make_mode(days):
             "lanes": ["new", "busy-supplements"]}
 
 
-def prepare(days):
+def prepare(days, core_only=False):
     """Build the shared context once (gazetteer, resolver, DB). The
     orchestrator (depth_run.py) drives run over per-category sub lists."""
     mode = make_mode(days)
@@ -413,7 +421,8 @@ def prepare(days):
             cur.execute("SELECT name, id FROM subreddits")
             return dict(cur.fetchall())
     ctx["sub_ids"] = db.run(ctx, _boot, label="boot")
-    ctx["mapping"] = load_scoring_map()
+    ctx["mapping"] = load_scoring_map(core_only)
+    ctx["core_only"] = core_only
     return ctx
 
 
@@ -477,9 +486,11 @@ def main():
     ap.add_argument("--tree-cap", type=int, default=100000,
                     help="max trees per sub this invocation")
     ap.add_argument("--status", action="store_true")
+    ap.add_argument("--core", action="store_true",
+                    help="only the CORE subreddits (data/select_core_subs.py)")
     args = ap.parse_args()
 
-    mapping = load_scoring_map()
+    mapping = load_scoring_map(args.core)
     subs = sorted(mapping)
     if args.only:
         keep = {s.strip().lower() for s in args.only.split(",")}
@@ -488,7 +499,7 @@ def main():
     if args.status:
         return status(subs, make_mode(args.days))
 
-    ctx = prepare(args.days)
+    ctx = prepare(args.days, args.core)
     tot_trees, tot_m = run_subs(subs, ctx, args.tree_cap)
     print(f"\nSWEEP PASS DONE: {tot_trees} trees, {tot_m} mentions", flush=True)
     ctx["conn"].close()

@@ -40,13 +40,23 @@ TREES_PER_SUB = 12
 RUN_ID = str(uuid.uuid4())
 
 
-def load_scoring_map():
-    """sub -> [category_slug…], scoring rows only."""
+def load_scoring_map(core_only=False):
+    """sub -> [category_slug…], scoring rows only.
+
+    core_only restricts to the CORE set (data/select_core_subs.py): the
+    subreddits that actually carry each category's product conversation,
+    ranked by topicality, observed brand evidence and measured density. It is
+    a FETCH-ORDER filter, not a membership one — `is_scoring` still governs
+    what counts, so the tail can be swept later without a methodology change.
+    """
     out = {}
     with open(os.path.join(REPO, "data", "category-subreddits.csv")) as f:
         for r in csv.DictReader(f):
-            if r.get("is_scoring") == "True":
-                out.setdefault(r["subreddit"], []).append(r["category_slug"])
+            if r.get("is_scoring") != "True":
+                continue
+            if core_only and r.get("is_core") != "True":
+                continue
+            out.setdefault(r["subreddit"], []).append(r["category_slug"])
     return out
 
 
