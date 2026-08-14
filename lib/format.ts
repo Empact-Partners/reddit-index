@@ -7,7 +7,7 @@
 export const SCORING_WINDOW_MONTHS = 12;
 
 /** The published method version. Frozen before the first production crawl. */
-export const METHODOLOGY_VERSION = "2.0.0";
+export const METHODOLOGY_VERSION = "2.0.1";
 
 const MONTHS = [
   "Jan", "Feb", "Mar", "Apr", "May", "Jun",

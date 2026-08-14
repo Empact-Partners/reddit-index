@@ -4,6 +4,13 @@
 412 brand × category rows). This is the honest audit of what the number is,
 what it is not, and what should change.*
 
+> **Addendum 2026-08-14.** This review predates methodology 2.0.x on two
+> counts: the prior it describes (brand-rate method of moments) was replaced
+> by the pooled-LOO prior (K=10) in 2.0.0, and the "top 8" scoring-subreddit
+> selection it references was replaced in 2.0.1 by all-qualifying selection
+> (no cap; six qualification bars). The audit's findings stand as the record
+> that motivated both changes. Current doctrine: [methodology.md](methodology.md).
+
 ## How the score actually works, in plain words
 
 1. **Collect.** For each category, we harvest threads from its scoring

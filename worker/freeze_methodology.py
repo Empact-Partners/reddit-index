@@ -32,7 +32,17 @@ REF = "nrsyqcttpijxhwtdtoct"
 # K=10, and a calibration gate refuses to load any run whose ordering
 # contradicts its own raw data. Params below are the complete v2 set;
 # the 1.0.0-provisional rows remain in the table untouched (append-only).
-VERSION = "2.0.0"
+# 2.0.1 (2026-08-14): selection-rule change ONLY — the top-N-by-worth cap
+# (T × bb_per_hour, 8 then 12) on scoring subreddits is removed. Every
+# candidate that passes ALL qualification bars (exists & open · alive ≥ ~2
+# posts/wk · not vendor-run · rules posture v2 ≠ forbid · topicality ≥ 0.5 ·
+# evidence floor) is is_scoring for its category. The cap starved 38
+# categories below the 5-sub viability floor and 6 to zero; mega-subs are
+# scoped at THREAD level (Stage 3 qualification), not excluded at sub level.
+# Estimator, prior, gates, window, resolution, sentiment: all unchanged —
+# the full set is re-frozen under 2.0.1 so /methodology renders one
+# complete, self-contained set per version (the page filters version =).
+VERSION = "2.0.1"
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.dirname(HERE)
@@ -99,6 +109,13 @@ PARAMS = [
     ("category_viability_min_scoring_subreddits", "global", 5,
      "A CATEGORY-level test, distinct from every brand-level test. Failing it renders the "
      "insufficient-signal panel; it never makes a brand 'below threshold'."),
+    ("scoring_subreddit_selection", "global", "all_qualifying",
+     "2.0.1: every subreddit passing ALL qualification bars is is_scoring for the "
+     "category — no top-N cap, no worth ranking. Replaces the implicit top-8 (later 12) "
+     "by T × bb_per_hour, which left 38 categories under the 5-subreddit viability floor "
+     "and 6 at zero. Subscriber count is never a bar; mega-subs serving many categories "
+     "are scoped by thread-level qualification, not excluded. Selection changes which "
+     "mentions exist, never how any mention is scored."),
 
     # ── uncertainty ─────────────────────────────────────────────────────────
     ("ci_level", "global", 0.90, "07 §5."),

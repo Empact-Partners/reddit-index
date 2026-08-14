@@ -402,3 +402,27 @@ Raised by reviewers and resolved as false positives — do not "fix" them:
 ---
 
 [← Back to README](README.md) · [BUILD-PROMPT.md](BUILD-PROMPT.md) · [Index methodology](07-index-methodology.md) · [Phasing](12-phasing.md)
+
+---
+
+## 2026-08-14 — Depth expansion: methodology 2.0.1, all-qualifying scoring subs
+
+Supersedes two earlier entries in this ledger: "`is_scoring` is the top 8 per
+category by `T × bb_per_hour`" (the cap is GONE — 2.0.1 freezes
+`scoring_subreddit_selection: all_qualifying`), and "four categories cannot
+field five scoring subreddits… a correct outcome" (all 100 categories now
+clear the 5-sub floor).
+
+- Discovery v2 (`data/discover_v2.py`, four angles: fleet enumeration,
+  sitewide evidence search, posture-v2 rules rescue, one-hop siblings)
+  measured a 16,972-sub universe and qualified **9,053 scoring slots /
+  2,029 unique subs** (was 607 / 245). Per category: min 15, median 90.
+- The v1 HOSTILE regex was wrong at scale: on actual rules text the fleet
+  judged only 1.6% of subs `forbid` (the regex had condemned 28% of rows).
+  `rule_posture` in the CSV now carries the mapped fleet verdict
+  (`posture_source=fleet_v2`); the raw verdict is in `posture_v2`.
+- 39 previously-scoring pairs were dropped on hard bars only (vendor,
+  forbid, closed) — e.g. r/vscode out of ides (vendor), r/wikipedia out of
+  wikis (forbid). Soft bars never remove history, only gate additions.
+- The stale "capped at 8" comment in `supabase/migrations/0001_core_schema.sql`
+  is prose in an already-applied migration — deliberately left unedited.

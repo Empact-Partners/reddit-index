@@ -40,9 +40,12 @@ self-tested against the real v1 output: it raises three violations on it.
 
 ## What counts
 
-- Comments and post bodies from the category's **scoring subreddits**
-  (measured density × topicality, top 8, never vendor-run — see
-  [taxonomy.md](taxonomy.md)), trailing **365 days**, uniform weight.
+- Comments and post bodies from the category's **scoring subreddits** —
+  every community that passes all qualification bars: exists & open, alive
+  (~2+ posts/week), not vendor-run, rules do not forbid product discussion,
+  topicality ≥ 0.5, and observed brand talk. No top-N cap and never ranked
+  by subscriber count (frozen as `scoring_subreddit_selection`, 2.0.1 — see
+  [taxonomy.md](taxonomy.md)). Trailing **365 days**, uniform weight.
 - Only brands whose **category membership** includes the scored category —
   a mention of Google Drive in r/CRM stays on Google Drive's page and out
   of the CRM leaderboard.
