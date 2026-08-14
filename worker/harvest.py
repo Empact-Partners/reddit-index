@@ -195,6 +195,56 @@ def flatten_tree(listing, out):
             flatten_tree(replies, out)
 
 
+REDDIT = "https://www.reddit.com"
+
+
+def _abs(permalink):
+    p = permalink or ""
+    return p if p.startswith("http") else REDDIT + p
+
+
+def tree_docs(tree):
+    """Every scorable document in a /comments/{id} response, as (docs, title).
+
+    Comments (doc_type 1) then the post body (doc_type 2), absolute
+    permalinks, in exactly the shape the mentions rows are built from.
+
+    This exists because daily.py and sweep.py each open-coded the flattening
+    and both got flatten_tree's contract wrong the same way — it takes a DICT
+    accumulator and the listing ITSELF, and both passed a list plus
+    listing["data"]. The loop body therefore never ran: on a real 435-comment
+    thread they extracted ZERO comments and collected post bodies only, which
+    is why the sweep's yield looked like ~2 mentions per thread. One helper,
+    one contract, both callers.
+    """
+    docs, title = [], ""
+    if not (isinstance(tree, list) and len(tree) == 2):
+        return docs, title
+    out = {"comments": [], "more": 0}
+    flatten_tree(tree[1], out)
+    for c in out["comments"]:
+        docs.append({
+            "id": c["id"], "doc_type": 1,
+            "author": c.get("author") or "",
+            "body": c.get("body") or "",
+            "created_utc": c.get("created_utc"),
+            "permalink": _abs(c.get("permalink")),
+            "score": c.get("score"),
+        })
+    for k in tree[0].get("data", {}).get("children", []):
+        d = k.get("data", {})
+        title = d.get("title") or title
+        if d.get("selftext") and d.get("author") not in ("[deleted]", None):
+            docs.append({
+                "id": f"t3_{d['id']}", "doc_type": 2,
+                "author": d["author"], "body": d["selftext"],
+                "created_utc": d.get("created_utc"),
+                "permalink": _abs(d.get("permalink")),
+                "score": d.get("score"),
+            })
+    return docs, title
+
+
 def harvest_category(cat_slug, cat_name, subs, brands, depth, trees_override=0):
     cfg = dict(DEPTHS[depth])
     if trees_override:

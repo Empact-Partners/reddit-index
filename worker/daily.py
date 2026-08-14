@@ -32,7 +32,7 @@ sys.path.insert(0, HERE)
 import reddit_client as rc  # noqa: E402
 import db  # noqa: E402
 from resolve import Resolver  # noqa: E402
-from harvest import CATEGORY_NOUNS, build_alias_re, load_brands, flatten_tree  # noqa: E402
+from harvest import CATEGORY_NOUNS, build_alias_re, load_brands, tree_docs  # noqa: E402
 
 CODE_VERSION = "daily-v1"
 REVISIT_HOURS = 72
@@ -216,18 +216,7 @@ def main():
             mrows = []
             for tid, title in revisit:
                 tree = tree_fresh(tid.replace("t3_", ""))
-                docs = []
-                if isinstance(tree, list) and len(tree) == 2:
-                    flatten_tree(tree[1].get("data", {}), docs)
-                    # the post body itself
-                    for k in tree[0].get("data", {}).get("children", []):
-                        d = k.get("data", {})
-                        if d.get("selftext") and d.get("author") not in ("[deleted]", None):
-                            docs.append({"id": f"t3_{d['id']}", "doc_type": 2,
-                                         "author": d["author"], "body": d["selftext"],
-                                         "created_utc": d.get("created_utc"),
-                                         "permalink": "https://www.reddit.com" + (d.get("permalink") or ""),
-                                         "score": d.get("score")})
+                docs, _t = tree_docs(tree)
                 for doc in docs:
                     body = doc.get("body") or ""
                     for h in resolver.resolve(body, sub, title):

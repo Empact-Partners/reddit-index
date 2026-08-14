@@ -44,7 +44,7 @@ sys.path.insert(0, HERE)
 import reddit_client as rc  # noqa: E402
 import db  # noqa: E402
 from resolve import Resolver  # noqa: E402
-from harvest import build_alias_re, load_brands, flatten_tree, CATEGORY_NOUNS  # noqa: E402
+from harvest import build_alias_re, load_brands, tree_docs, CATEGORY_NOUNS  # noqa: E402
 from daily import (  # noqa: E402
     load_scoring_map, ensure_partitions, content_qualify, insert_mentions,
 )
@@ -301,18 +301,7 @@ def sweep_sub(sub, cat_slugs, ctx, tree_cap=10 ** 9):
             # a rate-limited tree is NOT swept — recorded and retried (<=3)
             failed[pid] = failed.get(pid, 0) + 1
             continue
-        docs, title = [], ""
-        if isinstance(tree, list) and len(tree) == 2:
-            flatten_tree(tree[1].get("data", {}), docs)
-            for k in tree[0].get("data", {}).get("children", []):
-                d = k.get("data", {})
-                title = d.get("title") or title
-                if d.get("selftext") and d.get("author") not in ("[deleted]", None):
-                    docs.append({"id": f"t3_{d['id']}", "doc_type": 2,
-                                 "author": d["author"], "body": d["selftext"],
-                                 "created_utc": d.get("created_utc"),
-                                 "permalink": "https://www.reddit.com" + (d.get("permalink") or ""),
-                                 "score": d.get("score")})
+        docs, title = tree_docs(tree)
         mrows = []
         for doc in docs:
             body = doc.get("body") or ""
