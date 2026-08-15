@@ -228,10 +228,14 @@ class Daemon:
                     return max(0, min(self.max_inflight - busy,
                                       self.max_inflight - len(self.inflight)))
         except Exception:
-            # UNKNOWN == FULL for the fleet's own count, but never guess free.
-            # The health probe times out precisely when the box is busiest.
-            return 0
-        return 0
+            pass
+        # The health probe times out precisely when the box is busiest, and
+        # treating UNKNOWN as FULL meant every timeout submitted nothing:
+        # measured ~150 items/min against a theoretical 363 at p50=106s and 16
+        # slots. Our OWN inflight count is authoritative for the jobs we
+        # submitted, and the load guard above is the real safety rail — so an
+        # unreadable probe falls back to local accounting instead of stalling.
+        return max(0, self.max_inflight - len(self.inflight))
 
     def submit_loop(self):
         while not _stop.is_set():
