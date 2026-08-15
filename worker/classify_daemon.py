@@ -45,7 +45,7 @@ sys.path.insert(0, HERE)
 
 import csv  # noqa: E402
 import db  # noqa: E402
-from classify import MODEL_VERSION, STAGE_LLM, LABEL_CODE, mark_target  # noqa: E402
+from classify import MODEL_VERSION, STAGE_LLM, LABEL_CODE, mark_target, load_known  # noqa: E402
 from classify_codex import (  # noqa: E402
     batch_task, valid_result, journal, fleet, MODEL, SERVER, RUN, CACHE,
     burn_lock, burn_refresh, burn_release,
@@ -134,9 +134,12 @@ class Daemon:
     def __init__(self, args):
         self.args = args
         self.max_inflight = args.max_inflight
-        # 2x cores: enough to keep every core busy on I/O-bound model calls
-        # without the run-queue thrash that collapses per-job latency.
-        self.load_ceiling = args.load_ceiling or (os.cpu_count() or 8) * 2.0
+        # 3x cores. These jobs are mostly WAITING on the model API, so a
+        # run-queue length of 2x cores is normal and healthy here; at 2.0 the
+        # guard stalled the whole lane every time the collector got busy. The
+        # failure it exists to prevent was load 154 on 10 cores, an order of
+        # magnitude above this.
+        self.load_ceiling = args.load_ceiling or (os.cpu_count() or 8) * 3.0
         self._load_warned = False
         self.state = {"conn": db.connect()}
         self.db_lock = threading.Lock()
@@ -149,6 +152,13 @@ class Daemon:
         self.seen_files = {}            # out-file name -> mtime
         self.lock = threading.Lock()
         self.n_submitted = self.n_harvested = self.n_committed = 0
+        self.n_skipped = 0
+        # The item-level cache is the ONLY record of an entity-rejected item:
+        # those never get a mention_sentiment row, so the anti-join returns
+        # them forever and the fleet re-judges the same rejects every cycle.
+        # 74,584 of 210,576 cached items (35%) were in that state — a third of
+        # every cycle spent re-deciding what we already decided.
+        self.known = set(load_known().keys())
         self.last_commit = time.time()
         self.started = time.time()
 
@@ -157,6 +167,9 @@ class Daemon:
         items = []
         for created, doc_id, bslug, sub, title, body, form in rows:
             iid = f"{doc_id}:{bslug}"
+            if iid in self.known:
+                self.n_skipped += 1     # already judged; never re-spend on it
+                continue
             off = (body or "").lower().find((form or "").lower())
             items.append({"item_id": iid, "brand_slug": bslug, "subreddit": sub,
                           "link_title": title, "doc_id": doc_id,
@@ -330,6 +343,8 @@ class Daemon:
                 json.dump(keep, f)
             os.replace(cfp + ".tmp", cfp)
             rows = []
+            with self.lock:
+                self.known.update(keep.keys())
             for it in rec["items"]:
                 r = keep.get(it["item_id"])
                 if not isinstance(r, dict) or r.get("entity_ok") is False:
@@ -411,6 +426,7 @@ class Daemon:
                 harv = self.n_harvested
             print(f"  [{el/60:5.1f}m] inflight {inf:>2}/{self.max_inflight} | ready {rdy:>3} "
                   f"| harvested {harv:>6} | committed {com:>6} "
+                  f"| skipped {self.n_skipped:>6} "
                   f"| {harv/el*60:>5.0f} items/min", flush=True)
             burn_refresh()
 
