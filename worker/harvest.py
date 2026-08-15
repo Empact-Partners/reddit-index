@@ -197,6 +197,24 @@ def flatten_tree(listing, out):
 
 REDDIT = "https://www.reddit.com"
 
+# 06-sentiment.md stage 1: automated content is removed BEFORE any polarity is
+# assigned. It never was, and measured 4.1% of the corpus (6,645 mentions) —
+# AutoModerator rule posts, "I am a bot" footers, submission acknowledgements.
+# They are not opinions, they are counted in n, and they inflate the distinct
+# author floor that is supposed to prove independent voices.
+BOT_AUTHORS = {"automoderator", "[deleted]", "reddit", "sub_doesnt_exist_bot"}
+BOT_MARKERS = ("i am a bot", "performed automatically", "beep boop",
+               "thank you for your submission", "this action was performed",
+               "^(i am a bot")
+
+
+def is_bot_doc(author, body):
+    a = (author or "").strip().lower()
+    if a in BOT_AUTHORS or a.endswith("bot") or a.endswith("-bot") or a.endswith("_bot"):
+        return True
+    b = (body or "").lower()
+    return any(m in b for m in BOT_MARKERS)
+
 
 def _abs(permalink):
     p = permalink or ""
@@ -223,6 +241,8 @@ def tree_docs(tree):
     out = {"comments": [], "more": 0}
     flatten_tree(tree[1], out)
     for c in out["comments"]:
+        if is_bot_doc(c.get("author"), c.get("body")):
+            continue
         docs.append({
             "id": c["id"], "doc_type": 1,
             "author": c.get("author") or "",
@@ -234,7 +254,8 @@ def tree_docs(tree):
     for k in tree[0].get("data", {}).get("children", []):
         d = k.get("data", {})
         title = d.get("title") or title
-        if d.get("selftext") and d.get("author") not in ("[deleted]", None):
+        if (d.get("selftext") and d.get("author") not in ("[deleted]", None)
+                and not is_bot_doc(d.get("author"), d.get("selftext"))):
             docs.append({
                 "id": f"t3_{d['id']}", "doc_type": 2,
                 "author": d["author"], "body": d["selftext"],
