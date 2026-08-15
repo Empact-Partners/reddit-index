@@ -75,23 +75,23 @@ def est_threads(sub):
         return 150
 
 
-def coverage(mapping, mode):
+def coverage(mapping, sweep_mode, tree_cap):
     """category -> fraction of its core subs already complete."""
     done = {}
     for sub, slugs in mapping.items():
-        c = sweep.sub_complete(sub, mode, mode.get("tree_cap"))
+        c = sweep.sub_complete(sub, sweep_mode, tree_cap)
         for s in slugs:
             a, b = done.get(s, (0, 0))
             done[s] = (a + (1 if c else 0), b + 1)
     return {s: (a / b if b else 1.0) for s, (a, b) in done.items()}
 
 
-def claim_next(mapping, ctx, mode):
+def claim_next(mapping, ctx, tree_cap):
     """Lease the most valuable unclaimed, incomplete sub. None when done."""
-    cov = coverage(mapping, mode)
+    cov = coverage(mapping, ctx["mode"], tree_cap)
     cands = []
     for sub, slugs in mapping.items():
-        if sweep.sub_complete(sub, ctx["mode"], mode.get("tree_cap")):
+        if sweep.sub_complete(sub, ctx["mode"], tree_cap):
             continue
         # the least-covered category this sub unlocks drives priority, so
         # every category advances rather than one finishing at a time
@@ -140,7 +140,7 @@ def main():
     swept_total = mentions_total = subs_done = 0
     t0 = time.time()
     while not STOP["v"]:
-        sub, lease = claim_next(mapping, ctx, mode)
+        sub, lease = claim_next(mapping, ctx, ctx["tree_cap"])
         if sub is None:
             print("no claimable subreddit — core set complete or all leased", flush=True)
             break

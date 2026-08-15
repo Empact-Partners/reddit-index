@@ -55,11 +55,13 @@ WINDOW_DAYS = 400
 PAGE = 2000                # backlog rows per keyset page
 BATCH = int(os.environ.get("CLASSIFY_BATCH", "40"))
 TICK = 2.0                 # submit-loop period
-JOB_TIMEOUT = 420
-STALE_AFTER = JOB_TIMEOUT + 180   # no out-file by now => the job died
+JOB_TIMEOUT = 900   # was 420: jobs exceed it whenever the box is busy, and a
+                    # timeout wastes the whole batch and re-queues it
+STALE_AFTER = JOB_TIMEOUT + 180  # no out-file by now => the job died
 COMMIT_EVERY = 500         # labels
 COMMIT_SECS = 30
 READY_LOW = 20             # keep at least this many batches pre-cut
+SUBMIT_STAGGER = 1.0       # seconds between submits inside one burst
 MAX_ATTEMPTS = 3
 
 _stop = threading.Event()
@@ -132,6 +134,10 @@ class Daemon:
     def __init__(self, args):
         self.args = args
         self.max_inflight = args.max_inflight
+        # 2x cores: enough to keep every core busy on I/O-bound model calls
+        # without the run-queue thrash that collapses per-job latency.
+        self.load_ceiling = args.load_ceiling or (os.cpu_count() or 8) * 2.0
+        self._load_warned = False
         self.state = {"conn": db.connect()}
         self.db_lock = threading.Lock()
         self.brand_names = {r["slug"]: r["brand"] for r in
@@ -192,6 +198,24 @@ class Daemon:
 
     # ---- fleet ----
     def free_slots(self):
+        # LOAD GUARD, checked before the fleet is even asked. Every codex job
+        # is a local node process, so concurrency and job LATENCY are not
+        # independent: the fleet advertises 60 slots, but filling them on a
+        # 10-core Mac drove load average to 154, made each job ~10x slower and
+        # cut throughput to 58 items/min against the old serial loop's 280.
+        # The old code never hit this only because its 8s sleep accidentally
+        # capped real concurrency near 22. Slots are not capacity.
+        try:
+            load1 = os.getloadavg()[0]
+        except OSError:
+            load1 = 0.0
+        if load1 > self.load_ceiling:
+            if not self._load_warned:
+                print(f"  load {load1:.0f} > {self.load_ceiling:.0f} — holding "
+                      f"submissions", flush=True)
+                self._load_warned = True
+            return 0
+        self._load_warned = False
         try:
             h = fleet.health()
             for e in (h if isinstance(h, list) else [h]):
@@ -204,7 +228,9 @@ class Daemon:
                     return max(0, min(self.max_inflight - busy,
                                       self.max_inflight - len(self.inflight)))
         except Exception:
-            return 0                      # UNKNOWN == FULL, never guess free
+            # UNKNOWN == FULL for the fleet's own count, but never guess free.
+            # The health probe times out precisely when the box is busiest.
+            return 0
         return 0
 
     def submit_loop(self):
@@ -236,6 +262,15 @@ class Daemon:
                         self.inflight[b["bid"]] = {"t": time.time(), "items": b["items"],
                                                    "att": b["att"]}
                         self.n_submitted += 1
+                    # STAGGER. Filling every slot in the same instant makes N
+                    # node processes boot and call the model simultaneously;
+                    # they contend, each job slows past its timeout, and a
+                    # timeout wastes the entire batch. Measured: 68 of 223 jobs
+                    # timed out when submitted in bursts. The old loop never saw
+                    # this only because its 8s sleep staggered starts by
+                    # accident. One second is enough to smear the boot spike
+                    # while still filling 16 slots in 16s rather than 3 minutes.
+                    time.sleep(SUBMIT_STAGGER)
                 self.harvest_tick()
                 self.reap_stale()
                 self.maybe_commit()
@@ -409,8 +444,13 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--category", action="append", help="restrict to category slug(s)")
     ap.add_argument("--max-inflight", type=int,
-                    default=int(os.environ.get("RI_MAX_INFLIGHT", "56")),
-                    help="fleet slots to use (box allows 60; 4 left for other lanes)")
+                    default=int(os.environ.get("RI_MAX_INFLIGHT", "16")),
+                    help="concurrent fleet jobs. NOT the fleet's slot count: 56 "
+                         "drove load to 154 on 10 cores and cut throughput 5x; "
+                         "24 still timed out 30%% of jobs. 16 is the measured "
+                         "healthy ceiling on this box.")
+    ap.add_argument("--load-ceiling", type=float, default=0,
+                    help="hold submissions above this 1-min load average (default 2x cores)")
     ap.add_argument("--once", action="store_true", help="drain the backlog once, then exit")
     args = ap.parse_args()
 
