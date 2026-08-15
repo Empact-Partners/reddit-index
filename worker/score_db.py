@@ -17,7 +17,7 @@ sys.path.insert(0, HERE)
 
 import db  # noqa: E402
 from score import score_category, load_categories  # noqa: E402
-from gate_calibration import check_rows  # noqa: E402
+from gate_calibration import check_rows, violations_by_category  # noqa: E402
 
 INDEX = os.path.join(HERE, ".cache", "index")
 os.makedirs(INDEX, exist_ok=True)
@@ -36,7 +36,6 @@ def main():
 
     cats = load_categories()
     state = {"conn": db.connect()}
-    conn = state["conn"]
     window_end = datetime.date.today()
     window_start = window_end - datetime.timedelta(days=365)
 
@@ -75,6 +74,12 @@ def main():
         for r in rows_out:
             r.setdefault("category_slug", slug)
         fp = os.path.join(INDEX, slug + ".json")
+        if os.path.exists(fp):
+            try:
+                import shutil as _sh
+                _sh.copyfile(fp, fp + ".lastgood")
+            except Exception:
+                pass
         json.dump({"category_slug": slug, "rows": rows_out,
                    "window_start": str(window_start), "window_end": str(window_end)},
                   open(fp + ".tmp", "w"))
@@ -83,17 +88,45 @@ def main():
         all_rows.extend(rows_out)
         if rows_out:
             print(f"  {slug:24} {len(ms):>6} mentions -> {len(rows_out):>3} brands", flush=True)
-    conn.close()
+    # close the LIVE connection: db.run replaces state["conn"] on every
+    # transient reconnect, so a captured reference closes a stale object and
+    # leaks the real one for the process lifetime
+    try:
+        state["conn"].close()
+    except Exception:
+        pass
 
     # The calibration gate: a run whose ordering contradicts its own raw data
-    # never reaches the database.
-    violations = check_rows(all_rows)
-    if violations:
-        print(f"\nCALIBRATION GATE FAILED — {len(violations)} violations, not loading:",
-              flush=True)
-        for v in violations:
-            print("  " + v, flush=True)
-        return 1
+    # never reaches the database. QUARANTINE per category — a violating board
+    # keeps its last good numbers on disk and is reported, while every other
+    # category publishes. Aborting the whole load on one category's violation
+    # is what blocked the entire site for hours on a single email-providers
+    # tie.
+    blocked = violations_by_category(all_rows)
+    if blocked:
+        print(f"\nCALIBRATION: {len(blocked)} category(ies) quarantined:", flush=True)
+        for slug, vs in sorted(blocked.items()):
+            print(f"  {slug}: {vs[0]}", flush=True)
+            # restore the previous good index file so the stale-but-sane
+            # numbers stay live rather than publishing a contradiction
+            fp = os.path.join(INDEX, slug + ".json")
+            bak = fp + ".lastgood"
+            if os.path.exists(bak):
+                os.replace(bak, fp)
+            elif os.path.exists(fp):
+                os.remove(fp)
+        json.dump({"blocked": {k: v for k, v in blocked.items()},
+                   "at": str(datetime.datetime.now(datetime.timezone.utc))},
+                  open(os.path.join(INDEX, "_blocked.json"), "w"), indent=1)
+        # a systemic regression still stops everything
+        if len(blocked) > max(3, len(cats) // 20):
+            print(f"  {len(blocked)} categories is systemic — refusing the load",
+                  flush=True)
+            return 1
+    else:
+        bp = os.path.join(INDEX, "_blocked.json")
+        if os.path.exists(bp):
+            os.remove(bp)
 
     print(f"\n{total} score rows across {len(cats)} categories; loading…", flush=True)
     loaded = subprocess.run([sys.executable, os.path.join(HERE, "load.py"), "--scores"])

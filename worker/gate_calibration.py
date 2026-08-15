@@ -63,6 +63,16 @@ def _spearman(a, b):
     return cov / (va * vb) ** 0.5
 
 
+def violations_by_category(rows):
+    """Same tests, grouped by category, so one bad board can be quarantined
+    instead of blocking the other ninety-nine from publishing at all."""
+    out = {}
+    for v in check_rows(rows):
+        slug = v.split(":", 1)[0].split("/", 1)[0].strip()
+        out.setdefault(slug, []).append(v)
+    return out
+
+
 def check_rows(rows):
     """rows: score_category dicts (needs brand_slug, category_slug, pos,
     n_op, reddit_love_score). Returns violation strings."""
