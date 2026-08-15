@@ -220,6 +220,40 @@ def _domain_identifies(domain, slug, all_domains):
     return any(len(t) >= 5 and t in label for t in brand_toks)
 
 
+def load_blocklist():
+    """(alias, brand) pairs the LLM entity gate rejects almost every time.
+
+    The gate answers "is this comment actually about this product", and its
+    verdict is an independent measurement of resolver precision. Measured over
+    a day of live classification, 40 brands were rejected on >=75% of their
+    matches — 73% of ALL classified items were being discarded — and the forms
+    behind them are exactly the generic tokens no dictionary catches:
+    'automate' -> ConnectWise Automate, 'benchmark' -> Benchmark Email
+    ("I wrote a small toy benchmark"), 'baseline' -> Baselane, 'dms' -> the
+    DMs people send, 'my time', 'the edge', 'npc', 'ipo', 'mba'.
+
+    _is_plain_english downgrades these to require corroboration, but the
+    available corroboration ("a category noun within 120 chars") is nearly
+    free inside a topical subreddit, so they still resolved. A blocklist is
+    the honest instrument: the gate already told us, per pair, and this stops
+    us paying to be told again.
+
+    Regenerate with the query in the 2026-08-15 HANDOFF entry.
+    """
+    out = set()
+    fp = os.path.join(REPO, "data", "alias-blocklist.csv")
+    if not os.path.exists(fp):
+        return out
+    for r in csv.DictReader(open(fp)):
+        a, b = (r.get("alias") or "").strip().lower(), (r.get("brand_slug") or "").strip()
+        if a and b:
+            out.add((a, b))
+    return out
+
+
+_BLOCKED = load_blocklist()
+
+
 def build_automaton(aliases):
     """One Aho-Corasick automaton over all surface forms. Linear in text length.
 
@@ -230,6 +264,8 @@ def build_automaton(aliases):
     A = ahocorasick.Automaton()
     for alias, brand_slug, cls, min_c, disabled in aliases:
         if disabled or len(alias.strip()) < MIN_BARE_LEN:
+            continue
+        if (alias.strip().lower(), brand_slug) in _BLOCKED:
             continue
         if cls == "SAFE" and _is_plain_english(alias):
             # an ordinary English word is never self-evidently a brand

@@ -458,3 +458,39 @@ the collection backlog. Do it AFTER the sweep completes: fix the rubric, bump
 `model_version`, re-label neutrals only.
 
 Sample and verdicts: docs/neutral_audit.json.
+
+## 2026-08-15 — the entity gate is a precision instrument; use its verdicts
+
+73% of everything the classifier processed was being discarded by the LLM's
+`entity_ok=false` check — the model saying "this comment is not about that
+product". That is not a labelling problem, it is the resolver's precision
+measured by an independent judge, and it was costing three quarters of the
+fleet's output.
+
+Over a day of live classification, 40 brands were rejected on >=75% of their
+matches. The forms behind them are the generic tokens no dictionary catches:
+
+    automate -> connectwise-automate      2,600 mentions
+    aws      -> amazon-route-53           1,507   (Route 53 is not AWS)
+    my time  -> mytime                    1,195
+    bandwidth-> bandwidth-messaging-api   1,041
+    app      -> astro-pixel-processor     1,028
+    baseline -> baselane                    859
+    dms      -> docker-mailserver           760   (people's DMs)
+    benchmark-> benchmark-email             570   ("a small toy benchmark")
+    mba, npc, ipo, aps, forma, the edge, spot on …
+
+`_is_plain_english` downgrades these to require corroboration, but the
+corroboration available ("a category noun within +/-120 chars") is nearly free
+inside a topical subreddit, so they resolved anyway. data/alias-blocklist.csv
+now holds the 47 (alias, brand) pairs and resolve.py excludes them from the
+automaton. "We use ConnectWise Automate" still resolves; "we need to automate
+our workflows" no longer does.
+
+Purged 17,153 of these from the corpus. Regenerate the list by grouping
+worker/.cache/sentiment/codex_*.json by brand, keeping brands with n>=20 and
+>=75% entity_ok=false, then joining to mentions for their dominant
+matched_form.
+
+TOTAL corpus purges this session: 6,752 shared-host domains + 6,953 bot
+comments + 17,153 blocklisted forms = 30,858 false positives removed.
