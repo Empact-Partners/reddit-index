@@ -426,3 +426,35 @@ clear the 5-sub floor).
   wikis (forbid). Soft bars never remove history, only gate additions.
 - The stale "capped at 8" comment in `supabase/migrations/0001_core_schema.sql`
   is prose in an already-applied migration — deliberately left unedited.
+
+## 2026-08-15 — labelling audit: 10% of "neutral" is a discarded opinion
+
+Independently re-judged 60 mentions the classifier labelled NEUTRAL
+(gpt-5.6-terra, rubric that explicitly permits abstain):
+
+| should have been | share |
+|---|---|
+| neutral (correct) | 78% |
+| abstain | 12% |
+| pos | 7% |
+| neg | 3% |
+
+The abstain half is HARMLESS — abstain and neutral are both excluded from
+`N_op`, so misrouting between them moves no published number. The 10% that
+should have been pos/neg is a real loss: roughly 4,400 mentions at the current
+corpus size, understating the opinionated pool by ~8.5%.
+
+The failure mode is a classifier too reluctant to call a mild endorsement or a
+comparative preference positive: "Calls Mailchimp fine" and "Says GitHub is
+better than Jenkins" were both filed neutral. `classify.py`'s SYSTEM rubric
+says a recommendation is "pos ONLY if the author endorses it", which reads
+more conservatively than intended.
+
+DEFERRED DELIBERATELY, not forgotten. Changing the rubric mid-run splits the
+corpus across two rubrics with no way to tell them apart (both engines already
+share one `model_version` — a separate known flaw), and re-labelling the ~44k
+neutral pool costs ~4h of fleet time that is currently the bottleneck draining
+the collection backlog. Do it AFTER the sweep completes: fix the rubric, bump
+`model_version`, re-label neutrals only.
+
+Sample and verdicts: docs/neutral_audit.json.
