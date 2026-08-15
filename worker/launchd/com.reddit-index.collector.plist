@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key><string>com.reddit-index.collector</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/usr/bin/caffeinate</string><string>-is</string>
+    <string>/usr/bin/python3</string><string>-u</string>
+    <string>/Users/vladshvets/Projects/reddit-index/worker/collector.py</string>
+  </array>
+  <key>WorkingDirectory</key><string>/Users/vladshvets/Projects/reddit-index</string>
+  <!-- KeepAlive: the lane restarts itself after a crash, a kill, or a wake.
+       Each lane is idempotent and resumes from disk/DB state, and the flock
+       leases mean a restart never double-claims work. -->
+  <key>KeepAlive</key><true/>
+  <key>RunAtLoad</key><true/>
+  <key>ThrottleInterval</key><integer>60</integer>
+  <key>StandardOutPath</key><string>/tmp/ri-collector.log</string>
+  <key>StandardErrorPath</key><string>/tmp/ri-collector.log</string>
+  <key>EnvironmentVariables</key>
+  <dict><key>PATH</key><string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin</string></dict>
+</dict>
+</plist>
