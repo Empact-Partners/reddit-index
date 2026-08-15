@@ -296,9 +296,16 @@ def load_scores():
     total = 0
     lost = []
     for fn in sorted(os.listdir(idx)):
-        if not fn.endswith(".json"):
+        # "_"-prefixed files are sidecars, not category indexes: score_db
+        # writes _blocked.json here for quarantined categories, and reading it
+        # as an index raises KeyError('rows') and fails the entire score load.
+        if not fn.endswith(".json") or fn.startswith("_"):
             continue
-        rows = json.load(open(os.path.join(idx, fn)))["rows"]
+        payload = json.load(open(os.path.join(idx, fn)))
+        if "rows" not in payload:
+            print(f"  skipping {fn}: no 'rows' key")
+            continue
+        rows = payload["rows"]
         for i, batch in enumerate([rows[j:j + 12] for j in range(0, len(rows), 12)]):
             vals = []
             for s in batch:

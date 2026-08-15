@@ -139,8 +139,45 @@ def main():
               "publish; the previous complete set stays live", flush=True)
         return 1
 
-    # the no-history rule: one truthful week, nothing older
+    # A score must not outlive its evidence. load.py UPSERTS, and the prune
+    # below only removes OLDER week_starts, so a (brand, category) that scored
+    # yesterday and has no mentions today keeps its stale row at today's
+    # week_start forever. Purging 30,858 false-positive mentions left 44 such
+    # rows live — amazon-route-53 still publishing 43/100 in domain-registrars
+    # on evidence that no longer exists. Delete anything at the current
+    # week_start that this run did not just compute.
+    live_b = [r["brand_slug"] for r in all_rows]
+    live_c = [r.get("category_slug") for r in all_rows]
     prune_state = {"conn": db.connect()}
+    if live_b:
+        def _drop_stale(c):
+            with c.cursor() as cur:
+                cur.execute("""
+                    DELETE FROM brand_category_scores s
+                    USING brands b, categories c2
+                    WHERE b.id = s.brand_id AND c2.id = s.category_id
+                      AND s.week_start = (SELECT max(week_start)
+                                          FROM brand_category_scores)
+                      AND NOT EXISTS (
+                        SELECT 1 FROM unnest(%s::text[], %s::text[]) AS t(bs, cs)
+                        WHERE t.bs = b.slug AND t.cs = c2.slug)
+                """, (live_b, live_c))
+                n = cur.rowcount
+                c.commit()
+                return n
+        try:
+            n = db.run(prune_state, _drop_stale, label="drop stale scores")
+            if n:
+                print(f"dropped {n} score rows whose evidence no longer exists",
+                      flush=True)
+        except Exception as e:
+            # never let this poison the connection the prune needs
+            try:
+                prune_state["conn"].rollback()
+            except Exception:
+                prune_state["conn"] = db.connect()
+            print(f"  stale-score sweep failed ({str(e).splitlines()[0][:80]}) "
+                  f"— non-fatal", flush=True)
 
     def _prune(c):
         with c.cursor() as cur:
