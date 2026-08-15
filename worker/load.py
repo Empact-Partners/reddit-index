@@ -321,7 +321,7 @@ def load_scores():
                     f"{n('rank_desc')}, {n('rank_asc')}, {bool(s['eligible'])}, "
                     f"{lit(s.get('failed_test'))}, {lit(s.get('failed_observed'))}, "
                     f"{lit(s.get('failed_required'))}, {lit(s['window_start'])}::date, "
-                    f"{lit(s['window_end'])}::date, {lit(s.get('methodology_version', '2.0.1'))})")
+                    f"{lit(s['window_end'])}::date, {lit(s.get('methodology_version', '2.0.2'))})")
             q = ("INSERT INTO brand_category_scores (brand_id, category_id, week_start, pos, neg, "
                  "neu, abstain, n, n_op, n_eff, deff, deff_thread, deff_author, icc_thread, "
                  "icc_author, icc_estimated, alpha0, beta0, reddit_love_score, polarization, "

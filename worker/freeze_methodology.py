@@ -42,7 +42,7 @@ REF = "nrsyqcttpijxhwtdtoct"
 # Estimator, prior, gates, window, resolution, sentiment: all unchanged —
 # the full set is re-frozen under 2.0.1 so /methodology renders one
 # complete, self-contained set per version (the page filters version =).
-VERSION = "2.0.1"
+VERSION = "2.0.2"
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.dirname(HERE)
@@ -77,12 +77,15 @@ PARAMS = [
      "Below this many LOO pooled opinionated mentions the row is flagged prior_fallback: p0 is "
      "mostly the smoothing, not the category."),
     ("calibration_gate", "global",
-     {"min_n_op": 10, "min_brands": 4, "spearman_min": 0.8,
+     {"min_n_op": 10, "min_brands": 4, "material_gap": 0.15,
       "quartile_raw_hi": 0.75, "quartile_raw_lo": 0.25},
      "A scoring run is refused before load if, within any category over brands with n_op>=10, "
-     "Spearman(raw rate, score) < 0.8, or a brand with raw rate >=0.75 lands in the bottom score "
-     "quartile (or <=0.25 in the top). Mechanized from the failure a reader caught that the "
-     "pipeline did not (worker/gate_calibration.py, self-tested against the v1 output)."),
+     "any two brands whose raw positive rates differ by >=0.15 are published in the opposite "
+     "order, or a brand with raw rate >=0.75 lands in the bottom score quartile (or <=0.25 in "
+     "the top). 2.0.2 replaced an all-pairs Spearman>=0.8 test, which flagged shrinkage among "
+     "statistical ties as a contradiction; materiality is what the gate always meant. "
+     "Mechanized from the failure a reader caught that the pipeline did not "
+     "(worker/gate_calibration.py, self-tested against the v1 output)."),
 
     # ── the eligibility gate ────────────────────────────────────────────────
     ("n_eff_numerator", "global", "n_op",
