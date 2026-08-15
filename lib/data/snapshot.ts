@@ -65,9 +65,13 @@ async function loadSnapshot(): Promise<Snapshot> {
       where week_start = (select max(week_start) from published.brand_category_scores)`,
     s`select cs.category_id, count(*)::int as n
       from published.category_subreddits cs where cs.is_scoring group by 1`,
-    // Newest first. The dashboard paginates client-side over the FULL set
-    // (Vlad's ruling: load all, 10 per page) — the 2000 ceiling is a safety
-    // rail far above today's biggest brand, not a display cap.
+    // Newest first, 500 per brand. The dashboard paginates 10 per page, so
+    // 500 is fifty pages — far past what anyone scrolls. The old rail of 2000
+    // was set when the biggest brand had a few hundred mentions; at 158k
+    // mentions and climbing it pulled ~135k full comment bodies through the
+    // pooler in one statement and the build started dying with
+    // CONNECTION_CLOSED while the collector and classifier used the same
+    // instance. This is a build-memory and transport bound, not a display one.
     // A LATERAL per brand, not a global window: row_number() over the whole
     // table sorted every mention in the corpus to keep the newest 2000 of
     // each, which stopped fitting inside the statement timeout once the
@@ -80,7 +84,7 @@ async function loadSnapshot(): Promise<Snapshot> {
         select m.* from published.mentions m
         where m.brand_id = b.id
         order by m.created_utc desc
-        limit 2000
+        limit 500
       ) t
       join published.subreddits sr on sr.id = t.subreddit_id`,
     // The dashboard aggregates: TRUE totals over the whole table, per
