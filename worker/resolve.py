@@ -123,6 +123,13 @@ _ENGLISH = _english_words()
 _TECH_EXEMPT = {"aws", "sap", "ibm", "gcp", "sas", "php", "sql", "vim", "git",
                 "npm", "aix", "erp", "crm", "api", "ios", "mac", "pdf"}
 
+# Generic tech nouns that a dictionary does not list but which are never a
+# brand reference on their own. "APP" ships as a SAFE alias of Astro Pixel
+# Processor and matched 2,699 times in three subreddits.
+_GENERIC = {"app", "apps", "tool", "tools", "bot", "bots", "web", "site",
+            "cloud", "data", "code", "stack", "server", "client", "agent",
+            "studio", "suite", "platform", "dashboard", "console", "portal"}
+
 
 def _is_plain_english(alias):
     """True when a SINGLE-token alias is an ordinary English word — 'pieces',
@@ -138,10 +145,12 @@ def _is_plain_english(alias):
     veto. An earlier version of this guard classified them as English and
     would have thrown away every multi-word brand in the gazetteer.
     """
-    if not _ENGLISH:
-        return False
     toks = [t for t in re.split(r"[^a-z0-9]+", alias.lower()) if t]
     if len(toks) != 1 or any(t in _TECH_EXEMPT for t in toks):
+        return False
+    if toks[0] in _GENERIC:
+        return True
+    if not _ENGLISH:
         return False
 
     def known(t):
@@ -156,6 +165,59 @@ def _is_plain_english(alias):
         return False
 
     return all(known(t) for t in toks)
+
+
+_dom_claims = None
+
+
+def _domain_identifies(domain, slug, all_domains):
+    """Can this domain, seen in a comment, prove THIS brand is being discussed?
+
+    Domain hits are the strongest signal in resolve() — conf 0.98, and they
+    override stop contexts and ambiguity class alike. The gazetteer feeds them
+    two systematic falsehoods:
+
+    1. SHARED domains. 206 domain strings are claimed by more than one brand;
+       microsoft.com by seventeen, aws.amazon.com by sixteen, zoho.com by
+       fifteen. One microsoft.com URL was auto-accepting all seventeen.
+       A domain that points at several brands identifies none of them.
+    2. MULTI-TENANT hosts. github.com is listed as a domain of `fooocus`, an
+       image tool hosted there, so every GitHub link in every subreddit
+       credited Fooocus (1,144 hits in three subs). A brand only owns a
+       domain when the registrable label is recognisably its own name.
+
+    Losing a domain signal costs little — the brand's own name still matches
+    through the normal gated path. Accepting a false one costs everything,
+    because nothing downstream re-examines a 0.98 auto-accept.
+    """
+    global _dom_claims
+    if _dom_claims is None:
+        _dom_claims = {}
+        for s, doms in all_domains.items():
+            for dd in doms:
+                if dd:
+                    _dom_claims.setdefault(dd.strip().lower(), set()).add(s)
+    d = domain.strip().lower()
+    if len(_dom_claims.get(d, ())) > 1:
+        return False
+    parts = [p for p in d.split(".") if p]
+    if len(parts) < 2:
+        return False
+    # registrable label: the one before the public suffix, allowing for a
+    # two-part suffix such as .co.uk / .com.au
+    label = parts[-3] if (len(parts) >= 3 and len(parts[-2]) <= 3
+                          and parts[-2] in ("co", "com", "org", "net", "ac")) else parts[-2]
+    brand_toks = set(re.split(r"[^a-z0-9]+", slug.lower())) - {""}
+    if label in brand_toks:
+        return True
+    flat = "".join(slug.lower().split("-"))
+    if label == flat or flat == label:
+        return True
+    # get<brand>.com / try<brand>.io / <brand>hq.com: the label must CONTAIN a
+    # whole brand token of real length. Deliberately not a prefix test —
+    # "huggingface" and "huggingchat" share six characters and are different
+    # companies, and that fallback let a tenant claim its host.
+    return any(len(t) >= 5 and t in label for t in brand_toks)
 
 
 def build_automaton(aliases):
@@ -242,7 +304,8 @@ class Resolver:
         self._canonical = {b["slug"]: b["brand"].lower()
                            for b in self.brands.values() if isinstance(b, dict)}
         self._domain_ac = None
-        pairs = [(d.lower(), slug) for slug, doms in self.domains.items() for d in doms if d]
+        pairs = [(d.lower(), slug) for slug, doms in self.domains.items()
+                 for d in doms if d and _domain_identifies(d, slug, self.domains)]
         if pairs:
             A = ahocorasick.Automaton()
             for d, slug in pairs:
