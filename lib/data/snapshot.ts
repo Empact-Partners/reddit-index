@@ -68,13 +68,21 @@ async function loadSnapshot(): Promise<Snapshot> {
     // Newest first. The dashboard paginates client-side over the FULL set
     // (Vlad's ruling: load all, 10 per page) — the 2000 ceiling is a safety
     // rail far above today's biggest brand, not a display cap.
-    s`select * from (
-        select m.*, b.slug as brand_slug, b.name as brand_name, sr.name as subreddit,
-               row_number() over (partition by m.brand_id order by m.created_utc desc) as rn
-        from published.mentions m
-        join published.brands b on b.id = m.brand_id
-        join published.subreddits sr on sr.id = m.subreddit_id
-      ) t where rn <= 2000`,
+    // A LATERAL per brand, not a global window: row_number() over the whole
+    // table sorted every mention in the corpus to keep the newest 2000 of
+    // each, which stopped fitting inside the statement timeout once the
+    // depth sweep pushed the table past ~200k rows (the build failed on
+    // /jamf-pro with 57014). The lateral walks the (brand_id, created_utc
+    // desc) index and touches at most 2000 rows per brand. Same result set.
+    s`select t.*, b.slug as brand_slug, b.name as brand_name, sr.name as subreddit
+      from published.brands b
+      cross join lateral (
+        select m.* from published.mentions m
+        where m.brand_id = b.id
+        order by m.created_utc desc
+        limit 2000
+      ) t
+      join published.subreddits sr on sr.id = t.subreddit_id`,
     // The dashboard aggregates: TRUE totals over the whole table, per
     // (brand x subreddit x label) — the stat tiles and the subreddit ledger
     // must describe everything collected, not the 100 cards shown.
