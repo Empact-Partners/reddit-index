@@ -151,9 +151,25 @@ async function loadSnapshot(): Promise<Snapshot> {
       baseRate: row?.base_rate_c === null || row?.base_rate_c === undefined
         ? null : Number(row.base_rate_c),
       lastUpdated: null,
+      // filled below, once every category's scores are known
+      threshold: 3,
       scores: mine.sort((a, b) => (b.redditLoveScore ?? -1) - (a.redditLoveScore ?? -1)),
     };
   });
+
+  // Each category's publication bar, from its OWN evidence distribution
+  // (see buildThresholds in boards.ts). Computed here so every consumer —
+  // boards, category pages, company pages — applies one number.
+  for (const c of categories) {
+    const ops = c.scores.filter((x) => x.redditLoveScore !== null && x.nOp > 0)
+      .map((x) => x.nOp).sort((a, b) => a - b);
+    if (!ops.length) { c.threshold = 3; continue; }
+    const mid = Math.floor(ops.length / 2);
+    const lo = ops[mid - 1] ?? ops[mid] ?? 3;
+    const hi = ops[mid] ?? 3;
+    const median = ops.length % 2 ? hi : Math.round((lo + hi) / 2);
+    c.threshold = Math.max(3, Math.min(30, median));
+  }
 
   // Aggregate rows -> per-brand sentiment totals + subreddit ledger.
   // Labels: 0 neu, 1 pos, 2 neg, 3 abstain; null (unclassified yet) and

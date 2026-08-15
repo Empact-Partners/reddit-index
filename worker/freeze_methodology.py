@@ -42,7 +42,7 @@ REF = "nrsyqcttpijxhwtdtoct"
 # Estimator, prior, gates, window, resolution, sentiment: all unchanged —
 # the full set is re-frozen under 2.0.1 so /methodology renders one
 # complete, self-contained set per version (the page filters version =).
-VERSION = "2.0.2"
+VERSION = "2.1.0"
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.dirname(HERE)
@@ -112,6 +112,20 @@ PARAMS = [
     ("category_viability_min_scoring_subreddits", "global", 5,
      "A CATEGORY-level test, distinct from every brand-level test. Failing it renders the "
      "insufficient-signal panel; it never makes a brand 'below threshold'."),
+    ("ranking_threshold", "global",
+     {"rule": "category_median_n_op", "floor": 3, "ceiling": 30},
+     "A company is RANKED in a category once its opinionated mention count reaches that "
+     "category's median across tracked brands, clamped to [3, 30] — it must carry at least "
+     "as much evidence as the typical brand it is ranked against. Self-calibrating: a dense "
+     "category asks for more, a thin one falls to the floor and stays publishable. Replaces "
+     "a flat n_op>=3 display floor and the unused n_eff gate, whose per-category tiers were "
+     "a hardcoded default for 86 of 100 categories derived from category-level comment flow, "
+     "never from per-brand evidence. Below the threshold a company keeps its page and its "
+     "mentions and carries no position."),
+    ("n_eff_role", "global", "precision_claim_not_visibility",
+     "2.1.0: n_eff >= n_min no longer decides whether a company appears — it decides whether "
+     "a published score may also claim a precision (+/-4/5/7pp by tier). It admitted 10 of "
+     "2,056 rows while the boards rendered 1,029, and no component ever read it."),
     ("scoring_subreddit_selection", "global", "all_qualifying",
      "2.0.1: every subreddit passing ALL qualification bars is is_scoring for the "
      "category — no top-N cap, no worth ranking. Replaces the implicit top-8 (later 12) "

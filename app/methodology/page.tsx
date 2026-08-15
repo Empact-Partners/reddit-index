@@ -101,14 +101,26 @@ Reddit Love Score = round(100 · p̃)`}</Pre>
           scale.
         </p>
         <p>
-          The gate is <code>n_eff ≥ n_min</code>. <code>n_min</code> comes from
-          a published precision target, not from taste:{" "}
+          A company is ranked in a category once it carries at least that
+          category&apos;s <strong>threshold</strong> of opinionated mentions.
+          The threshold is the category&apos;s own median: a company must hold
+          at least as much evidence as the typical brand it is being ranked
+          against, never fewer than 3 and never more than 30. A category where
+          the typical brand has four opinions asks for four; one where the
+          typical brand has twenty asks for twenty. Nothing about the bar is
+          chosen by hand, and it moves as the corpus grows.
+        </p>
+        <p>
+          Separately, <code>n_eff ≥ n_min</code> decides whether a published
+          score may also claim a <em>precision</em>. <code>n_min</code> comes
+          from a published precision target:{" "}
           <code>n_min = 1.96² × 0.25 / h²</code>, giving 600 at ±4pp, 400 at
           ±5pp and 200 at ±7pp. <code>n_eff</code> is the opinionated mention
           count divided by a design effect, because a hundred replies inside one
           thread are not a hundred independent opinions. The design effect is
           computed twice — clustering by thread and by author — and the worse of
-          the two is used.
+          the two is used. A company can be ranked without clearing it; it then
+          carries a rank and no precision claim.
         </p>
         <ul>
           <li>at least 50 distinct authors</li>
@@ -117,9 +129,8 @@ Reddit Love Score = round(100 · p̃)`}</Pre>
           <li>no more than 5% of mentions from any one author</li>
         </ul>
         <p>
-          A company that fails any of these is shown as{" "}
-          <strong>below threshold</strong>, with the failing test named and both
-          numbers printed. It is never quietly dropped. A category that cannot
+          A company below its category&apos;s threshold is not ranked: it has a
+          page and its mentions, but no position. A category that cannot
           field five scoring subreddits is a different failure with different
           words: <strong>the category cannot be ranked</strong>, and no company
           inside it gets a position, including companies that pass every

@@ -296,7 +296,7 @@ def score_category(cat_slug, mentions, categories):
             "failed_required": failed_required,
             "window_start": window_start,
             "window_end": now,
-            "methodology_version": "2.0.2",
+            "methodology_version": "2.1.0",
         })
 
     # Rank by score descending

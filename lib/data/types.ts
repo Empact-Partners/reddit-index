@@ -81,6 +81,14 @@ export type CategoryView = {
   requiredSubreddits: number;
   baseRate: number | null;
   lastUpdated: string | null;
+  /**
+   * Opinionated mentions a company needs before it is ranked in THIS category
+   * — the median evidence its own tracked brands carry, floored at 3 and
+   * capped at 30. A category where the typical brand has forty opinions
+   * demands more than one where the typical brand has four, and no category
+   * ever demands more than thirty. See buildThresholds() in boards.ts.
+   */
+  threshold: number;
   scores: BrandScore[];
 };
 
