@@ -35,6 +35,7 @@ import argparse
 import json
 import os
 import signal
+import subprocess
 import sys
 import threading
 import time
@@ -60,6 +61,28 @@ JOB_TIMEOUT = 900   # was 420: jobs exceed it whenever the box is busy, and a
 STALE_AFTER = JOB_TIMEOUT + 180  # no out-file by now => the job died
 COMMIT_EVERY = 500         # labels
 COMMIT_SECS = 30
+
+
+def _swap_free_mb():
+    """Free swap in MB. The binding constraint on a 16 GB Mac.
+
+    Returns a large number if unreadable — an unreadable gauge must not
+    silently halt the fleet the way the old load guard did.
+    """
+    try:
+        out = subprocess.run(["sysctl", "-n", "vm.swapusage"],
+                             capture_output=True, text=True, timeout=5).stdout
+        for tok in out.split():
+            if tok.startswith("free"):
+                pass
+        # "total = 28672.00M  used = 27698.62M  free = 973.38M  (encrypted)"
+        parts = out.replace("=", " ").split()
+        for i, p in enumerate(parts):
+            if p == "free" and i + 1 < len(parts):
+                return float(parts[i + 1].rstrip("M"))
+    except Exception:
+        pass
+    return 1e9
 
 
 def pg_text(v, limit):
@@ -149,12 +172,9 @@ class Daemon:
     def __init__(self, args):
         self.args = args
         self.max_inflight = args.max_inflight
-        # 3x cores. These jobs are mostly WAITING on the model API, so a
-        # run-queue length of 2x cores is normal and healthy here; at 2.0 the
-        # guard stalled the whole lane every time the collector got busy. The
-        # failure it exists to prevent was load 154 on 10 cores, an order of
-        # magnitude above this.
-        self.load_ceiling = args.load_ceiling or (os.cpu_count() or 8) * 3.0
+        # Guard on free swap, not load: see free_slots(). Below this many
+        # MB of free swap the box is thrashing and another job helps nobody.
+        self.min_swap_mb = args.min_swap_mb
         self._load_warned = False
         self.state = {"conn": db.connect()}
         self.db_lock = threading.Lock()
@@ -226,21 +246,22 @@ class Daemon:
 
     # ---- fleet ----
     def free_slots(self):
-        # LOAD GUARD, checked before the fleet is even asked. Every codex job
-        # is a local node process, so concurrency and job LATENCY are not
-        # independent: the fleet advertises 60 slots, but filling them on a
-        # 10-core Mac drove load average to 154, made each job ~10x slower and
-        # cut throughput to 58 items/min against the old serial loop's 280.
-        # The old code never hit this only because its 8s sleep accidentally
-        # capped real concurrency near 22. Slots are not capacity.
-        try:
-            load1 = os.getloadavg()[0]
-        except OSError:
-            load1 = 0.0
-        if load1 > self.load_ceiling:
+        # RESOURCE GUARD, checked before the fleet is even asked.
+        #
+        # This used to guard on load average, which was the wrong metric and
+        # cost real throughput: a codex job is a local node process that
+        # spends nearly all its life blocked on the OpenAI API, and load
+        # average counts I/O-blocked processes. Measured at 32 jobs: load
+        # 18-38 (guard firing, "holding submissions") while the CPU sat at
+        # 64% IDLE and all 100 codex processes together held 1.4 GB.
+        #
+        # The real ceiling on a 16 GB Mac is MEMORY, so that is what we
+        # guard. Free swap is the number that decides whether the next job
+        # is free or starts thrashing the whole machine.
+        if _swap_free_mb() < self.min_swap_mb:
             if not self._load_warned:
-                print(f"  load {load1:.0f} > {self.load_ceiling:.0f} — holding "
-                      f"submissions", flush=True)
+                print(f"  free swap {_swap_free_mb():.0f} MB < "
+                      f"{self.min_swap_mb} MB — holding submissions", flush=True)
                 self._load_warned = True
             return 0
         self._load_warned = False
@@ -511,12 +532,19 @@ def main():
     ap.add_argument("--category", action="append", help="restrict to category slug(s)")
     ap.add_argument("--max-inflight", type=int,
                     default=int(os.environ.get("RI_MAX_INFLIGHT", "16")),
-                    help="concurrent fleet jobs. NOT the fleet's slot count: 56 "
-                         "drove load to 154 on 10 cores and cut throughput 5x; "
-                         "24 still timed out 30%% of jobs. 16 is the measured "
-                         "healthy ceiling on this box.")
-    ap.add_argument("--load-ceiling", type=float, default=0,
-                    help="hold submissions above this 1-min load average (default 2x cores)")
+                    help="concurrent fleet jobs. Do NOT raise this on the "
+                         "strength of RAM headroom. Tried 100 on 2026-08-16: "
+                         "memory was indeed a non-issue (119 procs, 1.8 GB, "
+                         "swap stable) and it STILL collapsed — load 176, "
+                         "sys-time 55%%, and ZERO batches returned in 13 min "
+                         "against ~120 items/min at 16. The binding cost is "
+                         "kernel scheduling/context-switch overhead per local "
+                         "node process, which no memory gauge shows. 16 is "
+                         "the measured healthy ceiling; 24 timed out 30%% of "
+                         "jobs; 56 drove load to 154.")
+    ap.add_argument("--min-swap-mb", type=float,
+                    default=float(os.environ.get("RI_MIN_SWAP_MB", "400")),
+                    help="hold submissions when free swap falls below this")
     ap.add_argument("--once", action="store_true", help="drain the backlog once, then exit")
     args = ap.parse_args()
 
