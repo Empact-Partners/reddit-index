@@ -9,7 +9,7 @@ write .cache/index/<slug>.json in exactly the shape load.py --scores reads,
 load, and prune every older week_start row so the table holds ONE truthful
 set (the no-history rule).
 """
-import datetime, json, os, subprocess, sys
+import datetime, json, os, subprocess, sys, time
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.dirname(HERE)
@@ -36,40 +36,87 @@ def main():
 
     cats = load_categories()
     state = {"conn": db.connect()}
+    # A hung read once wedged this script for 78 minutes with no output and no
+    # active query — the connection had gone away underneath it. A server-side
+    # timeout turns that into an error db.run can retry.
+    try:
+        with state["conn"].cursor() as _c:
+            _c.execute("SET statement_timeout = '600s'")
+        state["conn"].commit()
+    except Exception:
+        pass
     window_end = datetime.date.today()
     window_start = window_end - datetime.timedelta(days=365)
+
+    # ── read the corpus ONCE ────────────────────────────────────────────────
+    #
+    # This used to be 100 queries, one per category, each joining through
+    # category_subreddits. That join fans out: 263 of the 527 scoring
+    # subreddits belong to two or more categories (r/sysadmin to 52), so the
+    # same mention was fetched, transferred and re-parsed once per category it
+    # touched. Measured on the live corpus: 5,210,703 rows over the wire for
+    # 319,093 distinct labelled mentions — a 16x tax, paid in network and in
+    # Postgres planning 100 separate joins.
+    #
+    # Now: every mention once, the subreddit->categories map once, and the
+    # fan-out done in memory where it is pointer arithmetic. Same rows reach
+    # score_category, ~13x less data crosses the connection, and the whole
+    # read is a single statement that either lands or retries as a unit.
+    def _read_mentions(c):
+        with c.cursor() as cur:
+            cur.execute("""
+            SELECT b.slug, m.doc_id, m.doc_type, m.thread_id, m.author,
+                   s.name, extract(epoch from m.created_utc), ms.label,
+                   m.subreddit_id
+            FROM mentions m
+            JOIN mention_sentiment ms
+                 ON ms.doc_id = m.doc_id AND ms.brand_id = m.brand_id
+            JOIN brands b ON b.id = m.brand_id
+            JOIN subreddits s ON s.id = m.subreddit_id
+            WHERE m.created_utc >= now() - interval '365 days'
+        """)
+            return cur.fetchall()
+
+    def _read_map(c):
+        with c.cursor() as cur:
+            cur.execute("""
+            SELECT cs.subreddit_id, c.slug
+            FROM category_subreddits cs
+            JOIN categories c ON c.id = cs.category_id
+            WHERE cs.is_scoring
+        """)
+            return cur.fetchall()
+
+    t_read = time.time()
+    mention_rows = db.run(state, _read_mentions, label="score read mentions")
+    sub_cats = {}
+    for sub_id, cslug in db.run(state, _read_map, label="score read map"):
+        sub_cats.setdefault(sub_id, []).append(cslug)
+    print(f"  read {len(mention_rows):,} labelled mentions and "
+          f"{sum(len(v) for v in sub_cats.values()):,} subreddit-category links "
+          f"in {time.time() - t_read:.1f}s", flush=True)
+
+    # Bucket by category. The SAME dict object is appended to every category
+    # it belongs to — the fan-out costs one pointer, not one copy.
+    by_cat = {slug: [] for slug in cats}
+    for bslug, doc_id, doc_type, thread_id, author, sub, epoch, label, sub_id in mention_rows:
+        member = also_in.get(bslug)
+        if not member:
+            continue
+        m = {"brand_slug": bslug, "doc_id": doc_id, "doc_type": doc_type,
+             "thread_id": thread_id, "author": author, "subreddit": sub,
+             "created_utc": float(epoch), "label": WORD.get(label, "abstain")}
+        for cslug in sub_cats.get(sub_id, ()):
+            # the category-membership filter, unchanged: a brand is scored in
+            # a category only if it is actually tracked there
+            if cslug in member and cslug in by_cat:
+                by_cat[cslug].append(m)
+    del mention_rows
 
     total = 0
     all_rows = []
     for slug in cats:
-        # Scoring reads 100 categories in a row; a dropped link partway
-        # through must reconnect and re-read that category, not abort the run
-        # and block the publish.
-        def _read(c, _slug=slug):
-            with c.cursor() as cur:
-                cur.execute("""
-                SELECT b.slug, m.doc_id, m.doc_type, m.thread_id, m.author,
-                       s.name, extract(epoch from m.created_utc), ms.label
-                FROM mentions m
-                JOIN mention_sentiment ms
-                     ON ms.doc_id = m.doc_id AND ms.brand_id = m.brand_id
-                JOIN brands b ON b.id = m.brand_id
-                JOIN subreddits s ON s.id = m.subreddit_id
-                JOIN category_subreddits cs
-                     ON cs.subreddit_id = m.subreddit_id AND cs.is_scoring
-                JOIN categories c ON c.id = cs.category_id
-                WHERE c.slug = %s
-                  AND m.created_utc >= now() - interval '365 days'
-            """, (_slug,))
-                return cur.fetchall()
-        rows = db.run(state, _read, label=f"score read {slug}")
-        ms = []
-        for bslug, doc_id, doc_type, thread_id, author, sub, epoch, label in rows:
-            if slug not in also_in.get(bslug, set()):
-                continue  # the category-membership filter
-            ms.append({"brand_slug": bslug, "doc_id": doc_id, "doc_type": doc_type,
-                       "thread_id": thread_id, "author": author, "subreddit": sub,
-                       "created_utc": float(epoch), "label": WORD.get(label, "abstain")})
+        ms = by_cat.get(slug, [])
         rows_out = score_category(slug, ms, cats) if ms else []
         for r in rows_out:
             r.setdefault("category_slug", slug)

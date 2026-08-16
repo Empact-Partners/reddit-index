@@ -35,6 +35,8 @@ function mount() {
       totalMentions={25}
       heroScore={54}
       heroLabel="Reddit ❤️ Score · CRM"
+      rank={null}
+      rankLabel={null}
     />,
   );
 }

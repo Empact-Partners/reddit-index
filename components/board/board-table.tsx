@@ -5,23 +5,15 @@ import { CATEGORY_BY_SLUG, type CategorySlug } from "@/lib/generated/categories"
 import { PER_LIST, type BoardRow } from "@/lib/data/board-shapes";
 
 /**
- * Display-only short names so the category column stays ONE line inside a
- * half-width card. The full name lives everywhere else (dropdown, tiles,
- * breadcrumbs); this trims only the "and …" tails.
+ * Full category names, always. The abbreviation map that used to live here
+ * ("Backup & Storage" -> trimmed tails) existed because the two half-width
+ * cards could not fit a real name on one line, and the fallback was a
+ * horizontal scrollbar inside each card. Vlad, 2026-08-16: no horizontal
+ * scroll on Most Loved / Most Hated, and the category name must be fully
+ * visible. The cards are now given the width instead (see .board-grid).
  */
-const CATEGORY_SHORT: Partial<Record<CategorySlug, string>> = {
-  "password-managers": "Password Managers",
-  "note-taking": "Note-taking",
-  "help-desk": "Help Desk",
-  "business-intelligence": "Business Intelligence",
-  "recruiting": "Recruiting",
-  "cloud-hosting": "Cloud Hosting",
-  "team-chat": "Team Chat",
-  "backup-storage": "Backup & Storage",
-};
-
 function categoryLabel(slug: CategorySlug): string {
-  return CATEGORY_SHORT[slug] ?? CATEGORY_BY_SLUG[slug].name;
+  return CATEGORY_BY_SLUG[slug].name;
 }
 
 /**
@@ -55,6 +47,8 @@ export function BoardTable({
   const lovedN = Math.min(PER_LIST, Math.ceil(rows.length / 2));
 
   function rank(i: number): number {
+    const t = rows[i]?.trueRank;
+    if (t !== undefined) return t;   // search hit: its position on the real board
     if (!consolidated) return i + 1; // split view: rank within this list
     if (!truncated || i < PER_LIST) return i + 1;
     return (total as number) - (rows.length - i) + 1; // bottom block: absolute
@@ -72,7 +66,7 @@ export function BoardTable({
   }
 
   return (
-    <div className="table-scroll">
+    <div className="board-table-wrap">
       <table className="rank-table" data-tone={tone}>
         <caption className="sr-only">{caption}</caption>
         <thead>

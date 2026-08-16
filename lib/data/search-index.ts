@@ -22,37 +22,27 @@ export type SearchEntry = {
   n: string;
   /** primary category name, for disambiguating same-named brands */
   c: string;
-  /** rank within that category, 1 = most loved. null when unranked there. */
-  r: number | null;
-  /** how many companies are ranked in that category, so "12 of 63" reads */
-  t: number | null;
-  /** the published score, null while below the category's threshold */
+  /** the published score, null while below the category's threshold. The
+   *  result line is "score · category" and nothing else — Vlad, 2026-08-16:
+   *  a rank in the dropdown read as though it were the score. */
   v: number | null;
 };
 
 export function buildSearchIndex(snap: Snapshot): SearchEntry[] {
-  // how many ranked companies each category holds, so a result can say
-  // "12 of 63" rather than a rank floating free of its denominator
-  const rankedIn = new Map<string, number>();
-  for (const cat of snap.categories) {
-    rankedIn.set(cat.slug, cat.scores.filter((s) => s.rankDesc !== null).length);
-  }
   const out: SearchEntry[] = [];
   for (const co of snap.companies.values()) {
     if (co.totalMentions <= 0 && co.scores.length === 0) continue;
     const cat = co.primaryCategorySlug
       ? CATEGORY_BY_SLUG[co.primaryCategorySlug as CategorySlug]?.name ?? ""
       : "";
-    // Rank is reported for the PRIMARY category — the one the company page
-    // leads with — so search and the page agree.
+    // The score is the PRIMARY category's — the one the company page leads
+    // with — so search and the page always agree.
     const primary = co.primaryCategorySlug
       ? co.scores.find((sc) => sc.categorySlug === co.primaryCategorySlug)
       : undefined;
     const meetsBar = primary != null && primary.nOp >= co.primaryThreshold;
     out.push({
       s: co.slug, n: co.name, c: cat,
-      r: meetsBar ? primary!.rankDesc : null,
-      t: co.primaryCategorySlug ? rankedIn.get(co.primaryCategorySlug) ?? null : null,
       v: meetsBar ? primary!.redditLoveScore : null,
     });
   }

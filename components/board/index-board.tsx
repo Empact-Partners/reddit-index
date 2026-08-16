@@ -32,8 +32,20 @@ export function IndexBoard({
 }) {
   const [scope, setScope] = useState<Scope>(initialScope);
   const [view, setView] = useState<BoardView>("boards");
+  const [query, setQuery] = useState("");
 
-  const board: ScopeBoard = data[scope] ?? { rows: [], total: 0 };
+  const full: ScopeBoard = data[scope] ?? { rows: [], total: 0 };
+  // Typing filters the ranking in place. Ranks are NOT recomputed: a filtered
+  // row keeps the position it holds on the real board, because a search that
+  // renumbers its hits to 1..n is inventing a ranking nobody can check.
+  const q = query.trim().toLowerCase();
+  const hits = q
+    ? full.rows
+        .map((r, i) => ({ ...r, trueRank: i + 1 }))
+        .filter((r) => r.brandName.toLowerCase().includes(q)
+          || r.brandSlug.includes(q))
+    : [];
+  const board: ScopeBoard = q ? { rows: hits, total: full.total } : full;
   const showCategory = scope === "all";
   const scopeName = scope === "all"
     ? "All Categories"
@@ -50,16 +62,44 @@ export function IndexBoard({
     <>
       <div className="bleed controls-band">
         <div className="board-controls">
-          <CategorySelect value={scope} onChange={changeScope} />
-          <BrandSearch index={search} />
-          <ViewSwitcher value={view} onChange={setView} />
+          <div className="controls-left">
+            <BrandSearch index={search} query={query} onQueryChange={setQuery} />
+          </div>
+          <div className="controls-center">
+            <CategorySelect value={scope} onChange={changeScope} />
+          </div>
+          <div className="controls-right">
+            <ViewSwitcher value={view} onChange={setView} />
+          </div>
         </div>
       </div>
 
       {board.rows.length === 0 ? (
         <p className="mt-14 text-center" style={{ fontSize: "var(--fs-body)" }}>
-          No scored brands in this category yet.
+          {q
+            ? `No ranked company matches “${query.trim()}” in ${scopeName}.`
+            : "No scored brands in this category yet."}
         </p>
+      ) : q ? (
+        /* A search shows ONE list of matches with their real board positions.
+           Splitting a handful of hits into "most loved" and "most hated"
+           halves would label a brand by where it fell among its own search
+           results rather than on the board. */
+        <div className="board-grid" data-view="list">
+          <section className="board-card" data-tone="neutral"
+                   aria-label={`Search results in ${scopeName}`}>
+            <h2>
+              {board.rows.length} {board.rows.length === 1 ? "match" : "matches"}
+              {" in "}{scopeName}
+            </h2>
+            <BoardTable
+              rows={board.rows}
+              tone="neutral"
+              showCategory={showCategory}
+              caption={`Companies matching ${query.trim()} in ${scopeName}`}
+            />
+          </section>
+        </div>
       ) : view === "boards" ? (
         <div className="board-bleed">
         <div className="board-grid">

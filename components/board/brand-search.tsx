@@ -19,8 +19,17 @@ import { searchCompanies, type SearchEntry } from "@/lib/data/search-index";
  * aria-activedescendant so a screen reader announces the highlighted row
  * rather than silently moving focus.
  */
-export function BrandSearch({ index }: { index: SearchEntry[] }) {
-  const [q, setQ] = useState("");
+export function BrandSearch({
+  index,
+  query: q,
+  onQueryChange: setQ,
+}: {
+  index: SearchEntry[];
+  /** Lifted to IndexBoard: the same query filters the visible board, so
+   *  typing narrows the ranking in place instead of only offering a jump. */
+  query: string;
+  onQueryChange: (q: string) => void;
+}) {
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(0);
   const listId = useId();
@@ -116,9 +125,7 @@ export function BrandSearch({ index }: { index: SearchEntry[] }) {
                 >
                 <span className="brand-search-name">{e.n}</span>
                 <span className="brand-search-cat">
-                  {e.r != null
-                    ? `#${e.r}${e.t ? ` of ${e.t}` : ""} in ${e.c}${e.v != null ? ` · ${e.v}` : ""}`
-                    : e.c}
+                  {e.v != null ? `${e.v} · ${e.c}` : e.c}
                 </span>
                 </a>
               </li>

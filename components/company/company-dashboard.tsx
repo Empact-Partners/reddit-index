@@ -30,6 +30,8 @@ export function CompanyDashboard({
   totalMentions,
   heroScore,
   heroLabel,
+  rank,
+  rankLabel,
 }: {
   mentions: Mention[];
   subredditStats: SubredditStat[];
@@ -37,6 +39,11 @@ export function CompanyDashboard({
   totalMentions: number;
   heroScore: number | null;
   heroLabel: string;
+  /** "#12 in Social Media Management" — the brand's standing in the category
+   *  it is ranked in. Null when it is below that category's threshold, which
+   *  is the same bar that suppresses the score itself. */
+  rank: number | null;
+  rankLabel: string | null;
 }) {
   const [view, setView] = useState<View>("mentions");
   const [sentiment, setSentiment] = useState<SentimentFilter>("all");
@@ -116,6 +123,17 @@ export function CompanyDashboard({
             </span>
             <span className="stat-label">{heroLabel}</span>
           </li>
+          {rank !== null && (
+            <li className="stat-tile stat-tile-rank">
+              <span className="stat-num">
+                <span className="stat-hash" aria-hidden="true">#</span>{rank}
+              </span>
+              <span className="stat-label">
+                <span className="sr-only">Ranked number {rank} in </span>
+                {rankLabel}
+              </span>
+            </li>
+          )}
           {tiles.map(({ key, num: n2, label, ink, active, onClick }) => (
             <li key={key}>
               <button

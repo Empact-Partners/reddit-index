@@ -84,7 +84,22 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
   if (hit?.tier === "company") {
     const company = snap.companies.get(slug);
     if (!company) notFound();
-    return <CompanyPage company={company} />;
+    // The rank shown on a company page must be the position on the board a
+    // reader can go and look at, so it is read from buildBoards rather than
+    // from brand_category_scores.rank_desc. Those disagree: rank_desc comes
+    // from an eligibility-gated ordering, so HubSpot — first on the CRM board
+    // with 1,353 opinionated mentions — carries a NULL rank_desc there.
+    const boards = buildBoards(snap);
+    const cat = company.primaryCategorySlug;
+    const rows = cat ? boards[cat]?.rows ?? [] : [];
+    const idx = rows.findIndex((r) => r.brandSlug === slug);
+    return (
+      <CompanyPage
+        company={company}
+        boardRank={idx >= 0 ? idx + 1 : null}
+        boardSize={rows.length}
+      />
+    );
   }
 
   notFound();

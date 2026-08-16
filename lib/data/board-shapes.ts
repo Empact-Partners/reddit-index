@@ -21,6 +21,10 @@ export type BoardRow = {
   /** Number of mentions (n) inside the scoring window. */
   mentions: number;
   categorySlug: CategorySlug;
+  /** Set ONLY on search-filtered rows: the position this brand holds on the
+   *  real board. A filtered list must never renumber its hits 1..n — that
+   *  would invent a ranking the reader cannot check anywhere else. */
+  trueRank?: number;
 };
 
 export type ScopeBoard = {
@@ -34,19 +38,13 @@ export type ScopeBoard = {
 export type BoardData = Record<string, ScopeBoard>;
 
 /**
- * Owner's call, 2026-08-16: the index must not hide companies.
- *
- * The single list ("Most Loved to Most Hated") now carries EVERY ranked
- * company in scope — no cap — because a list that silently stops at 200 of
- * ~3,000 reads as coverage it does not have. The two-table view shows up to
- * PER_LIST a side; it is a highlight reel, and the full list is one click
- * away in the same control band.
- *
- * Cost is bounded and was checked before removing the cap: the whole corpus
- * is ~4,000 scored (brand, category) rows, so the uncapped payload is that
- * plus the same rows again under the "all" scope, not 3,000 x 100.
+ * Vlad, 2026-08-16 (superseding the same-day show-everyone ruling): the home
+ * boards show the top 100 loved and top 100 hated, drawn from the strictly
+ * threshold-enforced list. The full "Most Loved to Most Hated" view is that
+ * SAME list in full — same thresholding, no cap past it — so the two views
+ * can never disagree about who qualifies.
  */
-export const PER_LIST = 500;
+export const PER_LIST = 100;
 export const LIST_CAP = Number.POSITIVE_INFINITY;
 
 /** Score descending; mentions break ties; slug makes it deterministic. */

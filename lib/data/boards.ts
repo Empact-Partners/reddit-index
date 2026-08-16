@@ -16,22 +16,14 @@ import { consolidate, type BoardData, type BoardRow, type Scope } from "./board-
 export const THRESHOLD_FLOOR = 3;
 /** …nor demands more than this, however loud the category is. */
 export const THRESHOLD_CEIL = 30;
-/**
- * Owner's call, 2026-08-16: every scored company appears, on every board.
- *
- * This bar was 10 opinionated mentions for the pooled board, and the
- * per-category median for the category boards. Together they hid most of the
- * index: 793 of ~3,000 companies on the home list, 34 of 67 on /web-hosting.
- *
- * They are safe to drop BECAUSE of methodology 2.2.0. The bars existed to
- * stop thin evidence ranking high — under the old posterior MEAN a brand
- * with four opinions was pulled up toward the category average (shift4, 0
- * positives out of 4, published 40 above PayPal). The published score is now
- * the posterior LOWER BOUND, which moves the other way: thin evidence lands
- * low on its own, so a company can be listed without being flattered. The
- * threshold is still computed and still published as evidence on the page.
- */
-const MIN_N_OP_POOLED = 1;
+/** The pooled boards call a brand most-loved/most-hated ACROSS the whole
+ *  index — that claim needs more than a handful of comments. Vlad revisited
+ *  this on 2026-08-16 after seeing 1-mention brands ranked beside 800-mention
+ *  brands and retracted the show-everyone experiment in his own words ("I
+ *  shouldn't have told it to display all the companies — that is wrong"):
+ *  strict thresholds everywhere. A brand below the bar appears on NO board;
+ *  it stays reachable through search and its own page. */
+const MIN_N_OP_POOLED = 10;
 
 /**
  * Each category's own bar, derived from its own evidence.
@@ -55,31 +47,40 @@ export function buildThresholds(snap: Snapshot): Map<string, number> {
   return new Map(snap.categories.map((c) => [c.slug, c.threshold]));
 }
 
-function toRow(s: BrandScore): BoardRow {
+/**
+ * The Mentions column shows the brand's TOTAL collected mentions — the same
+ * number its company page headlines — not the scoring-window count. Vlad's
+ * ruling (2026-08-16), after catching Raklet showing 3 in the list and 6 on
+ * its page: "total collected everywhere; the mentions used for the
+ * calculation are behind the scenes — viewers don't need to know."
+ */
+function toRow(s: BrandScore, totalOf: Map<string, number>): BoardRow {
   return {
     brandSlug: s.brandSlug,
     brandName: s.brandName,
     score: s.redditLoveScore as number,
-    mentions: s.n,
+    mentions: totalOf.get(s.brandSlug) ?? s.n,
     categorySlug: s.categorySlug,
   };
 }
 
 export function buildBoards(snap: Snapshot): BoardData {
   const thresholds = buildThresholds(snap);
+  const totalOf = new Map<string, number>(
+    [...snap.companies.values()].map((c) => [c.slug, c.totalMentions]));
   const floored = snap.categories
     .flatMap((c) => c.scores)
-    // one opinionated mention is enough to be LISTED; the lower-bound score
-    // decides where. See MIN_N_OP_POOLED above for why this is no longer the
-    // safety mechanism it once was.
-    .filter((s) => s.redditLoveScore !== null && s.nOp >= 1);
+    // A brand must carry at least as much opinionated evidence as the TYPICAL
+    // brand in its category (the median, clamped [3,30]) to be ranked there.
+    .filter((s) => s.redditLoveScore !== null
+      && s.nOp >= (thresholds.get(s.categorySlug) ?? THRESHOLD_FLOOR));
 
   const data: BoardData = {};
 
   for (const c of snap.categories) {
     const mine = floored.filter((s) => s.categorySlug === c.slug);
     data[c.slug satisfies Scope] = {
-      rows: consolidate(mine.map(toRow)),
+      rows: consolidate(mine.map((r) => toRow(r, totalOf))),
       total: mine.length,
     };
   }
@@ -102,7 +103,7 @@ export function buildBoards(snap: Snapshot): BoardData {
   }
   const pooled = [...best.values()];
   data["all" satisfies Scope] = {
-    rows: consolidate(pooled.map(toRow)),
+    rows: consolidate(pooled.map((r) => toRow(r, totalOf))),
     total: pooled.length,
   };
 

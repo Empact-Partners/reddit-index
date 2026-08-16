@@ -12,7 +12,17 @@ import type { CompanyView } from "@/lib/data/types";
  * data-category on the wrapper is what resolves --cat for the brand-mark
  * highlights and chips below.
  */
-export function CompanyPage({ company }: { company: CompanyView }) {
+export function CompanyPage({
+  company,
+  boardRank,
+  boardSize,
+}: {
+  company: CompanyView;
+  /** Position on the primary category's board — the same list the reader can
+   *  open — or null when the brand is below that category's threshold. */
+  boardRank: number | null;
+  boardSize: number;
+}) {
   const primary = company.primaryCategorySlug
     ? CATEGORY_BY_SLUG[company.primaryCategorySlug]
     : null;
@@ -23,9 +33,8 @@ export function CompanyPage({ company }: { company: CompanyView }) {
   const primaryRow = primary
     ? company.scores.find((s) => s.categorySlug === primary.slug)
     : undefined;
-  const primaryScore = primaryRow && primaryRow.nOp >= company.primaryThreshold
-    ? primaryRow.redditLoveScore
-    : null;
+  const meetsBar = primaryRow != null && primaryRow.nOp >= company.primaryThreshold;
+  const primaryScore = meetsBar ? primaryRow!.redditLoveScore : null;
 
   return (
     <div data-category={company.primaryCategorySlug ?? undefined}>
@@ -52,6 +61,10 @@ export function CompanyPage({ company }: { company: CompanyView }) {
         totalMentions={company.totalMentions}
         heroScore={primaryScore}
         heroLabel={`Reddit ❤️ Score${primary ? ` · ${primary.name}` : ""}`}
+        rank={boardRank}
+        rankLabel={primary
+          ? `of ${boardSize} in ${primary.name}`
+          : null}
       />
 
       {/* Only when the brand genuinely scores in MORE than one category —
