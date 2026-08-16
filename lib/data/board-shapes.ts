@@ -33,8 +33,21 @@ export type ScopeBoard = {
 
 export type BoardData = Record<string, ScopeBoard>;
 
-export const PER_LIST = 100;
-export const LIST_CAP = 200;
+/**
+ * Owner's call, 2026-08-16: the index must not hide companies.
+ *
+ * The single list ("Most Loved to Most Hated") now carries EVERY ranked
+ * company in scope — no cap — because a list that silently stops at 200 of
+ * ~3,000 reads as coverage it does not have. The two-table view shows up to
+ * PER_LIST a side; it is a highlight reel, and the full list is one click
+ * away in the same control band.
+ *
+ * Cost is bounded and was checked before removing the cap: the whole corpus
+ * is ~4,000 scored (brand, category) rows, so the uncapped payload is that
+ * plus the same rows again under the "all" scope, not 3,000 x 100.
+ */
+export const PER_LIST = 500;
+export const LIST_CAP = Number.POSITIVE_INFINITY;
 
 /** Score descending; mentions break ties; slug makes it deterministic. */
 export function byBoardOrder(a: BoardRow, b: BoardRow): number {
@@ -43,9 +56,9 @@ export function byBoardOrder(a: BoardRow, b: BoardRow): number {
 }
 
 /**
- * The single-list view: everything when N <= 200, else the top 100 and the
- * bottom 100 — both ends survive truncation, because a list whose bottom is
- * "the 200th most loved" has no Most Hated end at all.
+ * The single-list view: every ranked company in scope, most loved first.
+ * LIST_CAP is Infinity, so the truncation branch is dead by construction and
+ * kept only so a future cap cannot silently drop the Most Hated end.
  */
 export function consolidate(rows: BoardRow[]): BoardRow[] {
   const sorted = [...rows].sort(byBoardOrder);

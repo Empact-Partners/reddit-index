@@ -8,6 +8,8 @@ import {
 import { CategorySelect } from "./category-select";
 import { ViewSwitcher, type BoardView } from "./view-switcher";
 import { BoardTable } from "./board-table";
+import { BrandSearch } from "./brand-search";
+import type { SearchEntry } from "@/lib/data/search-index";
 import { CATEGORY_BY_SLUG, type CategorySlug } from "@/lib/generated/categories";
 
 /**
@@ -22,9 +24,11 @@ import { CATEGORY_BY_SLUG, type CategorySlug } from "@/lib/generated/categories"
 export function IndexBoard({
   data,
   initialScope,
+  search,
 }: {
   data: BoardData;
   initialScope: Scope;
+  search: SearchEntry[];
 }) {
   const [scope, setScope] = useState<Scope>(initialScope);
   const [view, setView] = useState<BoardView>("boards");
@@ -47,6 +51,7 @@ export function IndexBoard({
       <div className="bleed controls-band">
         <div className="board-controls">
           <CategorySelect value={scope} onChange={changeScope} />
+          <BrandSearch index={search} />
           <ViewSwitcher value={view} onChange={setView} />
         </div>
       </div>

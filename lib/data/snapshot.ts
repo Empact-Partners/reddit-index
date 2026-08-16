@@ -53,7 +53,37 @@ export function getSnapshot(): Promise<Snapshot> {
   return (snapshotPromise ??= loadSnapshot());
 }
 
+/**
+ * Retry the whole snapshot fetch on a transport failure.
+ *
+ * `next build` prerenders in several worker processes and each runs this
+ * query; the Supabase TRANSACTION pooler drops a connection under that load
+ * and the build dies at 90% on an arbitrary page (CONNECTION_CLOSED on
+ * /customshow one run, /big-agi the next — a different page each time, which
+ * is the signature of load rather than of bad data). The query is a pure
+ * read, so retrying it is free and safe.
+ */
+async function withRetry<T>(fn: () => Promise<T>, tries = 4): Promise<T> {
+  let last: unknown;
+  for (let i = 0; i < tries; i++) {
+    try {
+      return await fn();
+    } catch (e) {
+      last = e;
+      const msg = String((e as { message?: string })?.message ?? e);
+      const transient = /CONNECTION_CLOSED|ECONNRESET|ETIMEDOUT|socket|terminat|statement timeout|57014/i.test(msg);
+      if (!transient || i === tries - 1) throw e;
+      await new Promise((r) => setTimeout(r, 1500 * 2 ** i));
+    }
+  }
+  throw last;
+}
+
 async function loadSnapshot(): Promise<Snapshot> {
+  return withRetry(() => loadSnapshotOnce());
+}
+
+async function loadSnapshotOnce(): Promise<Snapshot> {
   const t0 = Date.now();
   const s = db();
 
@@ -77,14 +107,22 @@ async function loadSnapshot(): Promise<Snapshot> {
     // each, which stopped fitting inside the statement timeout once the
     // depth sweep pushed the table past ~200k rows (the build failed on
     // /jamf-pro with 57014). The lateral walks the (brand_id, created_utc
-    // desc) index and touches at most 2000 rows per brand. Same result set.
+    // desc) index and touches at most `limit` rows per brand.
+    //
+    // The rail is 250, cut from 500 when the corpus reached 373k mentions and
+    // 57014 came back — this time on /project-management, and only in the
+    // SECOND build worker, i.e. when two copies of this query overlap. The
+    // dashboard paginates ten cards a page, so 250 is twenty-five pages of
+    // mentions per company: far past anything a reader scrolls, and the stat
+    // tiles and subreddit ledger below are computed from the full-table
+    // aggregate query, not from this rail.
     s`select t.*, b.slug as brand_slug, b.name as brand_name, sr.name as subreddit
       from published.brands b
       cross join lateral (
         select m.* from published.mentions m
         where m.brand_id = b.id
         order by m.created_utc desc
-        limit 500
+        limit 250
       ) t
       join published.subreddits sr on sr.id = t.subreddit_id`,
     // The dashboard aggregates: TRUE totals over the whole table, per

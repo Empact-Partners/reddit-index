@@ -23,23 +23,29 @@ describe("consolidate", () => {
     ]);
   });
 
-  it("caps at 200 by keeping BOTH ends, never the top 200", () => {
-    const rows = Array.from({ length: 250 }, (_, i) => row(i, 250 - i));
+  // Owner's call 2026-08-16: the full list hides nothing. LIST_CAP is
+  // Infinity, so consolidate returns every row in scope, ordered.
+  it("returns EVERY row, most loved first — the list is uncapped", () => {
+    const rows = Array.from({ length: 3000 }, (_, i) => row(i, 3000 - i));
     const out = consolidate(rows);
-    expect(out).toHaveLength(LIST_CAP);
-    expect(out[0]?.score).toBe(250);        // the most loved survives
-    expect(out[LIST_CAP - 1]?.score).toBe(1); // the most hated survives
+    expect(out).toHaveLength(3000);
+    expect(out[0]?.score).toBe(3000);          // most loved first
+    expect(out[out.length - 1]?.score).toBe(1); // most hated last
   });
 
-  it("returns everything when N <= 200", () => {
+  it("keeps both ends if a cap is ever reintroduced", () => {
+    expect(LIST_CAP).toBe(Number.POSITIVE_INFINITY);
+  });
+
+  it("returns everything for a small scope", () => {
     const rows = Array.from({ length: 150 }, (_, i) => row(i, i));
     expect(consolidate(rows)).toHaveLength(150);
   });
 });
 
 describe("splitScope", () => {
-  it("splits 200 rows into disjoint 100/100 with hated reversed", () => {
-    const rows = Array.from({ length: 200 }, (_, i) => row(i, 200 - i));
+  it("splits 1000 rows into disjoint 500/500 with hated reversed", () => {
+    const rows = Array.from({ length: 2 * PER_LIST }, (_, i) => row(i, 2 * PER_LIST - i));
     const { loved, hated } = splitScope(rows);
     expect(loved).toHaveLength(PER_LIST);
     expect(hated).toHaveLength(PER_LIST);
@@ -80,7 +86,7 @@ describe("IndexBoard", () => {
   it("renders the initial scope's rows synchronously — no effect needed", () => {
     // "use client" still SSRs: what this render shows without any effect
     // running is exactly what the prerendered HTML carries.
-    const { container } = render(<IndexBoard data={data} initialScope="all" />);
+    const { container } = render(<IndexBoard data={data} initialScope="all" search={[]} />);
     const t = container.textContent ?? "";
     expect(t).toContain("Most Loved");
     expect(t).toContain("Most Hated");
@@ -89,7 +95,7 @@ describe("IndexBoard", () => {
   });
 
   it("links brands to /{slug}/", () => {
-    const { container } = render(<IndexBoard data={data} initialScope="all" />);
+    const { container } = render(<IndexBoard data={data} initialScope="all" search={[]} />);
     // Unit renders bypass next.config's trailingSlash rewrite, so accept both
     // forms here; the slugs gate asserts the built shape.
     const hrefs = [...container.querySelectorAll("tbody a")].map((a) => a.getAttribute("href"));
@@ -98,7 +104,7 @@ describe("IndexBoard", () => {
 
   it("renders a category page's scope preselected", () => {
     const { container } = render(
-      <IndexBoard data={data} initialScope={"crm" as CategorySlug} />,
+      <IndexBoard data={data} initialScope={"crm" as CategorySlug} search={[]} />,
     );
     expect(container.textContent).toContain("Brand 4");
     expect(container.textContent).not.toContain("Brand 1");
@@ -106,7 +112,7 @@ describe("IndexBoard", () => {
 
   it("shows the quiet empty state for a scope with no rows", () => {
     const { container } = render(
-      <IndexBoard data={{ all: { rows: [], total: 0 } }} initialScope="all" />,
+      <IndexBoard data={{ all: { rows: [], total: 0 } }} initialScope="all" search={[]} />,
     );
     expect(container.textContent).toContain("No scored brands");
   });

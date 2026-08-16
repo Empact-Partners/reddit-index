@@ -9,6 +9,20 @@ const nextConfig: NextConfig = {
   // shape outright; this is the cheapest place to enforce it.
   typedRoutes: true,
   reactStrictMode: true,
+  // The snapshot is memoised PER PROCESS, and Next prerenders in several
+  // worker processes, so the first page each worker touches pays the whole
+  // corpus query. At 345k labelled mentions that first page exceeds the 60s
+  // default and the build fails on pages that are individually trivial
+  // (/tidio, /tilda...). The pages are not slow; the one-time fetch behind
+  // them is. Every later page in that worker is served from the memo.
+  staticPageGenerationTimeout: 300,
+  // ...and cap the worker count for the same reason. Each worker opens its
+  // own connection to the Supabase TRANSACTION pooler and runs the full
+  // corpus query; at default parallelism the pooler drops connections
+  // mid-query (CONNECTION_CLOSED on /customshow, /big-agi — different pages
+  // each run, which is the signature of load, not of a bad page). Fewer
+  // workers is strictly faster here than retrying a build that dies at 90%.
+  experimental: { cpus: 2 },
   outputFileTracingExcludes: { "*": ["worker/**", "data/**", "supabase/**"] },
   async headers() {
     // Three independent noindex layers because they fail differently: a header,

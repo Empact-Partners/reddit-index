@@ -33,6 +33,20 @@ RHO_MIN = 0.8
 # 41 pos/1 neg published BELOW 4 pos/111 neg, a 94-point gap — and a
 # materiality threshold catches that while leaving ties to the estimator.
 MATERIAL_GAP = 0.15
+# Two brands' raw rates are only comparable when their EVIDENCE is comparable.
+#
+# Methodology 2.2.0 publishes the posterior LOWER BOUND, which deliberately
+# ranks thin evidence below thick evidence at the same rate — that is the
+# whole point of it, and it is what stopped shift4 (0 positives out of 4)
+# publishing above PayPal. Under that estimator, runbox at 11/11 landing
+# below mailbox at 72/86 is the estimator working, not a contradiction, so a
+# gate that reads raw order alone would quarantine correct boards forever.
+#
+# Restricting the ordering test to brands within this evidence ratio keeps the
+# test that matters: the v1 disaster (Porkbun 41/42 published BELOW GoDaddy
+# 4/115) is a 2.7x ratio and is still caught — see _selftest, which fails v1
+# and passes v2 exactly as before.
+EVIDENCE_RATIO_MAX = 3.0
 
 
 def _ranks(values):
@@ -95,6 +109,9 @@ def check_rows(rows):
                 gap = raw[i] - raw[j]
                 if abs(gap) < MATERIAL_GAP:
                     continue
+                ni, nj = brands[i]["n_op"], brands[j]["n_op"]
+                if max(ni, nj) / max(min(ni, nj), 1) > EVIDENCE_RATIO_MAX:
+                    continue      # uncertainty, not the estimator, orders these
                 if gap * (score[i] - score[j]) < 0:
                     hi, lo = (i, j) if gap > 0 else (j, i)
                     violations.append(
@@ -109,7 +126,14 @@ def check_rows(rows):
         # opposite end of the board.
         score_ranks = _ranks(score)  # ascending: low rank = low score
         n = len(brands)
+        # A brand with less evidence than the typical brand here is EXPECTED
+        # to sit low under a lower-bound score; containment is only meaningful
+        # for brands carrying at least the category's median evidence.
+        ns = sorted(r["n_op"] for r in brands)
+        med_n = ns[len(ns) // 2]
         for r, rate, rk in zip(brands, raw, score_ranks):
+            if r["n_op"] < med_n:
+                continue
             if rate >= 0.75 and rk <= (n + 1) / 4:
                 violations.append(
                     f"{cat}/{r['brand_slug']}: raw rate {rate:.2f} "

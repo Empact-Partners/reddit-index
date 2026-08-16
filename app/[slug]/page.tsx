@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { getRegistry } from "@/lib/routing";
 import { getSnapshot } from "@/lib/data/snapshot";
 import { buildBoards } from "@/lib/data/boards";
+import { buildSearchIndex } from "@/lib/data/search-index";
 import { IndexPage } from "@/components/pages/index-page";
 import { CompanyPage } from "@/components/pages/company-page";
 import { CATEGORY_BY_SLUG, type CategorySlug } from "@/lib/generated/categories";
@@ -77,7 +78,7 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
   if (hit?.tier === "category") {
     // The same board as the homepage, preselected — ONE experience, not a
     // second page design. The dropdown swaps scope in place from here too.
-    return <IndexPage data={buildBoards(snap)} scope={slug as CategorySlug} />;
+    return <IndexPage data={buildBoards(snap)} scope={slug as CategorySlug} search={buildSearchIndex(snap)} />;
   }
 
   if (hit?.tier === "company") {

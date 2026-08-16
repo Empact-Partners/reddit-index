@@ -80,6 +80,69 @@ def fit_prior_pooled(brand_counts, exclude_slug):
     return PRIOR_K * p0, PRIOR_K * (1 - p0), on < PRIOR_POOL_MIN
 
 
+SCORE_QUANTILE = 0.10       # the published score is this posterior quantile
+
+
+def _betacf(a, b, x, itmax=200, eps=3e-14):
+    """Continued fraction for the incomplete beta (Numerical Recipes §6.4)."""
+    qab, qap, qam = a + b, a + 1.0, a - 1.0
+    c, d = 1.0, 1.0 - qab * x / qap
+    if abs(d) < 1e-300:
+        d = 1e-300
+    d = 1.0 / d
+    h = d
+    for m in range(1, itmax + 1):
+        m2 = 2 * m
+        aa = m * (b - m) * x / ((qam + m2) * (a + m2))
+        d = 1.0 + aa * d
+        if abs(d) < 1e-300:
+            d = 1e-300
+        c = 1.0 + aa / c
+        if abs(c) < 1e-300:
+            c = 1e-300
+        d = 1.0 / d
+        h *= d * c
+        aa = -(a + m) * (qab + m) * x / ((a + m2) * (qap + m2))
+        d = 1.0 + aa * d
+        if abs(d) < 1e-300:
+            d = 1e-300
+        c = 1.0 + aa / c
+        if abs(c) < 1e-300:
+            c = 1e-300
+        d = 1.0 / d
+        delta = d * c
+        h *= delta
+        if abs(delta - 1.0) < eps:
+            break
+    return h
+
+
+def betainc(a, b, x):
+    """Regularised incomplete beta I_x(a,b) — the Beta CDF."""
+    if x <= 0:
+        return 0.0
+    if x >= 1:
+        return 1.0
+    lbeta = (math.lgamma(a + b) - math.lgamma(a) - math.lgamma(b)
+             + a * math.log(x) + b * math.log(1.0 - x))
+    if x < (a + 1.0) / (a + b + 2.0):
+        return math.exp(lbeta) * _betacf(a, b, x) / a
+    return 1.0 - math.exp(lbeta) * _betacf(b, a, 1.0 - x) / b
+
+
+def beta_quantile(a, b, q):
+    """Inverse Beta CDF by bisection. No scipy on this box, and the score
+    must be reproducible, so this is deterministic rather than sampled."""
+    lo, hi = 0.0, 1.0
+    for _ in range(100):
+        mid = (lo + hi) / 2.0
+        if betainc(a, b, mid) < q:
+            lo = mid
+        else:
+            hi = mid
+    return (lo + hi) / 2.0
+
+
 # ── ICC and DEFF ────────────────────────────────────────────────────────────
 
 def compute_icc(y, cluster_ids):
@@ -260,8 +323,33 @@ def score_category(cat_slug, mentions, categories):
         # The score
         alpha0, beta0, prior_fallback = fit_prior_pooled(brand_counts, slug)
         if n_op > 0:
-            p_tilde = (pos + alpha0) / (n_op + alpha0 + beta0)
-            score = round(100 * p_tilde)
+            # 2.2.0 — the published score is the posterior LOWER BOUND, not the
+            # posterior mean.
+            #
+            # The mean let thin evidence float upward: shrinkage pulls a brand
+            # with almost no data toward the category average, so shift4 with
+            # ZERO positives out of 4 published 40 while PayPal, 25% positive
+            # over 72 opinions, published 29. Three categories were quarantined
+            # by the calibration gate for exactly this, and every violation it
+            # named was a sub-10-opinion brand leapfrogging a well-evidenced
+            # one. The mean answers "our best guess at this brand's rate";
+            # ranking needs "the rate we can actually stand behind", which is
+            # what the lower bound answers. Sparse evidence now costs a brand
+            # position instead of buying it one — and it is monotonic in both
+            # rate and evidence, so this class of inversion cannot recur.
+            #
+            # NOT deff-deflated. Deflating the counts first was tried and
+            # rejected on measurement: it quarantined 20 categories, because
+            # deff varies per brand for reasons unrelated to sentiment, so
+            # dividing by it reorders brands on clustering rather than on
+            # opinion — inmotion-hosting at 55/58 landed BELOW racknerd at
+            # 64/84. Clustering is already handled where it belongs: n_eff
+            # gates eligibility and the cluster bootstrap sets the published
+            # interval. Applying it a third time inside the point estimate
+            # double-counts it.
+            p_tilde = (pos + alpha0) / (n_op + alpha0 + beta0)   # kept, published as evidence
+            score = round(100 * beta_quantile(pos + alpha0, neg + beta0,
+                                              SCORE_QUANTILE))
             polarization = 2 * min(pos, neg) / n_op if n_op > 0 else None
         else:
             p_tilde = None
@@ -296,7 +384,7 @@ def score_category(cat_slug, mentions, categories):
             "failed_required": failed_required,
             "window_start": window_start,
             "window_end": now,
-            "methodology_version": "2.1.0",
+            "methodology_version": "2.2.0",
         })
 
     # Rank by score descending

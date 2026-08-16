@@ -16,10 +16,22 @@ import { consolidate, type BoardData, type BoardRow, type Scope } from "./board-
 export const THRESHOLD_FLOOR = 3;
 /** …nor demands more than this, however loud the category is. */
 export const THRESHOLD_CEIL = 30;
-/** The pooled boards call a brand most-loved/most-hated ACROSS the whole
- *  index — that claim needs more than three annoyed comments
- *  (docs/methodology-review.md §2). */
-const MIN_N_OP_POOLED = 10;
+/**
+ * Owner's call, 2026-08-16: every scored company appears, on every board.
+ *
+ * This bar was 10 opinionated mentions for the pooled board, and the
+ * per-category median for the category boards. Together they hid most of the
+ * index: 793 of ~3,000 companies on the home list, 34 of 67 on /web-hosting.
+ *
+ * They are safe to drop BECAUSE of methodology 2.2.0. The bars existed to
+ * stop thin evidence ranking high — under the old posterior MEAN a brand
+ * with four opinions was pulled up toward the category average (shift4, 0
+ * positives out of 4, published 40 above PayPal). The published score is now
+ * the posterior LOWER BOUND, which moves the other way: thin evidence lands
+ * low on its own, so a company can be listed without being flattered. The
+ * threshold is still computed and still published as evidence on the page.
+ */
+const MIN_N_OP_POOLED = 1;
 
 /**
  * Each category's own bar, derived from its own evidence.
@@ -57,8 +69,10 @@ export function buildBoards(snap: Snapshot): BoardData {
   const thresholds = buildThresholds(snap);
   const floored = snap.categories
     .flatMap((c) => c.scores)
-    .filter((s) => s.redditLoveScore !== null
-      && s.nOp >= (thresholds.get(s.categorySlug) ?? THRESHOLD_FLOOR));
+    // one opinionated mention is enough to be LISTED; the lower-bound score
+    // decides where. See MIN_N_OP_POOLED above for why this is no longer the
+    // safety mechanism it once was.
+    .filter((s) => s.redditLoveScore !== null && s.nOp >= 1);
 
   const data: BoardData = {};
 
