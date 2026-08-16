@@ -209,6 +209,9 @@ async function loadSnapshot(): Promise<Snapshot> {
       slug,
       name: String(b.name),
       primaryCategorySlug: (primary?.slug ?? null) as CategorySlug | null,
+      primaryThreshold: primary
+        ? (categories.find((c) => c.slug === primary.slug)?.threshold ?? 3)
+        : 3,
       scores: mine,
       mentions: [],
       totalMentions: agg.pos + agg.neg + agg.neu,

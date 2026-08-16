@@ -16,8 +16,15 @@ export function CompanyPage({ company }: { company: CompanyView }) {
   const primary = company.primaryCategorySlug
     ? CATEGORY_BY_SLUG[company.primaryCategorySlug]
     : null;
-  const primaryScore = primary
-    ? company.scores.find((s) => s.categorySlug === primary.slug)?.redditLoveScore ?? null
+  // Apply the SAME bar the boards apply. Without it a company page published
+  // a Reddit Love Score off one or two opinionated mentions — 507 brands were
+  // doing so, and a page whose single opinion is negative outranked nothing
+  // while still showing a number a reader would take at face value.
+  const primaryRow = primary
+    ? company.scores.find((s) => s.categorySlug === primary.slug)
+    : undefined;
+  const primaryScore = primaryRow && primaryRow.nOp >= company.primaryThreshold
+    ? primaryRow.redditLoveScore
     : null;
 
   return (

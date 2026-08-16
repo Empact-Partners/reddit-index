@@ -106,6 +106,9 @@ export type CompanyView = {
   slug: string;
   name: string;
   primaryCategorySlug: CategorySlug | null;
+  /** The primary category's ranking threshold, so the page applies the same
+   *  bar as the boards instead of publishing a score off one comment. */
+  primaryThreshold: number;
   scores: BrandScore[];
   mentions: Mention[];
   /** TRUE full mention count from the aggregates, not the score-window n. */
