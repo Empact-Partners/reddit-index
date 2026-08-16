@@ -29,10 +29,16 @@ UID = os.getuid()
 STALL_MIN = 45.0        # ~40x the healthy write interval
 GRACE_MIN = 10.0        # don't judge a lane we just restarted
 
-# lane -> directories whose newest mtime proves the lane is doing work
+# lane -> directories whose newest mtime proves the lane is doing work.
+#
+# The classifier is deliberately NOT here. Watching its cache directory is
+# what let a ten-hour stall pass unnoticed: a NUL byte blocked every DB
+# commit while the fleet kept running, and .codex_stderr.log kept being
+# written, so "files are fresh" stayed true while committed labels stayed
+# frozen at 8,799. A lane's liveness signal has to be its OUTPUT, not its
+# exhaust — for the classifier that is rows landing in Postgres.
 SIGNALS = {
     "collector": [".cache/sweep"],
-    "classifier": [".cache/sentiment", ".cache/codex-absa"],
 }
 LAST_ACTION = os.path.join(HERE, ".cache", "depth", "watchdog.json")
 
@@ -108,6 +114,57 @@ def record(lane):
     os.replace(LAST_ACTION + ".tmp", LAST_ACTION)
 
 
+def label_count():
+    """Committed labels — the classifier's only honest progress signal."""
+    sys.path.insert(0, HERE)
+    import db
+    state = {"conn": db.connect()}
+
+    def _q(c):
+        with c.cursor() as cur:
+            cur.execute("SELECT count(*)::int FROM mention_sentiment")
+            return cur.fetchone()[0]
+    try:
+        return db.run(state, _q, label="watchdog count")
+    finally:
+        try:
+            state["conn"].close()
+        except Exception:
+            pass
+
+
+def classifier_stalled():
+    """True when committed labels have not moved for longer than STALL_MIN.
+
+    Returns (stalled, message). Any DB trouble reports NOT stalled — a
+    watchdog that restarts lanes because it could not reach Postgres is
+    worse than one that waits for the next tick.
+    """
+    import json
+    try:
+        n = label_count()
+    except Exception as e:
+        return False, f"cannot read label count ({str(e)[:60]}) — no action"
+    try:
+        st = json.load(open(LAST_ACTION))
+    except Exception:
+        st = {}
+    prev = st.get("labels")
+    now = time.time()
+    if not prev or n > prev.get("n", -1):
+        st["labels"] = {"n": n, "t": now}
+        os.makedirs(os.path.dirname(LAST_ACTION), exist_ok=True)
+        with open(LAST_ACTION + ".tmp", "w") as f:
+            json.dump(st, f)
+        os.replace(LAST_ACTION + ".tmp", LAST_ACTION)
+        moved = n - prev["n"] if prev else 0
+        return False, f"healthy, {n:,} labels (+{moved:,} since last check)"
+    idle = (now - prev.get("t", now)) / 60.0
+    if idle > STALL_MIN:
+        return True, f"STALLED — {n:,} labels, unchanged for {idle:.0f} min"
+    return False, f"{n:,} labels, unchanged for {idle:.0f} min (limit {STALL_MIN:.0f})"
+
+
 def keepawake_ok():
     """Is SOMETHING holding the idle-sleep assertion right now?"""
     r = subprocess.run(["pmset", "-g", "assertions"], capture_output=True, text=True)
@@ -143,6 +200,16 @@ def check(dry):
                 acted = True
         else:
             log(f"{lane}: healthy, last write {shown} ago")
+
+    # the classifier is judged on committed rows, never on file activity
+    if recently_acted("classifier"):
+        log("classifier: in restart grace period, skipping stall check")
+    else:
+        stalled, msg = classifier_stalled()
+        log(f"classifier: {msg}")
+        if stalled and kickstart("classifier", dry):
+            record("classifier")
+            acted = True
 
     if not keepawake_ok():
         log("no idle-sleep assertion held — restarting keepawake")

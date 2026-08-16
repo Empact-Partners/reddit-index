@@ -60,6 +60,21 @@ JOB_TIMEOUT = 900   # was 420: jobs exceed it whenever the box is busy, and a
 STALE_AFTER = JOB_TIMEOUT + 180  # no out-file by now => the job died
 COMMIT_EVERY = 500         # labels
 COMMIT_SECS = 30
+
+
+def pg_text(v, limit):
+    """Model-authored text, made safe for a Postgres text column.
+
+    A single NUL byte in one model's evidence span cost ~10 hours: psycopg
+    rejects the whole executemany, the batch was requeued whole, and the same
+    poison row killed every retry forever while the fleet kept judging. Text
+    that came out of a model is untrusted input to the DB and gets cleaned
+    here, at the one place every row is built.
+    """
+    s = str(v or "")
+    if "\x00" in s:
+        s = s.replace("\x00", "")
+    return s[:limit]
 READY_LOW = 20             # keep at least this many batches pre-cut
 SUBMIT_STAGGER = 1.0       # seconds between submits inside one burst
 MAX_ATTEMPTS = 3
@@ -354,7 +369,7 @@ class Daemon:
                              float(r.get("intensity") or 0), float(r.get("confidence") or 0),
                              STAGE_LLM, bool(r.get("comparative")),
                              bool(r.get("recommendation")), bool(r.get("category_gripe")),
-                             str(r.get("evidence") or "")[:300], it["brand_slug"]))
+                             pg_text(r.get("evidence"), 300), it["brand_slug"]))
             with self.lock:
                 self.pending_labels.extend(rows)
                 self.inflight.pop(bid, None)
@@ -413,9 +428,40 @@ class Daemon:
             with self.lock:
                 self.n_committed += len(rows)
         except Exception as e:
-            print(f"  commit failed ({str(e)[:90]}) — requeued", flush=True)
+            # A batch insert is all-or-nothing, so ONE malformed row blocks
+            # every good row behind it — forever, since we requeue and retry.
+            # Fall back to row-at-a-time: the good rows land and only the
+            # genuinely bad one is dropped, named in the log.
+            print(f"  batch commit failed ({str(e)[:90]}) — isolating bad rows",
+                  flush=True)
+            good = bad = 0
+
+            def _ins_one(c, row=None):
+                with c.cursor() as cur:
+                    cur.execute("""
+                        INSERT INTO mention_sentiment (doc_id, brand_id, model_version,
+                            label, intensity, conf, stage, is_comparative,
+                            is_recommendation, is_category_gripe, evidence_span)
+                        SELECT %s, b.id, %s, %s, %s, %s, %s, %s, %s, %s, %s
+                        FROM brands b WHERE b.slug = %s
+                        ON CONFLICT (doc_id, brand_id, model_version) DO NOTHING
+                    """, row)
+                    c.commit()
+
+            for row in rows:
+                try:
+                    with self.db_lock:
+                        db.run(self.state, lambda c, r=row: _ins_one(c, r),
+                               label="commit label")
+                    good += 1
+                except Exception as re:
+                    bad += 1
+                    if bad <= 3:
+                        print(f"    dropped doc_id={row[0]} brand={row[-1]}: "
+                              f"{str(re)[:70]}", flush=True)
+            print(f"  isolated: {good} committed, {bad} dropped", flush=True)
             with self.lock:
-                self.pending_labels.extend(rows)
+                self.n_committed += good
 
     def report(self):
         while not _stop.is_set():
