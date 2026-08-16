@@ -6,7 +6,7 @@
   <key>ProgramArguments</key>
   <array>
     <string>/usr/bin/caffeinate</string><string>-is</string>
-    <string>/usr/bin/python3</string><string>-u</string>
+    <string>/opt/homebrew/bin/python3</string><string>-u</string>
     <string>/Users/vladshvets/Projects/reddit-index/worker/collector.py</string>
   </array>
   <key>WorkingDirectory</key><string>/Users/vladshvets/Projects/reddit-index</string>
