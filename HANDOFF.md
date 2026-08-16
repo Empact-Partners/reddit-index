@@ -1,5 +1,68 @@
 # Handoff — open items
 
+## 2026-08-16 — RUN COMPLETE: full corpus collected, classified, scored, published
+
+**Final state (live at redditindex.com, still noindex):**
+
+| | |
+|---|---|
+| Core subreddits swept | 527 / 527 (100%) |
+| Threads | 187,303 |
+| Mentions | 373,538 across 2,005 subreddits |
+| Labelled | 344,917 (92% of mentions; the rest are entity-rejected and owed no row) |
+| Score rows | 3,980 |
+| Companies ranked | 3,081 across 100 categories |
+| Categories quarantined | 3 (email-providers, etl, payment-processing) |
+
+**Labels by model:**
+- `claude-cli-absa-1`: 229,097
+- `deepseek-v4-flash-absa-1`: 114,705
+- `haiku-4.5-absa-1`: 1,115
+
+**The classification lane was rebuilt.** `codex exec` is not an API call, it
+is an agent session, and our prompt additionally made it WRITE A FILE — a
+second tool round trip. Measured on one identical 40-item batch: codex >600s
+(timed out), `claude -p` haiku 108s, deepseek-v4-flash 84s, anthropic API
+haiku 21s. All three non-codex paths agreed with codex's own labels 34/40 =
+85% and produced the IDENTICAL label distribution, so n_op and pos/(pos+neg)
+are unchanged.
+
+`worker/classify_api.py` replaced it: provider pools over a shared backlog
+cursor. 153,748 items in 112 minutes at ~1,100 items/min (codex managed
+~160/min) for **$27.22** of DeepSeek credit, zero truncations in 1,307
+batches. `worker/bench_deepseek.py` grades any config before it is trusted
+(completeness, schema, agreement, truncation, distribution).
+
+**Four traps paid for, now encoded in the code:**
+1. **One NUL byte stopped every commit for ~10 hours.** psycopg rejects the
+   whole executemany; we requeued the batch whole, so the same poison row
+   killed every retry while the fleet kept spending. Fix: `pg_text()` strips
+   NUL where rows are built, plus per-row commit isolation. `backfill_labels.py`
+   recovered the 75,443 stranded labels with zero re-spend — necessary because
+   the daemon loads its cache as `known` on startup and would have skipped
+   them forever.
+2. **The watchdog watched the wrong signal.** It checked for file writes in
+   the classifier's cache dir; `.codex_stderr.log` kept ticking throughout the
+   stall. It now watches committed rows in Postgres. A lane's liveness signal
+   must be its output, not its exhaust.
+3. **Concurrency is not bounded by RAM.** 100 concurrent codex looked safe
+   (119 procs, 1.8 GB, stable swap) and returned ZERO batches in 13 minutes:
+   the cost is kernel scheduling per local process. Anything spawning a local
+   process per batch competes with the laptop; HTTP lanes do not.
+4. **max_tokens must scale with batch size.** A fixed 16k cap truncates any
+   deepseek batch past ~40 items, and a truncated response is billed in full
+   while parsing to nothing.
+
+**Also:** Spotlight was indexing 189,713 cache files at 50% CPU — the actual
+cause of a machine-wide slowdown blamed on the classifier. `.metadata_never_index`
+now sits in `worker/.cache`, and the 73,954-file response-cache buckets (8.6 GB,
+written with use_cache=False and never read back) were deleted; sweep STATE
+files were verified intact before and after.
+
+**Open:** the 3 quarantined categories keep last-good numbers and want a look;
+the deferred neutral/abstain re-label (10% real loss, recorded 2026-08-15) is
+still outstanding and is now cheap to run through `classify_api.py`.
+
 ## 2026-08-12 — methodology 2.0.0: the prior was broken, now fixed + gated
 
 **The v1 prior inverted rankings.** Brand-rate method-of-moments over brands
