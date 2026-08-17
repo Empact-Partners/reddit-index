@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key><string>com.reddit-index.backfill-posts</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/opt/homebrew/bin/python3</string><string>-u</string>
+    <string>/Users/vladshvets/Projects/reddit-index/worker/backfill_posts.py</string>
+  </array>
+
+  <!-- A ONE-OFF recovery, run by launchd only so that a closed laptop delays it
+       instead of ending it. The script resumes from an ingest_state watermark,
+       so a restart costs at most one batch; when it reaches the end it writes
+       worker/.cache/backfill_posts.done and every later start exits in one
+       query. Unload it once that file exists:
+         launchctl bootout gui/$(id -u)/com.reddit-index.backfill-posts -->
+  <key>KeepAlive</key><true/>
+  <key>ThrottleInterval</key><integer>1800</integer>
+  <key>RunAtLoad</key><true/>
+  <key>WorkingDirectory</key><string>/Users/vladshvets/Projects/reddit-index</string>
+  <key>StandardOutPath</key><string>/tmp/ri-backfill-posts.log</string>
+  <key>StandardErrorPath</key><string>/tmp/ri-backfill-posts.log</string>
+  <key>EnvironmentVariables</key>
+  <dict><key>PATH</key><string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin</string></dict>
+</dict>
+</plist>

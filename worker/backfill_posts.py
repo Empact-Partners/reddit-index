@@ -47,11 +47,13 @@ REPO = os.path.dirname(HERE)
 sys.path.insert(0, HERE)
 
 import db  # noqa: E402
+import leases  # noqa: E402
 import reddit_client as rc  # noqa: E402
 from harvest import post_doc  # noqa: E402
 from resolve import Resolver  # noqa: E402
 
 CODE_VERSION = "backfill-posts-v1"
+DONE_FP = os.path.join(HERE, ".cache", "backfill_posts.done")
 SCOPE = "_backfill_posts"
 BATCH = 100                      # /api/info's hard ceiling
 RUN_ID = str(uuid.uuid4())
@@ -122,6 +124,20 @@ def main():
     ap.add_argument("--restart", action="store_true", help="ignore the stored watermark")
     ap.add_argument("--dry-run", action="store_true", help="resolve and count, write nothing")
     args = ap.parse_args()
+
+    # A one-off recovery that must survive a closed laptop: launchd keeps
+    # restarting it until it finishes, and this sentinel is what makes each
+    # restart free once it has.
+    if os.path.exists(DONE_FP) and not args.restart:
+        print(f"already complete ({open(DONE_FP).read().strip()}) — nothing to do")
+        return 0
+
+    # One backfill at a time: launchd's KeepAlive and a hand-started run must
+    # not both walk the same watermark. flock, so a kill frees it immediately.
+    lane = leases.Lease("backfill_posts")
+    if not lane.acquire():
+        print("another backfill holds the lane — exiting")
+        return 0
 
     resolver = Resolver()
     conn = db.connect()
@@ -222,7 +238,14 @@ def main():
         if args.limit and seen >= args.limit:
             break
 
+    finished = not args.limit and not args.dry_run
     conn.close()
+    lane.release()
+    if finished:
+        os.makedirs(os.path.dirname(DONE_FP), exist_ok=True)
+        with open(DONE_FP, "w") as f:
+            f.write(f"completed {time.strftime('%Y-%m-%d %H:%M:%S')} — "
+                    f"{seen:,} threads re-read, +{inserted:,} post mentions")
     el = max((time.time() - t0) / 60, 0.01)
     print(f"\nDONE — {seen:,} threads re-read in {el:.1f} min: "
           f"+{inserted:,} post mentions, {repaired:,} bodies repaired, "
