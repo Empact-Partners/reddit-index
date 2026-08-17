@@ -124,7 +124,7 @@ export type CompanyView = {
   /** ISO date of the OLDEST mention held for this company, so "oldest" on the
    *  page can be honest about being the oldest SHOWN. */
   oldestMention: string | null;
-  /** How many mentions the page actually carries (≤ 300: 200 comments + 100
+  /** How many mentions the page actually carries (≤ 120: 80 comments + 40
    *  posts, newest first). The gap to totalMentions is stated, not hidden. */
   railSize: number;
   subredditStats: SubredditStat[];

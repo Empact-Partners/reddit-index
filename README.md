@@ -142,7 +142,7 @@ pooled "All Categories" board demands that bar AND `n_op ≥ 10`, because rankin
 across the whole index is a bigger claim than ranking inside one category.
 
 **A company page shows a window of its mentions, and says so.** The rails are
-the 200 newest comments and the 100 newest posts per brand — two rails, one per
+the 80 newest comments and the 40 newest posts per brand — two rails, one per
 document type, because a single newest-N window left post-heavy brands with a
 Posts filter over noise. The stat tiles, the Posts/Comments filter counts and
 the subreddit ledger are computed over the WHOLE corpus, not over that window.

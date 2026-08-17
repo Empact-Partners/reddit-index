@@ -431,6 +431,24 @@ Loaded launchd jobs are exactly two: `com.reddit-index.daily` and
 `watchdog` and `keepawake` plists still sit in `worker/launchd/` and are not
 bootstrapped.
 
+### The site can be down while the database is perfect
+
+Every assertion above reads Postgres. On 2026-08-17 at 21:05 UTC the database
+was healthy and every request to redditindex.com came back `403` with
+`x-vercel-mitigated: challenge`: Vercel's automatic mitigation had switched
+itself on. Nobody configured it — the project's firewall config was empty the
+whole time and the firewall event log records it as `system-action` — and to a
+visitor it looks like the site is broken and slow.
+
+So the health lane ends by fetching the homepage from outside and asserting two
+things: `site_reachable` (HTTP 200, a real body) and `site_unchallenged` (no
+`x-vercel-mitigated` header). To clear it:
+
+```bash
+python3 scripts/attack-mode.py          # what is the site serving right now?
+python3 scripts/attack-mode.py --off    # clear the challenge, then re-probe
+```
+
 ## Deployment
 
 ### Railway (the fetch)

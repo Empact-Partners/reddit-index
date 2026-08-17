@@ -72,9 +72,11 @@ audit rather than by symptom:
 ### The site
 
 Company pages now separate the two kinds of evidence. The mention rail is **two
-rails** — the 200 newest comments and the 100 newest posts — because posts are a
-fifth of the corpus and cluster differently in time, so one newest-250 window
-left a brand with thousands of posts showing seventeen. A **Posts / Comments**
+rails** — the 80 newest comments and the 40 newest posts — because posts are a
+quarter of the corpus and cluster differently in time, so one newest-250 window
+left a brand with thousands of posts showing seventeen. (It shipped at 200 + 100
+and came straight back down: every mention in the rail is serialised into the
+page, which put /hubspot at 155 KB gzipped.) A **Posts / Comments**
 filter sits beside the sort, and its counts come from the whole corpus, not from
 the window. Three things the page now states instead of implying: that the list
 is a window ("Showing the N most recent of M mentions"), that the sort is

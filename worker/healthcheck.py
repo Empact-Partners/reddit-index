@@ -27,6 +27,8 @@ import datetime
 import json
 import os
 import sys
+import time
+import urllib.error
 import urllib.request
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -50,6 +52,47 @@ MAX_LABEL_AGE_H = 36          # hours since the classifier last committed
 BACKLOG_WARN = 60_000
 BACKLOG_FAIL = 250_000
 WINDOW_H = 36
+
+
+SITE = os.environ.get("NEXT_PUBLIC_SITE_URL", "https://redditindex.com") + "/"
+
+
+def site_check():
+    """What a VISITOR gets. Every other assertion here reads Postgres, and the
+    database was perfectly healthy on 2026-08-17 while the site answered every
+    request with a 403 challenge page: Vercel's automatic mitigation
+    (`x-vercel-mitigated: challenge`, logged as `system-action`) had switched
+    itself on, and nothing in this project could see it. Clear it with
+    `python3 scripts/attack-mode.py --off`.
+
+    Returns (name, ok, detail) tuples — reachability and speed, measured from
+    outside, because the honest question is not "is the data good" but "does
+    the page load".
+    """
+    req = urllib.request.Request(SITE, headers={
+        "User-Agent": "reddit-index-healthcheck/1 (+https://redditindex.com)"})
+    t0 = time.time()
+    try:
+        with urllib.request.urlopen(req, timeout=30) as r:
+            body = r.read()
+            hdrs = {k.lower(): v for k, v in r.headers.items()}
+            code = r.status
+    except urllib.error.HTTPError as e:
+        hdrs = {k.lower(): v for k, v in (e.headers or {}).items()}
+        body, code = b"", e.code
+    except Exception as e:
+        return [("site_reachable", False, f"{SITE} did not answer: {e}"),
+                ("site_unchallenged", False, "not reachable, so not measurable")]
+    ms = (time.time() - t0) * 1000
+    mitigated = hdrs.get("x-vercel-mitigated")
+    return [
+        ("site_reachable", code == 200 and len(body) > 5000,
+         f"HTTP {code}, {len(body):,} bytes, {ms:.0f} ms"),
+        ("site_unchallenged", not mitigated,
+         f"x-vercel-mitigated: {mitigated} — visitors are getting Vercel's "
+         f"interstitial; run scripts/attack-mode.py --off"
+         if mitigated else "no Vercel interstitial in front of the site"),
+    ]
 
 
 def q1(cur, sql, params=None):
@@ -169,6 +212,9 @@ def checks(conn):
         visible = q1(cur, "SELECT count(*) FROM published.mentions WHERE label IS NOT NULL")
         out.append(("labels_visible", (visible or 0) > 0,
                     f"{visible:,} labelled mentions reach the site"))
+
+    # Last, and from outside: the database can be perfect while the site is not.
+    out.extend(site_check())
     return out
 
 

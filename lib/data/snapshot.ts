@@ -96,42 +96,38 @@ async function loadSnapshotOnce(): Promise<Snapshot> {
       where week_start = (select max(week_start) from published.brand_category_scores)`,
     s`select cs.category_id, count(*)::int as n
       from published.category_subreddits cs where cs.is_scoring group by 1`,
-    // Newest first, 500 per brand. The dashboard paginates 10 per page, so
-    // 500 is fifty pages — far past what anyone scrolls. The old rail of 2000
-    // was set when the biggest brand had a few hundred mentions; at 158k
-    // mentions and climbing it pulled ~135k full comment bodies through the
-    // pooler in one statement and the build started dying with
-    // CONNECTION_CLOSED while the collector and classifier used the same
-    // instance. This is a build-memory and transport bound, not a display one.
-    // A LATERAL per brand, not a global window: row_number() over the whole
-    // table sorted every mention in the corpus to keep the newest 2000 of
-    // each, which stopped fitting inside the statement timeout once the
-    // depth sweep pushed the table past ~200k rows (the build failed on
-    // /jamf-pro with 57014). The lateral walks the (brand_id, created_utc
-    // desc) index and touches at most `limit` rows per brand.
+    // A LATERAL per brand, not a global window: `row_number()` over the whole
+    // table sorted every mention in the corpus to keep the newest N of each,
+    // which stopped fitting inside the statement timeout once the sweep pushed
+    // the table past ~200k rows (the build failed on /jamf-pro with 57014).
+    // The lateral walks the (brand_id, created_utc desc) index and touches at
+    // most `limit` rows per brand. The rail has been cut twice for the same
+    // reason — 2000 -> 500 -> 250 — each time because a bigger corpus made the
+    // same query a build-memory and transport problem, never a display one.
     //
-    // The rail is 250, cut from 500 when the corpus reached 373k mentions and
-    // 57014 came back — this time on /project-management, and only in the
-    // SECOND build worker, i.e. when two copies of this query overlap. The
-    // dashboard paginates ten cards a page, so 250 is twenty-five pages of
-    // mentions per company: far past anything a reader scrolls, and the stat
-    // tiles and subreddit ledger below are computed from the full-table
-    // aggregate query, not from this rail.
-    // TWO rails, one per document type, not one rail of 250 by recency.
-    // Posts are ~20% of the corpus and clustered differently in time, so a
-    // single newest-250 window left brands with 6,889 posts showing 17 of
-    // them — and a "Posts" filter over that is a filter over noise. A quota
-    // per type is what makes the filter mean something.
+    // TWO rails, one per document type, not one rail by recency. Posts are a
+    // quarter of the corpus and clustered differently in time, so a single
+    // newest-N window left brands with thousands of posts showing seventeen —
+    // and a "Posts" filter over that is a filter over noise. A quota per type
+    // is what makes the filter mean something.
+    //
+    // 80 + 40, not 200 + 100. EVERY mention in this rail is serialised into
+    // the page: the dashboard is a client island that paginates and filters
+    // without a fetch, so the full body of all of them ships to the browser.
+    // At 200 + 100 /hubspot was 155 KB gzipped and 529 KB on the wire. 120
+    // cards is twelve pages of ten, past anything a reader scrolls, and the
+    // stat tiles, the filter counts and the subreddit ledger are computed from
+    // the full-table aggregate below — they do not narrow when the rail does.
     s`select t.*, b.slug as brand_slug, b.name as brand_name, sr.name as subreddit
       from published.brands b
       cross join lateral (
         (select m.* from published.mentions m
           where m.brand_id = b.id and m.doc_type = 1
-          order by m.created_utc desc limit 200)
+          order by m.created_utc desc limit 80)
         union all
         (select m.* from published.mentions m
           where m.brand_id = b.id and m.doc_type = 2
-          order by m.created_utc desc limit 100)
+          order by m.created_utc desc limit 40)
       ) t
       join published.subreddits sr on sr.id = t.subreddit_id`,
     // The dashboard aggregates: TRUE totals over the whole table, per
@@ -312,9 +308,13 @@ async function loadSnapshotOnce(): Promise<Snapshot> {
       sentiment: SENTIMENT[Number(r.label ?? 3)] ?? "abstain",
       docType: Number(r.doc_type) === 2 ? "post_body" : "comment",
       matchedForm: String(r.matched_form ?? ""),
-      // The thread this document belongs to. On a post card it is the
-      // headline; on a comment card it is the question being answered.
-      threadTitle: titleByThread.get(String(r.thread_id ?? "")) || null,
+      // The thread this document belongs to — the question a COMMENT answers.
+      // Never sent for a post: a post's title is already the first line of its
+      // own body, the card ignores this field for posts, and every byte here
+      // ships to the browser inside the island's props.
+      threadTitle: Number(r.doc_type) === 2
+        ? null
+        : titleByThread.get(String(r.thread_id ?? "")) || null,
       body: String(r.body),
       permalink: String(r.permalink).startsWith("http")
         ? String(r.permalink)

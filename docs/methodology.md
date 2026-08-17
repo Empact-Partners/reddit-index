@@ -102,7 +102,7 @@ so on the page. Deeper daily data is the cure, not a lower bar.
 ## What a company page shows
 
 A board ranks; a company page displays, and the two count different things.
-The mention list on a company page is **the 200 newest comments and the 100
+The mention list on a company page is **the 80 newest comments and the 40
 newest posts** for that brand — two rails, one per document type, not a
 single newest-N by recency. One rail was tried and left brands holding
 thousands of posts showing seventeen of them, which makes a Posts filter a

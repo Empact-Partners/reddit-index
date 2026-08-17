@@ -114,9 +114,11 @@ a nice-to-have. Reddit's Developer Terms require deletions to propagate as soon
 as possible, and `decisions/0002` makes it a *condition* of displaying full
 comment text at all.
 
-**A company page shows a window, and says so.** Each page renders the 200 newest
-comments and the 100 newest posts for that brand — two separate rails, not one
-list of 300 by recency. Posts are about a quarter of the corpus and are clustered
+**A company page shows a window, and says so.** Each page renders the 80 newest
+comments and the 40 newest posts for that brand — two separate rails, not one
+list of 120 by recency. Every mention in that rail is serialised into the page,
+because the dashboard filters and paginates without a fetch, so the rail is
+sized by page weight and not by appetite. Posts are about a quarter of the corpus and are clustered
 differently in time, so a single newest-N window left brands with thousands of
 posts showing seventeen of them, and a Posts filter over that is a filter over
 noise. Every *count* on the page is computed from the whole corpus rather than
