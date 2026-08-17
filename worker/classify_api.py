@@ -345,9 +345,17 @@ def main():
     dblock = threading.Lock()
     backlog = Backlog(state)
 
+    # A SECOND signal is an order, not a request. The first sets _stop and lets
+    # in-flight batches land; that drain waits up to 900s for worker threads,
+    # and a thread blocked in subprocess.run() can outlive it — three SIGTERMed
+    # processes sat alive for 40 minutes holding the lease while doing nothing,
+    # which would have blocked the 04:30 chain from classifying at all.
     def _sig(*_):
+        if _stop.is_set():
+            print("\nsecond signal — exiting now", flush=True)
+            os._exit(130)
         _stop.set()
-        print("\nstopping…", flush=True)
+        print("\nstopping… (signal again to exit immediately)", flush=True)
     signal.signal(signal.SIGTERM, _sig)
     signal.signal(signal.SIGINT, _sig)
 
