@@ -42,7 +42,17 @@ REF = "nrsyqcttpijxhwtdtoct"
 # Estimator, prior, gates, window, resolution, sentiment: all unchanged —
 # the full set is re-frozen under 2.0.1 so /methodology renders one
 # complete, self-contained set per version (the page filters version =).
-VERSION = "2.1.0"
+# 2.2.0 (2026-08-16): the PUBLISHED NUMBER changes from the posterior mean
+# to the 10th-percentile posterior LOWER BOUND. The mean let thin evidence
+# float upward — shrinkage pulled a barely-observed brand toward the category
+# average, so shift4 (0 positives / 4 opinions) published 40 while PayPal
+# (25% positive / 72 opinions) published 29; three categories sat quarantined
+# on exactly this. The lower bound is monotone in rate AND evidence, so
+# sparse data costs position instead of buying it. Prior, gates, thresholds,
+# window: unchanged. Also: classification moved to provider pools, so
+# sentiment_model_version is no longer a single pinned value — the published
+# view joins the newest label per (doc, brand) regardless of lane.
+VERSION = "2.2.0"
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.dirname(HERE)
@@ -59,9 +69,16 @@ def git_commit():
 # key, scope, value, rationale
 PARAMS = [
     # ── the estimator ───────────────────────────────────────────────────────
-    ("estimator", "global", "empirical_bayes_beta_binomial",
-     "p_tilde = (x_pos + alpha0) / (N_op + alpha0 + beta0); Reddit Love Score = round(100 * p_tilde). "
-     "One published number, 0-100 (decisions/0006)."),
+    ("estimator", "global", "empirical_bayes_beta_binomial_lower_bound",
+     "posterior = Beta(x_pos + alpha0, x_neg + beta0); Reddit Love Score = "
+     "round(100 * Q_0.10(posterior)) — the 10th-percentile posterior quantile, "
+     "not the mean. The mean rewarded thin evidence (shift4 0/4 published above "
+     "PayPal 25%/72); the lower bound is monotone in rate and in evidence, so "
+     "uncertainty costs position. One published number, 0-100 (decisions/0006)."),
+    ("score_quantile", "global", 0.10,
+     "The posterior quantile published as the score. Deterministic "
+     "dependency-free Beta inverse-CDF (bisection over the regularised "
+     "incomplete beta), worker/score.py::beta_quantile."),
     ("prior_fit", "global", "pooled_loo_mention_rate_fixed_k",
      "p0 = (pooled_pos + 5) / (pooled_op + 10) over every OTHER brand's opinionated mentions in "
      "the category; alpha0 = K*p0, beta0 = K*(1-p0). Replaces v1's brand-rate method-of-moments "
@@ -191,9 +208,12 @@ PARAMS = [
      "1,000-1,500 item gold set that does not exist. Classification runs on the local Codex "
      "fleet (subscription compute, batched, disk-idempotent) instead of any metered API, which "
      "removes both the cost argument and an ML-training dependency from the critical path."),
-    ("sentiment_model_version", "global", "claude-cli-absa-1",
-     "mention_sentiment.model_version. Re-scoring under a new version APPENDS a row, never "
-     "overwrites — the primary key carries the version for that reason."),
+    ("sentiment_model_version", "global", "multi-lane",
+     "Classification runs on provider pools (claude-cli-absa-1, "
+     "deepseek-v4-flash-absa-1, haiku-4.5-absa-1) with 85% pairwise label "
+     "agreement and identical label distributions on a blind benchmark. The "
+     "published view joins the NEWEST label per (doc, brand) regardless of "
+     "lane; a QA invariant enforces one label per (mention, brand)."),
 
     # ── scope of this build ─────────────────────────────────────────────────
     ("lanes_active", "global", ["B", "D"],

@@ -129,7 +129,10 @@ export function CompanyDashboard({
                 <span className="stat-hash" aria-hidden="true">#</span>{rank}
               </span>
               <span className="stat-label">
-                <span className="sr-only">Ranked number {rank} in </span>
+                {/* The visible label already reads "of 24 in CRM"; the
+                    sr-only prefix supplies only the word the "#" glyph
+                    stands for, so a screen reader hears one sentence. */}
+                <span className="sr-only">Ranked number </span>
                 {rankLabel}
               </span>
             </li>

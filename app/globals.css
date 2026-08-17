@@ -269,12 +269,23 @@
   }
   .masthead-link { text-decoration: none; }
   .masthead-title {
+    /* inline-block sized to its text, so on a narrow screen the wordmark was
+       WIDER than the viewport and every centred thing on the page centred
+       against that wider box — the whole layout appeared shifted right and
+       clipped. It may wrap now; it may not exceed the screen. */
     display: inline-block;
+    max-width: 100%;
+    overflow-wrap: break-word;
     font-family: var(--font-syne);
     font-weight: 700;
-    font-size: var(--fs-display);
+    /* Clamped, not fixed: "Reddit Brand Index" at the fixed display size ran
+       past a 390px viewport and the wordmark read "Reddit Brand Ind". */
+    font-size: min(var(--fs-display), 6.9vw);
     line-height: 1.05;
     letter-spacing: -0.02em;
+  }
+  @media (min-width: 768px) {
+    .masthead-title { font-size: var(--fs-display); }
   }
   /* The highlighter swash — MarketSplash's first-word coral, in Virtual Goal.
      Single unbreakable word only; the span carries its own stacking context so
@@ -309,8 +320,17 @@
     max-width: var(--container);
     margin-inline: auto;
   }
-  @media (max-width: 640px) {
-    .brand-search input { width: min(320px, 90vw); }
+  /* Narrow viewports: the search input's fixed width forced the controls row
+     wider than the screen, pushing the category select off the right edge.
+     Give search its own full-width row and let the other two sit under it. */
+  @media (max-width: 700px) {
+    /* Stack them. Wrapping still let the category select and the two-button
+       switcher share a row that exceeded a 390px screen, cutting "One list"
+       off the right edge. One control per row cannot overflow. */
+    .board-controls { flex-direction: column; align-items: center; gap: 12px; }
+    .brand-search { width: 100%; }
+    .brand-search input { width: 100%; }
+    .board-card { max-width: 100%; }
   }
 
   .listbox { position: relative; }

@@ -17,7 +17,7 @@
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run && node --test tests/resolve.test.mjs"
   },
   "dependencies": {
     "lucide-react": "1.28.0",
@@ -28,7 +28,10 @@
     "server-only": "0.0.1"
   },
   "pnpm": {
-    "onlyBuiltDependencies": ["esbuild", "@esbuild/*"]
+    "onlyBuiltDependencies": [
+      "esbuild",
+      "@esbuild/*"
+    ]
   },
   "devDependencies": {
     "@fontsource/public-sans": "5.2.6",

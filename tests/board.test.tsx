@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { render } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 import {
   consolidate, splitScope, scopeToPath, LIST_CAP, PER_LIST,
   type BoardRow,
@@ -115,5 +115,29 @@ describe("IndexBoard", () => {
       <IndexBoard data={{ all: { rows: [], total: 0 } }} initialScope="all" search={[]} />,
     );
     expect(container.textContent).toContain("No scored brands");
+  });
+});
+
+describe("search filtering", () => {
+  it("keeps a hit's TRUE board position — never renumbers matches 1..n", () => {
+    const rows = Array.from({ length: 30 }, (_, i) =>
+      ({ ...row(i, 30 - i), brandName: `Brand ${i}` }));
+    render(<IndexBoard data={{ all: { rows, total: 30 } }} initialScope="all" search={[]} />);
+    const input = screen.getByPlaceholderText("Search companies");
+    fireEvent.change(input, { target: { value: "Brand 12" } });
+    // Brand 12 is the 13th row of the board; the filtered list must say 13,
+    // not 1 — a search that renumbers its hits invents a ranking.
+    expect(screen.getByText("13")).toBeTruthy();
+  });
+
+  it("restores the full board when the query is cleared", () => {
+    const rows = Array.from({ length: 8 }, (_, i) =>
+      ({ ...row(i, 8 - i), brandName: `Brand ${i}` }));
+    render(<IndexBoard data={{ all: { rows, total: 8 } }} initialScope="all" search={[]} />);
+    const input = screen.getByPlaceholderText("Search companies");
+    fireEvent.change(input, { target: { value: "Brand 3" } });
+    expect(screen.queryByText("Brand 0")).toBeNull();
+    fireEvent.change(input, { target: { value: "" } });
+    expect(screen.getByText("Brand 0")).toBeTruthy();
   });
 });

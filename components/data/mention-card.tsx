@@ -1,7 +1,24 @@
+import { Fragment } from "react";
 import Link from "next/link";
 import { absoluteDate } from "@/lib/format";
 
 export type Sentiment = "pos" | "neg" | "neu" | "abstain";
+
+/**
+ * Reddit's API ships `body` as markdown SOURCE with `&`, `<`, `>` (and
+ * occasionally quotes) HTML-escaped — 1,071 stored bodies carry a visible
+ * `&amp;`-class artefact. Decoded here, at the one place bodies render;
+ * output stays a plain string handed to React, so this cannot introduce HTML.
+ */
+function decodeEntities(text: string): string {
+  return text
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;|&#x27;/g, "'")
+    .replace(/&#x200B;/gi, "");
+}
 
 export type Mention = {
   brandName: string;
@@ -99,8 +116,18 @@ export function MentionCard({ m }: { m: Mention }) {
       </p>
 
       <blockquote className="mention-body" cite={m.permalink}>
-        {m.body.split(/\n{2,}/).map((para, i) => (
-          <p key={i}>{highlight(para, [m.brandName, m.matchedForm])}</p>
+        {/* Blank lines split paragraphs; SINGLE newlines survive as line
+            breaks. Collapsing them mashed every bulleted list into one run of
+            text — 86,771 stored bodies (23%) carry single newlines. */}
+        {decodeEntities(m.body).split(/\n{2,}/).map((para, i) => (
+          <p key={i}>
+            {para.split("\n").map((line, j) => (
+              <Fragment key={j}>
+                {j > 0 && <br />}
+                {highlight(line, [m.brandName, m.matchedForm])}
+              </Fragment>
+            ))}
+          </p>
         ))}
       </blockquote>
 

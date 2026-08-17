@@ -37,9 +37,11 @@ export default async function Methodology() {
       <p className="mt-6" style={{ fontSize: "var(--fs-lead)" }}>
         Version {METHODOLOGY_VERSION}, frozen at commit{" "}
         <code>{commit.slice(0, 12)}</code>. Version 1 was frozen before the
-        first collection run; version 2 corrects a mis-specified prior in it —
-        the change, the reason, and the numbers that forced it are documented
-        below, because a method quietly edited after the fact is not a method.
+        first collection run. Version 2 corrected a mis-specified prior;
+        version 2.2 changed the published number from the posterior mean to a
+        posterior lower bound. Each change, the reason for it, and the numbers
+        that forced it are documented below, because a method quietly edited
+        after the fact is not a method.
       </p>
 
       <Section title="What is measured">
@@ -62,13 +64,27 @@ export default async function Methodology() {
         <Pre>{`N_op = pos + neg
 p₀   = (pooled_pos + 5) / (pooled_op + 10)   over every OTHER company
 α₀   = 10·p₀        β₀ = 10·(1−p₀)
-p̃    = (x_pos + α₀) / (N_op + α₀ + β₀)
-Reddit Love Score = round(100 · p̃)`}</Pre>
+posterior = Beta(x_pos + α₀,  x_neg + β₀)
+Reddit Love Score = round(100 · Q₀.₁₀(posterior))`}</Pre>
         <p>
           One published number per company per category, an integer from 0 to
-          100. Neutral mentions are counted and published but are not in the
-          denominator, because a company that is named constantly without
-          opinion is not thereby liked.
+          100: the <strong>10th percentile of the posterior</strong> — the
+          rate the evidence can stand behind, not the best guess. Neutral
+          mentions are counted and published but are not in the denominator,
+          because a company that is named constantly without opinion is not
+          thereby liked.
+        </p>
+        <p>
+          The lower bound, and not the posterior mean, because the mean
+          rewards thin evidence: shrinkage pulls a barely-observed company
+          toward the category average, so a company with zero positives out
+          of four opinions once published <em>above</em> one with 25% positive
+          over seventy-two. Under a lower bound, uncertainty costs a company
+          position instead of buying it one — the score rises with the
+          positive rate <em>and</em> with the amount of evidence behind it,
+          so a thin newcomer cannot leapfrog a well-measured incumbent. It is
+          the same reason Reddit&apos;s own comment ranking uses a confidence
+          bound rather than a raw average.
         </p>
         <p>
           The prior shrinks each company toward its category&apos;s pooled
@@ -84,14 +100,28 @@ Reddit Love Score = round(100 · p̃)`}</Pre>
           well-covered companies, each was scored as the <em>other</em>: a
           registrar with 41 positive and 1 negative mention published 20/100
           while one with 4 positive and 111 negative published 63/100. That is
-          why version 2 exists, and why a calibration gate now refuses any
-          scoring run whose ordering contradicts its own raw counts.
+          why version 2 exists. Version 2.2 replaced the published mean with
+          the lower bound after the same class of failure reappeared at the
+          thin end of sparse categories. Both changes were caught by a
+          calibration gate that refuses any scoring run whose ordering
+          contradicts its own raw counts, and that gate still runs on every
+          publish.
         </p>
         <p>
           Sorting that number descending <em>is</em> the consolidated view. Most
           Loved is the top of it, Most Hated is the bottom of it, and because
           both are positions in a single ordering, no company can appear on
-          both.
+          both. The two home boards show at most 100 a side; the single-list
+          view is the same ordering in full. On the pooled all-categories
+          board a company additionally needs at least ten opinionated
+          mentions — calling something the most loved or most hated product
+          on Reddit demands more than a handful of comments.
+        </p>
+        <p>
+          The Mentions column, everywhere it appears, is the company&apos;s
+          <em> total collected mentions</em> — the same figure its own page
+          headlines. The opinionated subset that actually enters the estimator
+          is published on the company page as evidence.
         </p>
       </Section>
 

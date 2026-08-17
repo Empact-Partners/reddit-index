@@ -19,6 +19,24 @@ export const metadata: Metadata = {
   // One of three independent noindex layers while the site is provisional; the
   // others are app/robots.ts and the X-Robots-Tag header in next.config.ts.
   // They fail differently, and all three read lib/site-stage.ts.
+  // Open Graph / Twitter defaults. Every route overrides title+description
+  // in its own generateMetadata; these supply the constants (site name, type,
+  // locale, card style) so a shared link is never bare, and so no page has to
+  // repeat them.
+  openGraph: {
+    type: "website",
+    siteName: "Reddit Brand Index",
+    locale: "en_US",
+    url: SITE_URL,
+    title: "Reddit Brand Index: Most Loved & Hated Brands On Reddit",
+    description: "An index of the most loved and hated brands on Reddit.",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Reddit Brand Index: Most Loved & Hated Brands On Reddit",
+    description: "An index of the most loved and hated brands on Reddit.",
+  },
+  alternates: { canonical: "/" },
   ...(IS_PROVISIONAL ? { robots: { index: false, follow: false, nocache: true } } : {}),
 };
 

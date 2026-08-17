@@ -35,7 +35,7 @@ for (const r of routes) {
 }
 
 // 2. Every content route is exactly one segment deep.
-const KNOWN_FILE_ROUTES = new Set(['/', '/robots.txt', '/sitemap.xml', '/favicon.ico']);
+const KNOWN_FILE_ROUTES = new Set(['/', '/robots.txt', '/sitemap.xml', '/favicon.ico', '/llms.txt']);
 for (const r of routes) {
   if (KNOWN_FILE_ROUTES.has(r)) continue;
   const segments = r.split('/').filter(Boolean);
