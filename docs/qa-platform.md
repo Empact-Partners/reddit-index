@@ -134,6 +134,9 @@ Both were masked by a CSS **source-order** trap worth recording: a
 every same-specificity tie, so `width: min(280px, 100%)` and
 `white-space: nowrap` kept winning and the mobile rules appeared to do
 nothing. The phone block now sits at the END of the stylesheet.
+
+## Known limitations, stated rather than hidden
+
 - **The build fails intermittently** with `TypeError: Iterator value
   undefined is not an entry object` during "Collecting page data", roughly
   one run in four, and passes on retry with no code change. Not diagnosed;
