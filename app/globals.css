@@ -323,15 +323,6 @@
   /* Narrow viewports: the search input's fixed width forced the controls row
      wider than the screen, pushing the category select off the right edge.
      Give search its own full-width row and let the other two sit under it. */
-  @media (max-width: 700px) {
-    /* Stack them. Wrapping still let the category select and the two-button
-       switcher share a row that exceeded a 390px screen, cutting "One list"
-       off the right edge. One control per row cannot overflow. */
-    .board-controls { flex-direction: column; align-items: center; gap: 12px; }
-    .brand-search { width: 100%; }
-    .brand-search input { width: 100%; }
-    .board-card { max-width: 100%; }
-  }
 
   .listbox { position: relative; }
   .listbox-btn {
@@ -419,6 +410,7 @@
     font-size: 0.85em; opacity: 0.6; white-space: nowrap;
   }
   .brand-search-empty { cursor: default; opacity: 0.7; }
+
 
   .seg {
     display: inline-flex;
@@ -903,5 +895,43 @@
     border: 1px solid var(--rule);
     border-radius: var(--radius-card);
     padding: 32px;
+  }
+
+  /* ── Phones ─────────────────────────────────────────────────────────────
+     Placed AFTER the search rules on purpose: the same block sitting above
+     them lost every tie on source order, so `width: min(280px, 100%)` kept
+     winning and the input never went full-bleed. */
+  @media (max-width: 700px) {
+    /* One control per row. Wrapping still let the category select and the
+       two-button switcher share a row wider than a 390px screen. */
+    .board-controls { flex-direction: column; align-items: stretch; gap: 12px; }
+    .board-controls > * { justify-self: stretch; }
+    .brand-search { width: 100%; }
+    .brand-search input { width: 100%; }
+    .listbox, .listbox-btn { width: 100%; justify-content: space-between; }
+    .seg { width: 100%; }
+    .seg button { flex: 1; }
+    .board-card { max-width: 100%; }
+
+    .board-grid:not([data-view="list"]) .rank-table th,
+    .board-grid:not([data-view="list"]) .rank-table td { padding: 12px 8px; }
+  }
+
+  /* Table economy, phones AND tablet portrait (iPad mini is 744 wide, and a
+     single-column board card there is 712 — the desktop table wants 813).
+     The SCORE is the reason the page exists; on a narrow screen it sat off
+     the right edge behind a scroll while Mentions took the room. Mentions is
+     one tap away on the company page; the score is not. */
+  @media (max-width: 900px) {
+    .rank-table .col-mentions { display: none; }
+    /* nowrap on desktop is what made the table wider than its card; two
+       lines of "Screaming Frog SEO Spider" beats a score nobody can see */
+    .rank-table td.col-brand { white-space: normal; }
+    .rank-table th { white-space: normal; }
+  }
+
+  /* Very narrow: the category chip goes too, so #, Brand and Score fit. */
+  @media (max-width: 430px) {
+    .rank-table .col-category { display: none; }
   }
 }

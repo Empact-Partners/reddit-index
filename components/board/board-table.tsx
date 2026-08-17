@@ -81,13 +81,13 @@ export function BoardTable({
         <caption className="sr-only">{caption}</caption>
         <thead>
           <tr>
-            <th scope="col" aria-label="Rank">#</th>
-            <th scope="col">Brand</th>
+            <th scope="col" className="col-rank" aria-label="Rank">#</th>
+            <th scope="col" className="col-brand">Brand</th>
             <th scope="col" className="col-score">
               Reddit <span aria-hidden="true">❤️</span><span className="sr-only">Love</span> Score
             </th>
             <th scope="col" className="col-mentions">Mentions</th>
-            {showCategory && <th scope="col">Category</th>}
+            {showCategory && <th scope="col" className="col-category">Category</th>}
           </tr>
         </thead>
         <tbody>

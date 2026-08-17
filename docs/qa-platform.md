@@ -89,15 +89,51 @@ not exist.
   A naive cross-check calls every hated-side brand a mismatch. HubSpot sits
   at DOM index 18 of 24 and is genuinely rank 18.
 
-## Known limitations, stated rather than hidden
+## Responsive QA — done properly, second pass
 
-- **Mobile rendering is unverified.** Headless Chrome would not apply the
-  requested CSS viewport below roughly 580px — the wordmark rendered at
-  ~39px when the clamp should give 27px at 390px, and 390px and 580px
-  captures were 79% pixel-identical. The mobile CSS shipped here (stacked
-  controls, clamped wordmark, `max-width: 100%` on cards) is correct by
-  inspection but has not been seen at a true 390px viewport. It needs a
-  device-emulation harness (CDP) or a real phone.
+The first pass could not verify mobile and said so. The cause was the
+harness: `chrome --headless --window-size=390,844` does **not** give a 390px
+viewport. A probe page printing `window.innerWidth` reported **500** for a
+requested 390, in both old and new headless — Chrome clamps the window to a
+500px minimum and merely crops the PNG. Every "mobile defect" found that way
+was an artifact.
+
+`scripts/device-shot.mjs` now drives the DevTools Protocol directly (Node 25
+has a native WebSocket, so no dependency) and calls
+`Emulation.setDeviceMetricsOverride`, which actually resizes the layout
+viewport. It reports `innerWidth`, `scrollWidth` and the elements wider than
+the viewport — so a failure names its culprit instead of leaving it to be
+guessed from a picture. Verified against the probe: requested 390, reported
+390.
+
+Measured on the real thing:
+
+| Device | Viewport | Page overflow | Widest element |
+|---|---|---|---|
+| iPhone SE | 375 | 0 | all fits |
+| iPhone 14 | 390 | 0 | all fits |
+| iPhone Pro Max | 430 | 0 | all fits |
+| iPad mini portrait | 744 | 0 | all fits |
+| iPad landscape | 1133 | 0 | all fits |
+| iPad Pro | 1024 | 0 | all fits |
+
+**Two genuine responsive defects, found and fixed:**
+
+1. **The score was off-screen on phones.** The board table rendered 813px
+   wide inside a 358px card, so `#` and `Brand` were visible and the Reddit
+   Love Score — the reason the page exists — sat behind a horizontal scroll.
+   Mentions now hides below 900px (it is one tap away on the company page),
+   the category chip hides below 430px, and brand names wrap instead of
+   forcing the table wide.
+2. **The Category `<th>` carried no column class**, so hiding the column hid
+   its cells while the header kept the column alive at full width. Every
+   header now carries its column class.
+
+Both were masked by a CSS **source-order** trap worth recording: a
+`@media (max-width: 700px)` block placed ABOVE the rules it overrides loses
+every same-specificity tie, so `width: min(280px, 100%)` and
+`white-space: nowrap` kept winning and the mobile rules appeared to do
+nothing. The phone block now sits at the END of the stylesheet.
 - **The build fails intermittently** with `TypeError: Iterator value
   undefined is not an entry object` during "Collecting page data", roughly
   one run in four, and passes on retry with no code change. Not diagnosed;
