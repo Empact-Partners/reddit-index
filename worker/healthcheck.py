@@ -142,6 +142,22 @@ def checks(conn):
         n_scores = q1(cur, "SELECT count(*) FROM brand_category_scores")
         out.append(("scores_present", (n_scores or 0) > 1000, f"{n_scores:,} score rows"))
 
+        # A PARTIAL load is the dangerous shape, not an empty one. The site
+        # reads `week_start = max(week_start)`, so a scoring run killed halfway
+        # through its load leaves a newer key holding a fraction of the rows and
+        # the boards silently lose everything missing. Happened on 2026-08-17:
+        # 2,973 of 4,034 rows landed and the prune never ran, so the previous
+        # complete key was still there — invisible, and unused.
+        pair = q1(cur, """
+            SELECT string_agg(n::text, '/' ORDER BY week_start DESC)
+            FROM (SELECT week_start, count(*) n FROM brand_category_scores
+                  GROUP BY 1 ORDER BY 1 DESC LIMIT 2) x""")
+        counts = [int(x) for x in (pair or "0").split("/") if x]
+        ok_load = len(counts) < 2 or counts[0] >= counts[1] * 0.9
+        out.append(("scores_complete", ok_load,
+                    f"newest/previous week_start row counts {pair} "
+                    "(a short newest key means a load died mid-write)"))
+
         # ---- the view that has silently blanked the site once ---------------
         pinned = q1(cur, "SELECT pg_get_viewdef('published.mentions'::regclass, true) "
                          "LIKE '%%sentiment_model_version%%'")
