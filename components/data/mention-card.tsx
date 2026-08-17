@@ -22,7 +22,10 @@ const SENTIMENT_WORD: Record<Sentiment, string> = {
   pos: "Positive",
   neg: "Negative",
   neu: "Neutral",
-  abstain: "No verdict",
+  // Folded into Neutral for DISPLAY. "No verdict" flooded company pages
+  // when the view pin hid 115k labels, and the owner ruled the wording out
+  // ("what do you mean, no verdict") — a reader means Neutral by it anyway.
+  abstain: "Neutral",
 };
 
 /**

@@ -1,5 +1,3 @@
-import Link from "next/link";
-import { num } from "@/lib/format";
 import { CompanyDashboard } from "@/components/company/company-dashboard";
 import { Breadcrumbs } from "@/components/site/breadcrumbs";
 import { CATEGORY_BY_SLUG } from "@/lib/generated/categories";
@@ -60,42 +58,13 @@ export function CompanyPage({
         totals={company.sentimentTotals}
         totalMentions={company.totalMentions}
         heroScore={primaryScore}
-        heroLabel={`Reddit ❤️ Score${primary ? ` · ${primary.name}` : ""}`}
+        heroLabel="Reddit ❤️ Score"
         rank={boardRank}
         rankLabel={primary
           ? `of ${boardSize} in ${primary.name}`
           : null}
       />
 
-      {/* Only when the brand genuinely scores in MORE than one category —
-          a single-category repeat of the hero tile is noise (Vlad). */}
-      {company.scores.length > 1 && (
-        <section className="mt-[var(--section)]" aria-label="Scores by category">
-          <h2 className="section-title">Scores by category</h2>
-          <ul className="score-tiles mt-6">
-            {company.scores.map((s) => (
-              <li key={s.categorySlug} className="score-tile">
-                <Link href={`/${s.categorySlug}/`} className="score-tile-cat">
-                  <span className="cat-chip" data-category={s.categorySlug}>
-                    {CATEGORY_BY_SLUG[s.categorySlug].name}
-                  </span>
-                </Link>
-                {s.redditLoveScore !== null ? (
-                  <span className="score-tile-num">
-                    {s.redditLoveScore}
-                    <span className="score-tile-denom"> / 100</span>
-                  </span>
-                ) : (
-                  <span className="score-tile-num score-tile-nonum">—</span>
-                )}
-                <span className="score-tile-mentions">
-                  {num(s.n)} scored {s.n === 1 ? "mention" : "mentions"}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
 
     </div>
   );

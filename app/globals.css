@@ -448,19 +448,17 @@
   }
   .board-grid {
     display: grid;
-    /* One column by default and TWO only when there is genuinely room for two
-       full-width tables. The old breakpoint (1360px) put two cards side by
-       side at ~660px each, which could not fit a real category name on one
-       line — hence the abbreviation map and the horizontal scrollbar, both
-       now gone. A stacked card gets the whole container, so every name fits. */
+    /* minmax(0,…) everywhere: an auto track sizes to the table's one-line
+       max-content and blows past a phone viewport; a zero-minimum track
+       makes the card shrink and its table scroll inside .table-scroll. */
     grid-template-columns: minmax(0, 1fr);
     gap: 28px;
-    max-width: 1600px;
+    max-width: 1400px;
     margin: 40px auto 0;
     padding: 0 var(--gutter);
     align-items: start;
   }
-  @media (min-width: 1600px) {
+  @media (min-width: 1360px) {
     .board-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
   }
   .board-grid > * { min-width: 0; }
@@ -883,24 +881,7 @@
      proportions so the columns are known up front, the category chip holds
      one line, and a freakishly long brand name ellipses rather than widening
      the table past its card. */
-  .board-table-wrap { position: relative; }
-  .board-table-wrap .rank-table { table-layout: fixed; width: 100%; }
-  .board-table-wrap .col-rank     { width: 3.2rem; }
-  .board-table-wrap .col-score    { width: 6.5rem; }
-  .board-table-wrap .col-mentions { width: 6rem; }
-  /* NOTHING truncates — the build gate enforces it, and it is the right rule:
-     a clipped brand or category name is exactly the defect this redesign is
-     fixing. Rows stay on one line because the card is given enough width
-     (stacked until 1600px), not because the text is cut. A freakishly long
-     brand name wraps to a second line rather than disappearing. */
-  .board-table-wrap td.col-category { white-space: nowrap; }
-  .board-table-wrap .cat-chip { display: inline-block; white-space: nowrap; }
-  /* On a phone there is no width for five columns. Mentions is the one a
-     reader can get from the company page in one tap, so it is what goes —
-     the rank, the brand, the score and the category all stay. */
-  @media (max-width: 640px) {
-    .board-table-wrap .col-mentions { display: none; }
-  }
+
 
   .badge {
     display: inline-block; border-radius: var(--radius-card);
