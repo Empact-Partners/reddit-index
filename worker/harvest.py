@@ -221,6 +221,47 @@ def _abs(permalink):
     return p if p.startswith("http") else REDDIT + p
 
 
+def post_doc(d):
+    """The POST itself as a scorable document (doc_type 2), or None.
+
+    THE BODY IS TITLE + SELFTEXT. It used to be selftext alone, and that single
+    omission is why the index reads as comments-only:
+
+      * a brand named in the TITLE — the most common place a brand appears on
+        Reddit ("Anyone moved off HubSpot?") — resolved to nothing, because the
+        title was passed only as context to the resolver and never scanned;
+      * a link/image post has an EMPTY selftext, so it produced no document at
+        all and its title was never read by anything.
+
+    Callers must not build this shape themselves: tree_docs, sweep.py and
+    daily.py all mint post rows and they must agree byte for byte, because the
+    mentions primary key is (brand_id, doc_id, created_utc) and the stored body
+    is what the site renders.
+    """
+    author = d.get("author") or ""
+    if author in ("", "[deleted]", "[removed]") or author is None:
+        return None
+    title = (d.get("title") or "").strip()
+    selftext = (d.get("selftext") or "").strip()
+    if selftext in ("[removed]", "[deleted]"):
+        selftext = ""
+    body = f"{title}\n\n{selftext}".strip() if selftext else title
+    if not body or is_bot_doc(author, body):
+        return None
+    pid = str(d.get("id") or "")
+    if not pid:
+        return None
+    return {
+        "id": pid if pid.startswith("t3_") else f"t3_{pid}",
+        "doc_type": 2,
+        "author": author,
+        "body": body,
+        "created_utc": d.get("created_utc"),
+        "permalink": _abs(d.get("permalink")),
+        "score": d.get("score"),
+    }
+
+
 def tree_docs(tree):
     """Every scorable document in a /comments/{id} response, as (docs, title).
 
@@ -254,15 +295,9 @@ def tree_docs(tree):
     for k in tree[0].get("data", {}).get("children", []):
         d = k.get("data", {})
         title = d.get("title") or title
-        if (d.get("selftext") and d.get("author") not in ("[deleted]", None)
-                and not is_bot_doc(d.get("author"), d.get("selftext"))):
-            docs.append({
-                "id": f"t3_{d['id']}", "doc_type": 2,
-                "author": d["author"], "body": d["selftext"],
-                "created_utc": d.get("created_utc"),
-                "permalink": _abs(d.get("permalink")),
-                "score": d.get("score"),
-            })
+        pd = post_doc(d)
+        if pd:
+            docs.append(pd)
     return docs, title
 
 

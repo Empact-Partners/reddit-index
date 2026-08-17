@@ -103,18 +103,33 @@ MIN_BARE_LEN = 3
 
 
 def _english_words():
-    """The system dictionary, lowercased. Absent on a bare container, in which
-    case the guard below simply does not fire (the length rule still does)."""
-    words = set()
-    try:
-        with open("/usr/share/dict/words") as f:
-            for w in f:
-                w = w.strip().lower()
-                if len(w) >= 2:
-                    words.add(w)
-    except FileNotFoundError:
-        pass
-    return words
+    """The dictionary, lowercased. VENDORED at data/english-words.txt, with the
+    system copy as a fallback.
+
+    It used to read /usr/share/dict/words only, and swallow FileNotFoundError.
+    python:3.12-slim ships no dictionary, so the guard silently did not fire in
+    the Railway container while it did fire on the Mac: 31 aliases (`sheets`,
+    `bookings`, `tabs`, `fireflies`, `ses`…) were AMBIGUOUS here and resolved
+    bare at conf 0.95 there. Two lanes writing to one corpus under two
+    different resolution policies, and nothing said so.
+
+    An absent wordlist is now a hard failure, not a behaviour change.
+    """
+    here = os.path.dirname(os.path.abspath(__file__))
+    for fp in (os.path.join(os.path.dirname(here), "data", "english-words.txt"),
+               "/usr/share/dict/words"):
+        try:
+            with open(fp) as f:
+                words = {w.strip().lower() for w in f if len(w.strip()) >= 2}
+            if len(words) > 50_000:
+                return words
+        except FileNotFoundError:
+            continue
+    raise RuntimeError(
+        "no English wordlist found — the plain-word alias guard cannot run. "
+        "Expected data/english-words.txt (vendored, shipped in the image) or "
+        "/usr/share/dict/words. Resolving without it changes what the matcher "
+        "accepts, which is worse than not resolving at all.")
 
 
 _ENGLISH = _english_words()
@@ -243,7 +258,13 @@ def load_blocklist():
     out = set()
     fp = os.path.join(REPO, "data", "alias-blocklist.csv")
     if not os.path.exists(fp):
-        return out
+        # Silence here shipped 41 known-false-positive pairs (aws→amazon-route-53,
+        # app→astro-pixel-processor…) straight back into production, because the
+        # Dockerfile copied four CSVs and not this one. A missing blocklist is a
+        # different matcher, so it must be impossible to run past unnoticed.
+        raise RuntimeError(
+            f"alias blocklist missing at {fp} — every pair the entity gate "
+            "already rejected would resolve again. Ship the file with the code.")
     for r in csv.DictReader(open(fp)):
         a, b = (r.get("alias") or "").strip().lower(), (r.get("brand_slug") or "").strip()
         if a and b:
