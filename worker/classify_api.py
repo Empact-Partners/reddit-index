@@ -25,9 +25,15 @@ CONCURRENCY, THE LESSON THAT COST A MORNING
     nothing locally and can go wide; the claude CLI pool is a local process
     per worker and must be ramped carefully.
 
-    python3 worker/classify_api.py --haiku 16 --deepseek 0        # free lane only
-    python3 worker/classify_api.py --haiku 16 --deepseek 8        # both
-    python3 worker/classify_api.py --deepseek 4 --limit 800       # cost probe
+    python3 worker/classify_api.py                      # the lane: 16 free Haiku
+    python3 worker/classify_api.py --haiku 24           # wider, still free
+
+THE METERED LANE IS OFF. Vlad ruled on 2026-08-17: classification runs on free
+Haiku on the Max plan, and nothing else. DeepSeek stays in this file because it
+is how the throughput ceiling was measured and because a future one-off backlog
+may justify it — but it cannot start without --allow-metered, and that flag is
+a decision, not a default. A slower free lane beats a faster billed one; the
+backlog drains overnight either way.
 """
 import argparse
 import csv
@@ -318,12 +324,21 @@ def reporter(t0, start_backlog):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--haiku", type=int, default=16)
-    ap.add_argument("--deepseek", type=int, default=0)
+    ap.add_argument("--haiku", type=int, default=16,
+                    help="free `claude -p` Haiku workers on the Max plan (the lane)")
+    ap.add_argument("--deepseek", type=int, default=0,
+                    help="metered DeepSeek workers; requires --allow-metered")
+    ap.add_argument("--allow-metered", action="store_true",
+                    help="acknowledge that --deepseek spends real money")
     ap.add_argument("--limit", type=int, default=0, help="stop after N items (cost probe)")
     ap.add_argument("--min-swap-mb", type=float, default=400)
     args = ap.parse_args()
 
+    if args.deepseek and not args.allow_metered:
+        print("--deepseek spends money and this project classifies on the free "
+              "Haiku lane (ruled 2026-08-17). Pass --allow-metered if that has "
+              "genuinely changed.", flush=True)
+        return 1
     key = deepseek_key() if args.deepseek else None
     if args.deepseek and not key:
         print("no deepseek key found", flush=True)

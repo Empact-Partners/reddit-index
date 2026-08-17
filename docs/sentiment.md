@@ -36,12 +36,13 @@ disk before it is committed so a crash never loses paid work. Two providers:
 
 - **`claude -p` Haiku (`haiku-4.5-absa-1`)** — 16 workers by default, free
   on the Max plan, one local process per worker.
-- **DeepSeek `deepseek-v4-flash` (`deepseek-v4-flash-absa-1`)** — off by
-  default (`--deepseek N`), plain HTTP, and **metered**. It has been used
-  deliberately: $27.22 of credit labelled 153,748 items in 112 minutes at
-  ~1,100 items/min. Any claim that this project never spends on a metered
-  API is false; the accurate claim is that the free lane is the default and
-  the metered lane is bought on purpose when throughput is worth the money.
+- **DeepSeek `deepseek-v4-flash` (`deepseek-v4-flash-absa-1`)** — plain HTTP,
+  **metered**, and **switched off by ruling** since 2026-08-17: it needs
+  `--allow-metered` on top of `--deepseek N` or the run refuses to start.
+  It was used deliberately once — $27.22 of credit labelled 153,748 items in
+  112 minutes at ~1,100 items/min during the 2026-08-16 backlog — which is why
+  its labels are in the corpus. Classification is now free Haiku only; when a
+  backlog is deep, it drains overnight rather than for money.
 
 The corpus carries three `model_version` values — `claude-cli-absa-1` (the
 original `claude -p` lane in `worker/classify.py`),

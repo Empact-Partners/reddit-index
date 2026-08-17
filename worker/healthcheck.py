@@ -37,18 +37,19 @@ import db  # noqa: E402
 STATE_FP = os.path.join(HERE, ".cache", "health.json")
 CRED_FP = os.path.expanduser("~/.claude/.reddit-index.json")
 
-# The fetch runs twice a day (railway.json: 0 2,14 * * *). Everything below is
-# sized against that cadence with a full cycle of slack, so a single missed or
-# slow pass is not an alarm and two are.
-MAX_RUN_AGE_H = 20            # hours since the last completed pass
+# The fetch runs ONCE a day (railway.json: 0 2 * * *) with up to a 10-hour
+# budget. Everything below is sized so a single late or slow pass is not an
+# alarm and a missed day is: 36 hours is a full cycle plus the budget plus
+# room, and nothing healthy ever reaches it.
+MAX_RUN_AGE_H = 36            # hours since the last completed pass
 MIN_RUN_MENTIONS = 200        # NEW mentions a healthy pass writes
 MIN_SUB_COVERAGE = 0.80       # share of scoring subs touched in the window
 MAX_SUB_ERRORS = 100
 MIN_MENTIONS_WRITTEN = 1000   # rows landed in the window, by OUR clock
-MAX_LABEL_AGE_H = 30          # hours since the classifier last committed
+MAX_LABEL_AGE_H = 36          # hours since the classifier last committed
 BACKLOG_WARN = 60_000
 BACKLOG_FAIL = 250_000
-WINDOW_H = 30
+WINDOW_H = 36
 
 
 def q1(cur, sql, params=None):

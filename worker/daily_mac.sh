@@ -1,7 +1,8 @@
 #!/bin/zsh
 # The Mac half of the daily loop (launchd: com.reddit-index.daily, 04:30 local).
 #
-# Railway fetches (railway.json: 0 2,14 * * * UTC) because it is always on.
+# Railway fetches once a day (railway.json: 0 2 * * * UTC) because it is
+# always on.
 # Classification runs HERE because the free lane is `claude -p` on the Max
 # plan, which exists only on this machine. Scoring and publishing follow.
 #
@@ -19,7 +20,9 @@ LOG_PREFIX="=== $(date '+%F %T')"
 echo "$LOG_PREFIX classify (free Haiku lane, drains the backlog then exits)"
 # 16 local `claude -p` processes is the measured sweet spot: ~350 items/min.
 # Concurrency here costs kernel scheduling, not RAM — see classify_api.py.
-/usr/bin/caffeinate -i python3 -u classify_api.py --haiku 16 --deepseek 0
+# Free Haiku on the Max plan, and only that: the metered lane needs a flag
+# this chain does not pass (ruled 2026-08-17).
+/usr/bin/caffeinate -i python3 -u classify_api.py --haiku 16
 echo "$LOG_PREFIX classify exited $?"
 
 echo "$LOG_PREFIX score + load + prune"

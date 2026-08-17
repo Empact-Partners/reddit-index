@@ -7,11 +7,11 @@ on the Max plan, which exists on this machine and nowhere else. So fetching
 lives on Railway, and everything downstream of a stored mention lives here.
 
 ```
-02:00 + 14:00 UTC   Railway cron container       worker/daily.py
+02:00 UTC daily     Railway cron container       worker/daily.py
                     /new listings -> qualify -> posts + 72h revisit trees
                     -> rules-only resolve -> Supabase (threads, mentions,
-                    watermarks).  RI_MAX_MINUTES=330, so a pass stops
-                    cleanly at 5.5h and the next one picks up the tail.
+                    watermarks).  RI_MAX_MINUTES=600, so a pass stops
+                    cleanly at 10h and tomorrow's picks up the tail.
 
 08:30 UTC           Mac launchd com.reddit-index.daily   worker/daily_mac.sh
 (04:30 Santiago)    classify_api.py   label the backlog, 16 free Haiku workers
@@ -172,22 +172,33 @@ Against 2,029 scoring subreddits (527 of them core):
 | item | calls | at 0.75s |
 |---|---|---|
 | one listing page per sub (the floor) | 2,029 | 25 min |
-| four listing pages per sub (the ceiling) | 8,116 | 101 min |
+| eight listing pages per sub (the ceiling nobody reaches) | 16,232 | 3.4 h |
 | 24 trees per sub (the ceiling) | 48,696 | 10.1 h |
-| **what `RI_MAX_MINUTES=330` buys** | **26,400** | **5.5 h** |
+| **what `RI_MAX_MINUTES=600` buys** | **48,000** | **10 h** |
 
-The time budget binds long before the tree budget does, and that is the
-intended shape. Subtract a one-page listing sweep and a pass can afford roughly
-24,000 tree fetches — about 12 per subreddit averaged, against a cap of 24. The
-cap only bites on the busy head, which is exactly where core-first ordering
-puts the spend: the 527 core subs, saturated at 24 trees each, cost 527 +
-12,648 = 13,175 calls, about 2.7 hours. The core set therefore fits inside half
-a pass, and the tail gets whatever is left.
+Both ceilings are theoretical. A listing stops paging the moment it reaches the
+watermark, so a quiet subreddit costs exactly one call and only a genuinely
+busy one spends eight; and the revisit query only returns threads first seen in
+the last 72 hours, so a subreddit with four new threads asks for four trees,
+not 24. Real passes land far below the table.
 
-Two passes 12 hours apart (02:00 and 14:00 UTC) means at most 11 hours of
-fetching in a 24-hour day and at least 6.5 hours of slack after each pass.
-That slack is what the Mac chain at 08:30 UTC starts into: the overnight pass
-has finished, at the latest, by 07:30 UTC.
+The shape that matters is the ORDER. The 527 core subs, saturated at 24 trees
+each, cost 527 + 12,648 = 13,175 calls — about 2.7 hours, comfortably inside
+the budget — and they are walked first, so the head of the index is always
+fully collected and the tail absorbs any truncation. A pass that runs out of
+clock loses subreddits nobody ranks on, not categories.
+
+One pass a day at 02:00 UTC, with a 10-hour budget (`RI_MAX_MINUTES=600`),
+means the fetch is finished by 12:00 UTC at the very latest and normally hours
+earlier. The Mac chain starts at 08:30 UTC into whatever the pass has already
+committed — collection commits per subreddit, so there is nothing to wait for
+and nothing to coordinate. A pass that is still running when the chain starts
+costs only that the last subreddits' mentions are classified tomorrow.
+
+Once a day is the owner's ruling (2026-08-17) and it fits: a subreddit's 24
+hours of new posts is covered by 8 listing pages, and the 72-hour revisit
+window means every thread still gets multiple chances to have its comments
+read as its discussion accumulates.
 
 Listing and tree calls both pass `use_cache=False`. The disk cache exists for
 resumable one-off harvests, not for a lane whose whole job is to see what
@@ -199,12 +210,17 @@ Anti-join: every mention with no `mention_sentiment` row for its
 `(doc_id, brand_id)`, any model_version. It drains the backlog and exits — it
 is not a daemon.
 
-Providers are pools. The default is `--haiku 16 --deepseek 0`: sixteen local
-`claude -p` processes on the Max plan, free, measured at ~350 items/min.
-DeepSeek is available (`--deepseek N`) and **metered**; about $27 has been
-spent on it deliberately. Any claim that this project never touches a metered
-API is false — the corpus carries `claude-cli-absa-1`,
-`deepseek-v4-flash-absa-1` and `haiku-4.5-absa-1`.
+Providers are pools, and **the lane is free Haiku**: sixteen local `claude -p`
+processes on the Max plan, measured at ~350 items/min. That is the default and,
+since 2026-08-17, the ruling — a slower free lane beats a faster billed one,
+and the backlog drains overnight either way.
+
+The metered DeepSeek pool is still in the file, because it is how the
+throughput ceiling was measured and a future one-off backlog may justify it,
+but it cannot start without `--allow-metered`. `--deepseek N` alone exits with
+a message. About $27 was spent on it deliberately during the 2026-08-16
+backlog, so the corpus carries `claude-cli-absa-1`, `deepseek-v4-flash-absa-1`
+and `haiku-4.5-absa-1` — history, not policy.
 
 Concurrency is chosen on measured throughput, never on a resource gauge. The
 Codex fleet at 100 concurrent looked fine on memory (119 procs, 1.8 GB) and
@@ -303,8 +319,9 @@ zero.
 
 So the question it asks is not "did it run" but "did it MOVE". Fourteen
 assertions, each comparing a clock or a count against what a healthy pass
-produces, all sized against the twice-daily cadence with a full cycle of slack
-so one missed pass is not an alarm and two are:
+produces, all sized against the once-daily cadence: 36 hours is a full cycle
+plus the 10-hour budget plus room, so a late pass is not an alarm and a missed
+day is:
 
 | assertion | what it proves |
 |---|---|
@@ -342,7 +359,7 @@ the code now. The point of the table is the diagnosis path, not the guard.
 | what breaks | symptom | caught by | what to run |
 |---|---|---|---|
 | **Watermark unreadable** (TEXT read as float) | cron green, exit 0, `_run` rows=0, no sub advances, log shows an exception per subreddit | `fetch_collected`, `mentions_written`, `sub_coverage` | `node --test tests/collect.test.mjs`; the parse lives only in `daily.py::as_epoch` |
-| **Listing budget exhausted** before the watermark | `r/x: 400 posts still short of the watermark — held`; `capped` count in `_run_coverage` | nothing fails: the watermark is held and the pass re-walks | raise `RI_MAX_PAGES`, or run the cron more often — a sub publishing >800/day cannot be covered twice a day at 4 pages |
+| **Listing budget exhausted** before the watermark | `r/x: 400 posts still short of the watermark — held`; `capped` count in `_run_coverage` | nothing fails: the watermark is held and the pass re-walks | raise `RI_MAX_PAGES` (default 8 = 800 posts/day) — a sub publishing more than that in a day cannot be covered by one pass |
 | **Listing page errored** mid-fetch | `r/x: listing incomplete — watermark held` | `sub_errors` if it raised; otherwise self-heals | nothing; the next pass re-reads from the same floor |
 | **Revisit starvation** (no `tree_fetched_at`) | comment mentions stop arriving while thread counts look fine; unread threads pile up in the 72h window | `revisit_backlog` | check `threads.tree_fetched_at IS NULL` inside 72h; raise `RI_TREES_PER_SUB` |
 | **Rejected row rolls back the caller** | a subreddit's threads and mentions vanish while its watermark advances | `fetch_collected`, `mentions_written` | savepoints in `insert_mentions`; the reject reason is printed for the first 5 |
@@ -391,7 +408,7 @@ Everything in `worker/`. A dead lane must not be runnable by accident.
 | `daily.py` | **current** — the Railway fetch |
 | `daily_mac.sh` | **current** — the Mac chain (classify, score, delete-sync, publish, health) |
 | `healthcheck.py` | **current** — the 3-hourly check |
-| `classify_api.py` | **current** — the classifier: provider pools, 16 free `claude -p` Haiku workers by default, optional metered DeepSeek |
+| `classify_api.py` | **current** — the classifier: 16 free `claude -p` Haiku workers on the Max plan. The metered DeepSeek pool exists but needs `--allow-metered` |
 | `score_db.py` | **current** — scoring from Supabase, calibration gate, prune |
 | `delete_sync.py` | **current** — deletion propagation + revalidate |
 | `backfill_posts.py` | **current** — one-off, resumable: re-reads every stored thread through `/api/info` so historical post TITLES finally resolve |
@@ -423,7 +440,7 @@ bootstrapped.
 ```json
 {
   "build": { "builder": "DOCKERFILE", "dockerfilePath": "Dockerfile" },
-  "deploy": { "cronSchedule": "0 2,14 * * *", "restartPolicyType": "NEVER" }
+  "deploy": { "cronSchedule": "0 2 * * *", "restartPolicyType": "NEVER" }
 }
 ```
 
@@ -467,7 +484,7 @@ Environment on the cron service:
 | `SUPABASE_PROJECT_REF` | project ref | becomes the pooler user `postgres.<ref>` |
 | `SUPABASE_DB_PASSWORD` | db password | scoped to this one database; the org-wide Supabase PAT never enters the container |
 | `RI_CACHE` | `/tmp/ri-cache` | the image is read-only elsewhere |
-| `RI_MAX_MINUTES` | `330` | the code default is 0 (no budget) — 5.5h lives here, not in the source |
+| `RI_MAX_MINUTES` | `600` | the code default is 0 (no budget) — 10h lives here, not in the source |
 | `RI_TREES_PER_SUB` | `24` | revisit budget per sub per pass |
 | optional | `RI_MAX_PAGES`, `RI_SLEEP`, `RI_NET_MAX_WAIT`, `RI_DB_CONNECT_TRIES`, `SUPABASE_DB_HOST/PORT/USER/NAME/REGION` | |
 

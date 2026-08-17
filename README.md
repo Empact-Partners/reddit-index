@@ -10,10 +10,10 @@ one of them stored, classified, and linkable back to its source. Built by
 
 ```
 Reddit API ──►┌──────────────────────────────────────────────────────────┐
- /new         │ Railway cron · 02:00 + 14:00 UTC · worker/daily.py       │
+ /new         │ Railway cron · 02:00 UTC daily · worker/daily.py         │
  /comments    │ the 527 core subreddits first, then the rest of 2,029    │
               │ fetch → qualify → resolve (rules only) → Supabase        │
-              │ RI_MAX_MINUTES=330 (stops clean at 5.5h) · 24 trees/sub  │
+              │ RI_MAX_MINUTES=600 (stops clean at 10h) · 24 trees/sub   │
               └────────────────────────┬─────────────────────────────────┘
                                        ▼ threads · verbatim mentions · watermarks
                             ┌──────────────────────┐
@@ -23,7 +23,9 @@ Reddit API ──►┌───────────────────
               ┌──────────────────────────────────────────────────────────┐
               │ Mac launchd · 04:30 America/Santiago (08:30 UTC)         │
               │ worker/daily_mac.sh — NOT `set -e`; every stage reports  │
-              │ classify_api.py  16 free `claude -p` Haiku workers       │
+              │ classify_api.py  16 free `claude -p` Haiku workers, and  │
+              │ nothing metered — the DeepSeek pool needs a flag it is   │
+              │ never given                                              │
               │ → score_db.py → delete_sync.py → publish → healthcheck   │
               └────────────────────────┬─────────────────────────────────┘
                                        ▼ POST Vercel deploy hook
@@ -41,9 +43,12 @@ Reddit API ──►┌───────────────────
 
 Two things in that picture are there because of what happened without them.
 
-The fetch runs **twice** a day and walks the core subreddits first: a pass has
-a 5.5-hour budget and stops cleanly when it expires, so what gets dropped is
-the tail, never the subreddits that carry the categories.
+The fetch runs **once** a day and walks the core subreddits first: a pass has a
+10-hour budget and stops cleanly when it expires, so what gets dropped is the
+tail, never the 527 subreddits that carry the categories. One pass has to cover
+a full day, so the listing budget is 8 pages — 800 posts, past anything in this
+set — and a subreddit busier than that holds its watermark instead of skipping
+the overflow.
 
 The health lane exists because between 2026-08-16 and 2026-08-17 the daily
 fetch collected **zero rows and every signal stayed green** — the cron ran, the
@@ -90,10 +95,10 @@ node scripts/qa-sweep.mjs        # read every built page (after a build)
 # the fetch (Railway runs this; these are the by-hand forms)
 python3 worker/daily.py --dry-run --only sysadmin   # fetch + resolve, write NOTHING
 python3 worker/daily.py --core-only                 # the 527 core subreddits only
-python3 worker/daily.py --max-minutes 60            # bounded pass (Railway sets 330)
+python3 worker/daily.py --max-minutes 60            # bounded pass (Railway sets 600)
 
 worker/daily_mac.sh              # the whole Mac chain, by hand
-python3 worker/classify_api.py --haiku 16 --deepseek 0   # drain the label backlog, free
+python3 worker/classify_api.py                      # drain the label backlog (free Haiku)
 python3 worker/score_db.py                               # re-score from Supabase + prune
 python3 worker/delete_sync.py --dry-run                  # what Reddit has removed
 python3 worker/backfill_posts.py --limit 2000            # re-read stored threads AS POSTS
@@ -103,12 +108,14 @@ python3 worker/healthcheck.py --json           # the same, machine-readable
 python3 worker/qa_audit.py --only invariants   # the 6 SQL invariants, free
 ```
 
-Classification is `worker/classify_api.py`: provider pools, defaulting to 16
-free `claude -p` Haiku workers on the Max plan. It drains the backlog and
-exits. `--deepseek N` adds a **metered** HTTP lane — the corpus carries labels
-from three engines (`claude-cli-absa-1`, `deepseek-v4-flash-absa-1`,
-`haiku-4.5-absa-1`) and roughly $27 of DeepSeek spend was deliberate, so this
-project is not a no-metered-API project.
+Classification is `worker/classify_api.py`: 16 free `claude -p` Haiku workers
+on the Max plan. It drains the backlog and exits. The metered DeepSeek pool is
+still in the file — it is how the throughput ceiling was measured — but it
+refuses to start without `--allow-metered`, because classification runs free
+(ruled 2026-08-17). The corpus carries labels from three engines
+(`claude-cli-absa-1`, `deepseek-v4-flash-absa-1`, `haiku-4.5-absa-1`); the
+DeepSeek ones are from one deliberate $27 backlog run and are history, not
+policy.
 
 `worker/backfill_posts.py` is a repair, not a daily job: until 2026-08-17 the
 post document was built from `selftext` alone, so a brand named only in a post

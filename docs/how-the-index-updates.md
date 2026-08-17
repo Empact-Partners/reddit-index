@@ -1,14 +1,19 @@
 # How the index updates
 
-**Cadence: collection twice a day, everything else once a day.**
+**Cadence: once a day, end to end.**
 
-A Railway cron container runs `worker/daily.py` at **02:00 and 14:00 UTC**
-(`railway.json`, `cronSchedule: "0 2,14 * * *"`). Each pass walks the scoring
+A Railway cron container runs `worker/daily.py` at **02:00 UTC**
+(`railway.json`, `cronSchedule: "0 2 * * *"`). The pass walks the scoring
 subreddits core-first, reads `/r/{sub}/new`, resolves brands out of the posts
 and out of the comment trees of recently-seen threads, and writes mentions to
-Supabase. It carries a 5.5-hour budget (`RI_MAX_MINUTES=330`) and stops cleanly
+Supabase. It carries a 10-hour budget (`RI_MAX_MINUTES=600`) and stops cleanly
 when it expires, which is exactly why the walk is core-first: a truncated pass
 loses the tail, not the 527 subreddits that carry the categories.
+
+One pass has to cover a full day of every subreddit, so the listing budget is
+eight pages — 800 posts, past anything in this set (the busiest, r/pcmasterrace,
+runs about 512 a day). Pages are only fetched while the listing is still ahead
+of the watermark, so a quiet subreddit still costs one call.
 
 The Mac then runs one chain at **04:30 America/Santiago, 08:30 UTC** (launchd
 `com.reddit-index.daily` → `worker/daily_mac.sh`): classify → score → delete-sync

@@ -45,11 +45,16 @@ REVISIT_HOURS = 72
 # Trees per subreddit per pass. Raised from 12 the day the revisit queue got a
 # memory (threads.tree_fetched_at): with fair ordering, a bigger budget spends
 # on threads nobody has read rather than on re-reading the same busiest twelve.
+# It is a CAP, not a cost: the revisit query only returns threads first seen in
+# the last 72h, so a quiet subreddit asks for far fewer.
 TREES_PER_SUB = int(os.environ.get("RI_TREES_PER_SUB", "24"))
-# /new pages per subreddit per pass, 100 posts each. At two passes a day this
-# covers a sub publishing up to ~800 posts/day; anything busier reports capped
-# and holds its watermark rather than skipping the overflow (see fetch_new).
-MAX_PAGES = int(os.environ.get("RI_MAX_PAGES", "4"))
+# /new pages per subreddit per pass, 100 posts each. ONE pass a day means a
+# pass must cover 24 hours of a subreddit, so the budget is 800 posts — past
+# anything in this set (the busiest, r/pcmasterrace, runs ~512/day). Pages are
+# only fetched while the listing is still ahead of the watermark, so a quiet
+# subreddit still costs exactly one call; raising this is free for everyone
+# except the subs that need it.
+MAX_PAGES = int(os.environ.get("RI_MAX_PAGES", "8"))
 # Comments requested per thread. ONE constant, imported by sweep.py, because
 # the two lanes make the identical call: the daily lane asked for 200 where the
 # sweep asked for 500, so it silently collected a smaller tree at the same cost.

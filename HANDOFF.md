@@ -20,12 +20,13 @@ most of why the board read as comments-only.
 
 | | |
 |---|---|
-| Fetch cadence | 04:00 UTC daily → **02:00 and 14:00 UTC**, core subreddits first, 5.5h budget |
+| Fetch cadence | 04:00 UTC daily → **02:00 UTC daily**, core subreddits first, 10h budget, 8 listing pages |
 | Post document | `selftext` → **title + selftext** (`harvest.post_doc`, one builder, three callers) |
 | Posts per pass | only if the thread won a revisit slot → **every qualifying post, off the listing already held, at zero extra API calls** |
 | Revisit queue | same top-12 by `num_comments`, forever → **`tree_fetched_at NULLS FIRST`, 24/sub** |
 | Mac chain | Codex fleet classify (retired lane), `set -e` → **`classify_api.py` free Haiku pool**, no `set -e`, + delete-sync + healthcheck |
-| Watching it | nothing → **`worker/healthcheck.py`**, 14 assertions, launchd every 3h |
+| Watching it | nothing → **`worker/healthcheck.py`**, 15 assertions, launchd every 3h |
+| Classification | Codex fleet / mixed metered → **free Haiku only**, metered lane gated behind `--allow-metered` |
 
 Seven defects, each a silent loss, each now guarded and most of them found by
 audit rather than by symptom:
@@ -96,11 +97,12 @@ across the pooler, and the first pilot crawled at 100 threads/min because of it.
 ### Still open
 
 - **Classification is behind collection** and will be until the backfill's post
-  mentions are labelled. The free lane (`classify_api.py --haiku 16`) runs at
-  ~130-350 items/min; the 04:30 chain drains what is left each night. Company
-  pages disclose the unclassified share while it is large. A metered DeepSeek
-  lane would finish the same backlog in about three hours for roughly $30 —
-  Vlad's call, not a default.
+  mentions are labelled. The free Haiku lane (`classify_api.py`, 16 `claude -p`
+  workers on the Max plan) runs at ~130-350 items/min; the 04:30 chain drains
+  what is left each night, and company pages disclose the unclassified share
+  while it is large. Vlad ruled on 2026-08-17 that this is the lane: DeepSeek
+  would have finished the same backlog in three hours for about $30 and is
+  declined. `--deepseek` now refuses to start without `--allow-metered`.
 - **Scores do not move until the labels land** (`score_db.py` reads labelled
   rows only), so the boards are unchanged by the backfill until then.
 - The three quarantined categories (email-providers, etl, payment-processing)
@@ -221,7 +223,7 @@ data-driven via `brand-seed-new.csv`; byte-identical regression for the
 original 145 verified before the merge.
 
 **The daily loop is DEPLOYED:**
-- ⚠️ SUPERSEDED 2026-08-17: the cron is `0 2,14 * * *`, the revisit budget is 24
+- ⚠️ SUPERSEDED 2026-08-17: the cron is `0 2 * * *`, the revisit budget is 24
   per subreddit ordered by `threads.tree_fetched_at` NULLS FIRST, and the Mac
   chain is `classify_api.py` at 04:30 local. See the top entry.
 - Railway project `reddit-index` (90cd4c29…), cron `0 4 * * *` UTC, Dockerfile
