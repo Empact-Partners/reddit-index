@@ -48,6 +48,7 @@ REPO = os.path.dirname(HERE)
 sys.path.insert(0, HERE)
 
 import db  # noqa: E402
+import leases  # noqa: E402
 from classify import MODEL_VERSION, STAGE_LLM, LABEL_CODE, mark_target  # noqa: E402
 from classify_codex import SYSTEM  # noqa: E402
 from classify_daemon import Backlog, pg_text, _swap_free_mb  # noqa: E402
@@ -328,6 +329,16 @@ def main():
         print("no deepseek key found", flush=True)
         return 1
 
+    # ONE classifier at a time. The nightly chain starts one at 04:30 whether or
+    # not a hand-started run from the evening is still draining, and two copies
+    # over one backlog cursor pay twice for the same batches (harmless to the
+    # data — ON CONFLICT DO NOTHING — and pure waste otherwise). flock, so a
+    # kill -9 frees it with no TTL window and no reaper.
+    lane = leases.Lease("classify")
+    if not lane.acquire():
+        print("another classifier holds the lane — exiting", flush=True)
+        return 0
+
     brand_names = {r["slug"]: r["brand"] for r in
                    csv.DictReader(open(os.path.join(REPO, "data", "brands.csv")))}
     state = {"conn": db.connect()}
@@ -421,6 +432,7 @@ def main():
             state["conn"].close()
         except Exception:
             pass
+        lane.release()
     return 0
 
 
