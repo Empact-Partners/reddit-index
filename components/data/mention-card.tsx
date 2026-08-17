@@ -31,6 +31,11 @@ export type Mention = {
   /** The surface form the matcher fired on ("HubSpot", "hubspot.com") —
    *  highlighted in the body alongside the display name. */
   matchedForm: string;
+  /** The thread this document sits in. On a POST it is the headline (and the
+   *  first line of the body, so it is not repeated); on a COMMENT it is the
+   *  question being answered, which is the context a reader needs to judge
+   *  the reply. Null only when the thread predates title collection. */
+  threadTitle: string | null;
   body: string;        // FULL text
   permalink: string;   // absolute reddit.com URL, copied from the API
 };
@@ -84,7 +89,13 @@ export function highlight(text: string, forms: string[]): React.ReactNode[] {
  */
 export function MentionCard({ m }: { m: Mention }) {
   const headingId = `m-${m.permalink.split("/").filter(Boolean).pop()}`;
-  const typeLabel = m.docType === "post_body" ? "Post" : "Comment";
+  const isPost = m.docType === "post_body";
+  const typeLabel = isPost ? "Post" : "Comment";
+  // A post's body already OPENS with its title (worker/harvest.py::post_doc
+  // stores title + selftext as one document), so repeating it above the quote
+  // would print it twice. A comment's thread title is context it does not
+  // otherwise carry, and that is worth a line.
+  const context = !isPost && m.threadTitle ? m.threadTitle : null;
 
   return (
     <article className="mention-card" data-sentiment={m.sentiment} aria-labelledby={headingId}>
@@ -114,6 +125,13 @@ export function MentionCard({ m }: { m: Mention }) {
           </time>
         </span>
       </p>
+
+      {context && (
+        <p className="mention-context">
+          <span className="sr-only">In thread: </span>
+          {context}
+        </p>
+      )}
 
       <blockquote className="mention-body" cite={m.permalink}>
         {/* Blank lines split paragraphs; SINGLE newlines survive as line

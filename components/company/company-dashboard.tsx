@@ -16,6 +16,7 @@ import type { SubredditStat } from "@/lib/data/types";
  */
 
 type SentimentFilter = "all" | "pos" | "neg" | "neu";
+type DocFilter = "all" | "post_body" | "comment";
 type View = "mentions" | "subreddits";
 const PAGE_SIZE = 10;
 
@@ -28,6 +29,9 @@ export function CompanyDashboard({
   subredditStats,
   totals,
   totalMentions,
+  docTypeTotals,
+  unlabelled,
+  oldestMention,
   heroScore,
   heroLabel,
   rank,
@@ -37,6 +41,13 @@ export function CompanyDashboard({
   subredditStats: SubredditStat[];
   totals: { pos: number; neg: number; neu: number };
   totalMentions: number;
+  /** TRUE corpus split, not the rail's. The filter counts what exists. */
+  docTypeTotals: { posts: number; comments: number };
+  /** Collected but not classified yet. Counted as neutral everywhere, which is
+   *  only honest while the number is small — so the page says it. */
+  unlabelled: number;
+  /** How far back collection reaches, so "oldest shown" can say what it is. */
+  oldestMention: string | null;
   heroScore: number | null;
   heroLabel: string;
   /** "#12 in Social Media Management" — the brand's standing in the category
@@ -47,6 +58,7 @@ export function CompanyDashboard({
 }) {
   const [view, setView] = useState<View>("mentions");
   const [sentiment, setSentiment] = useState<SentimentFilter>("all");
+  const [docType, setDocType] = useState<DocFilter>("all");
   const [subreddit, setSubreddit] = useState<string>("all");
   const [order, setOrder] = useState<"newest" | "oldest">("newest");
   const [page, setPage] = useState(1);
@@ -54,10 +66,17 @@ export function CompanyDashboard({
 
   const filtered = mentions
     .filter((m) => sentiment === "all" || bucket(m.sentiment) === sentiment)
+    .filter((m) => docType === "all" || m.docType === docType)
     .filter((m) => subreddit === "all" || m.subreddit === subreddit)
     .sort((a, b) => order === "newest"
       ? b.createdUtc.localeCompare(a.createdUtc)
       : a.createdUtc.localeCompare(b.createdUtc));
+
+  // Posts and comments are collected and shown separately, so say which is
+  // which with the real corpus totals — the list is a window, these are not.
+  const railPosts = mentions.filter((m) => m.docType === "post_body").length;
+  const railComments = mentions.length - railPosts;
+  const windowed = mentions.length < totalMentions;
 
   const pages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const current = Math.min(page, pages);
@@ -165,6 +184,17 @@ export function CompanyDashboard({
               <span><i className="dot dot-neg" />{pct(t.neg)}% negative</span>
               <span><i className="dot dot-neu" />{pct(t.neu)}% neutral</span>
             </p>
+            {/* The classifier trails the collector, and an unclassified
+                mention is counted as neutral. That is fine at 2% and a
+                distortion at 40%, so the page states the number whenever it is
+                big enough to move the bar. */}
+            {unlabelled / opTotal > 0.1 && (
+              <p className="rail-note">
+                {num(unlabelled)} of these ({pct(unlabelled)}%) were collected
+                recently and are still being classified. They count as neutral
+                until they are.
+              </p>
+            )}
           </div>
         )}
       </section>
@@ -228,6 +258,21 @@ export function CompanyDashboard({
                 r/{subreddit} ✕
               </button>
             )}
+            {/* Posts and comments are different evidence — a post is someone
+                raising the subject, a comment is someone answering. The counts
+                are the whole corpus, not the window below. */}
+            <div className="seg" role="group" aria-label="Document type">
+              {([
+                ["all", "All", docTypeTotals.posts + docTypeTotals.comments],
+                ["comment", "Comments", docTypeTotals.comments],
+                ["post_body", "Posts", docTypeTotals.posts],
+              ] as [DocFilter, string, number][]).map(([key, label, count]) => (
+                <button key={key} type="button" aria-pressed={docType === key}
+                        onClick={() => { setDocType(key); setPage(1); }}>
+                  {label}<span className="seg-count"> {num(count)}</span>
+                </button>
+              ))}
+            </div>
             <div className="seg" role="group" aria-label="Sort order">
               <button type="button" aria-pressed={order === "newest"}
                       onClick={() => { setOrder("newest"); setPage(1); }}>
@@ -235,10 +280,24 @@ export function CompanyDashboard({
               </button>
               <button type="button" aria-pressed={order === "oldest"}
                       onClick={() => { setOrder("oldest"); setPage(1); }}>
-                Oldest
+                {/* "Oldest" sorts the WINDOW, and saying so is the difference
+                    between a sort and a lie: the oldest mention held can be
+                    years older than the oldest card here. */}
+                {windowed ? "Oldest shown" : "Oldest"}
               </button>
             </div>
           </div>
+
+          {windowed && (
+            <p className="rail-note">
+              Showing the {num(mentions.length)} most recent of{" "}
+              {num(totalMentions)} mentions ({num(railComments)} comments,{" "}
+              {num(railPosts)} posts).
+              {oldestMention && (
+                <> Collection reaches back to {oldestMention.slice(0, 10)}.</>
+              )}
+            </p>
+          )}
 
           <div className="mt-8">
             <MentionList mentions={visible} />

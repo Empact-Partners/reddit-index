@@ -17,7 +17,7 @@ COPY data/categories.csv data/category-subreddits.csv data/brands.csv \
      data/brand-aliases.csv data/alias-blocklist.csv data/english-words.txt \
      /app/data/
 
-# Fail the BUILD, not a 04:00 cron, if the gazetteer the image carries is not
+# Fail the BUILD, not a 02:00 cron, if the gazetteer the image carries is not
 # the gazetteer the code expects.
 RUN python3 -c "import sys; sys.path.insert(0,'/app/worker'); import resolve; \
     assert len(resolve._BLOCKED) >= 40, resolve._BLOCKED; \

@@ -1,30 +1,123 @@
 # How the index updates
 
-**Cadence: daily.** Railway fetches every scoring subreddit's new threads at
-04:00 UTC and stores resolved mentions in Supabase; the Mac classifies,
-re-scores, and triggers a Vercel rebuild around 07:30 UTC. The numbers on
-the site describe the trailing 365 days as of the last rebuild.
+**Cadence: collection twice a day, everything else once a day.**
+
+A Railway cron container runs `worker/daily.py` at **02:00 and 14:00 UTC**
+(`railway.json`, `cronSchedule: "0 2,14 * * *"`). Each pass walks the scoring
+subreddits core-first, reads `/r/{sub}/new`, resolves brands out of the posts
+and out of the comment trees of recently-seen threads, and writes mentions to
+Supabase. It carries a 5.5-hour budget (`RI_MAX_MINUTES=330`) and stops cleanly
+when it expires, which is exactly why the walk is core-first: a truncated pass
+loses the tail, not the 527 subreddits that carry the categories.
+
+The Mac then runs one chain at **04:30 America/Santiago, 08:30 UTC** (launchd
+`com.reddit-index.daily` → `worker/daily_mac.sh`): classify → score → delete-sync
+→ publish → healthcheck. Classification lives here because the free lane is
+`claude -p` Haiku on the Max plan, which exists only on this machine. The chain
+is deliberately **not** `set -e`. It used to be, and a stalled classifier
+therefore aborted the script before scoring and publishing — one slow lane, and
+the site stopped updating with data it already had.
+
+A third job, launchd `com.reddit-index.health`, runs `worker/healthcheck.py
+--slack` **every 3 hours**, independent of the chain. It exists because of a
+specific failure: from 2026-08-16 to 2026-08-17 the daily fetch collected
+nothing at all and every signal a human would check stayed green. The cron ran,
+the container exited 0, `ingest_state` gained a fresh row with `status='ok'`,
+and the site kept serving. The only trace was `rows=0`, and nobody reads a row
+for a zero. So the check is not "did it run" but "did it MOVE": fourteen
+assertions comparing clocks and counts against what a healthy pass produces,
+including that posts are still being read as posts and that the
+`published.mentions` view is not pinned to a single sentiment model. It posts to
+Slack only on a change of state — into failure, and again on recovery — and only
+if `slack_channel` is set in `~/.claude/.reddit-index.json`.
+
+**What the numbers describe.** The *scores* describe the trailing 365 days as of
+the last rebuild. The *mention counts* — the Mentions column on the boards, the
+totals on a company page — describe everything ever collected, all the way back.
+Those are two different windows on purpose, and the pages that show them say
+which one they are showing.
 
 **There is no history and no deltas — by design.** The scores table holds
-exactly one truthful set: each daily run upserts the fresh scores and
-deletes everything older. The site never shows "up 3 since last week"
-because a moving 12-month window plus a growing corpus makes day-over-day
-deltas mostly measurement noise wearing a trend costume. Supabase keeps
-every MENTION ever collected (verbatim, permanently, minus Reddit-deleted
-ones) — history of the evidence, not of the rankings.
+exactly one truthful set: each run upserts the fresh scores, deletes every older
+`week_start`, and additionally drops any row at the current `week_start` that
+this run did not just compute. That last sweep is not tidiness. Because the
+loader upserts, a (brand, category) that scored yesterday and has no evidence
+today would otherwise keep its stale row at today's date forever — purging
+30,858 false-positive mentions once left 44 such rows live, publishing scores on
+evidence that no longer existed. A score must not outlive its evidence.
 
-**Publish = rebuild.** The site is fully static: every route is prerendered
-from one database read at build time, and there is deliberately no runtime
-data path (no anon key ships, no client fetches). A Vercel Deploy Hook
-triggers the daily rebuild; a git push does the same for code changes. New
-brands get their pages at the next build.
+The site never shows "up 3 since last week" because a moving 12-month window
+plus a growing corpus makes day-over-day deltas mostly measurement noise wearing
+a trend costume. Supabase keeps every MENTION ever collected (verbatim,
+permanently, minus the ones deleted on Reddit) — history of the evidence, not of
+the rankings.
+
+**Publish = rebuild.** The site is fully static: every route is prerendered from
+one database read at build time, and there is deliberately no runtime data path
+— no anon key ships, no client fetches, and the snapshot module is `server-only`.
+The publish step POSTs a Vercel Deploy Hook; if no hook is configured it pushes
+an empty commit instead, because Vercel builds every push. A git push does the
+same for code changes. Company routes set `dynamicParams = false`, so a brand
+that was not in the build has no page until the next one.
+
+There is one narrow runtime endpoint, `POST /api/revalidate`, and it carries no
+data: it is bearer-gated and only invalidates cache tags. Delete-sync uses it.
 
 **A mention's lifecycle:**
-1. Fetched by the daily worker (or the backfill), body stored verbatim with
-   its author, permalink and timestamp.
-2. Classified within a day (pos / neg / neu / abstain, about THAT brand).
-3. Counted into its category's next scoring pass if its brand belongs to
-   that category and it is inside the 365-day window.
-4. Ages out of the score window after a year (stays in the database).
-5. If deleted on Reddit: removed from the site at the next delete-sync, no
-   tombstone.
+
+1. **Collected.** Both posts and comments become mentions. A post's document is
+   its TITLE plus its selftext, stored as `doc_type 2`. It used to be selftext
+   alone, and that one omission is why the index read as comments-only: a brand
+   named in the headline ("Anyone moved off HubSpot?") resolved to nothing, and
+   a link post with an empty body produced no document at all. Posts are now
+   resolved straight off the `/new` listing the pass already holds, at zero extra
+   API calls. Comments (`doc_type 1`) come from the comment trees of threads
+   first seen in the last 72 hours, unread threads first. Either way the body is
+   stored verbatim with its author, permalink, score and timestamp.
+2. **Classified**, usually within a day, but the classifier trails collection.
+   It is an anti-join against `mention_sentiment` that drains the backlog and
+   exits, and it runs once, at 08:30 UTC. So the 02:00 batch is labelled the same
+   morning, the 14:00 batch waits for the next one, and a deep backlog takes
+   longer still. This matters because scoring reads only labelled rows: a
+   collected but unclassified mention exists in the database, is visible on the
+   company page, and is not yet in any score.
+3. **Counted** into its category's next scoring pass if its brand is actually
+   tracked in that category (primary or `also_in`) and its timestamp is inside
+   the 365-day window.
+4. **Ages out** of the score window after a year. It stays in the database and it
+   stays on the company page.
+5. **Purged** if its author deletes it on Reddit. No tombstone.
+
+**Delete-sync runs before the publish, in the same chain.**
+`worker/delete_sync.py` takes a batch of stored documents, probes them through
+Reddit's `/api/info` a hundred at a time, and treats anything Reddit no longer
+returns — or returns with the body blanked to `[deleted]`/`[removed]`, or the
+author blanked — as gone. Gone documents are written to a `removals` ledger
+first, then their `mentions` and `mention_sentiment` rows are deleted, then the
+affected pages are invalidated, then `revalidated_at` is stamped as the receipt.
+That order is the whole design: a crash anywhere leaves a row that
+`gate_checks.sql` flags, rather than a live page still serving a comment its
+author deleted with nothing recording it.
+
+Purging Postgres is only half the job — a cached page keeps serving a removed
+comment until its tag is invalidated, which is why delete-sync owns the
+revalidate call instead of leaving it to the publish. Running it inside the
+chain, immediately before the rebuild, is what makes the purge and the pages
+that reflect it land together: the `--publish-follows` flag stamps the receipt
+on the rebuild, which invalidates more thoroughly than any tag set. This is not
+a nice-to-have. Reddit's Developer Terms require deletions to propagate as soon
+as possible, and `decisions/0002` makes it a *condition* of displaying full
+comment text at all.
+
+**A company page shows a window, and says so.** Each page renders the 200 newest
+comments and the 100 newest posts for that brand — two separate rails, not one
+list of 300 by recency. Posts are about a quarter of the corpus and are clustered
+differently in time, so a single newest-N window left brands with thousands of
+posts showing seventeen of them, and a Posts filter over that is a filter over
+noise. Every *count* on the page is computed from the whole corpus rather than
+from the cards shown: the stat tiles, the Posts/Comments filter counts, and the
+subreddit ledger all come from a full-table aggregate. The page states the gap
+itself, above the list ("Showing the N most recent of M mentions"), and labels
+the oldest-first sort "Oldest shown" — because the oldest mention held can be
+years older than the oldest card rendered, and calling that button "Oldest"
+would be a lie.

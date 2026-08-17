@@ -57,6 +57,9 @@ export function CompanyPage({
         subredditStats={company.subredditStats}
         totals={company.sentimentTotals}
         totalMentions={company.totalMentions}
+        docTypeTotals={company.docTypeTotals}
+        unlabelled={company.unlabelled}
+        oldestMention={company.oldestMention}
         heroScore={primaryScore}
         heroLabel="Reddit ❤️ Score"
         rank={boardRank}

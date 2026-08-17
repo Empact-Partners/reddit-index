@@ -114,6 +114,19 @@ export type CompanyView = {
   /** TRUE full mention count from the aggregates, not the score-window n. */
   totalMentions: number;
   sentimentTotals: { pos: number; neg: number; neu: number };
+  /** TRUE post/comment split over the whole corpus — the numbers on the type
+   *  filter. Never derived from `mentions`, which is a window. */
+  docTypeTotals: { posts: number; comments: number };
+  /** Mentions with no sentiment row yet (the classifier trails the collector).
+   *  Folded into "neutral" for display, counted here so the page can say when
+   *  that fold is large enough to distort the bar. */
+  unlabelled: number;
+  /** ISO date of the OLDEST mention held for this company, so "oldest" on the
+   *  page can be honest about being the oldest SHOWN. */
+  oldestMention: string | null;
+  /** How many mentions the page actually carries (≤ 300: 200 comments + 100
+   *  posts, newest first). The gap to totalMentions is stated, not hidden. */
+  railSize: number;
   subredditStats: SubredditStat[];
 };
 

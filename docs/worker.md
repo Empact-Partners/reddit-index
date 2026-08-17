@@ -1,159 +1,527 @@
 # The daily worker
 
-The index refreshes every day through a two-machine loop, split by capability:
-Railway can fetch but cannot run our LLMs; the Mac runs the LLM engines
-(Codex fleet, Claude subscriptions) but should not be a 24/7 fetch box.
+The index refreshes through a two-machine loop, split by capability rather than
+by taste. Railway is always on and can fetch Reddit around the clock, but it
+cannot run our LLMs. The Mac can: the free classification lane is `claude -p`
+on the Max plan, which exists on this machine and nowhere else. So fetching
+lives on Railway, and everything downstream of a stored mention lives here.
 
 ```
-04:00 UTC  Railway cron container      worker/daily.py
-           Reddit /new listings  ->  qualify  ->  72h revisit trees
-           ->  rules-only resolve  ->  Supabase (threads, mentions, watermarks)
+02:00 + 14:00 UTC   Railway cron container       worker/daily.py
+                    /new listings -> qualify -> posts + 72h revisit trees
+                    -> rules-only resolve -> Supabase (threads, mentions,
+                    watermarks).  RI_MAX_MINUTES=330, so a pass stops
+                    cleanly at 5.5h and the next one picks up the tail.
 
-07:30 UTC  Mac launchd (com.reddit-index.daily)   worker/daily_mac.sh
-           classify_daily.py   label every unlabelled mention (Codex fleet)
-           score_db.py         re-score every category FROM Supabase, prune history
-           deploy hook         Vercel rebuild = the publish step
+08:30 UTC           Mac launchd com.reddit-index.daily   worker/daily_mac.sh
+(04:30 Santiago)    classify_api.py   label the backlog, 16 free Haiku workers
+                    score_db.py       recompute every category from Supabase
+                    delete_sync.py    purge what Reddit's authors deleted
+                    deploy hook       the Vercel rebuild IS the publish
+
+every 3 hours       Mac launchd com.reddit-index.health  worker/healthcheck.py
+                    14 assertions, Slack on a CHANGE of state
 ```
+
+The two lanes never block each other and never need to agree on anything but
+Postgres. Every write on both sides is `ON CONFLICT DO NOTHING` or a full
+recompute, so a missed night costs a bigger batch tomorrow and nothing else.
 
 ## The fetch algorithm (Railway, `worker/daily.py`)
 
-Per scoring subreddit (see [taxonomy.md](taxonomy.md) for the list):
+Subreddits are walked **core first**: `sorted(mapping, key=lambda s: (s not in
+core, s))` puts the 527 `is_core` subreddits ahead of the other 1,502. `core`
+is a fetch-ORDER filter only — `is_scoring` still decides what counts — so a
+pass that runs out of time, dies or gets throttled has spent what it had on the
+subreddits that actually carry the categories, and loses only the tail.
 
-1. `GET /r/{sub}/new?limit=100`, watermark-bounded (up to 3 pages while every
-   item is newer than the stored watermark).
-2. **Content-qualify** each post: a brand alias or an owning category's noun
-   in the title or selftext; not removed, not locked. The backfill's
-   `num_comments >= 3` floor is deliberately dropped — a fresh thread
-   legitimately has no comments yet.
-3. Upsert qualifying threads (`num_comments`/`score` refresh on conflict).
-4. **Revisit window**: fetch full comment trees for this sub's threads first
-   seen in the last **72 hours**, up to **12 per sub per day**, busiest
-   first. A thread gets tree-fetched up to ~4 times across its window;
-   `ON CONFLICT DO NOTHING` on the mentions PK makes re-fetches free while
-   catching every comment that arrived since the last visit.
-5. Resolve mentions (the same rules-only Aho-Corasick resolver as the
-   backfill — word boundaries, qualified forms, stop-contexts; nothing
-   guessed), insert verbatim bodies, **commit per sub**, then advance the
-   watermark. A mid-run death costs nothing committed.
+Per subreddit, in this order:
 
-Budget: ~600 listing calls + a few thousand tree calls ≈ 45-90 min at the
-80 req/min discipline.
+1. **Watermark.** `get_watermark` reads `ingest_state` through `as_epoch`,
+   which accepts a Postgres timestamp string, an ISO string, a `datetime` or a
+   bare epoch. It returns `None` for anything it cannot parse instead of
+   raising — see the worked example below for why that sentence exists.
+
+2. **`/r/{sub}/new`, watermark-bounded.** 100 posts per page, at most
+   `MAX_PAGES` (4, `RI_MAX_PAGES`). The loop stops early on the first page
+   whose oldest post is at or below the watermark, on an empty page, or when
+   Reddit stops handing back an `after` cursor. A sub with no watermark yet
+   reads exactly one page.
+
+   Two failure shapes are distinguished, and both **hold** the watermark:
+
+   - `ok=False` — a page came back `_err`. An error used to collapse into an
+     empty page, indistinguishable from a clean end of listing, and the caller
+     advanced past posts it had never seen. Reproduced: a drop on page 2 of 250
+     new posts skipped 150 forever, and the next healthy run returned nothing
+     because the watermark had already moved.
+   - `capped=True` — the page budget ran out while the listing was still ahead
+     of the watermark. This is the one this lane actually walks into.
+     r/pcmasterrace publishes ~512 posts a day; a 300-post read covers 14 hours
+     of a 24-hour gap, and the ~210 posts below it were unreachable for good.
+     Every day. A capped read is an incomplete read, so the watermark stays put
+     and the next pass re-walks the same pages.
+
+3. **Content-qualify.** Not removed, not locked, and either a brand alias (the
+   low-ambiguity regex) or an owning category's noun in **title or selftext**.
+   The backfill's `num_comments >= 3` floor is deliberately dropped: a fresh
+   thread legitimately has no comments yet, and the revisit queue is what
+   collects its discussion later.
+
+4. **Thread upsert.** `ON CONFLICT (id) DO UPDATE` refreshes `num_comments` and
+   `score`; `first_seen_at` is stamped once, at insert, and is what the revisit
+   window is measured from. A subreddit missing from the `subreddits` table is
+   skipped loudly and counted as an error — no row, no foreign key, no
+   mentions, and a whole community going dark must be visible. Names are folded
+   to lowercase on lookup: Reddit names are case-preserving but
+   case-insensitive, and most stored rows carry capitals (r/CRM, r/SaaS).
+
+5. **Posts, resolved straight off the listing.** `harvest.post_doc` builds the
+   post document as **title + selftext** (doc_type 2) and `resolver.resolve`
+   runs over it. Zero extra Reddit calls — the listing is already in hand.
+   Before this, a post became a mention only if its thread also won one of the
+   day's revisit slots, so on any busy subreddit most post mentions were
+   dropped on the floor while their comments were kept. And the document itself
+   was selftext alone, so a brand named only in the title resolved to nothing
+   and a link post produced no document at all.
+
+6. **Revisit queue.** Threads in this subreddit first seen in the last
+   `REVISIT_HOURS` (72), `ORDER BY tree_fetched_at NULLS FIRST, num_comments
+   DESC`, `LIMIT TREES_PER_SUB` (24, `RI_TREES_PER_SUB`). Each one gets a
+   `/comments/{id}` fetch at depth 6, limit 200, sort top.
+
+   The ordering key is the whole point. This used to be `ORDER BY num_comments
+   DESC LIMIT 12` with no memory of what had been fetched, and `num_comments`
+   is refreshed on every pass — so the ordering was stable and the same twelve
+   threads were re-read for three days while the thirteenth aged out of the
+   window having never been read at all. Measured over 2026-08-10..15: 48,171
+   of 75,511 threads (64%) never had their comments collected, and comments are
+   the large majority of the corpus (about three quarters of it on 2026-08-17). `tree_fetched_at` plus NULLS FIRST means nothing is read
+   twice until everything in the window has been read once, which is also why
+   the per-sub budget could go from 12 to 24 without waste. A thread whose tree
+   comes back empty is still marked read, so it cannot hold a slot the rest of
+   the window needs.
+
+7. **Insert, under savepoints.** `insert_mentions` writes in batches of 50 with
+   `ON CONFLICT (brand_id, doc_id, created_utc) DO NOTHING`, and falls back to
+   row-by-row when a batch is rejected — the vendor-sub trigger is the usual
+   culprit. Every failure is contained in a `SAVEPOINT`. The first version
+   called `cur.connection.rollback()`, a connection-level rollback that threw
+   away the caller's open transaction: the subreddit's entire `threads` upsert
+   and every batch that had already succeeded. `main()` then advanced the
+   watermark and committed, so one rejected row silently cost a subreddit's
+   whole pass and made the loss permanent. A helper must never commit or roll
+   back a transaction it does not own.
+
+   The returned count is **real insertions** — `rowcount`, which
+   `ON CONFLICT DO NOTHING` reports as 0 for a duplicate — not `len(batch)`.
+   The dead-run detector reads this number, and `len(batch)` made a
+   duplicates-only run look productive.
+
+8. **Mark and advance.** `UPDATE threads SET tree_fetched_at = now()` for every
+   tree actually fetched, then the watermark, then `conn.commit()` — **per
+   subreddit**, so a mid-run death costs nothing already committed. The
+   watermark moves only when `newest and listing_ok and not capped`.
+
+Monthly `mentions` partitions for this month and next are created at run start,
+before any row could land in `mentions_default` (Postgres refuses a partition
+whose range overlaps rows already in the default).
 
 ### Watermarks (`ingest_state`)
 
 | column | value |
 |---|---|
-| scope | subreddit name (plus one `_run` summary row) |
+| scope | subreddit name, plus `_run` and `_run_coverage` summary rows |
 | ym | `'daily'` (constant — this lane is not month-scoped) |
 | stage | `'new_listing'` |
 | code_version | `'daily-v1'` (bump = clean restart, by PK) |
-| watermark | newest `created_utc` ingested for that sub |
+| watermark | newest `created_utc` ingested for that sub, written as ISO-8601 |
+| rows | qualifying threads on the last pass (`tot_mentions` on `_run`) |
+| status | `'ok'` or `'error'` |
 
-A sub that errors keeps its old watermark and self-heals next run (a
-100-deep listing covers several days on most communities).
+The column is **TEXT**. `set_watermark` writes `isoformat()` explicitly rather
+than leaning on psycopg's datetime adaptation, and `as_epoch` is the only place
+that parses it back, so no caller can reintroduce the assumption that it holds
+a number.
 
-## The 90-day depth sweep (Mac, `worker/sweep.py` + `worker/depth_run.py`)
+A sub that errors keeps its old watermark and self-heals next pass. `_run`
+carries the run-level verdict; `_run_coverage` carries a human summary
+(`"1240/2029 subs · 3411 threads · 4 errors · 2 capped"`). A `--only`
+invocation is a test and deliberately writes neither: it used to overwrite the
+global `_run` marker, so a three-subreddit smoke test made the health check
+believe a full pass had just finished.
 
-The daily loop keeps the present current; the depth sweep is what makes each
-category deep. `sweep.py --days 90` paginates `/r/{sub}/new` until posts age
-past the cutoff — a complete 90-day census for any subreddit under ~11
-posts/day, which is nearly all of them. A subreddit whose `/new` listing cap
-(~1,000 posts) is *younger* than the cutoff is marked
-`coverage: "approximate"` and gets supplements: `/top t=month`, `/top t=year`,
-and per-noun scoped search, all client-filtered to the window.
+The run exits 1 — and stamps `status='error'` — when errors exceed
+`max(20, 5% of subs attempted)`, or when more than 50 subreddits were attempted
+and the pass produced zero threads and zero mentions. Before that, a run that
+raised on every single subreddit still printed DONE and exited 0, and Railway
+showed a green cron for two days while the index froze.
 
-Thread qualification in this mode: a brand surface form (the **full**
-20,798-alias automaton via `Resolver.has_alias`, not the low-ambiguity regex
-the daily loop uses) or an owning-category noun in title/selftext, not
-removed, not locked, `num_comments >= 2`. Over-qualification is deliberate —
-a false qualify costs one tree fetch, a false reject drops a thread forever,
-and extraction still runs the fully gated `resolve()`.
+## What one pass costs
 
-State is per subreddit in `worker/.cache/sweep/<sub>.json` (schema 2) and
-records the mode it was collected under, so a resume never mixes a 90-day
-pass with an all-time one. Two rate-limit guards matter: a listing page that
-comes back `_err` never lets the sub be marked `listings_done` (a truncated
-listing used to look complete), and a tree that errors is counted in
-`failed_trees` and retried rather than recorded as swept.
+The pacing floor is in `reddit_client`: `SLEEP = 0.75s`, applied
+**start-to-start**, not end-to-start. Request latency (~0.6s from Chile) used
+to stack on top of the floor, so a 0.75s gap produced ~44 req/min against a
+~100 QPM budget. As a period it gives 60 / 0.75 = **80 calls per minute**, run
+deliberately under the ~100 budget. It widens on its own when
+`x-ratelimit-remaining` drops below 30, because the app-level budget is shared
+across every process using this client_id.
 
-`depth_run.py` orchestrates it category by category — mention volume
-descending, order frozen on first run — sweeping each category's subs, then
-running that category's classify burn, then scoring and publishing, so
-categories come online whole rather than everything half-done at once. A
-subreddit shared by several categories is swept once and credited to all.
+Against 2,029 scoring subreddits (527 of them core):
 
-```bash
-nohup caffeinate -is python3 -u worker/depth_run.py --days 90 \
-    --allow-git-publish > /tmp/ri-depth.log 2>&1 &
-python3 worker/depth_run.py --status              # per-category table
-python3 worker/depth_run.py --list-approximate    # the busy-sub coverage list
-```
+| item | calls | at 0.75s |
+|---|---|---|
+| one listing page per sub (the floor) | 2,029 | 25 min |
+| four listing pages per sub (the ceiling) | 8,116 | 101 min |
+| 24 trees per sub (the ceiling) | 48,696 | 10.1 h |
+| **what `RI_MAX_MINUTES=330` buys** | **26,400** | **5.5 h** |
 
-Kill it at any instant; re-run the identical command to resume.
+The time budget binds long before the tree budget does, and that is the
+intended shape. Subtract a one-page listing sweep and a pass can afford roughly
+24,000 tree fetches — about 12 per subreddit averaged, against a cap of 24. The
+cap only bites on the busy head, which is exactly where core-first ordering
+puts the spend: the 527 core subs, saturated at 24 trees each, cost 527 +
+12,648 = 13,175 calls, about 2.7 hours. The core set therefore fits inside half
+a pass, and the tail gets whatever is left.
 
-## Classification (Mac, `worker/classify_daily.py`)
+Two passes 12 hours apart (02:00 and 14:00 UTC) means at most 11 hours of
+fetching in a 24-hour day and at least 6.5 hours of slack after each pass.
+That slack is what the Mac chain at 08:30 UTC starts into: the overnight pass
+has finished, at the latest, by 07:30 UTC.
 
-Anti-join: every mention with **no** `mention_sentiment` row (any
-model_version) inside the trailing 400 days. Items go to the Codex fleet
-(gpt-5.6-luna, 40-item batches, 40 wide) through the shared item-level label
-cache — a re-run never re-spends a model call. `entity_ok=false` verdicts
-drop the mention (an entity decision, not a sentiment one). Labels upsert
-with the pipeline's `model_version` constant; the engine is recorded
-per-item in the cache.
+Listing and tree calls both pass `use_cache=False`. The disk cache exists for
+resumable one-off harvests, not for a lane whose whole job is to see what
+changed.
 
-The nightly run is **capped** (`CLASSIFY_DAILY_CAP`, default 30,000, newest
-first) because it is unattended. A supervised burn is the same code
-uncapped and category-scoped: `--category <slug> --cap 0 --loop`, draining
-until the anti-join returns nothing. Scoping is by **subreddit** membership,
-not brand: `score_db` builds a category's corpus from its scoring subs and
-then filters brands by `also_in` in Python, so sub-scoping is what
-guarantees everything the scorer will read is already labelled. A burn holds
-`worker/.cache/codex-absa/burn.lock`; the nightly job sees it and skips
-classification (it still scores and publishes), because both processes
-compute the same content-addressed batch ids and would delete each other's
-in-flight out-files.
+## Classification (Mac, `worker/classify_api.py`)
+
+Anti-join: every mention with no `mention_sentiment` row for its
+`(doc_id, brand_id)`, any model_version. It drains the backlog and exits — it
+is not a daemon.
+
+Providers are pools. The default is `--haiku 16 --deepseek 0`: sixteen local
+`claude -p` processes on the Max plan, free, measured at ~350 items/min.
+DeepSeek is available (`--deepseek N`) and **metered**; about $27 has been
+spent on it deliberately. Any claim that this project never touches a metered
+API is false — the corpus carries `claude-cli-absa-1`,
+`deepseek-v4-flash-absa-1` and `haiku-4.5-absa-1`.
+
+Concurrency is chosen on measured throughput, never on a resource gauge. The
+Codex fleet at 100 concurrent looked fine on memory (119 procs, 1.8 GB) and
+returned zero batches in 13 minutes, because a local agent process costs kernel
+scheduling, not RAM. HTTP providers cost almost nothing locally and can go
+wide; the CLI pool is one local process per worker and gets ramped carefully.
+
+Three protections that each cost something to learn:
+
+- `_claude_bin()` resolves the CLI absolutely and raises if it is missing.
+  launchd hands a job `PATH=/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin`
+  and the CLI lives in `~/.local/bin`, so bare `claude` raised
+  `FileNotFoundError` inside every worker thread, got swallowed by the generic
+  handler, and an unattended run labelled nothing while looking busy. The
+  `daily` plist also puts `~/.local/bin` on PATH.
+- `load_judged()` reads the on-disk caches and skips items any lane has already
+  decided. Entity-rejected items never get a `mention_sentiment` row, so the
+  anti-join returns them forever: 34,432 of them against 5,568 genuinely
+  unprocessed items on one measured run, i.e. 86% of a naive second pass would
+  be money spent re-learning a decision already on disk.
+- Model output is cached to disk **before** the DB write, so a crash never
+  loses paid work, and a poison row falls back to one-by-one so it cannot block
+  the other 39.
+
+`entity_ok=false` verdicts drop the mention. That is an entity decision, not a
+sentiment one.
 
 ## Scoring (Mac, `worker/score_db.py`)
 
-Supabase is the corpus — the local file caches are backfill machinery, not
-the source of truth. Per category: labelled mentions from its scoring subs in
-the trailing 365 days, **restricted to brands whose category membership
-includes it** (a mention of Google Drive in r/CRM stays on Google Drive's
-page and out of the CRM leaderboard). `score_category()` — the EB-shrunk
-estimator, unchanged — then upsert into `brand_category_scores` and **delete
-every older `week_start` row**: the table holds exactly one truthful set.
-No deltas, no history, by design.
+Supabase is the corpus. The local file caches under `worker/.cache/` are
+backfill machinery, not the source of truth.
+
+Per category: labelled mentions from its scoring subreddits over the trailing
+365 days, restricted to brands whose category membership (primary or `also_in`)
+includes this category — the fix for "Google Workspace tops the CRM board".
+`score_category()` is the frozen EB-shrunk estimator, unchanged.
+
+Then three gates before anything is published:
+
+- **Calibration.** `gate_calibration.check_rows` refuses a run whose ordering
+  contradicts its own raw data. Quarantine is **per category**: a violating
+  board keeps its last-good numbers on disk (`<slug>.json.lastgood`), is listed
+  in `.cache/index/_blocked.json`, and every other category publishes.
+  Aborting the whole load on one category blocked the entire site for hours on
+  a single email-providers tie. More than `max(3, len(cats)//20)` blocked
+  categories is systemic and refuses the load outright.
+- **No prune after an incomplete load.** `week_start` is stamped today, so a
+  partial load moves `max(week_start)` forward and the prune would then delete
+  the last complete published set.
+- **No score outlives its evidence.** `load.py` upserts and the prune only
+  removes older `week_start`s, so a (brand, category) that scored yesterday and
+  has no mentions today would keep its stale row at today's `week_start`
+  forever. Purging 30,858 false-positive mentions left 44 such rows live. The
+  stale-score sweep deletes anything at the current `week_start` that this run
+  did not just compute.
+
+`brand_category_scores` then holds exactly one truthful set. No deltas, no
+history, by design.
+
+## Delete-sync
+
+`delete_sync.py --publish-follows` probes stored `doc_id`s through `/api/info`,
+purges mentions whose author deleted them on Reddit, writes `removals`, and
+calls `revalidateTag`. This is not deferrable: Reddit's Developer Terms require
+deletions to propagate as soon as possible, and `decisions/0002` makes it a
+condition of displaying full comment text at all.
+
+Purging Postgres is half the job — a cached page keeps serving a removed
+comment until its tag is invalidated, which is why delete_sync owns the
+revalidate call. A row with `purged_at` set and `revalidated_at` null is an
+open defect, and `gate_checks.sql` asserts it.
 
 ## Publish
 
 `curl -X POST $DEPLOY_HOOK` — a Vercel rebuild. The site is fully static
 (`force-static`, `dynamicParams=false`): a rebuild re-reads Supabase once,
 re-renders every route, and new brands get pages. There is no cache
-revalidation path that refreshes this site without a build; the hook IS the
-publish mechanism.
+revalidation path that refreshes the score pages without a build; the hook IS
+the publish mechanism. The hook URL lives in `~/.claude/.reddit-index.json`
+under `deploy_hook`. With no hook configured, `daily_mac.sh` falls back to an
+empty commit and a push, because Vercel builds every push.
+
+`daily_mac.sh` is deliberately **not** `set -e`. The old version was, and a
+stalled classifier therefore aborted the script before scoring and publishing:
+one slow lane and the site stopped updating with data it already had. Each
+stage reports its exit code and the chain continues.
+
+## The health check (`worker/healthcheck.py`)
+
+It exists because of a failure that is invisible to every other signal. On
+2026-08-16 the fetch stopped writing a single row and everything a human would
+look at stayed green: the cron ran on schedule, the container exited 0,
+`ingest_state` gained a fresh `_run` row with `status='ok'`, and the site kept
+serving. The only trace was `rows=0` on that row, and nobody reads a row for a
+zero.
+
+So the question it asks is not "did it run" but "did it MOVE". Fourteen
+assertions, each comparing a clock or a count against what a healthy pass
+produces, all sized against the twice-daily cadence with a full cycle of slack
+so one missed pass is not an alarm and two are:
+
+| assertion | what it proves |
+|---|---|
+| `fetch_ran` | a pass finished within 20h |
+| `fetch_collected` | the last pass wrote ≥200 new mentions — the 2026-08-16 signal |
+| `fetch_status` | the last pass stamped `status='ok'` |
+| `sub_coverage` | ≥80% of scoring subs advanced their watermark in 30h |
+| `sub_errors` | ≤100 subreddits errored in 30h |
+| `mentions_written` | ≥1,000 rows landed in 30h, by `loaded_at` (our clock, not Reddit's) |
+| `posts_collected` | doc_type 2 rows are still arriving — zero means the post document regressed to selftext-only |
+| `revisit_backlog` | unread threads in the 72h window have not run away |
+| `labels_fresh` | the classifier committed within 30h |
+| `backlog` | unlabelled count under 60k (warn) / 250k (fail) |
+| `scores_fresh` | `max(week_start)` within 7 days |
+| `scores_present` | >1,000 score rows exist |
+| `view_unpinned` | `published.mentions` is not pinned to one model_version |
+| `labels_visible` | labelled mentions actually reach the site |
+
+It writes its verdict to `ingest_state` under scope `_health`, exits 1 on any
+failure, and with `--slack` posts only on a **change** of state — into failure
+and again on recovery. A long outage is one message, not one every three hours.
+State is `worker/.cache/health.json`; the channel is `slack_channel` in
+`~/.claude/.reddit-index.json`, and with no channel configured it posts nothing.
+
+```bash
+python3 worker/healthcheck.py            # human output, exit 1 on failure
+python3 worker/healthcheck.py --json     # machine output
+```
 
 ## Failure matrix
 
-| scenario | outcome |
+Every row below is a real failure this pipeline has had, and the guard is in
+the code now. The point of the table is the diagnosis path, not the guard.
+
+| what breaks | symptom | caught by | what to run |
+|---|---|---|---|
+| **Watermark unreadable** (TEXT read as float) | cron green, exit 0, `_run` rows=0, no sub advances, log shows an exception per subreddit | `fetch_collected`, `mentions_written`, `sub_coverage` | `node --test tests/collect.test.mjs`; the parse lives only in `daily.py::as_epoch` |
+| **Listing budget exhausted** before the watermark | `r/x: 400 posts still short of the watermark — held`; `capped` count in `_run_coverage` | nothing fails: the watermark is held and the pass re-walks | raise `RI_MAX_PAGES`, or run the cron more often — a sub publishing >800/day cannot be covered twice a day at 4 pages |
+| **Listing page errored** mid-fetch | `r/x: listing incomplete — watermark held` | `sub_errors` if it raised; otherwise self-heals | nothing; the next pass re-reads from the same floor |
+| **Revisit starvation** (no `tree_fetched_at`) | comment mentions stop arriving while thread counts look fine; unread threads pile up in the 72h window | `revisit_backlog` | check `threads.tree_fetched_at IS NULL` inside 72h; raise `RI_TREES_PER_SUB` |
+| **Rejected row rolls back the caller** | a subreddit's threads and mentions vanish while its watermark advances | `fetch_collected`, `mentions_written` | savepoints in `insert_mentions`; the reject reason is printed for the first 5 |
+| **Container gazetteer drift** | Railway resolves different mentions than the Mac for identical text | the Docker **build** fails; `resolve.py` raises at import | `docker build .` — the parity assert wants ≥40 blocked pairs and >200k dictionary words |
+| **Post document regresses** to selftext-only | zero doc_type 2 rows; titles stop producing mentions | `posts_collected` | `node --test tests/collect.test.mjs`; repair the corpus with `worker/backfill_posts.py` |
+| **`published.mentions` re-pinned** to one model_version | site shows no sentiment at all while labels exist in the DB | `view_unpinned`, `labels_visible` | re-apply `supabase/migrations/0003` |
+| **`claude` not on launchd PATH** | classify run "looks busy" and labels nothing | `labels_fresh`, `backlog` | `_claude_bin()` raises loudly; check the `PATH` key in `com.reddit-index.daily.plist` |
+| **Mac asleep, chain missed** | labels stale, `week_start` old, fetch fine | `labels_fresh`, `scores_fresh` | nothing — launchd runs a missed calendar job once on wake |
+| **Calibration quarantine** | one board keeps yesterday's numbers | not a health assertion | read `worker/.cache/index/_blocked.json` |
+| Railway ran, Mac didn't | unclassified mentions wait | `labels_fresh` | next Mac run's anti-join sweeps them |
+| Mac ran, Railway didn't | anti-join ≈ empty, identical scores re-upserted | `fetch_ran` | harmless |
+| Double runs, either side | — | — | watermarks + PK conflicts + the judged-set cache give zero duplicates and zero re-spend |
+| Railway dies mid-run | — | — | finished subs are committed; unfinished resume from their own watermark |
+| Month boundary | — | — | partitions for this month and next are created at run start |
+
+### The worked example: 2026-08-16 to 2026-08-17
+
+`ingest_state.watermark` is a TEXT column. psycopg writes a `datetime` into it
+as `'2026-08-15 10:02:29+00'` and reads it back as that **string**.
+`daily.py` read it with `float(wmv) if wmv else None`, which raised
+`ValueError` on every subreddit from the second run onward.
+
+It survived its own smoke test because the first run for a subreddit reads
+`None` — no row yet — and works perfectly. Only the second run is dead.
+
+The cron ran on schedule, the container exited 0, a fresh `_run` row landed
+with `status='ok'`, and the site kept serving stale data. Two full days
+collected zero rows before anyone noticed.
+
+Three things came out of it, and all three are in the repo:
+
+1. `as_epoch` accepts every form the column has ever held and returns `None`
+   for anything unparseable, never an exception. `tests/collect.test.mjs` pins
+   it against the exact string Postgres returns.
+2. `main()` now fails a pass that produced nothing across more than 50
+   subreddits, in its exit code and in `ingest_state.status`.
+3. `healthcheck.py` exists, runs on its own three-hour schedule, and every one
+   of its assertions would have failed on 2026-08-17 04:13.
+
+## Which script is current
+
+Everything in `worker/`. A dead lane must not be runnable by accident.
+
+| script | status |
 |---|---|
-| Railway ran, Mac didn't | unclassified mentions wait; next Mac run's anti-join sweeps them |
-| Mac ran, Railway didn't | anti-join ≈ empty; identical scores re-upserted; harmless |
-| double runs (either side) | watermarks + PK conflicts + label cache → zero duplicates, zero re-spend |
-| Railway dies mid-run | finished subs committed; unfinished resume from their watermark |
-| batch insert hits the vendor-sub trigger | bisect to row-by-row, reject journaled, run continues |
-| month boundary | monthly partitions pre-created at run start, this month + next |
+| `daily.py` | **current** — the Railway fetch |
+| `daily_mac.sh` | **current** — the Mac chain (classify, score, delete-sync, publish, health) |
+| `healthcheck.py` | **current** — the 3-hourly check |
+| `classify_api.py` | **current** — the classifier: provider pools, 16 free `claude -p` Haiku workers by default, optional metered DeepSeek |
+| `score_db.py` | **current** — scoring from Supabase, calibration gate, prune |
+| `delete_sync.py` | **current** — deletion propagation + revalidate |
+| `backfill_posts.py` | **current** — one-off, resumable: re-reads every stored thread through `/api/info` so historical post TITLES finally resolve |
+| `backfill_labels.py` | **current** — recovery: commits labels that exist in the on-disk cache but never reached Postgres |
+| `qa_audit.py` | **current** — invariants, recall, precision, entity audit |
+| `reddit_client.py` `db.py` `resolve.py` `score.py` `gate_calibration.py` `load.py` `classify.py` | **current libraries.** `load.py --scores` is called by `score_db.py`; its `--seed`/`--mentions` legs are backfill machinery. `classify.py` supplies `MODEL_VERSION`, `LABEL_CODE`, `mark_target`; its own CLI is the retired serial `claude -p` lane |
+| `harvest.py` | **library, not a driver.** It survives as the shared document builders `post_doc` / `tree_docs` (plus `CATEGORY_NOUNS`, `build_alias_re`, `load_brands`) that `daily.py`, `sweep.py` and `backfill_posts.py` all import — they must agree byte for byte, because the mentions PK is `(brand_id, doc_id, created_utc)` and the stored body is what the site renders. Its `--category/--all` Lane D CLI is retired |
+| `sweep.py` | the 90-day depth sweep engine. **The sweep is complete** (527/527 core subs); still the right tool for a newly added subreddit, nothing runs it on a schedule |
+| `classify_codex.py` `classify_daily.py` `classify_daemon.py` | **superseded** — the Codex fleet lane, retired in `071de98`. `codex exec` is an agent session, not an API call: >600s on a 40-item batch against 108s for `claude -p` Haiku, with identical label distributions. `classify_daemon.py` still supplies `Backlog` / `pg_text` to `classify_api.py`, and `classify_codex.py` still supplies the `SYSTEM` prompt; neither is run |
+| `depth_run.py` `collector.py` `publisher.py` `watchdog.py` `lanes.sh` | **superseded** — the continuous lanes built to drive the one-off 90-day depth sweep. That sweep is done and none of these is loaded. `lanes.sh install` would bootstrap four launchd jobs that no longer have work |
+| `leases.py` `status.py` `depth_progress.py` | support for those dormant lanes — `leases.py` is the flock primitive, the other two are read-only observers |
+| `backfill_100.sh` | **superseded** — runs the old discovery chain and the retired classifier |
+| `finalize.sh` `pipeline.py` `run_scoring.py` | **superseded** — the file-cache era (`resolve -> classify -> assemble -> score -> load`). Supabase is the corpus now; `score_db.py` replaced the whole chain |
+| `verify.py` `freeze_methodology.py` | one-off evidence producers. `freeze_methodology.py` ran before the first production crawl and re-running it is a methodology version bump, not a refresh |
+| `bench_deepseek.py` | benchmark: finds the fastest DeepSeek config that does not degrade labels |
+| `gate_checks.sql` | the SQL assertions `verify.py` and delete-sync are checked against |
+
+Loaded launchd jobs are exactly two: `com.reddit-index.daily` and
+`com.reddit-index.health`. The `collector`, `classifier`, `publisher`,
+`watchdog` and `keepawake` plists still sit in `worker/launchd/` and are not
+bootstrapped.
 
 ## Deployment
 
-- **Railway**: `Dockerfile` at the repo root (python:3.12-slim +
-  `psycopg[binary]` + `pyahocorasick`; CSVs baked into the image so mapping
-  updates ship with a push). Cron service, `0 4 * * *`, restart policy off.
-  Env: `REDDIT_CLIENT_ID/SECRET/USER_AGENT`, `SUPABASE_PROJECT_REF`,
-  `SUPABASE_DB_PASSWORD` (+ optional `SUPABASE_DB_HOST/USER/REGION`),
-  `RI_CACHE=/tmp/ri-cache`. Transport is the Supavisor **session** pooler
-  (`aws-0-us-east-1.pooler.supabase.com:5432`, IPv4) — the direct DB host is
-  IPv6-only and unreachable from Railway, and the org-wide Supabase PAT
-  never enters the container.
-- **Mac**: `~/Library/LaunchAgents/com.reddit-index.daily.plist` runs
-  `worker/daily_mac.sh` daily; the deploy-hook URL lives in
-  `~/.claude/.reddit-index.json` under `deploy_hook` (0600).
+### Railway (the fetch)
+
+`railway.json` is the whole configuration:
+
+```json
+{
+  "build": { "builder": "DOCKERFILE", "dockerfilePath": "Dockerfile" },
+  "deploy": { "cronSchedule": "0 2,14 * * *", "restartPolicyType": "NEVER" }
+}
+```
+
+`restartPolicyType: NEVER` matters — a cron container that restarts on exit
+would re-run the pass immediately.
+
+The `Dockerfile` is python:3.12-slim plus `psycopg[binary]` and
+`pyahocorasick`, and it copies `worker/` and **six** data files:
+`categories.csv`, `category-subreddits.csv`, `brands.csv`, `brand-aliases.csv`,
+`alias-blocklist.csv`, `english-words.txt`.
+
+The last two were missing, and the container therefore resolved against a
+different gazetteer than the Mac: 41 blocklisted alias→brand pairs the entity
+gate rejects (`aws`→amazon-route-53, `app`→astro-pixel-processor) resolved
+anyway, and slim images have no `/usr/share/dict/words`, so 31 aliases that the
+plain-word guard should have caught resolved bare. Two guards now:
+`resolve.py` **raises** when either input is absent rather than silently
+changing behaviour, and the image build asserts parity, so a wrong gazetteer
+fails the **build** rather than a 02:00 cron:
+
+```dockerfile
+RUN python3 -c "import sys; sys.path.insert(0,'/app/worker'); import resolve; \
+    assert len(resolve._BLOCKED) >= 40, resolve._BLOCKED; \
+    assert len(resolve._ENGLISH) > 200000, len(resolve._ENGLISH)"
+```
+
+Deploy:
+
+```bash
+cd ~/Projects/reddit-index && railway up
+```
+
+`.railwayignore` keeps the Next app, `node_modules`, caches and docs out of the
+build context — the image is the worker and its CSVs, nothing else.
+
+Environment on the cron service:
+
+| var | value | why |
+|---|---|---|
+| `REDDIT_CLIENT_ID` / `_SECRET` / `_USER_AGENT` | app-only OAuth | `reddit_client` raises at import without all three |
+| `SUPABASE_PROJECT_REF` | project ref | becomes the pooler user `postgres.<ref>` |
+| `SUPABASE_DB_PASSWORD` | db password | scoped to this one database; the org-wide Supabase PAT never enters the container |
+| `RI_CACHE` | `/tmp/ri-cache` | the image is read-only elsewhere |
+| `RI_MAX_MINUTES` | `330` | the code default is 0 (no budget) — 5.5h lives here, not in the source |
+| `RI_TREES_PER_SUB` | `24` | revisit budget per sub per pass |
+| optional | `RI_MAX_PAGES`, `RI_SLEEP`, `RI_NET_MAX_WAIT`, `RI_DB_CONNECT_TRIES`, `SUPABASE_DB_HOST/PORT/USER/NAME/REGION` | |
+
+Transport is the Supavisor **session** pooler
+(`aws-0-<region>.pooler.supabase.com:5432`), which resolves to IPv4. The direct
+DB host is IPv6-only and unreachable from a Railway container.
+
+### Mac (classify, score, publish, health)
+
+Both plists live in `worker/launchd/` and are copied into
+`~/Library/LaunchAgents/`:
+
+```bash
+cd ~/Projects/reddit-index
+cp worker/launchd/com.reddit-index.daily.plist  ~/Library/LaunchAgents/
+cp worker/launchd/com.reddit-index.health.plist ~/Library/LaunchAgents/
+
+launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.reddit-index.daily.plist
+launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.reddit-index.health.plist
+
+launchctl list | grep reddit-index                        # what is loaded
+launchctl kickstart -k gui/$(id -u)/com.reddit-index.daily  # run it now
+launchctl bootout   gui/$(id -u)/com.reddit-index.daily     # unload
+```
+
+Editing a plist requires `bootout` then `bootstrap` again — launchd does not
+re-read a loaded job.
+
+- `com.reddit-index.daily` — `StartCalendarInterval` 04:30 local (America/
+  Santiago, 08:30 UTC), after the overnight Railway pass has finished. Its
+  `PATH` deliberately includes `~/.local/bin`, which carries the `claude` CLI
+  that IS the free classification lane. launchd runs a missed calendar job once
+  on wake, so a closed laptop delays the chain rather than skipping it — which
+  is why no `caffeinate` lane is loaded to hold the machine awake all night for
+  an hour of work.
+- `com.reddit-index.health` — `StartInterval` 10800 (3h) with `RunAtLoad`,
+  independent of the daily chain, so a broken chain cannot also break its own
+  alarm.
+
+Logs: `~/Library/Logs/reddit-index-daily.log` and
+`~/Library/Logs/reddit-index-health.log`.
+
+Credentials on the Mac are `~/.claude/.reddit-index.json` (0600):
+`project_ref`, `db_password`, `region`, `deploy_hook`, `slack_channel`. The
+Supabase management token for `load.py` and `delete_sync.py` is
+`~/.claude/.supabase-empact.token`.
+
+### Running a pass by hand
+
+```bash
+python3 worker/daily.py --dry-run --only crm --only sysadmin   # writes nothing
+python3 worker/daily.py --core-only --max-minutes 60           # the 527 core subs
+python3 worker/daily.py                                        # a full pass
+```
+
+`--only` never writes the `_run` markers, so a smoke test cannot fool the
+health check.

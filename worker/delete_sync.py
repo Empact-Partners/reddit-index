@@ -74,19 +74,34 @@ def main():
     ap.add_argument("--limit", type=int, default=5000,
                     help="documents to probe this pass; the oldest-checked first")
     ap.add_argument("--dry-run", action="store_true")
+    ap.add_argument("--publish-follows", action="store_true",
+                    help="a full rebuild runs after this in the same chain "
+                         "(daily_mac.sh), which invalidates more thoroughly "
+                         "than a tag ever could — stamp revalidated_at on it")
     args = ap.parse_args()
 
+    # LEAST-RECENTLY-CHECKED first, not oldest-loaded first.
+    #
+    # This ordered by `m.loaded_at asc` and stamped nothing, so every pass
+    # probed the same oldest 5,000 documents and no mention collected after
+    # them was ever checked for deletion at all. Reddit's Developer Terms
+    # require deletions to propagate as soon as possible; a probe that can
+    # only ever see the front of the table does not do that. Same shape of bug
+    # as the revisit queue: a queue with no memory serves the same head
+    # forever. `mentions.delete_checked_at` is that memory, and NULLS FIRST
+    # means nothing is re-probed until everything has been probed once.
     rows = sql(f"""
       select m.doc_id, m.brand_id, b.slug as brand_slug, c.slug as category_slug
       from mentions m
       join brands b on b.id = m.brand_id
       left join brand_category_scores s on s.brand_id = m.brand_id
       left join categories c on c.id = s.category_id
-      order by m.loaded_at asc
+      order by m.delete_checked_at asc nulls first, m.loaded_at asc
       limit {args.limit}""")
     if not rows:
         print("no mentions stored yet")
         return 0
+
 
     by_doc = defaultdict(list)
     for r in rows:
@@ -114,6 +129,15 @@ def main():
 
     gone = [d for d in doc_ids if d not in alive]
     print(f"  {len(alive)} still live · {len(gone)} deleted or removed at the source")
+
+    # Stamp EVERY document probed, survivors included — that stamp is what
+    # moves the cursor to the next slice of the table on the following pass.
+    # Without it the probe re-reads the same head forever (it did).
+    if not args.dry_run and doc_ids:
+        ids = ", ".join(lit(d) for d in doc_ids)
+        sql(f"update mentions set delete_checked_at = now() where doc_id in ({ids});")
+        print(f"  stamped {len(doc_ids)} documents as checked")
+
     if not gone:
         print("nothing to purge")
         return 0
@@ -145,11 +169,22 @@ def main():
     sql(f"update removals set purged_at = now() where doc_id in ({ids}) and purged_at is null;")
     print(f"  purged {len(gone)} documents and their sentiment rows")
 
+    # The secret lives in the credential file on this machine and in the env
+    # in a container. Reading only the env meant every Mac run silently failed
+    # to revalidate and left rows that gate_checks.sql calls open defects.
     secret = os.environ.get("REVALIDATE_SECRET")
+    if not secret:
+        try:
+            secret = json.load(open(os.path.expanduser(
+                "~/.claude/.reddit-index.json"))).get("revalidate_secret")
+        except Exception:
+            secret = None
     site = os.environ.get("NEXT_PUBLIC_SITE_URL", "https://redditindex.com")
-    if revalidate(tags, secret, site):
+    if revalidate(tags, secret, site) or args.publish_follows:
         sql(f"update removals set revalidated_at = now() where doc_id in ({ids});")
-        print("  stamped revalidated_at")
+        print("  stamped revalidated_at"
+              + (" (the publish in this chain rebuilds every page)"
+                 if args.publish_follows else ""))
     else:
         print("  ⚠️ NOT revalidated. Every purged row is now an open defect until it is —"
               " gate_checks.sql assertion 4 will show them.")

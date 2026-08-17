@@ -87,7 +87,8 @@ async function loadSnapshotOnce(): Promise<Snapshot> {
   const t0 = Date.now();
   const s = db();
 
-  const [catRows, brandRows, scoreRows, subCounts, mentionRows, mentionAgg] = await Promise.all([
+  const [catRows, brandRows, scoreRows, subCounts, mentionRows, mentionAgg,
+         threadRows] = await Promise.all([
     s`select id, slug, name, threshold_tier, precision_target_pp, n_min, base_rate_c, status
       from published.categories`,
     s`select id, slug, name, primary_category_id from published.brands`,
@@ -116,23 +117,40 @@ async function loadSnapshotOnce(): Promise<Snapshot> {
     // mentions per company: far past anything a reader scrolls, and the stat
     // tiles and subreddit ledger below are computed from the full-table
     // aggregate query, not from this rail.
+    // TWO rails, one per document type, not one rail of 250 by recency.
+    // Posts are ~20% of the corpus and clustered differently in time, so a
+    // single newest-250 window left brands with 6,889 posts showing 17 of
+    // them — and a "Posts" filter over that is a filter over noise. A quota
+    // per type is what makes the filter mean something.
     s`select t.*, b.slug as brand_slug, b.name as brand_name, sr.name as subreddit
       from published.brands b
       cross join lateral (
-        select m.* from published.mentions m
-        where m.brand_id = b.id
-        order by m.created_utc desc
-        limit 250
+        (select m.* from published.mentions m
+          where m.brand_id = b.id and m.doc_type = 1
+          order by m.created_utc desc limit 200)
+        union all
+        (select m.* from published.mentions m
+          where m.brand_id = b.id and m.doc_type = 2
+          order by m.created_utc desc limit 100)
       ) t
       join published.subreddits sr on sr.id = t.subreddit_id`,
     // The dashboard aggregates: TRUE totals over the whole table, per
-    // (brand x subreddit x label) — the stat tiles and the subreddit ledger
-    // must describe everything collected, not the 100 cards shown.
-    s`select m.brand_id, sr.name as subreddit, m.label,
-             count(*)::int as n, max(m.created_utc) as newest
+    // (brand x subreddit x doc_type x label) — the stat tiles, the type
+    // filter counts and the subreddit ledger must describe everything
+    // collected, not the cards shown. `oldest` is here so the page can say
+    // how far back collection reaches without an ascending scan (measured at
+    // 35s and back into statement-timeout territory).
+    s`select m.brand_id, sr.name as subreddit, m.doc_type, m.label,
+             count(*)::int as n, max(m.created_utc) as newest,
+             min(m.created_utc) as oldest
       from published.mentions m
       join published.subreddits sr on sr.id = m.subreddit_id
-      group by 1, 2, 3`,
+      group by 1, 2, 3, 4`,
+    // Thread titles, flat. A post card without its headline reads exactly like
+    // a comment, which is half of why the index looked comment-only. Joining
+    // threads INSIDE the rail lateral measured 12-27s; as its own query it is
+    // 0.24s and the map is built in JS.
+    s`select id, link_title from published.threads`,
   ]);
 
   const catById = new Map(catRows.map((c) => [String(c.id), c]));
@@ -217,32 +235,49 @@ async function loadSnapshotOnce(): Promise<Snapshot> {
   // Labels: 0 neu, 1 pos, 2 neg, 3 abstain; null (unclassified yet) and
   // abstain both fold into neu for DISPLAY — the dashboard's "Neutral" is
   // "carried no verdict", which is what a reader means by it.
-  type Agg = { pos: number; neg: number; neu: number; subs: Map<string, {
+  type Agg = { pos: number; neg: number; neu: number;
+    unlabelled: number; posts: number; comments: number; oldest: string;
+    subs: Map<string, {
     pos: number; neg: number; neu: number; total: number; newest: string }> };
   const aggByBrand = new Map<string, Agg>();
   for (const r of mentionAgg) {
     const bid = String(r.brand_id);
-    const a = aggByBrand.get(bid) ?? { pos: 0, neg: 0, neu: 0, subs: new Map() };
-    const label = r.label === null || r.label === undefined ? 3 : Number(r.label);
+    const a = aggByBrand.get(bid) ?? { pos: 0, neg: 0, neu: 0, unlabelled: 0,
+                                       posts: 0, comments: 0, oldest: "",
+                                       subs: new Map() };
+    const raw = r.label;
+    const label = raw === null || raw === undefined ? 3 : Number(raw);
     const bucket = label === 1 ? "pos" : label === 2 ? "neg" : "neu";
     const n = Number(r.n);
     a[bucket] += n;
+    // Counted separately from "neutral": a mention nothing has classified yet
+    // is not a reader's neutral, and 11.5% of the corpus is in that state at
+    // any time while the classifier catches up with the collector.
+    if (raw === null || raw === undefined) a.unlabelled += n;
+    if (Number(r.doc_type) === 2) a.posts += n; else a.comments += n;
     const sub = String(r.subreddit);
     const st = a.subs.get(sub) ?? { pos: 0, neg: 0, neu: 0, total: 0, newest: "" };
     st[bucket] += n;
     st.total += n;
     const newest = new Date(r.newest as string).toISOString();
     if (newest > st.newest) st.newest = newest;
+    const oldest = new Date(r.oldest as string).toISOString();
+    if (!a.oldest || oldest < a.oldest) a.oldest = oldest;
     a.subs.set(sub, st);
     aggByBrand.set(bid, a);
   }
+
+  const titleByThread = new Map<string, string>(
+    threadRows.map((t) => [String(t.id), String(t.link_title ?? "")]),
+  );
 
   const companies = new Map<string, CompanyView>();
   for (const b of brandRows) {
     const slug = String(b.slug);
     const mine = scores.filter((x) => x.brandSlug === slug);
     const primary = b.primary_category_id ? catById.get(String(b.primary_category_id)) : null;
-    const agg = aggByBrand.get(String(b.id)) ?? { pos: 0, neg: 0, neu: 0, subs: new Map() };
+    const agg = aggByBrand.get(String(b.id)) ?? { pos: 0, neg: 0, neu: 0,
+      unlabelled: 0, posts: 0, comments: 0, oldest: "", subs: new Map() };
     companies.set(slug, {
       slug,
       name: String(b.name),
@@ -254,6 +289,10 @@ async function loadSnapshotOnce(): Promise<Snapshot> {
       mentions: [],
       totalMentions: agg.pos + agg.neg + agg.neu,
       sentimentTotals: { pos: agg.pos, neg: agg.neg, neu: agg.neu },
+      docTypeTotals: { posts: agg.posts, comments: agg.comments },
+      unlabelled: agg.unlabelled,
+      oldestMention: agg.oldest || null,
+      railSize: 0,        // filled once the rail is built, below
       subredditStats: [...agg.subs.entries()]
         .map(([subreddit, st]) => ({ subreddit, total: st.total, pos: st.pos,
                                      neg: st.neg, neu: st.neu, newest: st.newest }))
@@ -273,6 +312,9 @@ async function loadSnapshotOnce(): Promise<Snapshot> {
       sentiment: SENTIMENT[Number(r.label ?? 3)] ?? "abstain",
       docType: Number(r.doc_type) === 2 ? "post_body" : "comment",
       matchedForm: String(r.matched_form ?? ""),
+      // The thread this document belongs to. On a post card it is the
+      // headline; on a comment card it is the question being answered.
+      threadTitle: titleByThread.get(String(r.thread_id ?? "")) || null,
       body: String(r.body),
       permalink: String(r.permalink).startsWith("http")
         ? String(r.permalink)
@@ -286,6 +328,10 @@ async function loadSnapshotOnce(): Promise<Snapshot> {
     if (m.author === "[deleted]") continue;
     c.mentions.push(m);
   }
+
+  // The rail is a WINDOW, not the corpus. Recording its size is what lets the
+  // page say so instead of implying that 250 cards are 34,000 mentions.
+  for (const c of companies.values()) c.railSize = c.mentions.length;
 
   console.log(
     `[snapshot] ${categories.length} categories / ${companies.size} companies / ` +

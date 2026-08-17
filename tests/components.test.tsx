@@ -8,6 +8,7 @@ describe("mention card", () => {
     brandName: "HubSpot", brandSlug: "hubspot", subreddit: "sales", author: "someone",
     createdUtc: "2026-03-03T14:22:11.000Z", sentiment: "pos", docType: "comment",
     matchedForm: "hubspot",
+    threadTitle: "Which CRM do you actually like?",
     body: long,
     permalink: "https://www.reddit.com/r/sales/comments/abc123/thread/def456/",
   };
@@ -41,14 +42,33 @@ describe("mention card", () => {
     }
   });
 
-  it("changes only the label for a post body, never the treatment", () => {
+  it("changes only the label and the context line for a post body", () => {
     const c = render(<MentionCard m={m} />).container.innerHTML;
     const p = render(<MentionCard m={{ ...m, docType: "post_body" }} />).container.innerHTML;
     expect(c).toContain("Comment");
     expect(p).toContain("Post");
+
+    // A COMMENT carries the thread title above the quote: without it a reply
+    // is unjudgeable, because the question it answers is on Reddit and not
+    // here. A POST does not — worker/harvest.py::post_doc stores title +
+    // selftext as ONE document, so the title is already the first line of the
+    // body and printing it again would double it.
+    expect(c).toContain("mention-context");
+    expect(p).not.toContain("mention-context");
+
+    // Everything else is identical treatment: same chips, same blockquote,
+    // same permalink, same attribution.
+    const strip = (h: string) => h.replace(/<p class="mention-context">.*?<\/p>/s, "");
     const norm = (h: string) =>
-      h.replace(/post_body/g, "X").replace(/post/gi, "X").replace(/comment/gi, "X");
+      strip(h).replace(/post_body/g, "X").replace(/post/gi, "X").replace(/comment/gi, "X");
     expect(norm(c)).toBe(norm(p));
+  });
+
+  it("a post with no stored thread title still renders", () => {
+    const { container } = render(
+      <MentionCard m={{ ...m, docType: "post_body", threadTitle: null }} />);
+    expect(container.textContent).toContain("Post");
+    expect(container.innerHTML).not.toContain("mention-context");
   });
 });
 

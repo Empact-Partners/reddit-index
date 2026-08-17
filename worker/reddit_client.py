@@ -167,10 +167,17 @@ def get(path, params=None, bucket="misc", tries=3, use_cache=True):
                 _stats["calls"] += 1
                 _read_ratelimit(f.headers)
                 data = json.loads(f.read())
-            tmp = fp + ".tmp"
-            with open(tmp, "w") as f:
-                json.dump(data, f)
-            os.replace(tmp, fp)
+            # use_cache=False means DO NOT CACHE — it used to skip only the
+            # READ, so the streaming lanes (daily /new pages, fresh comment
+            # trees) wrote a file per call that nothing would ever read back.
+            # That is what filled worker/.cache with 189,713 files, put
+            # Spotlight at 50% CPU for a day, and grows unbounded in a
+            # container whose disk is /tmp.
+            if use_cache:
+                tmp = fp + ".tmp"
+                with open(tmp, "w") as f:
+                    json.dump(data, f)
+                os.replace(tmp, fp)
             return data
         except urllib.error.HTTPError as e:
             _last_call[0] = time.time()

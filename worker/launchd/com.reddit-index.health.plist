@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key><string>com.reddit-index.health</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/opt/homebrew/bin/python3</string><string>-u</string>
+    <string>/Users/vladshvets/Projects/reddit-index/worker/healthcheck.py</string>
+    <string>--slack</string>
+  </array>
+
+  <!-- Every 3 hours, independent of the daily chain. The failure this exists
+       for — a cron that runs, exits 0 and collects nothing — is invisible to
+       every other signal, and it went unnoticed for two days. This job answers
+       "is the index still moving" on its own schedule so a broken chain cannot
+       also break its own alarm. It posts to Slack only on a CHANGE of state
+       (into failure, and again on recovery), so a long outage is one message,
+       not one an hour. -->
+  <key>StartInterval</key><integer>10800</integer>
+  <key>RunAtLoad</key><true/>
+  <key>WorkingDirectory</key><string>/Users/vladshvets/Projects/reddit-index</string>
+  <key>StandardOutPath</key><string>/Users/vladshvets/Library/Logs/reddit-index-health.log</string>
+  <key>StandardErrorPath</key><string>/Users/vladshvets/Library/Logs/reddit-index-health.log</string>
+  <key>EnvironmentVariables</key>
+  <dict><key>PATH</key><string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin</string></dict>
+</dict>
+</plist>

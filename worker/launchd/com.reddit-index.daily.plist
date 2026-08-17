@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key><string>com.reddit-index.daily</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/zsh</string>
+    <string>/Users/vladshvets/Projects/reddit-index/worker/daily_mac.sh</string>
+  </array>
+
+  <!-- 04:30 America/Santiago = 08:30 UTC. Railway fetches at 02:00 and 14:00
+       UTC with a 5.5h budget, so the overnight pass has finished (by ~07:30
+       UTC) before this starts classifying what it collected.
+
+       launchd runs a missed calendar job once on wake, so a closed laptop
+       delays the chain rather than skipping it — which is why no `caffeinate`
+       lane is loaded to hold the machine awake all night for a job that takes
+       about an hour. -->
+  <key>StartCalendarInterval</key>
+  <dict><key>Hour</key><integer>4</integer><key>Minute</key><integer>30</integer></dict>
+
+  <key>StandardOutPath</key><string>/Users/vladshvets/Library/Logs/reddit-index-daily.log</string>
+  <key>StandardErrorPath</key><string>/Users/vladshvets/Library/Logs/reddit-index-daily.log</string>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <!-- ~/.local/bin carries the claude CLI, which IS the free classification
+         lane. Without it on PATH every batch raises FileNotFoundError inside a
+         worker thread and the run labels nothing while looking busy. -->
+    <key>PATH</key><string>/Users/vladshvets/.local/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin</string>
+  </dict>
+</dict>
+</plist>

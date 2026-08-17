@@ -1,4 +1,16 @@
-@import "tailwindcss";
+/* source(none) + explicit sources, NOT Tailwind's automatic detection.
+   Automatic detection scans every non-ignored file in the repo for anything
+   that looks like a class name, and this repo carries a 235,976-word English
+   dictionary (data/english-words.txt — the resolver's plain-word guard) plus
+   megabytes of brand-alias CSVs. The dictionary contains the word "truncate",
+   so Tailwind emitted a `.truncate` utility with `text-overflow: ellipsis` in
+   it, and the css-law gate failed the build: nothing on this site truncates.
+   The site's classes exist in exactly three directories; anything else that
+   lands in the repo is data, not markup. */
+@import "tailwindcss" source(none);
+@source "../app";
+@source "../components";
+@source "../lib";
 @import "./_generated/category-colors.css";
 
 /* 16-design-system.md: "There is no dark mode." One ground, one set of contrast
@@ -766,6 +778,26 @@
     line-height: 1.4;
     font-weight: 600;
     color: var(--structure);
+  }
+
+  /* The thread a COMMENT answers. Quieter than the body it introduces — this
+     is context, not evidence, and a post's title is already the first line of
+     its own body so it never renders here. */
+  .mention-context {
+    margin: 0 0 8px;
+    font-size: var(--fs-small);
+    font-weight: 600;
+    color: var(--sherpa-blue);
+    max-width: 68ch;
+    overflow-wrap: anywhere;
+  }
+
+  /* One line under the filters, stating what the list IS: a window over the
+     corpus, and how far the corpus reaches back. */
+  .rail-note {
+    margin: 10px 0 0;
+    font-size: var(--fs-small);
+    color: var(--sherpa-blue);
   }
 
   /* Full text. No clamp, no mask, no max-height — all three are explicit.

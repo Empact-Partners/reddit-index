@@ -26,7 +26,7 @@ resolve() so junk threads yield nothing. num_comments >= 2.
 
 Disk is the source of truth: kill at any point and re-running fills exactly
 the gaps. A tree re-fetch is harmless (mentions PK is ON CONFLICT DO NOTHING).
-Classification is deliberately NOT here — classify_daily (nightly, capped)
+Classification is deliberately NOT here — classify_api.py (the nightly chain)
 plus supervised burns drain the backlog.
 
 Usage:
@@ -47,6 +47,7 @@ from resolve import Resolver  # noqa: E402
 from harvest import build_alias_re, load_brands, tree_docs, CATEGORY_NOUNS  # noqa: E402
 from daily import (  # noqa: E402
     load_scoring_map, ensure_partitions, content_qualify, insert_mentions,
+    TREE_LIMIT,
 )
 
 CODE_VERSION = "sweep-v2"
@@ -54,7 +55,6 @@ RUN_ID = str(uuid.uuid4())
 PAGES = 10               # per listing lane (Reddit stops around 1000 anyway)
 MIN_COMMENTS_LEGACY = 3  # the backfill floor for all-time threads
 MIN_COMMENTS_DAYS = 2    # depth plan: a thread nobody answered has no opinions
-TREE_LIMIT = 500         # one request either way; deeper comment coverage
 STATE_DIR = os.path.join(HERE, ".cache", "sweep")
 os.makedirs(STATE_DIR, exist_ok=True)
 

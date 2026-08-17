@@ -35,6 +35,7 @@ import json
 import os
 import queue
 import re
+import shutil
 import signal
 import subprocess
 import sys
@@ -147,9 +148,32 @@ def parse_obj(txt):
 
 # ── providers ───────────────────────────────────────────────────────────────
 
+def _claude_bin():
+    """Absolute path to the claude CLI.
+
+    launchd gives a job PATH=/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin and
+    nothing else, while the CLI lives in ~/.local/bin. Bare "claude" therefore
+    raises FileNotFoundError inside every worker thread, the batch is swallowed
+    by the generic handler below, and an unattended run quietly labels NOTHING
+    while reporting batch errors nobody reads. Resolve it once, loudly.
+    """
+    found = shutil.which("claude") or os.path.expanduser("~/.local/bin/claude")
+    if not os.path.exists(found):
+        raise RuntimeError(
+            f"claude CLI not found (looked on PATH and at {found}). The free "
+            "Haiku lane cannot run; pass --deepseek N to use the metered lane.")
+    return found
+
+
+CLAUDE_BIN = None
+
+
 def call_haiku(prompt):
     """Max-plan Haiku through the CLI. Free; costs a local process."""
-    p = subprocess.run(["claude", "-p", "--model", HAIKU_MODEL],
+    global CLAUDE_BIN
+    if CLAUDE_BIN is None:
+        CLAUDE_BIN = _claude_bin()
+    p = subprocess.run([CLAUDE_BIN, "-p", "--model", HAIKU_MODEL],
                        input=prompt, capture_output=True, text=True, timeout=900)
     return parse_obj(p.stdout or "")
 
@@ -347,6 +371,9 @@ def main():
         while not _stop.is_set():
             rows = backlog.page()
             if not rows:
+                # Tell the workers, or the drain below waits its full 900s with
+                # a session-pooler connection held open for nothing.
+                _stop.set()
                 break
             items = []
             for created, doc_id, bslug, sub, title, body, form in rows:

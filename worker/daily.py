@@ -2,23 +2,29 @@
 """The daily fetch. Runs in a Railway cron container; writes ONLY to Supabase.
 
 Per scoring subreddit, per day:
-  1. /r/{sub}/new (limit 100, up to 3 pages while everything is newer than the
-     watermark) — content-qualify each post: a brand alias or an owning
-     category's noun in title or selftext, not removed, not locked. The
+  1. /r/{sub}/new (limit 100, up to MAX_PAGES pages while everything is newer
+     than the watermark) — content-qualify each post: a brand alias or an
+     owning category's noun in title or selftext, not removed, not locked. The
      backfill's `num_comments >= 3` floor is deliberately DROPPED here: a
      fresh thread legitimately has zero comments; the revisit loop catches
-     its discussion as it accumulates.
+     its discussion as it accumulates. A read that runs out of pages BEFORE
+     reaching the watermark holds the watermark rather than skipping what it
+     did not read.
   2. Upsert qualifying threads (num_comments/score refreshed on conflict).
-  3. REVISIT: fetch full comment trees for this sub's threads first seen in
-     the last 72h (up to 12/day, busiest first). ON CONFLICT DO NOTHING on
-     the mentions PK makes a re-fetch free of duplicates while catching the
-     comments that arrived since yesterday.
-  4. Resolve (rules-only Aho-Corasick, same resolver as the backfill), insert
+  3. Resolve the POSTS themselves — title + selftext, off the listing already
+     in hand, at zero extra Reddit calls.
+  4. REVISIT: fetch full comment trees for this sub's threads first seen in
+     the last 72h, TREES_PER_SUB per pass, UNREAD FIRST (threads.tree_fetched_at
+     NULLS FIRST). ON CONFLICT DO NOTHING on the mentions PK makes a re-fetch
+     free of duplicates while catching the comments that arrived since
+     yesterday.
+  5. Resolve (rules-only Aho-Corasick, same resolver as the backfill), insert
      mentions verbatim, COMMIT, then advance the watermark — per-sub commits,
      so a mid-run death costs nothing already committed.
 
-Classification, scoring and publishing happen on the Mac (classify_daily.py,
-score_db.py) — the LLM engines live there, not here.
+Classification, scoring and publishing happen on the Mac (worker/daily_mac.sh:
+classify_api.py, score_db.py, delete_sync.py) — the free LLM lane lives there,
+not here.
 
 Env (Railway): REDDIT_CLIENT_ID/SECRET/USER_AGENT, SUPABASE_DB_PASSWORD,
 SUPABASE_PROJECT_REF (or SUPABASE_DB_USER), RI_CACHE=/tmp/ri-cache.
@@ -44,6 +50,12 @@ TREES_PER_SUB = int(os.environ.get("RI_TREES_PER_SUB", "24"))
 # covers a sub publishing up to ~800 posts/day; anything busier reports capped
 # and holds its watermark rather than skipping the overflow (see fetch_new).
 MAX_PAGES = int(os.environ.get("RI_MAX_PAGES", "4"))
+# Comments requested per thread. ONE constant, imported by sweep.py, because
+# the two lanes make the identical call: the daily lane asked for 200 where the
+# sweep asked for 500, so it silently collected a smaller tree at the same cost.
+# It lives here rather than in sweep.py because sweep imports daily, not the
+# other way round.
+TREE_LIMIT = 500
 RUN_ID = str(uuid.uuid4())
 
 
@@ -200,8 +212,12 @@ def content_qualify(p, cat_slugs, alias_re):
 
 
 def tree_fresh(post_id):
+    # limit 500, matching sweep.TREE_LIMIT. Both make ONE call for the same
+    # thing; asking for 200 comments where the sweep asks for 500 meant the
+    # daily lane silently collected a smaller tree than the backfill did, at
+    # identical cost.
     return rc.get(f"/comments/{post_id}",
-                  {"depth": 6, "limit": 200, "raw_json": 1, "sort": "top"},
+                  {"depth": 6, "limit": TREE_LIMIT, "raw_json": 1, "sort": "top"},
                   bucket="stream", use_cache=False)
 
 

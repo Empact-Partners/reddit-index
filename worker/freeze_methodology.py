@@ -52,7 +52,7 @@ REF = "nrsyqcttpijxhwtdtoct"
 # window: unchanged. Also: classification moved to provider pools, so
 # sentiment_model_version is no longer a single pinned value — the published
 # view joins the newest label per (doc, brand) regardless of lane.
-VERSION = "2.2.0"
+VERSION = "2.2.1"
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.dirname(HERE)
@@ -203,11 +203,16 @@ PARAMS = [
     ("doc_type_encoding", "global", {"comment": 1, "post_body": 2},
      "A brand named in a post body and a brand named in a comment are counted identically and both "
      "displayed. doc_type selects the card label and the permalink target, never the weight."),
-    ("sentiment_engine", "global", "codex_fleet_local_subscription",
+    ("sentiment_engine", "global", "provider_pools_subscription_first",
      "06 §3's eight-stage cascade exists to avoid a per-million API bill and depends on a "
-     "1,000-1,500 item gold set that does not exist. Classification runs on the local Codex "
-     "fleet (subscription compute, batched, disk-idempotent) instead of any metered API, which "
-     "removes both the cost argument and an ML-training dependency from the critical path."),
+     "1,000-1,500 item gold set that does not exist. Classification runs on worker/"
+     "classify_api.py: pools of subscription-first workers (16 `claude -p` Haiku by "
+     "default, free on the Max plan) with an optional metered DeepSeek lane for a large "
+     "one-off backlog. This REPLACES the local Codex fleet frozen at 2.2.0 — `codex exec` "
+     "is an agent session rather than an API call and measured >600s on a 40-item batch "
+     "against 108s for the same batch through claude -p, at identical label "
+     "distributions. The sibling parameter sentiment_model_version already said "
+     "'multi-lane' at 2.2.0; this entry is what made the pair contradict itself."),
     ("sentiment_model_version", "global", "multi-lane",
      "Classification runs on provider pools (claude-cli-absa-1, "
      "deepseek-v4-flash-absa-1, haiku-4.5-absa-1) with 85% pairwise label "

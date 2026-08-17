@@ -1,5 +1,114 @@
 # Handoff — open items
 
+## 2026-08-17 — the index had stopped collecting, and posts were never read
+
+**Two days of nothing, under a green light.** The Railway cron ran at 04:00 UTC
+on the 16th and the 17th, exited 0, and wrote `ingest_state` rows with
+`status='ok'`. It collected zero rows both times. `ingest_state.watermark` is a
+TEXT column and `daily.py` read it back with `float()`, which raises on every
+subreddit from the SECOND run onward — the first run reads `None` and works
+perfectly, which is exactly why it passed its own smoke test. The only trace was
+`rows=0`, and nobody reads a row for a zero.
+
+**Posts were being collected and then not read as posts.** The post document was
+built from `selftext` alone, so a brand named in a TITLE — "Anyone moved off
+HubSpot?", the most common place a brand appears on Reddit — resolved to nothing,
+and a link or image post (empty selftext) produced no document at all. That is
+most of why the board read as comments-only.
+
+### What changed
+
+| | |
+|---|---|
+| Fetch cadence | 04:00 UTC daily → **02:00 and 14:00 UTC**, core subreddits first, 5.5h budget |
+| Post document | `selftext` → **title + selftext** (`harvest.post_doc`, one builder, three callers) |
+| Posts per pass | only if the thread won a revisit slot → **every qualifying post, off the listing already held, at zero extra API calls** |
+| Revisit queue | same top-12 by `num_comments`, forever → **`tree_fetched_at NULLS FIRST`, 24/sub** |
+| Mac chain | Codex fleet classify (retired lane), `set -e` → **`classify_api.py` free Haiku pool**, no `set -e`, + delete-sync + healthcheck |
+| Watching it | nothing → **`worker/healthcheck.py`**, 14 assertions, launchd every 3h |
+
+Seven defects, each a silent loss, each now guarded and most of them found by
+audit rather than by symptom:
+
+1. **The watermark crash** above. Parsing is `daily.py::as_epoch`, pinned by
+   `tests/collect.test.mjs` — which reproduces it the only way it reproduces,
+   by running twice.
+2. **The listing cap advanced the watermark past posts it never read.**
+   `fetch_new` stopped after 3 pages and reported `ok`; r/pcmasterrace publishes
+   ~512 posts/day against a 300-post read, so ~210 posts a day were unreachable
+   for good. A capped read now HOLDS the watermark and says so; `MAX_PAGES` is 4
+   and the twice-daily cadence halves what one pass must cover.
+3. **The revisit queue had no memory.** `ORDER BY num_comments DESC LIMIT 12`
+   over a 72h window, with `num_comments` refreshed every pass, is a stable
+   ordering: the same twelve threads were re-read for three days while the
+   thirteenth aged out unread. 48,171 of 75,511 threads (64%) never had their
+   comments collected, and comments are 80% of the corpus. `threads.tree_fetched_at`
+   + NULLS FIRST (migration 0003).
+4. **`insert_mentions` rolled back the CALLER's transaction** on a rejected row,
+   discarding the subreddit's thread upsert and every earlier batch — after
+   which `main()` advanced the watermark and committed. SAVEPOINTs now, and the
+   returned count is real insertions, so the dead-run detector measures new
+   evidence rather than attempts.
+5. **The container resolved against a different gazetteer than the Mac.** The
+   Dockerfile copied four CSVs and neither `data/alias-blocklist.csv` (41 pairs
+   the entity gate had already rejected: aws→amazon-route-53,
+   app→astro-pixel-processor…) nor a dictionary — `python:3.12-slim` has no
+   `/usr/share/dict/words`, so 31 aliases that are AMBIGUOUS here resolved bare
+   at conf 0.95 there. Both ship now, `resolve.py` raises when either is missing
+   instead of silently changing behaviour, and the image build asserts parity.
+6. **`published.mentions` was pinned to one `model_version`** in migration 0002.
+   It matched zero rows once the corpus went multi-engine, hid 115,820 labels,
+   was fixed by hand on 2026-08-16 — and that hand-fix existed in no file, so
+   the next `db push` onto a fresh database would have blanked every label
+   again. Migration 0003 writes it down.
+7. **A 235,976-word dictionary is a Tailwind source.** Vendoring
+   `data/english-words.txt` for the resolver made every English word a class
+   candidate, Tailwind emitted `.truncate` with `text-overflow: ellipsis`, and
+   the css-law gate failed the build. `globals.css` now uses
+   `@import "tailwindcss" source(none)` with three explicit `@source` roots. The
+   gate did its job: nothing on this site truncates.
+
+### The site
+
+Company pages now separate the two kinds of evidence. The mention rail is **two
+rails** — the 200 newest comments and the 100 newest posts — because posts are a
+fifth of the corpus and cluster differently in time, so one newest-250 window
+left a brand with thousands of posts showing seventeen. A **Posts / Comments**
+filter sits beside the sort, and its counts come from the whole corpus, not from
+the window. Three things the page now states instead of implying: that the list
+is a window ("Showing the N most recent of M mentions"), that the sort is
+"Oldest **shown**", and — when unclassified mentions exceed 10% — that they are
+counted as neutral until the classifier catches up. A comment card carries its
+thread title above the quote; a post's title is already the first line of its
+own body.
+
+### Recovery of the historical corpus
+
+`worker/backfill_posts.py` re-reads every stored thread through `/api/info` (100
+per call, ~1,300 threads/min, resumable through an `ingest_state` watermark),
+rebuilds the post document with the same `post_doc`, inserts the mentions that
+were never resolved and repairs the bodies of post rows that hold only a
+selftext. Vendor subreddits are excluded in the QUERY: a mention from one raises
+inside `reject_vendor_sub_mention()`, which aborts the pipelined `executemany`
+and drops the batch into a row-by-row fallback — 168 round trips at 176 ms
+across the pooler, and the first pilot crawled at 100 threads/min because of it.
+
+### Still open
+
+- **Classification is behind collection** and will be until the backfill's post
+  mentions are labelled. The free lane (`classify_api.py --haiku 16`) runs at
+  ~130-350 items/min; the 04:30 chain drains what is left each night. Company
+  pages disclose the unclassified share while it is large. A metered DeepSeek
+  lane would finish the same backlog in about three hours for roughly $30 —
+  Vlad's call, not a default.
+- **Scores do not move until the labels land** (`score_db.py` reads labelled
+  rows only), so the boards are unchanged by the backfill until then.
+- The three quarantined categories (email-providers, etl, payment-processing)
+  from 2026-08-16 still want a look.
+- `worker/publisher.py`, `collector.py`, `watchdog.py`, `lanes.sh` and the Codex
+  classify lane are the one-off depth-sweep machinery. Nothing loads them now;
+  `docs/worker.md` lists what is current and what is superseded.
+
 ## 2026-08-16 — RUN COMPLETE: full corpus collected, classified, scored, published
 
 **Final state (live at redditindex.com, still noindex):**
@@ -112,6 +221,9 @@ data-driven via `brand-seed-new.csv`; byte-identical regression for the
 original 145 verified before the merge.
 
 **The daily loop is DEPLOYED:**
+- ⚠️ SUPERSEDED 2026-08-17: the cron is `0 2,14 * * *`, the revisit budget is 24
+  per subreddit ordered by `threads.tree_fetched_at` NULLS FIRST, and the Mac
+  chain is `classify_api.py` at 04:30 local. See the top entry.
 - Railway project `reddit-index` (90cd4c29…), cron `0 4 * * *` UTC, Dockerfile
   at repo root, env set, first deploy SUCCESS. `worker/daily.py`: /new
   listings + 72h revisit trees (12/sub cap) + rules-only resolve + per-sub
@@ -158,6 +270,8 @@ gates remain, self-test proves each fails when violated.
 
 **Display floor replaced eligibility for VISIBILITY:** any (brand × category)
 row with a computed score and `n_op >= 3` is ranked (`lib/data/boards.ts`).
+⚠️ SUPERSEDED: the floor is now each category's own MEDIAN n_op clamped to
+[3,30] (2026-08-16), and the pooled boards additionally require n_op >= 10.
 The n_eff gates and diversity floors stay in the database untouched; they just
 no longer decide whether a brand appears. Pooled scope dedupes by brand — the
 max-`n_op` row is the brand's home row.
@@ -170,6 +284,12 @@ labels: 81% exact on the 4-way set, 3 polarity flips in 80 — annotator-level.
 The mixed-engine corpus is recorded here deliberately: labels carry `_engine`
 in the cache. `claude -p` remains legal for classification but is the slow
 lane; if used, SERIAL only (`--workers 1`) — concurrent sessions still wedge.
+
+⚠️ **SUPERSEDED 2026-08-17.** The wedge was the Codex agent lane and the old
+per-category driver, not `claude -p`. `worker/classify_api.py` runs 16
+concurrent `claude -p` Haiku workers as its DEFAULT and that is what the
+nightly chain executes. Nothing in this file's "subscription-only" or
+"serial-only" language is current doctrine.
 
 **The second corpus (this run):** in-window-first selection (the fix that
 unlocked backup-storage's 299 stranded mentions), a `--trees` top-up harvest
@@ -221,7 +341,7 @@ r/stripe), which are excluded by rule, and in consumer marketplaces
 rather than a product anyone is evaluating. A category can be viable on the
 five-subreddit test and still have nothing to say.
 
-⚠️ **The classifier must run SERIALLY.** Concurrent headless `claude -p`
+⚠️ **The classifier must run SERIALLY.** (SUPERSEDED — see 2026-08-17.) Concurrent headless `claude -p`
 sessions do not fail cleanly, they wedge: the processes stay alive, produce
 nothing, and the 300-second timeout plus retries turns a five-minute category
 into an hour. The lever is batch size — 100 items per call amortises the startup
