@@ -62,15 +62,9 @@ export function IndexBoard({
     <>
       <div className="bleed controls-band">
         <div className="board-controls">
-          <div className="controls-left">
-            <BrandSearch index={search} query={query} onQueryChange={setQuery} />
-          </div>
-          <div className="controls-center">
-            <CategorySelect value={scope} onChange={changeScope} />
-          </div>
-          <div className="controls-right">
-            <ViewSwitcher value={view} onChange={setView} />
-          </div>
+          <BrandSearch index={search} query={query} onQueryChange={setQuery} />
+          <CategorySelect value={scope} onChange={changeScope} />
+          <ViewSwitcher value={view} onChange={setView} />
         </div>
       </div>
 
