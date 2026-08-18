@@ -23,16 +23,25 @@ stamp() { echo "\n=== $(date '+%F %T') $1" }
 # rehearsed end to end in fifteen minutes instead of waiting out a six-hour
 # backlog — the difference between a chain that is believed to work and one
 # that has been watched working.
-CLASSIFY_ARGS="--haiku 16"
-[ -n "$RI_CLASSIFY_LIMIT" ] && CLASSIFY_ARGS="$CLASSIFY_ARGS --limit $RI_CLASSIFY_LIMIT"
+# An ARRAY, and quoted on use. zsh does not word-split an unquoted parameter
+# the way bash does, so the string form passed "--haiku 16 --limit 800" as ONE
+# argument: argparse exited 2, classification became a silent no-op, and the
+# rest of the chain carried on scoring and publishing as if nothing was wrong.
+# That is the exact failure shape this whole rebuild exists to make impossible.
+CLASSIFY_ARGS=(--haiku 16)
+[ -n "$RI_CLASSIFY_LIMIT" ] && CLASSIFY_ARGS+=(--limit "$RI_CLASSIFY_LIMIT")
 
 stamp "classify (free Haiku on the Max plan; drains the backlog, then exits)"
 # 16 local `claude -p` processes is the measured sweet spot: ~310 items/min,
 # 1,908 batches with zero errors and zero rate-limiting on 2026-08-17.
 # Concurrency here costs kernel scheduling, not RAM — see classify_api.py. The
 # metered lane needs a flag this chain deliberately does not pass.
-/usr/bin/caffeinate -i python3 -u classify_api.py $CLASSIFY_ARGS
-echo "classify exited $?"
+/usr/bin/caffeinate -i python3 -u classify_api.py "${CLASSIFY_ARGS[@]}"
+CLASSIFIED=$?
+echo "classify exited $CLASSIFIED"
+# An exit code the chain cannot act on is still worth SAYING. 2 is argparse:
+# the lane never ran, and no amount of scoring downstream will notice.
+[ $CLASSIFIED -eq 2 ] && echo "!! classify never started (bad arguments) — nothing was labelled"
 
 stamp "score + load + prune"
 python3 -u score_db.py

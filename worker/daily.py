@@ -315,6 +315,27 @@ def main():
             cur.execute("SELECT name, id FROM subreddits")
             sub_ids = {name.lower(): sid for name, sid in cur.fetchall()}
 
+            # ...and WITHIN each band, longest-waiting first.
+            #
+            # Core-first alone starves the tail. A pass that reaches only the
+            # first 900 subreddits before its budget expires would collect the
+            # SAME 900 every day and never touch the other 1,100 — the identical
+            # fairness bug the revisit queue had, one level up. Ordering each
+            # band by when it was last collected makes a truncated pass resume
+            # where the last one stopped, so every subreddit comes round.
+            if not args.only:
+                cur.execute(
+                    "SELECT scope, finished_at FROM ingest_state WHERE ym='daily' "
+                    "AND stage='new_listing' AND code_version=%s "
+                    "AND scope NOT LIKE '\\_%%'", (CODE_VERSION,))
+                seen = {sc.lower(): fin for sc, fin in cur.fetchall()}
+                never = datetime.datetime(1970, 1, 1, tzinfo=datetime.timezone.utc)
+                subs.sort(key=lambda x: (x not in core, seen.get(x.lower()) or never))
+                waiting = sum(1 for x in subs if x.lower() not in seen)
+                oldest = min((seen.values()), default=None)
+                print(f"order: core first, then longest-waiting — {waiting} never "
+                      f"collected, oldest watermark {oldest}", flush=True)
+
     t0 = time.time()
     tot_threads = tot_mentions = tot_rejects = errors = capped_subs = 0
     reconnects = 0
