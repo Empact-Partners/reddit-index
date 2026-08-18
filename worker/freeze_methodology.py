@@ -206,9 +206,9 @@ PARAMS = [
     ("sentiment_engine", "global", "provider_pools_subscription_first",
      "06 §3's eight-stage cascade exists to avoid a per-million API bill and depends on a "
      "1,000-1,500 item gold set that does not exist. Classification runs on worker/"
-     "classify_api.py: pools of subscription-first workers (16 `claude -p` Haiku by "
-     "default, free on the Max plan) with an optional metered DeepSeek lane for a large "
-     "one-off backlog. This REPLACES the local Codex fleet frozen at 2.2.0 — `codex exec` "
+     "classify_api.py: 16 DeepSeek API workers (deepseek-v4-flash — decisions/0010, "
+     "2026-08-18; the `claude -p` Haiku pool remains as an explicit fallback lane "
+     "only). This REPLACES the local Codex fleet frozen at 2.2.0 — `codex exec` "
      "is an agent session rather than an API call and measured >600s on a 40-item batch "
      "against 108s for the same batch through claude -p, at identical label "
      "distributions. The sibling parameter sentiment_model_version already said "

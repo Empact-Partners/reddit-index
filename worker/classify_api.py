@@ -28,12 +28,17 @@ CONCURRENCY, THE LESSON THAT COST A MORNING
     python3 worker/classify_api.py                      # the lane: 16 free Haiku
     python3 worker/classify_api.py --haiku 24           # wider, still free
 
-THE METERED LANE IS OFF. Vlad ruled on 2026-08-17: classification runs on free
-Haiku on the Max plan, and nothing else. DeepSeek stays in this file because it
-is how the throughput ceiling was measured and because a future one-off backlog
-may justify it — but it cannot start without --allow-metered, and that flag is
-a decision, not a default. A slower free lane beats a faster billed one; the
-backlog drains overnight either way.
+THE METERED LANE IS THE LANE. Vlad ruled on 2026-08-18 (decisions/0010,
+superseding the 2026-08-17 free-Haiku ruling): classification runs on the
+DeepSeek API — faster (~1,100 vs ~310 items/min) and off the Claude quota
+entirely, at ~$0.18 per 1,000 items. The context: the free Haiku lane was
+drawing from the same 5-hour/weekly Max-plan buckets as all interactive work
+("free" was never free), and the index has no scheduled jobs any more — a
+human runs worker/update.sh, which passes --deepseek 16 --haiku 0
+--allow-metered explicitly. The gate stays: --deepseek without --allow-metered
+still refuses, so spending money remains a decision written at the call site,
+never a default someone inherits by accident. The Haiku lane stays runnable
+as a fallback for a day the DeepSeek API is down.
 """
 import argparse
 import csv
@@ -325,9 +330,11 @@ def reporter(t0, start_backlog):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--haiku", type=int, default=16,
-                    help="free `claude -p` Haiku workers on the Max plan (the lane)")
+                    help="`claude -p` Haiku workers on the Max plan (fallback lane; "
+                         "draws the shared Claude quota)")
     ap.add_argument("--deepseek", type=int, default=0,
-                    help="metered DeepSeek workers; requires --allow-metered")
+                    help="metered DeepSeek workers — THE lane since decisions/0010; "
+                         "requires --allow-metered")
     ap.add_argument("--allow-metered", action="store_true",
                     help="acknowledge that --deepseek spends real money")
     ap.add_argument("--limit", type=int, default=0, help="stop after N items (cost probe)")
@@ -335,9 +342,10 @@ def main():
     args = ap.parse_args()
 
     if args.deepseek and not args.allow_metered:
-        print("--deepseek spends money and this project classifies on the free "
-              "Haiku lane (ruled 2026-08-17). Pass --allow-metered if that has "
-              "genuinely changed.", flush=True)
+        print("--deepseek spends money; pass --allow-metered to acknowledge it. "
+              "(DeepSeek IS the ruled lane — decisions/0010, 2026-08-18 — the "
+              "gate exists so spend is always explicit at the call site.)",
+              flush=True)
         return 1
     key = deepseek_key() if args.deepseek else None
     if args.deepseek and not key:

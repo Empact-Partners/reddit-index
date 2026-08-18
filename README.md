@@ -9,11 +9,16 @@ one of them stored, classified, and linkable back to its source. Built by
 [Empact Partners](https://empact.partners).
 
 ```
+              ┌──────────────────────────────────────────────────────────┐
+              │ A HUMAN runs worker/update.sh — that is the only trigger │
+              │ (decisions/0010 · 2026-08-18 · no scheduled jobs at all) │
+              └────────────────────────┬─────────────────────────────────┘
+                                       ▼
 Reddit API ──►┌──────────────────────────────────────────────────────────┐
- /new         │ Railway cron · 02:00 UTC daily · worker/daily.py         │
+ /new         │ 1· collect — worker/daily.py --core-only (Mac-side)      │
  /comments    │ the 527 core subreddits first, then the rest of 2,029    │
               │ fetch → qualify → resolve (rules only) → Supabase        │
-              │ RI_MAX_MINUTES=600 (stops clean at 10h) · 24 trees/sub   │
+              │ watermark-bounded · 24 trees/sub · stops clean on budget │
               └────────────────────────┬─────────────────────────────────┘
                                        ▼ threads · verbatim mentions · watermarks
                             ┌──────────────────────┐
@@ -21,36 +26,34 @@ Reddit API ──►┌───────────────────
                             └──────────┬───────────┘
                                        ▼
               ┌──────────────────────────────────────────────────────────┐
-              │ Mac launchd · 04:30 America/Santiago (08:30 UTC)         │
-              │ worker/daily_mac.sh — NOT `set -e`; every stage reports  │
-              │ classify_api.py  16 free `claude -p` Haiku workers, and  │
-              │ nothing metered — the DeepSeek pool needs a flag it is   │
-              │ never given                                              │
-              │ → score_db.py → delete_sync.py → publish → healthcheck   │
+              │ 2· classify — classify_api.py, 16 DeepSeek API workers   │
+              │ (deepseek-v4-flash · ~1,100 items/min · ~$0.18/1K items  │
+              │  · --allow-metered passed explicitly · Haiku = fallback) │
+              │ 3· score_db.py → 4· delete_sync.py → 5· publish          │
+              │ 6· healthcheck.py — the chain's own exit verdict         │
+              │ NOT `set -e`; every stage reports and the chain goes on  │
               └────────────────────────┬─────────────────────────────────┘
-                                       ▼ POST Vercel deploy hook
+                                       ▼ Vercel forced rebuild (fallback: empty-commit push)
                             ┌──────────────────────┐
                             │    Vercel rebuild    │ ──► redditindex.com (static)
                             └──────────────────────┘
-
-              ┌──────────────────────────────────────────────────────────┐
-              │ Mac launchd · every 3h · worker/healthcheck.py --slack   │
-              │ 14 assertions read Supabase on their OWN clock, so a     │
-              │ broken chain cannot also break its own alarm.            │
-              │ Slack on a CHANGE of state only — into failure, and out. │
-              └──────────────────────────────────────────────────────────┘
 ```
+
+**Everything is on-demand** ([SOP.md](SOP.md), [decisions/0010](decisions/0010-manual-on-demand.md)):
+no launchd lanes, no Railway cron (service Offline; retired plists archived in
+`worker/launchd/retired-2026-08-18/`). Run at least weekly — collection is the
+one stage that loses data to waiting (`/new` reach, the 72h revisit window).
 
 Two things in that picture are there because of what happened without them.
 
-The fetch runs **once** a day and walks the core subreddits first: a pass has a
-10-hour budget and stops cleanly when it expires, so what gets dropped is the
-tail, never the 527 subreddits that carry the categories. One pass has to cover
-a full day, so the listing budget is 8 pages — 800 posts, past anything in this
+The fetch walks the core subreddits first: a pass can carry a time budget and
+stops cleanly when it expires, so what gets dropped is the tail, never the 527
+subreddits that carry the categories. One pass has to cover the gap since the
+last run, so the listing budget is 8 pages — 800 posts, past anything in this
 set — and a subreddit busier than that holds its watermark instead of skipping
 the overflow.
 
-The health lane exists because between 2026-08-16 and 2026-08-17 the daily
+The verify stage exists because between 2026-08-16 and 2026-08-17 the daily
 fetch collected **zero rows and every signal stayed green** — the cron ran, the
 container exited 0, and `ingest_state` gained a fresh row with `status='ok'`.
 (`ingest_state.watermark` is a TEXT column; `daily.py` read it back with
@@ -92,13 +95,15 @@ pnpm gates:selftest              # prove each gate fails when violated (after a 
 pnpm test                        # vitest + the node:test resolver/collection suites
 node scripts/qa-sweep.mjs        # read every built page (after a build)
 
-# the fetch (Railway runs this; these are the by-hand forms)
+worker/update.sh                 # THE update — collect → … → verify (SOP.md)
+worker/update.sh --rehearse      # bounded end-to-end rehearsal, ~15 min
+
+# individual stages, by hand
 python3 worker/daily.py --dry-run --only sysadmin   # fetch + resolve, write NOTHING
 python3 worker/daily.py --core-only                 # the 527 core subreddits only
-python3 worker/daily.py --max-minutes 60            # bounded pass (Railway sets 600)
-
-worker/daily_mac.sh              # the whole Mac chain, by hand
-python3 worker/classify_api.py                      # drain the label backlog (free Haiku)
+python3 worker/daily.py --max-minutes 60            # bounded pass
+python3 worker/classify_api.py --deepseek 16 --haiku 0 --allow-metered  # the ruled lane
+python3 worker/classify_api.py                      # FALLBACK: 16 Haiku CLI (Claude quota!)
 python3 worker/score_db.py                               # re-score from Supabase + prune
 python3 worker/delete_sync.py --dry-run                  # what Reddit has removed
 python3 worker/backfill_posts.py --limit 2000            # re-read stored threads AS POSTS
@@ -108,14 +113,17 @@ python3 worker/healthcheck.py --json           # the same, machine-readable
 python3 worker/qa_audit.py --only invariants   # the 6 SQL invariants, free
 ```
 
-Classification is `worker/classify_api.py`: 16 free `claude -p` Haiku workers
-on the Max plan. It drains the backlog and exits. The metered DeepSeek pool is
-still in the file — it is how the throughput ceiling was measured — but it
-refuses to start without `--allow-metered`, because classification runs free
-(ruled 2026-08-17). The corpus carries labels from three engines
-(`claude-cli-absa-1`, `deepseek-v4-flash-absa-1`, `haiku-4.5-absa-1`); the
-DeepSeek ones are from one deliberate $27 backlog run and are history, not
-policy.
+Classification is `worker/classify_api.py` on the **DeepSeek API**
+(`deepseek-v4-flash`, 16 HTTP workers — ruled 2026-08-18,
+[decisions/0010](decisions/0010-manual-on-demand.md), superseding the
+free-Haiku ruling of 2026-08-17: "free" Haiku drew the shared Claude Max-plan
+quota, and its bare `claude -p` calls spent ~95% of their tokens booting
+context). It drains the backlog and exits: ~1,100 items/min, ~$0.18 per 1,000
+items, measured on the 153,748-item/$27.22 production run. `--allow-metered`
+stays as a gate so spend is always explicit at the call site — `update.sh`
+passes it. The Haiku CLI pool remains a fallback for a DeepSeek outage. The
+corpus carries labels from three engines (`claude-cli-absa-1`,
+`deepseek-v4-flash-absa-1`, `haiku-4.5-absa-1`) with 85% pairwise agreement.
 
 `worker/backfill_posts.py` is a repair, not a daily job: until 2026-08-17 the
 post document was built from `selftext` alone, so a brand named only in a post

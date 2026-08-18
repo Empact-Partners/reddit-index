@@ -1,37 +1,44 @@
 # How the index updates
 
-**Cadence: once a day, end to end.** Collect daily, classify daily, publish
-daily — the index is rebuilt every day. That is a ruling (2026-08-17), and it
-rests on two measurements rather than taste: batching the work saves nothing
-(the same subreddits, threads and rate limit make a weekly pass seven daily
-passes back to back), while waiting costs data that cannot be recovered —
-Reddit's `/new` only reaches about 1,000 posts back, and a thread leaves the
-72-hour revisit window with whatever comments it had when it was found.
+**Cadence: manual, on demand.** The index has no scheduled jobs — no launchd
+lanes, no Railway cron. A human runs **`worker/update.sh`** (collect → classify
+→ score → delete-sync → publish → verify) and that IS the update. That is a
+ruling ([decisions/0010](../decisions/0010-manual-on-demand.md), 2026-08-18,
+superseding the daily-cadence ruling of 2026-08-17), made after the project's
+automation burned an entire 5-hour Claude quota in a day. The old ruling's data
+still governs the *guidance*: run at least weekly, because waiting costs
+collection data that cannot be recovered — Reddit's `/new` only reaches about
+1,000 posts back, and a thread leaves the 72-hour revisit window with whatever
+comments it had when it was found. Everything downstream of collection loses
+nothing to waiting. The full operating procedure is [SOP.md](../SOP.md).
 
-A Railway cron container runs `worker/daily.py` at **02:00 UTC**
-(`railway.json`, `cronSchedule: "0 2 * * *"`). The pass walks the scoring
+Collection (`worker/daily.py`, stage 1 of the chain) walks the scoring
 subreddits core-first, reads `/r/{sub}/new`, resolves brands out of the posts
 and out of the comment trees of recently-seen threads, and writes mentions to
-Supabase. It carries a 10-hour budget (`RI_MAX_MINUTES=600`) and stops cleanly
+Supabase. It can carry a time budget (`--max-minutes`) and stops cleanly
 when it expires, which is exactly why the walk is core-first: a truncated pass
-loses the tail, not the 527 subreddits that carry the categories.
+loses the tail, not the 527 subreddits that carry the categories. (It ran on a
+Railway cron until 2026-08-18; the service is Offline and the pass now runs
+Mac-side inside `update.sh`, on the same credential fallbacks.)
 
 One pass has to cover a full day of every subreddit, so the listing budget is
 eight pages — 800 posts, past anything in this set (the busiest, r/pcmasterrace,
 runs about 512 a day). Pages are only fetched while the listing is still ahead
 of the watermark, so a quiet subreddit still costs one call.
 
-The Mac then runs one chain at **04:30 America/Santiago, 08:30 UTC** (launchd
-`com.reddit-index.daily` → `worker/daily_mac.sh`): classify → score → delete-sync
-→ publish → healthcheck. Classification lives here because the free lane is
-`claude -p` Haiku on the Max plan, which exists only on this machine. The chain
-is deliberately **not** `set -e`. It used to be, and a stalled classifier
-therefore aborted the script before scoring and publishing — one slow lane, and
-the site stopped updating with data it already had.
+The rest of the chain follows in the same `update.sh` run: classify → score →
+delete-sync → publish → verify. Classification runs on the **DeepSeek API**
+(`deepseek-v4-flash`, ~1,100 items/min, ~$0.18 per 1,000 items — decisions/0010;
+the old "free" Haiku lane drew the shared Claude Max-plan quota and remains only
+as an explicit fallback). The chain is deliberately **not** `set -e`. It used to
+be, and a stalled classifier therefore aborted the script before scoring and
+publishing — one slow lane, and the site stopped updating with data it already
+had.
 
-A third job, launchd `com.reddit-index.health`, runs `worker/healthcheck.py
---slack` **every 3 hours**, independent of the chain. It exists because of a
-specific failure: from 2026-08-16 to 2026-08-17 the daily fetch collected
+The chain ends with `worker/healthcheck.py` — the same fourteen-assertion
+battery that used to run as a standalone 3-hourly job (retired 2026-08-18 with
+the other lanes; its freshness thresholds assume a recent run, which is exactly
+what "end of the chain" guarantees). It exists because of a specific failure: from 2026-08-16 to 2026-08-17 the daily fetch collected
 nothing at all and every signal a human would check stayed green. The cron ran,
 the container exited 0, `ingest_state` gained a fresh row with `status='ok'`,
 and the site kept serving. The only trace was `rows=0`, and nobody reads a row

@@ -1,5 +1,43 @@
 # Handoff — open items
 
+## 2026-08-18 — MANUAL MODE. No scheduled jobs; DeepSeek classification; auto-resume dead
+
+**The index now updates only when a human runs `worker/update.sh`.** Ruled by
+Vlad 2026-08-18, recorded as [decisions/0010](decisions/0010-manual-on-demand.md),
+superseding BOTH 2026-08-17 rulings below (daily cadence; free-Haiku-only
+classification). Operating procedure: [SOP.md](SOP.md).
+
+What forced it: the `claude-rq` auto-resume daemon re-fired 153 dead
+reddit-index sessions in one day — 97/97 hit the usage limit again with zero
+completions (~96K tokens context re-ingestion per resume for ~4.3K output;
+$513 CLI-priced all-time, $448 of it Opus) — and the "free" Haiku lane was
+drawing the same Max-plan 5h/weekly buckets as all interactive work (Aug 17:
+~715M tokens through the Haiku lane alone; reddit-index was 59–64% of total
+account draw across Aug 17–18, weekly gauge at 56%).
+
+Executed 2026-08-18:
+- All 7 launchd lanes booted out and their plists archived in
+  `worker/launchd/retired-2026-08-18/` (collector, classifier, publisher,
+  watchdog, keepawake, daily, health). The watchdog went first — it
+  `launchctl kickstart`s the others back to life.
+- Railway: `cronSchedule` removed from `railway.json`; `railway down` — the
+  service is **Offline**. Collection now runs Mac-side inside `update.sh`
+  (`daily.py` resolves Reddit creds from the reddit MCP env in `~/.claude.json`
+  and DB creds from `~/.claude/.reddit-index.json` — both fallbacks verified).
+- `daily_mac.sh` removed; its chain (and its lessons: no `set -e`, zsh array
+  args, argparse-exit-2 alarm) lives on inside `worker/update.sh`, with
+  collection prepended and `healthcheck.py --json` as the chain's exit verdict.
+- Classification: `--deepseek 16 --haiku 0 --allow-metered` — deepseek-v4-flash,
+  ~1,100 items/min, ~$0.18/1K items (the measured 2026-08-16 run). The
+  `--allow-metered` gate STAYS; update.sh passes it explicitly. Haiku CLI pool
+  remains a fallback only.
+- `claude-rq` itself: plist deleted, code archived with post-mortem at
+  `~/.claude/scripts/retired/resume-on-reset-RETIRED-2026-08-18/RETIRED.md`,
+  queue files removed. **Never rebuild an automatic session resumer.**
+
+Open: none from this change. Run `worker/update.sh` at least weekly (collection
+loss past ~7 days — see 0010).
+
 ## 2026-08-17 (later) — the cadence ruling, and two more silent losses
 
 **Daily. Collect, classify, publish — every day.** Vlad ruled it after the

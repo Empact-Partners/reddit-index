@@ -34,15 +34,17 @@ Classification runs through **`worker/classify_api.py`**: provider pools
 pulling from one shared backlog cursor, batches of 40, each batch cached to
 disk before it is committed so a crash never loses paid work. Two providers:
 
-- **`claude -p` Haiku (`haiku-4.5-absa-1`)** — 16 workers by default, free
-  on the Max plan, one local process per worker.
 - **DeepSeek `deepseek-v4-flash` (`deepseek-v4-flash-absa-1`)** — plain HTTP,
-  **metered**, and **switched off by ruling** since 2026-08-17: it needs
-  `--allow-metered` on top of `--deepseek N` or the run refuses to start.
-  It was used deliberately once — $27.22 of credit labelled 153,748 items in
-  112 minutes at ~1,100 items/min during the 2026-08-16 backlog — which is why
-  its labels are in the corpus. Classification is now free Haiku only; when a
-  backlog is deep, it drains overnight rather than for money.
+  metered, and **the lane by ruling** since 2026-08-18
+  ([decisions/0010](../decisions/0010-manual-on-demand.md), superseding the
+  free-Haiku ruling of 2026-08-17): ~1,100 items/min at ~$0.18 per 1,000 items
+  — $27.22 labelled 153,748 items in 112 minutes on the 2026-08-16 backlog,
+  zero truncations in 1,307 batches. It still needs `--allow-metered` on top
+  of `--deepseek N` or the run refuses to start: spend stays explicit at the
+  call site (`update.sh` passes it).
+- **`claude -p` Haiku (`haiku-4.5-absa-1`)** — 16 workers, one local process
+  per worker, on the Max plan. **Fallback only**: "free" here means no invoice,
+  not no cost — it draws the shared Claude 5-hour/weekly quota buckets.
 
 The corpus carries three `model_version` values — `claude-cli-absa-1` (the
 original `claude -p` lane in `worker/classify.py`),

@@ -1,31 +1,26 @@
-# The daily worker
+# The worker
 
-The index refreshes through a two-machine loop, split by capability rather than
-by taste. Railway is always on and can fetch Reddit around the clock, but it
-cannot run our LLMs. The Mac can: the free classification lane is `claude -p`
-on the Max plan, which exists on this machine and nowhere else. So fetching
-lives on Railway, and everything downstream of a stored mention lives here.
+**The index updates on demand** — a human runs `worker/update.sh` and that is
+the only trigger (decisions/0010, 2026-08-18; the two-machine daily loop below
+is retired: Railway is Offline, all launchd lanes are booted out with plists
+archived in `worker/launchd/retired-2026-08-18/`). Operating procedure:
+[SOP.md](../SOP.md).
 
 ```
-02:00 UTC daily     Railway cron container       worker/daily.py
-                    /new listings -> qualify -> posts + 72h revisit trees
-                    -> rules-only resolve -> Supabase (threads, mentions,
-                    watermarks).  RI_MAX_MINUTES=600, so a pass stops
-                    cleanly at 10h and tomorrow's picks up the tail.
-
-08:30 UTC           Mac launchd com.reddit-index.daily   worker/daily_mac.sh
-(04:30 Santiago)    classify_api.py   label the backlog, 16 free Haiku workers
-                    score_db.py       recompute every category from Supabase
-                    delete_sync.py    purge what Reddit's authors deleted
-                    deploy hook       the Vercel rebuild IS the publish
-
-every 3 hours       Mac launchd com.reddit-index.health  worker/healthcheck.py
-                    14 assertions, Slack on a CHANGE of state
+worker/update.sh — one chain, run to completion, exit:
+  1 collect       worker/daily.py --core-only  (Mac-side now)
+                  /new listings -> qualify -> posts + 72h revisit trees
+                  -> rules-only resolve -> Supabase (threads, mentions,
+                  watermarks); stops cleanly on --max-minutes
+  2 classify      classify_api.py --deepseek 16 --haiku 0 --allow-metered
+  3 score         score_db.py    recompute every category from Supabase
+  4 delete-sync   delete_sync.py purge what Reddit's authors deleted
+  5 publish       publish.py     the Vercel rebuild IS the publish
+  6 verify        healthcheck.py --json — the chain's exit verdict
 ```
 
-The two lanes never block each other and never need to agree on anything but
-Postgres. Every write on both sides is `ON CONFLICT DO NOTHING` or a full
-recompute, so a missed night costs a bigger batch tomorrow and nothing else.
+Every write is `ON CONFLICT DO NOTHING` or a full recompute, so an interrupted
+run costs nothing but a re-run of the same command.
 
 ## The fetch algorithm (Railway, `worker/daily.py`)
 
@@ -210,17 +205,19 @@ Anti-join: every mention with no `mention_sentiment` row for its
 `(doc_id, brand_id)`, any model_version. It drains the backlog and exits — it
 is not a daemon.
 
-Providers are pools, and **the lane is free Haiku**: sixteen local `claude -p`
-processes on the Max plan, measured at ~350 items/min. That is the default and,
-since 2026-08-17, the ruling — a slower free lane beats a faster billed one,
-and the backlog drains overnight either way.
+Providers are pools, and **the lane is DeepSeek** (`deepseek-v4-flash`,
+sixteen HTTP workers): ~1,100 items/min at ~$0.18 per 1,000 items, measured on
+the 153,748-item / $27.22 / 112-minute production run of 2026-08-16 — zero
+truncations in 1,307 batches. Ruled 2026-08-18 (decisions/0010), superseding
+the free-Haiku ruling of 2026-08-17: "free" Haiku drew the shared Claude
+Max-plan quota and each bare `claude -p` call spent ~95% of its tokens booting
+context rather than labelling.
 
-The metered DeepSeek pool is still in the file, because it is how the
-throughput ceiling was measured and a future one-off backlog may justify it,
-but it cannot start without `--allow-metered`. `--deepseek N` alone exits with
-a message. About $27 was spent on it deliberately during the 2026-08-16
-backlog, so the corpus carries `claude-cli-absa-1`, `deepseek-v4-flash-absa-1`
-and `haiku-4.5-absa-1` — history, not policy.
+`--allow-metered` stays as a hard gate — `--deepseek N` alone exits with a
+message — so spending money is always explicit at the call site; `update.sh`
+passes it. The sixteen-worker Haiku CLI pool remains a fallback for a DeepSeek
+outage, knowing what it draws from. The corpus carries `claude-cli-absa-1`,
+`deepseek-v4-flash-absa-1` and `haiku-4.5-absa-1`.
 
 Concurrency is chosen on measured throughput, never on a resource gauge. The
 Codex fleet at 100 concurrent looked fine on memory (119 procs, 1.8 GB) and
@@ -436,10 +433,9 @@ Everything in `worker/`. A dead lane must not be runnable by accident.
 | `bench_deepseek.py` | benchmark: finds the fastest DeepSeek config that does not degrade labels |
 | `gate_checks.sql` | the SQL assertions `verify.py` and delete-sync are checked against |
 
-Loaded launchd jobs are exactly two: `com.reddit-index.daily` and
-`com.reddit-index.health`. The `collector`, `classifier`, `publisher`,
-`watchdog` and `keepawake` plists still sit in `worker/launchd/` and are not
-bootstrapped.
+Loaded launchd jobs are exactly ZERO (2026-08-18). All seven retired plists
+are archived in `worker/launchd/retired-2026-08-18/`; nothing may be
+re-bootstrapped without a new ruling (decisions/0010).
 
 ### The site can be down while the database is perfect
 
@@ -521,26 +517,19 @@ Transport is the Supavisor **session** pooler
 (`aws-0-<region>.pooler.supabase.com:5432`), which resolves to IPv4. The direct
 DB host is IPv6-only and unreachable from a Railway container.
 
-### Mac (classify, score, publish, health)
+### Mac (the whole chain)
 
-Both plists live in `worker/launchd/` and are copied into
-`~/Library/LaunchAgents/`:
+There is nothing to deploy on the Mac: no plists are installed
+(decisions/0010). The chain is run by hand:
 
 ```bash
 cd ~/Projects/reddit-index
-cp worker/launchd/com.reddit-index.daily.plist  ~/Library/LaunchAgents/
-cp worker/launchd/com.reddit-index.health.plist ~/Library/LaunchAgents/
-
-launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.reddit-index.daily.plist
-launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.reddit-index.health.plist
-
-launchctl list | grep reddit-index                        # what is loaded
-launchctl kickstart -k gui/$(id -u)/com.reddit-index.daily  # run it now
-launchctl bootout   gui/$(id -u)/com.reddit-index.daily     # unload
+worker/update.sh              # the update
+worker/update.sh --rehearse   # bounded end-to-end rehearsal
 ```
 
-Editing a plist requires `bootout` then `bootstrap` again — launchd does not
-re-read a loaded job.
+The retired plists are archived in `worker/launchd/retired-2026-08-18/` for
+topology reference only — do not copy them back into `~/Library/LaunchAgents/`.
 
 - `com.reddit-index.daily` — `StartCalendarInterval` 04:30 local (America/
   Santiago, 08:30 UTC), after the overnight Railway pass has finished. Its
