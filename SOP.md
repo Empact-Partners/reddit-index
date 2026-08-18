@@ -27,7 +27,7 @@ Exit 0 = the site is updated and healthy. Non-zero = read the verify block; the 
 worker/update.sh --rehearse     # ~15 min: 10-min collect cap, 800-item classify cap
 ```
 
-Expected: healthcheck may grumble about run size (`MIN_RUN_MENTIONS=200`) on a tiny rehearsal — that's the bound, not a defect.
+Expected: healthcheck fails coverage/backlog assertions on a bounded rehearsal — that's the bound, not a defect. Reference rehearsal (2026-08-18, exit chain proven): collect 10.5 min → 1,777 threads / 2,277 mentions / 395 calls, zero errors · classify 410 items / $0.11 · score 4,264 rows (calibration gate quarantined 2 categories, by design) · delete-sync 22,647 docs ~6 min · Vercel publish READY in 5.0 min · total 27 min. Verify correctly flagged what a bounded run leaves undone (`sub_coverage` 5%, `revisit_backlog`, 106K label `backlog`) — the exit code is an honest verdict, not noise.
 
 ## Cost (DeepSeek, the only metered stage)
 
