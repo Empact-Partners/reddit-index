@@ -317,8 +317,16 @@ def main():
 
     t0 = time.time()
     tot_threads = tot_mentions = tot_rejects = errors = capped_subs = 0
+    reconnects = 0
     stopped_early = None
-    for si, sub in enumerate(subs, 1):
+    # A WORK QUEUE, not a for-loop, so a subreddit whose connection died can be
+    # put back at the front and actually collected. Skipping it was the old
+    # behaviour and it cost the sub's whole pass — the watermark held, so no
+    # data was lost forever, but the day's mentions were.
+    queue = list(enumerate(subs, 1))
+    retried = set()
+    while queue:
+        si, sub = queue.pop(0)
         if args.max_minutes and (time.time() - t0) / 60 >= args.max_minutes:
             stopped_early = f"time budget {args.max_minutes:.0f} min reached at sub {si}/{len(subs)}"
             print(f"\n{stopped_early} — stopping cleanly", flush=True)
@@ -443,14 +451,13 @@ def main():
                 print(f"[{si}/{len(subs)}] r/{sub}: {len(posts)} new, {len(qual)} qualify, "
                       f"{len(revisit)} trees, {len(mrows)} mentions", flush=True)
         except Exception as e:
-            errors += 1
-            print(f"!! r/{sub}: {type(e).__name__}: {e}", flush=True)
-            # A pass runs for HOURS over one connection, and Supavisor drops
-            # one eventually. That used to end the run: the handler called
-            # conn.rollback(), which raised again on the dead socket, and the
-            # exception escaped main() — 12 subreddits in, 2,017 to go. A lost
-            # link must cost ONE subreddit, so rollback is guarded and a
-            # transient failure reconnects before the next iteration.
+            # A pass runs for HOURS over one connection while spending 20-60
+            # seconds per subreddit talking to Reddit, and a pooler drops a
+            # connection that quiet — 17 times in a 19-minute sample before TCP
+            # keepalives went into db.dsn(). Two rules: rollback is GUARDED (it
+            # raised again on the dead socket and killed the whole run, twelve
+            # subreddits in), and a transient failure RETRIES this subreddit on
+            # a fresh connection instead of writing the day off for it.
             broken = db.is_transient(e)
             try:
                 if conn:
@@ -464,13 +471,19 @@ def main():
                     pass
                 try:
                     conn = db.connect()
-                    print("   reconnected to Postgres — continuing", flush=True)
+                    reconnects += 1
                 except Exception as ce:
                     print(f"!! cannot reconnect to Postgres ({ce}) — stopping. "
                           "Every subreddit already committed keeps its watermark; "
                           "the next pass resumes from there.", flush=True)
                     stopped_early = f"lost the database at sub {si}/{len(subs)}"
                     break
+                if sub not in retried:
+                    retried.add(sub)
+                    queue.insert(0, (si, sub))
+                    continue                      # same subreddit, live socket
+            errors += 1
+            print(f"!! r/{sub}: {type(e).__name__}: {e}", flush=True)
 
     # A run that raises on every subreddit still printed "DONE" and exited 0,
     # so Railway showed a green cron for two days while the index froze. A pass
@@ -521,7 +534,8 @@ def main():
     s = rc.stats()
     print(f"\nDONE — {tot_threads} threads, {tot_mentions} NEW mentions "
           f"({tot_rejects} rejected), {errors} subreddit errors, {capped_subs} capped "
-          f"listings, {s['calls']} calls in {(time.time() - t0) / 60:.1f} min", flush=True)
+          f"listings, {reconnects} reconnects, {s['calls']} calls in "
+          f"{(time.time() - t0) / 60:.1f} min", flush=True)
     if stopped_early:
         print(f"NOTE — {stopped_early}", flush=True)
     if status == "error":

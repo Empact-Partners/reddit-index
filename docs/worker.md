@@ -295,13 +295,23 @@ open defect, and `gate_checks.sql` asserts it.
 
 ## Publish
 
-`curl -X POST $DEPLOY_HOOK` — a Vercel rebuild. The site is fully static
-(`force-static`, `dynamicParams=false`): a rebuild re-reads Supabase once,
-re-renders every route, and new brands get pages. There is no cache
-revalidation path that refreshes the score pages without a build; the hook IS
-the publish mechanism. The hook URL lives in `~/.claude/.reddit-index.json`
-under `deploy_hook`. With no hook configured, `daily_mac.sh` falls back to an
-empty commit and a push, because Vercel builds every push.
+`python3 worker/publish.py` — a Vercel rebuild of the CURRENT production
+commit. The site is fully static (`force-static`, `dynamicParams=false`): a
+rebuild re-reads Supabase once, re-renders every route, and new brands get
+pages. There is no cache revalidation path that refreshes the score pages
+without a build, so the rebuild IS the publish mechanism.
+
+It used to publish by pushing an empty commit, because a deploy hook has to be
+created by hand in the dashboard and never was. That works — Vercel builds
+every push — but daily publishing would write 365 commits a year recording no
+change to the code. `publish.py` asks the API directly (`POST /v13/deployments`
+with the previous deployment's id), waits for `READY`, and reports the
+deployment id, so a failed publish appears in the chain's log instead of being
+inferred from a stale site. The empty-commit push remains as the fallback when
+that call fails.
+
+    python3 worker/publish.py             # rebuild, wait for READY
+    python3 worker/publish.py --status    # what is live right now
 
 `daily_mac.sh` is deliberately **not** `set -e`. The old version was, and a
 stalled classifier therefore aborted the script before scoring and publishing:
@@ -503,6 +513,7 @@ Environment on the cron service:
 | `SUPABASE_DB_PASSWORD` | db password | scoped to this one database; the org-wide Supabase PAT never enters the container |
 | `RI_CACHE` | `/tmp/ri-cache` | the image is read-only elsewhere |
 | `RI_MAX_MINUTES` | `600` | the code default is 0 (no budget) — 10h lives here, not in the source |
+| `RI_CLASSIFY_LIMIT` | unset | caps the nightly classifier; set it only to rehearse the chain end to end |
 | `RI_TREES_PER_SUB` | `24` | revisit budget per sub per pass |
 | optional | `RI_MAX_PAGES`, `RI_SLEEP`, `RI_NET_MAX_WAIT`, `RI_DB_CONNECT_TRIES`, `SUPABASE_DB_HOST/PORT/USER/NAME/REGION` | |
 

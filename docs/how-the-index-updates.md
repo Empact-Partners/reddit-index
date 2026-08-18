@@ -1,6 +1,12 @@
 # How the index updates
 
-**Cadence: once a day, end to end.**
+**Cadence: once a day, end to end.** Collect daily, classify daily, publish
+daily — the index is rebuilt every day. That is a ruling (2026-08-17), and it
+rests on two measurements rather than taste: batching the work saves nothing
+(the same subreddits, threads and rate limit make a weekly pass seven daily
+passes back to back), while waiting costs data that cannot be recovered —
+Reddit's `/new` only reaches about 1,000 posts back, and a thread leaves the
+72-hour revisit window with whatever comments it had when it was found.
 
 A Railway cron container runs `worker/daily.py` at **02:00 UTC**
 (`railway.json`, `cronSchedule: "0 2 * * *"`). The pass walks the scoring
@@ -60,8 +66,9 @@ the rankings.
 **Publish = rebuild.** The site is fully static: every route is prerendered from
 one database read at build time, and there is deliberately no runtime data path
 — no anon key ships, no client fetches, and the snapshot module is `server-only`.
-The publish step POSTs a Vercel Deploy Hook; if no hook is configured it pushes
-an empty commit instead, because Vercel builds every push. A git push does the
+`worker/publish.py` asks Vercel to rebuild the current production commit with
+the fresh data; if that call fails the chain falls back to pushing an empty
+commit, because Vercel builds every push. A git push does the
 same for code changes. Company routes set `dynamicParams = false`, so a brand
 that was not in the build has no page until the next one.
 

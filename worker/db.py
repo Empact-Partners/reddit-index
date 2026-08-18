@@ -57,7 +57,14 @@ def dsn():
     if not (user and password):
         raise RuntimeError("database credentials missing: set SUPABASE_DB_USER/"
                            "SUPABASE_DB_PASSWORD (or SUPABASE_PROJECT_REF + local file)")
-    return f"host={host} port={port} dbname={name} user={user} password={password} sslmode=require"
+    # TCP keepalives are not optional here. The daily lane holds one connection
+    # while it spends 20-60 SECONDS per subreddit talking to Reddit, and
+    # Supavisor drops a connection that quiet: a 40-subreddit sample took 17
+    # drops in 19 minutes without them. The kernel now pokes the socket every
+    # 30s, which is well inside any pooler's idle window.
+    return (f"host={host} port={port} dbname={name} user={user} password={password} "
+            "sslmode=require keepalives=1 keepalives_idle=30 keepalives_interval=10 "
+            "keepalives_count=5")
 
 
 def connect(tries=CONNECT_TRIES):

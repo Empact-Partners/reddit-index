@@ -1,5 +1,49 @@
 # Handoff — open items
 
+## 2026-08-17 (later) — the cadence ruling, and two more silent losses
+
+**Daily. Collect, classify, publish — every day.** Vlad ruled it after the
+alternatives were costed, and the costing is the useful part:
+
+| | collect | classify (free Haiku) | staleness |
+|---|---|---|---|
+| daily | 2.6 h/pass | 2.0 h | ≤ 24 h |
+| weekly | 15.5 h in one pass | 14.2 h | ≤ 7 days |
+| biweekly | 31 h — does not fit in a day | 28.3 h | ≤ 14 days |
+
+Batching saves NOTHING: same subreddits, same threads, same 80 calls/min, so a
+weekly pass is seven daily passes back to back. Waiting only adds loss. Measured
+on 49 scoring subreddits (median 7 posts/day, mean 17, max 230): at 7 days one
+subreddit in 49 outruns `/new`'s ~1,000-post reach, at 14 days three do, and
+those posts are then unreachable. Worse and universal: a thread leaves the
+72-hour revisit window with whatever comments it had when it was found —
+r/cscareerquestions produced 2 new posts and 17 new comment mentions in one pass,
+and comments are 60% of the corpus.
+
+**Classification is not the constraint.** Free Haiku on the Max plan, measured
+over 4.2 hours: 60,111 labels, 1,908 batches, ~310 items/min sustained, zero
+errors, zero rate-limiting at 14-16 concurrent `claude -p` workers. A day's
+collection is ~2 hours of that.
+
+**Two more defects, both found by running the thing rather than reading it:**
+
+1. **A dropped connection killed the pass.** A 40-subreddit sample died 12 in
+   when Supavisor dropped the socket: `insert_mentions` raised, the handler
+   called `conn.rollback()`, and THAT raised again on the dead socket and
+   escaped `main()`. Over a ten-hour pass this was going to happen to the 02:00
+   run, not to a test.
+2. **The connection was being dropped every other subreddit.** The retry made
+   the pass survive — 17 reconnects in 19 minutes — but the cause was that the
+   lane holds one connection while spending 20-60 seconds per subreddit talking
+   to Reddit, and a pooler drops a connection that quiet. TCP keepalives in
+   `db.dsn()` (`keepalives_idle=30`) took the same 40-subreddit sample to ZERO
+   drops. The retry stays: a lost link now re-queues that subreddit on a fresh
+   connection instead of writing off its day.
+
+`worker/publish.py` replaces the empty-commit push: it asks Vercel to rebuild
+the current production commit and waits for READY. Daily publishing through git
+would have written 365 commits a year that record no change to the code.
+
 ## 2026-08-17 — the index had stopped collecting, and posts were never read
 
 **Two days of nothing, under a green light.** The Railway cron ran at 04:00 UTC

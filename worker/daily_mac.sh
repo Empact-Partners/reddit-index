@@ -1,58 +1,64 @@
 #!/bin/zsh
 # The Mac half of the daily loop (launchd: com.reddit-index.daily, 04:30 local).
 #
-# Railway fetches once a day (railway.json: 0 2 * * * UTC) because it is
-# always on.
-# Classification runs HERE because the free lane is `claude -p` on the Max
-# plan, which exists only on this machine. Scoring and publishing follow.
+# Railway fetches once a day (railway.json: 0 2 * * * UTC) because it is always
+# on. Classification runs HERE because the free lane is `claude -p` Haiku on the
+# Max plan, which exists only on this machine. Scoring, delete-sync and
+# publishing follow: collect daily, classify daily, publish daily — the index is
+# rebuilt every day (ruled 2026-08-17).
 #
-# Every stage is idempotent and resumable, so a missed night costs nothing but
-# a bigger batch tomorrow — the classifier is an anti-join against
-# mention_sentiment, and scoring is a full recompute.
+# Every stage is idempotent and resumable, so a missed night costs nothing but a
+# bigger batch tomorrow: the classifier is an anti-join against
+# mention_sentiment, scoring is a full recompute, delete-sync walks a
+# least-recently-checked cursor, and publishing is a rebuild.
 #
 # NOT `set -e`. The old version was, and a stalled classifier therefore aborted
 # the script BEFORE scoring and publishing: one slow lane and the site stopped
-# updating with data it already had. Each stage reports, and the chain
-# continues.
+# updating with data it already had. Each stage reports its exit code and the
+# chain continues.
 cd "$(dirname "$0")"
-LOG_PREFIX="=== $(date '+%F %T')"
+stamp() { echo "\n=== $(date '+%F %T') $1" }
 
-echo "$LOG_PREFIX classify (free Haiku lane, drains the backlog then exits)"
-# 16 local `claude -p` processes is the measured sweet spot: ~350 items/min.
-# Concurrency here costs kernel scheduling, not RAM — see classify_api.py.
-# Free Haiku on the Max plan, and only that: the metered lane needs a flag
-# this chain does not pass (ruled 2026-08-17).
-/usr/bin/caffeinate -i python3 -u classify_api.py --haiku 16
-echo "$LOG_PREFIX classify exited $?"
+# Unbounded by default. RI_CLASSIFY_LIMIT exists so the whole chain can be
+# rehearsed end to end in fifteen minutes instead of waiting out a six-hour
+# backlog — the difference between a chain that is believed to work and one
+# that has been watched working.
+CLASSIFY_ARGS="--haiku 16"
+[ -n "$RI_CLASSIFY_LIMIT" ] && CLASSIFY_ARGS="$CLASSIFY_ARGS --limit $RI_CLASSIFY_LIMIT"
 
-echo "$LOG_PREFIX score + load + prune"
+stamp "classify (free Haiku on the Max plan; drains the backlog, then exits)"
+# 16 local `claude -p` processes is the measured sweet spot: ~310 items/min,
+# 1,908 batches with zero errors and zero rate-limiting on 2026-08-17.
+# Concurrency here costs kernel scheduling, not RAM — see classify_api.py. The
+# metered lane needs a flag this chain deliberately does not pass.
+/usr/bin/caffeinate -i python3 -u classify_api.py $CLASSIFY_ARGS
+echo "classify exited $?"
+
+stamp "score + load + prune"
 python3 -u score_db.py
-echo "$LOG_PREFIX score exited $?"
+echo "score exited $?"
 
-echo "$LOG_PREFIX delete-sync (content removed on Reddit leaves the index)"
-# 60,000 mention rows ~= 12,000 distinct documents = ~120 /api/info calls,
-# about two minutes. With the least-recently-checked ordering that walks the
-# whole corpus in roughly a week; the default 5,000 would have taken two months.
+stamp "delete-sync (content removed on Reddit leaves the index)"
+# 60,000 mention rows ~= 12,000 distinct documents = ~120 /api/info calls, about
+# two minutes. With the least-recently-checked ordering that walks the whole
+# corpus in roughly a week; the default 5,000 would have taken two months.
 python3 -u delete_sync.py --limit 60000 --publish-follows
-echo "$LOG_PREFIX delete_sync exited $?"
+echo "delete_sync exited $?"
 
-echo "$LOG_PREFIX publish"
-HOOK=$(python3 -c "
-import json, os
-print(json.load(open(os.path.expanduser('~/.claude/.reddit-index.json'))).get('deploy_hook',''))")
-if [ -n "$HOOK" ]; then
-  curl -fsS -X POST "$HOOK" > /dev/null && echo "deploy hook triggered"
-else
-  # Fallback: an empty commit is a rebuild too, because Vercel builds every
-  # push. Paste a Vercel Deploy Hook URL into ~/.claude/.reddit-index.json
-  # under "deploy_hook" for the cleaner path.
+stamp "publish (the site is static — a production rebuild IS the publish)"
+python3 -u publish.py
+PUBLISHED=$?
+if [ $PUBLISHED -ne 0 ]; then
+  # Fallback: Vercel builds every push, so an empty commit is a rebuild too.
+  # Only reached when the API refuses, and then the noise in git history is
+  # worth having, because the alternative is a site that quietly stops moving.
+  echo "publish.py failed ($PUBLISHED) — falling back to an empty commit"
   cd ..
   git pull --ff-only --quiet
   git commit --allow-empty --quiet -m "daily publish $(date '+%F')" && git push --quiet
-  echo "published via empty-commit push"
   cd worker
 fi
 
-echo "$LOG_PREFIX health"
+stamp "health"
 python3 -u healthcheck.py --slack
-echo "DONE $(date '+%F %T')"
+echo "\nDONE $(date '+%F %T')"
