@@ -40,6 +40,21 @@ collection is ~2 hours of that.
    drops. The retry stays: a lost link now re-queues that subreddit on a fresh
    connection instead of writing off its day.
 
+**The chain was rehearsed end to end before it was trusted**, and the rehearsal
+found two more things a reading would not have: `load.py` loaded scores through
+the rate-limited Supabase Management API (over an hour of 429s for 4,243 rows;
+78 seconds over Postgres), and zsh does not word-split an unquoted parameter,
+so `classify_api.py` received `"--haiku 16 --limit 800"` as ONE argument,
+argparse exited 2, and classification became a silent no-op while scoring and
+publishing carried on. Both fixed. A full run now reads: classify 0 · score
+4,246 rows computed / 4,245 loaded / 0 pruned · delete-sync 12,012 documents
+probed · publish READY in 4.6 min · health 13 pass, 1 warn, 3 fail (the three
+that stay red until the first full collection pass lands).
+
+Ordering inside each band is now by longest-waiting, not alphabetical: at
+~1.5 subreddits/minute against a 10-hour budget a pass reaches ~900 of 2,029,
+and alphabetical order would have collected the same 900 every day forever.
+
 `worker/publish.py` replaces the empty-commit push: it asks Vercel to rebuild
 the current production commit and waits for READY. Daily publishing through git
 would have written 365 commits a year that record no change to the code.
