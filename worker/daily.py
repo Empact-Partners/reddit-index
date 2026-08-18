@@ -444,9 +444,33 @@ def main():
                       f"{len(revisit)} trees, {len(mrows)} mentions", flush=True)
         except Exception as e:
             errors += 1
-            if conn:
-                conn.rollback()
             print(f"!! r/{sub}: {type(e).__name__}: {e}", flush=True)
+            # A pass runs for HOURS over one connection, and Supavisor drops
+            # one eventually. That used to end the run: the handler called
+            # conn.rollback(), which raised again on the dead socket, and the
+            # exception escaped main() — 12 subreddits in, 2,017 to go. A lost
+            # link must cost ONE subreddit, so rollback is guarded and a
+            # transient failure reconnects before the next iteration.
+            broken = db.is_transient(e)
+            try:
+                if conn:
+                    conn.rollback()
+            except Exception:
+                broken = True
+            if broken and conn:
+                try:
+                    conn.close()
+                except Exception:
+                    pass
+                try:
+                    conn = db.connect()
+                    print("   reconnected to Postgres — continuing", flush=True)
+                except Exception as ce:
+                    print(f"!! cannot reconnect to Postgres ({ce}) — stopping. "
+                          "Every subreddit already committed keeps its watermark; "
+                          "the next pass resumes from there.", flush=True)
+                    stopped_early = f"lost the database at sub {si}/{len(subs)}"
+                    break
 
     # A run that raises on every subreddit still printed "DONE" and exited 0,
     # so Railway showed a green cron for two days while the index froze. A pass
@@ -457,10 +481,27 @@ def main():
     dead = attempted > 50 and tot_threads == 0 and tot_mentions == 0
     status = "error" if (bad or dead) else "ok"
 
-    if conn:
+    if conn and not args.only:
         # `--only` is a TEST invocation. It used to overwrite the global _run
         # marker, so a three-subreddit smoke test made the health check believe
         # a full pass had just finished with 283 threads.
+        #
+        # This write is the pass's own receipt, so it gets its own reconnect:
+        # losing it means the health lane reports "no pass ran" for work that
+        # did run, and every per-subreddit watermark is already committed.
+        try:
+            conn.execute("select 1")
+        except Exception:
+            try:
+                conn.close()
+            except Exception:
+                pass
+            try:
+                conn = db.connect()
+            except Exception as ce:
+                print(f"!! could not record the run: {ce}", flush=True)
+                conn = None
+    if conn:
         if not args.only:
             with conn.cursor() as cur:
                 set_watermark(cur, "_run", datetime.datetime.now(datetime.timezone.utc),
