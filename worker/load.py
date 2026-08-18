@@ -16,13 +16,68 @@ REF = json.load(open(os.path.expanduser("~/.claude/.reddit-index.json")))["proje
 TOKEN = open(os.path.expanduser("~/.claude/.supabase-empact.token")).read().strip()
 
 
-def sql(query, label="", tries=8):
-    """Execute raw SQL via the Supabase Management API.
+_PG = {"conn": None, "dead": False}
 
-    Retries 429/5xx with backoff: the 6k-brand gazetteer reload throttled at
-    ~batch 30 and every dropped batch was silent data loss (2,440 of 6,040
-    brands landed). A batch that still fails after all tries prints LOUDLY.
+
+def sql(query, label="", tries=8):
+    """Execute raw SQL — over Postgres when we can, the Management API when not.
+
+    The Management API was the only transport here, and it is the wrong one for
+    a NIGHTLY job: it is rate-limited per project, so the 2026-08-17 chain spent
+    over an hour on 4,243 score rows, walking a ladder of 429s and 502s while
+    the site waited. Every other worker in this repo already talks to Postgres
+    directly through the same pooler; scores had no reason not to.
+
+    Postgres first, then. The HTTP path stays as the fallback for a machine
+    with no database credentials (and because it is what the seed path was
+    proven on), and its retry ladder stays exactly as it was: the 6k-brand
+    gazetteer reload once throttled at ~batch 30 and every dropped batch was
+    silent data loss — 2,440 of 6,040 brands landed. A batch that still fails
+    after all tries prints LOUDLY.
     """
+    if not _PG["dead"]:
+        try:
+            if _PG["conn"] is None:
+                import db as _db
+                _PG["conn"] = _db.connect()
+                _PG["conn"].autocommit = True
+            # dict_row, NOT the default tuple: the Management API returns rows
+            # as objects and a caller reads r[0]["n"]. Two transports behind one
+            # helper have to return the same shape or the swap is a landmine.
+            from psycopg.rows import dict_row
+            with _PG["conn"].cursor(row_factory=dict_row) as cur:
+                cur.execute(query)
+                try:
+                    return cur.fetchall()
+                except Exception:
+                    return []           # no result set: an INSERT or UPDATE
+        except Exception as e:
+            import db as _db
+            if _db.is_transient(e) and _PG["conn"] is not None:
+                try:
+                    _PG["conn"].close()
+                except Exception:
+                    pass
+                _PG["conn"] = None
+                try:
+                    _PG["conn"] = _db.connect()
+                    _PG["conn"].autocommit = True
+                    from psycopg.rows import dict_row
+                    with _PG["conn"].cursor(row_factory=dict_row) as cur:
+                        cur.execute(query)
+                        try:
+                            return cur.fetchall()
+                        except Exception:
+                            return []
+                except Exception as e2:
+                    e = e2
+            print(f"  SQL ERROR ({label}) over Postgres: "
+                  f"{str(e).splitlines()[0][:200]}", flush=True)
+            if "syntax" in str(e).lower() or "constraint" in str(e).lower():
+                return None            # a real query error — do NOT silently retry over HTTP
+            _PG["dead"] = True
+            print("  falling back to the Management API for the rest of this run",
+                  flush=True)
     for attempt in range(tries):
         req = urllib.request.Request(
             f"https://api.supabase.com/v1/projects/{REF}/database/query",
