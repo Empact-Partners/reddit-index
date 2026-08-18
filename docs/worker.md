@@ -310,10 +310,10 @@ that call fails.
     python3 worker/publish.py             # rebuild, wait for READY
     python3 worker/publish.py --status    # what is live right now
 
-`daily_mac.sh` is deliberately **not** `set -e`. The old version was, and a
-stalled classifier therefore aborted the script before scoring and publishing:
-one slow lane and the site stopped updating with data it already had. Each
-stage reports its exit code and the chain continues.
+`update.sh` is deliberately **not** `set -e` (a lesson inherited from
+`daily_mac.sh`): a stalled classifier used to abort the script before scoring
+and publishing — one slow lane and the site stopped updating with data it
+already had. Each stage reports its exit code and the chain continues.
 
 ## The health check (`worker/healthcheck.py`)
 
@@ -412,10 +412,10 @@ Everything in `worker/`. A dead lane must not be runnable by accident.
 
 | script | status |
 |---|---|
-| `daily.py` | **current** — the Railway fetch |
-| `daily_mac.sh` | **current** — the Mac chain (classify, score, delete-sync, publish, health) |
-| `healthcheck.py` | **current** — the 3-hourly check |
-| `classify_api.py` | **current** — the classifier: 16 free `claude -p` Haiku workers on the Max plan. The metered DeepSeek pool exists but needs `--allow-metered` |
+| `daily.py` | **current** — the collection pass (stage 1 of `update.sh`; ran on Railway until 2026-08-18) |
+| `update.sh` | **current** — THE chain: collect, classify, score, delete-sync, publish, verify (replaced `daily_mac.sh`) |
+| `healthcheck.py` | **current** — the verify stage at the end of the chain |
+| `classify_api.py` | **current** — the classifier: 16 DeepSeek API workers (decisions/0010); the Haiku CLI pool is the fallback, and `--deepseek` still needs `--allow-metered` |
 | `score_db.py` | **current** — scoring from Supabase, calibration gate, prune |
 | `delete_sync.py` | **current** — deletion propagation + revalidate |
 | `backfill_posts.py` | **current** — one-off, resumable: re-reads every stored thread through `/api/info` so historical post TITLES finally resolve |
@@ -531,19 +531,10 @@ worker/update.sh --rehearse   # bounded end-to-end rehearsal
 The retired plists are archived in `worker/launchd/retired-2026-08-18/` for
 topology reference only — do not copy them back into `~/Library/LaunchAgents/`.
 
-- `com.reddit-index.daily` — `StartCalendarInterval` 04:30 local (America/
-  Santiago, 08:30 UTC), after the overnight Railway pass has finished. Its
-  `PATH` deliberately includes `~/.local/bin`, which carries the `claude` CLI
-  that IS the free classification lane. launchd runs a missed calendar job once
-  on wake, so a closed laptop delays the chain rather than skipping it — which
-  is why no `caffeinate` lane is loaded to hold the machine awake all night for
-  an hour of work.
-- `com.reddit-index.health` — `StartInterval` 10800 (3h) with `RunAtLoad`,
-  independent of the daily chain, so a broken chain cannot also break its own
-  alarm.
-
-Logs: `~/Library/Logs/reddit-index-daily.log` and
-`~/Library/Logs/reddit-index-health.log`.
+`update.sh` holds the machine awake itself (`caffeinate -i` around the run) and
+logs to the terminal; keep a copy with `worker/update.sh |& tee` if you want a
+file. The old scheduled-era logs (`~/Library/Logs/reddit-index-daily.log`,
+`-health.log`) are frozen history.
 
 Credentials on the Mac are `~/.claude/.reddit-index.json` (0600):
 `project_ref`, `db_password`, `region`, `deploy_hook`, `slack_channel`. The
