@@ -116,6 +116,10 @@ export type CompanyView = {
    *  has no opinionated label at all. Brands that meet the bar show the board
    *  score instead (see lib/data/page-score.ts, decisions/0011). */
   pageScore: number | null;
+  /** Opinionated mentions behind pageScore (positive + negative, all-time).
+   *  The evidence the published number rests on, and the bar the pooled
+   *  "All Categories" board still applies. */
+  pageNOp: number;
   mentions: Mention[];
   /** TRUE full mention count from the aggregates, not the score-window n. */
   totalMentions: number;

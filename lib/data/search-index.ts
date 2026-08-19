@@ -35,17 +35,9 @@ export function buildSearchIndex(snap: Snapshot): SearchEntry[] {
     const cat = co.primaryCategorySlug
       ? CATEGORY_BY_SLUG[co.primaryCategorySlug as CategorySlug]?.name ?? ""
       : "";
-    // The score is the PRIMARY category's — the one the company page leads
-    // with — so search and the page always agree.
-    const primary = co.primaryCategorySlug
-      ? co.scores.find((sc) => sc.categorySlug === co.primaryCategorySlug)
-      : undefined;
-    const meetsBar = primary != null && primary.nOp >= co.primaryThreshold;
-    out.push({
-      s: co.slug, n: co.name, c: cat,
-      // decisions/0011: below the bar, the page score — search and the page agree.
-      v: meetsBar ? primary!.redditLoveScore : co.pageScore,
-    });
+    // One number everywhere (decisions/0011): search shows exactly what the
+    // company page and the category board show.
+    out.push({ s: co.slug, n: co.name, c: cat, v: co.pageScore });
   }
   // Stable, alphabetical: the order is the tie-break when scores are equal,
   // and a deterministic index keeps the built HTML byte-identical run to run.

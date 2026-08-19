@@ -159,13 +159,17 @@ Reddit Love Score = round(100 · Q₀.₁₀(posterior))`}</Pre>
           <li>no more than 5% of mentions from any one author</li>
         </ul>
         <p>
-          A company below its category&apos;s threshold is not ranked: it has a
-          page and its mentions, but no position. Its page still shows a
-          Reddit ❤️ Score, computed with the same estimator and the same
-          category prior over every opinionated mention collected for it
-          rather than over the scoring window alone, and labelled nothing
-          else: a number you can check against the tiles beside it, not a
-          rank. A category that cannot
+          Every company carrying at least one positive or negative mention is
+          scored and ranked in its category. The published number is computed
+          over every opinionated mention collected for that company, which is
+          the same corpus as the Positive and Negative counts printed beside
+          it, and it is the number its category board ranks it by, so a page
+          and a board can never disagree. Thin evidence is handled by the
+          estimator rather than by hiding the company: because the published
+          score is the lower bound and not the mean, a company with one
+          opinion lands near its category&apos;s baseline, never at the top.
+          A company with no opinionated mention at all is not scored and not
+          ranked. A category that cannot
           field five scoring subreddits is a different failure with different
           words: <strong>the category cannot be ranked</strong>, and no company
           inside it gets a position, including companies that pass every

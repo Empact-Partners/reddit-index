@@ -305,6 +305,7 @@ async function loadSnapshotOnce(): Promise<Snapshot> {
       scores: mine,
       pageScore: pageScoreFor(slug, b.primary_category_id ? String(b.primary_category_id) : "",
                               agg.pos, agg.neg),
+      pageNOp: agg.pos + agg.neg,
       mentions: [],
       totalMentions: agg.pos + agg.neg + agg.neu,
       sentimentTotals: { pos: agg.pos, neg: agg.neg, neu: agg.neu },

@@ -24,21 +24,12 @@ export function CompanyPage({
   const primary = company.primaryCategorySlug
     ? CATEGORY_BY_SLUG[company.primaryCategorySlug]
     : null;
-  // Apply the SAME bar the boards apply. Without it a company page published
-  // a Reddit Love Score off one or two opinionated mentions — 507 brands were
-  // doing so, and a page whose single opinion is negative outranked nothing
-  // while still showing a number a reader would take at face value.
-  const primaryRow = primary
-    ? company.scores.find((s) => s.categorySlug === primary.slug)
-    : undefined;
-  const meetsBar = primaryRow != null && primaryRow.nOp >= company.primaryThreshold;
-  // decisions/0011 (2026-08-19): every page shows a score. At or above the bar
-  // it is the board score, the number the brand is ranked by. Below the bar it
-  // is the same estimator over ALL the brand's collected opinionated mentions
-  // (its own Positive/Negative tiles) — and the brand stays unranked, so the
-  // rank tile still only appears for board members. Null only when the brand
-  // has no opinionated label at all.
-  const primaryScore = meetsBar ? primaryRow!.redditLoveScore : company.pageScore;
+  // decisions/0011 (2026-08-19): ONE number. The score is computed over every
+  // opinionated mention collected for this brand — the same corpus as the
+  // Positive and Negative tiles below it — and it is the number its category
+  // board ranks it by, so the page and the board can never disagree. Null only
+  // when the brand carries no opinionated mention at all.
+  const primaryScore = company.pageScore;
 
   return (
     <div data-category={company.primaryCategorySlug ?? undefined}>
