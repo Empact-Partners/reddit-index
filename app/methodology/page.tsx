@@ -160,7 +160,12 @@ Reddit Love Score = round(100 · Q₀.₁₀(posterior))`}</Pre>
         </ul>
         <p>
           A company below its category&apos;s threshold is not ranked: it has a
-          page and its mentions, but no position. A category that cannot
+          page and its mentions, but no position. Its page still shows a
+          Reddit ❤️ Score, computed with the same estimator and the same
+          category prior over every opinionated mention collected for it
+          rather than over the scoring window alone, and labelled nothing
+          else: a number you can check against the tiles beside it, not a
+          rank. A category that cannot
           field five scoring subreddits is a different failure with different
           words: <strong>the category cannot be ranked</strong>, and no company
           inside it gets a position, including companies that pass every

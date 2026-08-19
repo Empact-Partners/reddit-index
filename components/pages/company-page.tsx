@@ -32,7 +32,13 @@ export function CompanyPage({
     ? company.scores.find((s) => s.categorySlug === primary.slug)
     : undefined;
   const meetsBar = primaryRow != null && primaryRow.nOp >= company.primaryThreshold;
-  const primaryScore = meetsBar ? primaryRow!.redditLoveScore : null;
+  // decisions/0011 (2026-08-19): every page shows a score. At or above the bar
+  // it is the board score, the number the brand is ranked by. Below the bar it
+  // is the same estimator over ALL the brand's collected opinionated mentions
+  // (its own Positive/Negative tiles) — and the brand stays unranked, so the
+  // rank tile still only appears for board members. Null only when the brand
+  // has no opinionated label at all.
+  const primaryScore = meetsBar ? primaryRow!.redditLoveScore : company.pageScore;
 
   return (
     <div data-category={company.primaryCategorySlug ?? undefined}>

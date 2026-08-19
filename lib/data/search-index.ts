@@ -43,7 +43,8 @@ export function buildSearchIndex(snap: Snapshot): SearchEntry[] {
     const meetsBar = primary != null && primary.nOp >= co.primaryThreshold;
     out.push({
       s: co.slug, n: co.name, c: cat,
-      v: meetsBar ? primary!.redditLoveScore : null,
+      // decisions/0011: below the bar, the page score — search and the page agree.
+      v: meetsBar ? primary!.redditLoveScore : co.pageScore,
     });
   }
   // Stable, alphabetical: the order is the tie-break when scores are equal,

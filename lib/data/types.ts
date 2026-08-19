@@ -110,6 +110,12 @@ export type CompanyView = {
    *  bar as the boards instead of publishing a score off one comment. */
   primaryThreshold: number;
   scores: BrandScore[];
+  /** The hero number for a brand BELOW its category's bar: the same estimator
+   *  over ALL its collected opinionated mentions (the page's own Positive and
+   *  Negative tiles), leave-one-out category prior. Null only when the brand
+   *  has no opinionated label at all. Brands that meet the bar show the board
+   *  score instead (see lib/data/page-score.ts, decisions/0011). */
+  pageScore: number | null;
   mentions: Mention[];
   /** TRUE full mention count from the aggregates, not the score-window n. */
   totalMentions: number;

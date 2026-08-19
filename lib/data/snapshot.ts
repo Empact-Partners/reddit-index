@@ -2,6 +2,7 @@ import "server-only";
 import postgres from "postgres";
 import { CATEGORIES, type CategorySlug } from "@/lib/generated/categories";
 import { METHODOLOGY_VERSION } from "@/lib/format";
+import { fitPriorPooled, pageScore as computePageScore } from "@/lib/data/page-score";
 import type { BrandScore, CategoryView, CompanyView, FailedTest, Snapshot } from "./types";
 import type { Mention, Sentiment } from "@/components/data/mention-card";
 
@@ -267,6 +268,26 @@ async function loadSnapshotOnce(): Promise<Snapshot> {
     threadRows.map((t) => [String(t.id), String(t.link_title ?? "")]),
   );
 
+  // decisions/0011 — the page score for below-bar brands. Per PRIMARY
+  // category, every brand votes its all-collected opinionated counts into the
+  // pooled prior (score.py's fit_prior_pooled, leave-one-out by mention mass).
+  const countsByCat = new Map<string, Array<[string, number, number]>>();
+  for (const b of brandRows) {
+    const agg = aggByBrand.get(String(b.id));
+    const cat = b.primary_category_id ? String(b.primary_category_id) : "";
+    if (!agg || !cat) continue;
+    const arr = countsByCat.get(cat) ?? [];
+    arr.push([String(b.slug), agg.pos, agg.pos + agg.neg]);
+    countsByCat.set(cat, arr);
+  }
+  const pageScoreFor = (slug: string, catId: string, pos: number, neg: number): number | null => {
+    if (pos + neg <= 0) return null;
+    const others = (countsByCat.get(catId) ?? []).filter((x) => x[0] !== slug)
+      .map((x) => [x[1], x[2]] as [number, number]);
+    const { alpha0, beta0 } = fitPriorPooled(others);
+    return computePageScore(pos, neg, alpha0, beta0);
+  };
+
   const companies = new Map<string, CompanyView>();
   for (const b of brandRows) {
     const slug = String(b.slug);
@@ -282,6 +303,8 @@ async function loadSnapshotOnce(): Promise<Snapshot> {
         ? (categories.find((c) => c.slug === primary.slug)?.threshold ?? 3)
         : 3,
       scores: mine,
+      pageScore: pageScoreFor(slug, b.primary_category_id ? String(b.primary_category_id) : "",
+                              agg.pos, agg.neg),
       mentions: [],
       totalMentions: agg.pos + agg.neg + agg.neu,
       sentimentTotals: { pos: agg.pos, neg: agg.neg, neu: agg.neu },
