@@ -133,6 +133,13 @@ def run_fleet(jobs, model):
             except Exception: continue
             if st.get('status') not in TERMINAL: continue
             p, o = inflight.pop(key)
+            # A job reaches TERMINAL a moment before its file lands. Without this window the
+            # retry resubmits a job that is still writing, and two Codex sessions then write
+            # the same path — measured here as 18 redundant in-flight jobs against 37 files
+            # already complete, each one able to overwrite a good file mid-write.
+            for _ in range(6):
+                if done(o): break
+                time.sleep(5)
             if done(o): print(f'  ok {os.path.basename(o)}', flush=True)
             else:
                 n = fails[o] = fails.get(o, 0) + 1
