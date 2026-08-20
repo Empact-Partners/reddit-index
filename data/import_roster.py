@@ -55,14 +55,29 @@ def reserved_slugs():
         res.add(m.group(1))
     return res
 
-def load_cohort():
+def load_cohort(which='existing'):
+    """Companies mapped to a category, split by whether that category predates this project.
+
+    The split exists because batch files are indexed by position: growing the cohort
+    re-slices every batch, so a disk-idempotent skip would pass over companies that were
+    never actually drafted and they would silently vanish at merge. Two cohorts, two file
+    prefixes, each stable on its own.
+    """
     roster = {r['domain']: r for r in json.load(open(f'{RI}/roster.json'))}
     mapping = json.load(open(f'{RI}/mapping.json'))
-    cohort = [dict(roster[m['domain']], category_slug=m['category_slug'])
-              for m in mapping if m['category_slug'] and m['domain'] in roster]
-    return cohort
+    pre_existing = {c['slug'] for c in json.load(open(f'{RI}/categories_ref.json'))}
+    out = []
+    for m in mapping:
+        slug = m['category_slug']
+        if not slug or m['domain'] not in roster:
+            continue
+        is_old = slug in pre_existing
+        if which == 'existing' and not is_old: continue
+        if which == 'new' and is_old: continue
+        out.append(dict(roster[m['domain']], category_slug=slug))
+    return sorted(out, key=lambda r: r['domain'])
 
-def prompt(i, batch):
+def prompt(i, batch, prefix='g'):
     items = json.dumps([{'company': r['company'], 'domain': r['domain'],
                          'sells': r['sells']} for r in batch], indent=0)
     return f"""You are drafting entity-resolution rows for a Reddit brand-mention gazetteer.
@@ -90,7 +105,7 @@ For EACH company return:
   phrase MUST contain the bare token. Empty list for low.
 - "note": one sentence on the ambiguity call.
 
-Write a JSON array to exactly {DRAFT}/g_{i:03d}.json — one object per company, same order,
+Write a JSON array to exactly {DRAFT}/{prefix}_{i:03d}.json — one object per company, same order,
 nothing else in the file. Do not modify any other file."""
 
 def done(path):
@@ -131,7 +146,7 @@ def resolve_domain(d):
         return False
 
 def merge():
-    cohort = load_cohort()
+    cohort = load_cohort('existing') + load_cohort('new')
     words = english_words()
     reserved = reserved_slugs()
 
@@ -144,7 +159,7 @@ def merge():
 
     drafts = {}
     for fp in sorted(os.listdir(DRAFT)):
-        if fp.startswith('g_') and fp.endswith('.json'):
+        if (fp.startswith('g_') or fp.startswith('n_')) and fp.endswith('.json'):
             for r in json.load(open(os.path.join(DRAFT, fp))):
                 if isinstance(r, dict) and r.get('domain'):
                     drafts[r['domain']] = r
@@ -233,8 +248,10 @@ if __name__ == '__main__':
     if '--merge' in sys.argv:
         merge()
     else:
-        cohort = load_cohort()
-        print(f'cohort (mapped to existing categories): {len(cohort)}', flush=True)
+        which = 'new' if '--new' in sys.argv else 'existing'
+        prefix = 'n' if which == 'new' else 'g'
+        cohort = load_cohort(which)
+        print(f'cohort ({which} categories): {len(cohort)}', flush=True)
         batches = [cohort[i:i+BATCH] for i in range(0, len(cohort), BATCH)]
-        run_fleet([(prompt(i, b), f'{DRAFT}/g_{i:03d}.json') for i, b in enumerate(batches)],
-                  'gpt-5.6-terra')
+        run_fleet([(prompt(i, b, prefix), f'{DRAFT}/{prefix}_{i:03d}.json')
+                   for i, b in enumerate(batches)], 'gpt-5.6-terra')
