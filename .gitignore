@@ -34,3 +34,13 @@ data/.brand-enum/
 data/.topicality-fleet/
 data/.brand-expand/
 data/.discover-v2/
+
+# Never-replied expansion working dir. Batch inputs and per-batch fleet outputs are
+# regenerable (disk-idempotent drivers); the DECISION artifacts under it are committed
+# explicitly with -f: mapping.json, clusters.json, split.json, g4_dead.json.
+data/.roster-import/*
+!data/.roster-import/mapping.json
+!data/.roster-import/clusters.json
+!data/.roster-import/split.json
+!data/.roster-import/g4_dead.json
+!data/.roster-import/already_in_gazetteer.json
