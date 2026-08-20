@@ -74,8 +74,15 @@ const existing = parseCsv(fs.readFileSync(path.join(ROOT, 'data', 'categories.cs
 const tax = parseCsv(fs.readFileSync(path.join(ROOT, 'data', 'taxonomy-100.csv'), 'utf8'));
 const existingBySlug = new Map(existing.map((r) => [r.slug, r]));
 const newRows = tax.filter((r) => !existingBySlug.has(r.slug));
-if (existing.length !== 20) throw new Error(`expected 20 existing rows, got ${existing.length}`);
-if (tax.length !== 100) throw new Error(`expected 100 taxonomy rows, got ${tax.length}`);
+// Generalized 2026-08-20 (index expansion): "existing" is whatever categories.csv holds
+// today, and every existing row keeps hex + icon byte-identical — published category
+// identity is frozen the same way slugs are (decisions/0007/0008). Only slugs newly added
+// to the taxonomy CSV get placed. The taxonomy may only GROW: a removed row would orphan a
+// published category page, so removals fail loudly here.
+if (existing.length < 20) throw new Error(`categories.csv looks truncated: ${existing.length} rows`);
+const taxSlugs = new Set(tax.map((r) => r.slug));
+const removed = existing.filter((r) => !taxSlugs.has(r.slug)).map((r) => r.slug);
+if (removed.length) throw new Error(`taxonomy removed published categories: ${removed.join(', ')}`);
 
 // icon uniqueness across all 100
 const allIcons = [...existing.map((r) => r.icon), ...newRows.map((r) => {
@@ -185,7 +192,20 @@ for (let i = 0; i < newRows.length; i++) {
     'thin', '7', '200', '0', 'False', r.nouns].join(','));
 }
 
+// identity gate: every pre-existing slug must re-emit its exact hex + icon
+const emitted = new Map(out.slice(1).map((l) => {
+  const c = l.split(',');
+  return [c[1], { icon: c[2], hex: c[3] }];
+}));
+for (const r of existing) {
+  const e = emitted.get(r.slug);
+  if (!e || e.hex !== r.hex || e.icon !== r.icon) {
+    throw new Error(`identity drift on published category ${r.slug}: ` +
+      `${r.icon}/${r.hex} -> ${e ? e.icon + '/' + e.hex : 'MISSING'}`);
+  }
+}
+
 const outFp = path.join(ROOT, 'data', 'categories.csv');
 fs.writeFileSync(outFp + '.tmp', out.join('\n') + '\n');
 fs.renameSync(outFp + '.tmp', outFp);
-console.log(`wrote data/categories.csv — ${out.length - 1} rows`);
+console.log(`wrote data/categories.csv — ${out.length - 1} rows (${existing.length} kept, ${newRows.length} new)`);

@@ -6068,10 +6068,10 @@ zuddl,Zuddl,canonical,SAFE,0,False
 zuddl,zuddl.com,domain,SAFE,0,False
 zuora,Zuora,canonical,SAFE,0,False
 zuora,zuora.com,domain,SAFE,0,False
-,Орфограммка,canonical,SAFE,0,False
-,Orfogrammka,alias,SAFE,0,False
-,Орфограмка,alias,SAFE,0,False
-,orfogrammka.ru,domain,SAFE,0,False
+orfogrammka,Орфограммка,canonical,SAFE,0,False
+orfogrammka,Orfogrammka,alias,SAFE,0,False
+orfogrammka,Орфограмка,alias,SAFE,0,False
+orfogrammka,orfogrammka.ru,domain,SAFE,0,False
 001-game-creator,001 Game Creator,canonical,SAFE,0,False
 001-game-creator,001,alias,SAFE,0,False
 001-game-creator,Engine001,alias,SAFE,0,False

@@ -1,24 +1,24 @@
 category,slug,nouns
-CRM,crm,crm;sales crm;crm software
-Project Management,project-management,project management tool;project management software;pm tool
-Accounting,accounting,accounting software;bookkeeping software;accounting tool
-HR and HRIS,hr,hris;hr software;hr system
-Email Marketing,email-marketing,email marketing tool;email marketing platform;newsletter tool
-Marketing Automation,marketing-automation,marketing automation;automation platform;drip campaign tool
-Password Managers and Security,password-managers,password manager;password vault;2fa app
-Note-taking and Knowledge Management,note-taking,note taking app;notes app;knowledge base
-Design and Prototyping,design,design tool;prototyping tool;ui design tool
-Video Editing,video-editing,video editor;video editing software;editing software
-Help Desk and Customer Support,help-desk,help desk;ticketing system;support software
-ERP,erp,erp;erp system;erp software
-Business Intelligence and Analytics,business-intelligence,bi tool;dashboard tool;analytics platform
-eCommerce Platforms,ecommerce,ecommerce platform;online store builder;shopping cart
-Applicant Tracking and Recruiting,recruiting,ats;applicant tracking system;recruiting software
-Payroll,payroll,payroll software;payroll provider;payroll service
-Cloud Hosting and Infrastructure,cloud-hosting,cloud hosting;cloud provider;vps
-Team Collaboration and Chat,team-chat,team chat;chat app;collaboration tool
-Backup and Storage,backup-storage,backup software;backup solution;backup tool
-Payment Processing,payment-processing,payment processor;payment gateway;merchant account
+CRM,crm,crm;pipeline;deal;lead;contact
+Project Management,project-management,project management;pm tool;kanban;sprint;task
+Accounting,accounting,accounting;bookkeeping;invoice;ledger;expense
+HR and HRIS,hr,hris;hr software;onboarding;payroll;people ops
+Email Marketing,email-marketing,email marketing;newsletter;esp;campaign;subscriber
+Marketing Automation,marketing-automation,marketing automation;lead nurture;drip;lifecycle
+Password Managers and Security,password-managers,password manager;vault;passkey;2fa;credential
+Note-taking and Knowledge Management,note-taking,note taking;notes app;second brain;knowledge base;wiki
+Design and Prototyping,design,design tool;prototyping;wireframe;ui design;mockup
+Video Editing,video-editing,video editing;editor;timeline;render;footage
+Help Desk and Customer Support,help-desk,help desk;ticketing;support tool;shared inbox;sla
+ERP,erp,erp;inventory;manufacturing;supply chain;gl
+Business Intelligence and Analytics,business-intelligence,bi tool;dashboard;analytics;data viz;warehouse
+eCommerce Platforms,ecommerce,ecommerce platform;online store;storefront;checkout;cart
+Applicant Tracking and Recruiting,recruiting,ats;applicant tracking;recruiting software;hiring;candidate
+Payroll,payroll,payroll;paycheck;contractor payments;eor;w2
+Cloud Hosting and Infrastructure,cloud-hosting,hosting;deploy;vps;serverless;infrastructure
+Team Collaboration and Chat,team-chat,team chat;collaboration tool;video call;huddle;channels
+Backup and Storage,backup-storage,backup;cloud storage;nas;sync;restore
+Payment Processing,payment-processing,payment processor;merchant account;gateway;chargeback;payouts
 VPN Services,vpn,vpn;vpn service;vpn provider
 Antivirus and Endpoint Security,antivirus,antivirus;endpoint protection;malware protection
 Web Hosting,web-hosting,web host;web hosting;wordpress hosting

@@ -104,13 +104,39 @@ def main():
     ap.add_argument("--tree-cap", type=int, default=500,
                     help="threads counted per sub (the sweep takes the richest first)")
     ap.add_argument("--apply", action="store_true", help="write is_core to the CSV")
+    ap.add_argument("--add-categories", default="",
+                    help="ADDITIVE mode: comma-separated NEW category slugs. Selects core "
+                         "subs for these categories only and leaves every existing is_core "
+                         "row byte-untouched. The default (global) mode re-allocates the "
+                         "whole budget from scratch, which EVICTS existing core slots to "
+                         "fund new floors — existing categories' collection silently "
+                         "narrows and their scores drift. Never run global --apply to add "
+                         "categories; that is what this flag is for. --budget in this mode "
+                         "is the INCREMENTAL thread budget for the new categories alone.")
     args = ap.parse_args()
 
     rows = list(csv.DictReader(open(CSV_PATH)))
     obs = observed_threads()
+    add_only = {s.strip() for s in args.add_categories.split(",") if s.strip()}
+    frozen = set()
+    if add_only:
+        # the existing core set is frozen: its slots stand, and its subs count as
+        # already-swept so a shared sub costs the incremental budget nothing
+        frozen = {(r["category_slug"], r["subreddit"].lower())
+                  for r in rows if r.get("is_core") == "True"}
+        unknown = add_only - {r["category_slug"] for r in rows}
+        if unknown:
+            raise SystemExit(f"--add-categories names slugs with no CSV rows: {sorted(unknown)} "
+                             f"(run discover_v2 qualify first)")
+        already = add_only & {slug for slug, _ in frozen}
+        if already:
+            raise SystemExit(f"--add-categories names categories that already have core rows: "
+                             f"{sorted(already)} — additive mode is for NEW categories only")
     by_cat = collections.defaultdict(list)
     for r in rows:
         if r.get("is_scoring") == "True":
+            if add_only and r["category_slug"] not in add_only:
+                continue
             by_cat[r["category_slug"]].append(r)
 
     scored = {}
@@ -132,7 +158,7 @@ def main():
 
     # A subreddit shared by several categories is SWEPT ONCE and credited to
     # all of them, so cost is per unique subreddit, never per category slot.
-    swept_subs = set()
+    swept_subs = {sub for _, sub in frozen}
 
     def cost_of(r):
         sub = r["subreddit"].lower()
@@ -187,8 +213,15 @@ def main():
             print(f"  {slug:18} {', '.join(picks)}")
 
     if args.apply:
-        for r in rows:
-            r["is_core"] = str((r["category_slug"], r["subreddit"].lower()) in chosen)
+        if add_only:
+            # additive: existing rows keep their is_core verbatim; only rows of the named
+            # new categories are (re)written. A diff gate downstream proves the freeze.
+            for r in rows:
+                if r["category_slug"] in add_only:
+                    r["is_core"] = str((r["category_slug"], r["subreddit"].lower()) in chosen)
+        else:
+            for r in rows:
+                r["is_core"] = str((r["category_slug"], r["subreddit"].lower()) in chosen)
         cols = list(rows[0].keys())
         with open(CSV_PATH + ".tmp", "w", newline="") as f:
             w = csv.DictWriter(f, fieldnames=cols)

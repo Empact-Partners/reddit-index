@@ -36,10 +36,27 @@ import csv, json, os, re, sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 
 
-def slugify(s):
+def slugify(s, domains=""):
+    """Kebab slug from the brand name; falls back to the first domain's label.
+
+    The fallback exists because a non-Latin name (Орфограммка) reduces to "" under the
+    ASCII regex, and an empty slug is a live build bomb: the routing registry's slug-shape
+    gate throws the moment that brand gains a page, which is exactly what a gazetteer-wide
+    re-resolve (backfill_posts.py) will eventually cause. A brand with no Latin name and no
+    domain has no publishable identity, and refusing loudly here beats next build failing.
+    """
+    raw = s
     s = s.lower().replace("&", " and ").replace(".", " ").replace("+", " plus ")
     s = re.sub(r"[^a-z0-9]+", "-", s).strip("-")
-    return re.sub(r"-+", "-", s)
+    s = re.sub(r"-+", "-", s)
+    if s:
+        return s
+    for dom in str(domains or "").split(";"):
+        label = dom.strip().lower().split(".")[0]
+        label = re.sub(r"[^a-z0-9]+", "-", label).strip("-")
+        if label:
+            return label
+    raise SystemExit(f"slugify: no Latin name and no usable domain for {raw!r}")
 
 
 # ── gazetteer label -> the 20 measured category slugs ────────────────────────
@@ -362,8 +379,8 @@ def main():
 
     brand_rows, alias_rows = [], []
     for b in brands:
-        s = slugify(b["brand"])
         doms = b.get("_domains") or DOMAINS.get(b["brand"], [])
+        s = slugify(b["brand"], ";".join(doms))
         stops = b.get("_stops") or STOP_CONTEXTS.get(b["brand"], [])
         cls = CLASS[b["ambiguity_class"]]
         brand_rows.append({
