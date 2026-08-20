@@ -34,6 +34,23 @@ for p in proposed:
         seen_members.add(m)
         if m not in roster: problems.append(f"{p['slug']}: unknown member {m}")
 
+# adjacency to existing categories, on DISTINCTIVE tokens only (a check on generic words
+# like "Management" flags 41 of 51 and is worthless). These are the calls worth a human eye.
+GENERIC = {'management','software','platform','platforms','tools','tool','and','systems',
+           'system','services','service','automation','marketing','business','data','cloud',
+           'ai','the','of','for','intelligence','security','processing','analytics','testing',
+           'hosting','reporting'}
+def dtoks(x):
+    import re as _re
+    return {w for w in _re.findall(r'[a-z]+', x.lower()) if w not in GENERIC and len(w) > 3}
+adjacent = []
+for p_ in proposed:
+    pt = dtoks(p_['category'])
+    for es, ec in cats.items():
+        sh = pt & dtoks(ec)
+        if sh:
+            adjacent.append((p_['category'], ec, sorted(sh))); break
+
 random.seed(11)
 sample = random.sample(mapped, min(100, len(mapped)))
 
@@ -80,6 +97,16 @@ for p in sorted(proposed, key=lambda x: -len(x['members'])):
       f'<td class="n">{len(p["members"])}</td><td>{E(p.get("nouns",""))}</td>'
       f'<td>{E(samp)}</td></tr>')
 w('</table></div>')
+if adjacent:
+    w('<h2>Sits near an existing category</h2>')
+    w('<p>Checked on distinctive words only — a naive check that counts words like '
+      '&ldquo;Management&rdquo; flags 41 of 51 and tells you nothing. Each of these reads as '
+      'genuinely separate to me, but they are the calls worth your eye.</p>')
+    w('<div class="scroll"><table><tr><th>Proposed</th><th>Existing</th><th>Shared word</th></tr>')
+    for a, b, sh in adjacent:
+        w(f'<tr><td><b>{E(a)}</b></td><td>{E(b)}</td><td>{E(", ".join(sh))}</td></tr>')
+    w('</table></div>')
+
 w('<h2>Existing-category mapping — 100-row random sample</h2>')
 w('<div class="scroll"><table><tr><th>Company</th><th>Sells</th><th>Mapped to</th></tr>')
 for m in sample:

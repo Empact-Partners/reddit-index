@@ -109,6 +109,14 @@ def run(jobs, model, label):
             except Exception: continue
             if st.get('status') not in TERMINAL: continue
             p, o = inflight.pop(key)
+            # A job can reach TERMINAL a moment before its file lands, and a naive retry
+            # then resubmits a job that is still writing — two Codex sessions writing the
+            # same path concurrently, which is how the clustering output rewrote itself
+            # three times. Give the write a grace window before calling it a failure.
+            for _ in range(6):
+                if done(o):
+                    break
+                time.sleep(5)
             if done(o):
                 print(f'  ok {os.path.basename(o)}', flush=True)
             else:
