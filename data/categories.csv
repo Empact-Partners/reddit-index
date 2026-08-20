@@ -1,101 +1,152 @@
 category,slug,icon,hex,oklch,contrast_space_black,contrast_snowbelt,dE_loved,dE_hated,dE_nearest_category,min_pairwise_dE,dE_orange,threshold_tier,precision_target_pp,n_min,scorable_subreddits,meets_5_sub_floor,nouns
-CRM,crm,contact-round,#F8AAC1,oklch(0.819 0.096 0.2),9.9,1.6,0.2468,0.2857,0.0449,0.0373,0.2263,deep,4,600,17,,crm;pipeline;deal;lead;contact
-Project Management,project-management,square-kanban,#EB377F,oklch(0.632 0.219 2.1),4.63,3.42,0.3746,0.2377,0.0405,0.0373,0.132,standard,5,400,11,,project management;pm tool;kanban;sprint;task
-Accounting,accounting,calculator,#D5788A,oklch(0.680 0.117 8.3),5.92,2.68,0.2615,0.2312,0.0422,0.0373,0.1375,standard,5,400,7,,accounting;bookkeeping;invoice;ledger;expense
-HR and HRIS,hr,users-round,#9F8242,oklch(0.620 0.090 85.2),4.94,3.21,0.1955,0.3179,0.0467,0.0373,0.1888,standard,5,400,6,,hris;hr software;onboarding;payroll;people ops
-Email Marketing,email-marketing,mail,#E8B109,oklch(0.789 0.160 85.8),9.22,1.72,0.1921,0.4168,0.0374,0.0373,0.2192,thin,7,200,8,,email marketing;newsletter;esp;campaign;subscriber
-Marketing Automation,marketing-automation,megaphone,#BEA15B,oklch(0.720 0.096 87.5),7.26,2.19,0.151,0.3381,0.0466,0.0373,0.1958,deep,4,600,13,,marketing automation;lead nurture;drip;lifecycle
-Password Managers and Security,password-managers,key-round,#C5CA85,oklch(0.819 0.090 111.7),10.46,1.52,0.1317,0.3822,0.0502,0.0373,0.276,deep,4,600,10,,password manager;vault;passkey;2fa;credential
-Note-taking and Knowledge Management,note-taking,notebook-pen,#93DE04,oklch(0.820 0.220 130),10.91,1.45,0.1443,0.4975,0.0443,0.0373,0.3667,standard,5,400,7,,note taking;notes app;second brain;knowledge base;wiki
-Design and Prototyping,design,pen-tool,#6D9935,oklch(0.630 0.138 129.9),5.38,2.95,0.1391,0.3766,0.0432,0.0373,0.2785,deep,4,600,16,,design tool;prototyping;wireframe;ui design;mockup
-Video Editing,video-editing,clapperboard,#1A999A,oklch(0.621 0.101 195.7),5.22,3.04,0.149,0.2821,0.0481,0.0373,0.3286,deep,4,600,10,,video editing;editor;timeline;render;footage
-Help Desk and Customer Support,help-desk,headset,#79D4E5,oklch(0.819 0.090 211),10.63,1.49,0.131,0.3204,0.0554,0.0373,0.3568,thin,7,200,6,,help desk;ticketing;support tool;shared inbox;sla
-ERP,erp,factory,#18B8FF,oklch(0.741 0.155 236.1),8.03,1.97,0.1805,0.2494,0.0412,0.0373,0.3872,thin,7,200,7,,erp;inventory;manufacturing;supply chain;gl
-Business Intelligence and Analytics,business-intelligence,chart-column,#4D7AFF,oklch(0.620 0.204 266.4),4.77,3.33,0.304,0.1327,0.0500,0.0373,0.3933,deep,4,600,14,,bi tool;dashboard;analytics;data viz;warehouse
-eCommerce Platforms,ecommerce,shopping-cart,#7A90CA,oklch(0.659 0.090 267.9),5.74,2.76,0.2081,0.1733,0.0390,0.0373,0.2933,thin,7,200,6,,ecommerce platform;online store;storefront;checkout;cart
-Applicant Tracking and Recruiting,recruiting,user-search,#9DB6F5,oklch(0.781 0.095 267.5),8.98,1.77,0.1948,0.229,0.0434,0.0373,0.3205,thin,7,200,8,,ats;applicant tracking;recruiting software;hiring;candidate
-Payroll,payroll,banknote,#FE7AEE,oklch(0.771 0.209 332.2),7.94,2,0.3513,0.1939,0.0400,0.0373,0.2553,thin,7,200,5,,payroll;paycheck;contractor payments;eor;w2
-Cloud Hosting and Infrastructure,cloud-hosting,server,#B169A7,oklch(0.621 0.123 332.1),4.69,3.38,0.2923,0.1509,0.0377,0.0373,0.2094,standard,5,400,15,,hosting;deploy;vps;serverless;infrastructure
-Team Collaboration and Chat,team-chat,messages-square,#D68FCC,oklch(0.741 0.117 331.8),7.45,2.13,0.2586,0.1922,0.0374,0.0373,0.2212,deep,4,600,12,,team chat;collaboration tool;video call;huddle;channels
-Backup and Storage,backup-storage,hard-drive,#D245BF,oklch(0.630 0.220 333.7),4.6,3.45,0.3799,0.135,0.0377,0.0373,0.2324,standard,5,400,8,,backup;cloud storage;nas;sync;restore
-Payment Processing,payment-processing,credit-card,#FE65AD,oklch(0.720 0.199 354),6.6,2.4,0.3405,0.2236,0.0407,0.0373,0.1652,deep,4,600,6,,payment processor;merchant account;gateway;chargeback;payouts
-VPN Services,vpn,globe-lock,#0898EC,oklch(0.656 0.162 244.6),5.77,2.75,0.2214,0.2012,0.0419,0.0373,0.3792,thin,7,200,0,False,vpn;vpn service;vpn provider
-Antivirus and Endpoint Security,antivirus,shield-check,#AFB200,oklch(0.737 0.162 111.0),7.90,2.01,0.1320,0.4157,0.0375,0.0373,0.2572,thin,7,200,0,False,antivirus;endpoint protection;malware protection
-Web Hosting,web-hosting,panel-top,#53ABC4,oklch(0.697 0.092 219.0),6.87,2.31,0.1305,0.2531,0.0439,0.0373,0.3229,thin,7,200,0,False,web host;web hosting;wordpress hosting
-Domain Registrars,domain-registrars,at-sign,#7C9DFF,oklch(0.714 0.148 268.4),6.99,2.27,0.2355,0.1638,0.0391,0.0373,0.3439,thin,7,200,0,False,domain registrar;domain name;dns provider
-Website Builders,website-builders,layout-template,#FF869E,oklch(0.760 0.148 8.6),7.87,2.01,0.2833,0.2682,0.0389,0.0373,0.1546,thin,7,200,0,False,website builder;site builder;landing page builder
-SEO Tools,seo-tools,trending-up,#DC6CD0,oklch(0.697 0.184 331.5),6.11,2.60,0.3291,0.1459,0.0394,0.0373,0.2249,thin,7,200,0,False,seo tool;keyword research tool;rank tracker
-Social Media Management,social-media-management,share-2,#A69600,oklch(0.666 0.139 101.8),6.01,2.64,0.1618,0.3770,0.0455,0.0373,0.2156,thin,7,200,0,False,social media scheduler;social media management tool;posting tool
-Live Chat and Chatbots,live-chat,message-circle,#C9C900,oklch(0.809 0.176 109.8),10.18,1.56,0.1565,0.4536,0.0382,0.0373,0.2900,thin,7,200,0,False,live chat;chatbot;chat widget
-VoIP and Business Phone,voip,phone-call,#FC9AE5,oklch(0.810 0.148 336.0),9.37,1.69,0.2978,0.2369,0.0393,0.0373,0.2495,thin,7,200,0,False,voip;business phone system;virtual phone number
-Video Conferencing,video-conferencing,video,#DA5FA1,oklch(0.658 0.170 349.4),5.27,3.01,0.3240,0.1856,0.0399,0.0373,0.1653,thin,7,200,0,False,video conferencing;video call app;meeting software
-Webinar Platforms,webinars,presentation,#3A92BE,oklch(0.626 0.106 234.0),5.19,3.06,0.1915,0.2191,0.0417,0.0373,0.3333,thin,7,200,0,False,webinar platform;webinar software;online event platform
-Learning Management Systems,lms,graduation-cap,#BA83B2,oklch(0.680 0.092 331.7),6.00,2.64,0.2435,0.1770,0.0388,0.0373,0.2067,thin,7,200,0,False,lms;learning management system;training platform
-Online Course Platforms,course-platforms,book-open,#6EBDDF,oklch(0.760 0.092 227.7),8.61,1.84,0.1356,0.2660,0.0378,0.0373,0.3349,thin,7,200,0,False,course platform;online course software;course builder
-Form Builders,form-builders,clipboard-list,#6182DC,oklch(0.624 0.141 267.1),4.93,3.22,0.2567,0.1433,0.0438,0.0373,0.3376,thin,7,200,0,False,form builder;online form;form software
-Survey Tools,survey-tools,list-checks,#DC919F,oklch(0.736 0.092 7.4),7.39,2.15,0.2297,0.2475,0.0380,0.0373,0.1717,thin,7,200,0,False,survey tool;survey software;feedback tool
-Scheduling and Appointments,scheduling,calendar-clock,#B67081,oklch(0.625 0.091 4.3),4.84,3.28,0.2590,0.2164,0.0476,0.0373,0.1625,thin,7,200,0,False,scheduling software;appointment scheduling;booking software
-Time Tracking,time-tracking,timer,#23CFFC,oklch(0.794 0.141 221.9),9.81,1.62,0.1502,0.3030,0.0391,0.0373,0.3932,thin,7,200,0,False,time tracking;time tracker;timesheet software
-Invoicing and Billing,invoicing,receipt,#7FA7DE,oklch(0.720 0.092 256.5),7.30,2.17,0.1779,0.2075,0.0386,0.0373,0.3105,thin,7,200,0,False,invoicing software;billing software;invoice generator
-Expense Management,expense-management,wallet,#F983C6,oklch(0.761 0.162 346.5),7.82,2.03,0.3051,0.2207,0.0385,0.0373,0.2003,thin,7,200,0,False,expense management;expense tracking;expense report software
-E-signature,esignature,signature,#D2B36A,oklch(0.778 0.099 87.1),8.94,1.77,0.1542,0.3614,0.0438,0.0373,0.2195,thin,7,200,0,False,e-signature;electronic signature;document signing
-Document Management,document-management,folder-open,#8C9956,oklch(0.657 0.092 118.0),5.85,2.71,0.1334,0.3332,0.0394,0.0373,0.2359,thin,7,200,0,False,document management;dms;document storage
-PDF Tools,pdf-tools,file-text,#CE5C7C,oklch(0.625 0.147 4.7),4.68,3.39,0.3090,0.2215,0.0412,0.0373,0.1321,thin,7,200,0,False,pdf editor;pdf software;pdf converter
-Cloud Storage and File Sharing,cloud-storage,cloud,#DF79AF,oklch(0.706 0.141 348.3),6.44,2.46,0.2861,0.1973,0.0409,0.0373,0.1747,thin,7,200,0,False,cloud storage;file sharing;file sync
-Photo Editing,photo-editing,image,#DEA6D8,oklch(0.793 0.093 330.1),9.07,1.75,0.2393,0.2362,0.0382,0.0373,0.2471,thin,7,200,0,False,photo editor;photo editing software;image editor
-3D and CAD,cad,box,#CEA40F,oklch(0.736 0.148 89.8),7.69,2.06,0.1710,0.3913,0.0487,0.0373,0.2020,thin,7,200,0,False,cad software;3d modeling software;cad program
-Game Engines,game-engines,gamepad-2,#5B8EFE,oklch(0.666 0.175 263.9),5.80,2.73,0.2606,0.1481,0.0458,0.0373,0.3694,thin,7,200,0,False,game engine;game development engine;gamedev engine
-Code Editors and IDEs,ides,code,#80C9FF,oklch(0.808 0.106 241.8),10.08,1.57,0.1742,0.2749,0.0469,0.0373,0.3597,thin,7,200,0,False,ide;code editor;text editor
-Git and Code Hosting,code-hosting,git-branch,#DC409E,oklch(0.626 0.211 347.9),4.53,3.50,0.3735,0.1852,0.0387,0.0373,0.1815,thin,7,200,0,False,git hosting;code hosting;repository hosting
-CI/CD,ci-cd,workflow,#46A7E4,oklch(0.697 0.127 239.9),6.80,2.33,0.1774,0.2200,0.0399,0.0373,0.3509,thin,7,200,0,False,ci/cd;continuous integration;build pipeline
-Containers and Orchestration,containers,container,#8AA300,oklch(0.672 0.160 120.0),6.29,2.52,0.1313,0.4021,0.0420,0.0373,0.2672,thin,7,200,0,False,container orchestration;kubernetes distribution;container platform
-Infrastructure as Code,iac,layers,#EC56B9,oklch(0.682 0.211 343.7),5.67,2.79,0.3593,0.1791,0.0384,0.0373,0.1940,thin,7,200,0,False,infrastructure as code;iac tool;provisioning tool
-Monitoring and Observability,observability,activity,#C1BC4B,oklch(0.778 0.134 106.7),9.08,1.75,0.1320,0.4016,0.0378,0.0373,0.2543,thin,7,200,0,False,monitoring tool;observability platform;metrics platform
-Error Tracking,error-tracking,bug,#C65FB8,oklch(0.640 0.170 332.8),4.93,3.22,0.3290,0.1346,0.0421,0.0373,0.2145,thin,7,200,0,False,error tracking;error monitoring;crash reporting
-Feature Flags and A/B Testing,feature-flags,flag,#70B6FF,oklch(0.760 0.127 250.8),8.45,1.88,0.1903,0.2280,0.0391,0.0373,0.3555,thin,7,200,0,False,feature flags;feature flag service;ab testing tool
-Product Analytics,product-analytics,chart-line,#F37293,oklch(0.713 0.161 6.0),6.57,2.41,0.2988,0.2445,0.0391,0.0373,0.1304,thin,7,200,0,False,product analytics;event analytics;user analytics
-Web Analytics,web-analytics,chart-area,#F868D2,oklch(0.729 0.211 339.1),6.80,2.33,0.3537,0.1854,0.0381,0.0373,0.2192,thin,7,200,0,False,web analytics;website analytics;traffic analytics
-Session Replay and Heatmaps,session-replay,mouse-pointer-click,#00C0E4,oklch(0.745 0.134 217.7),8.31,1.91,0.1301,0.2849,0.0386,0.0373,0.3729,thin,7,200,0,False,session replay;heatmap tool;user recording
-Data Warehouses,data-warehouses,database,#F196BE,oklch(0.777 0.119 352.3),8.47,1.87,0.2626,0.2450,0.0381,0.0373,0.2015,thin,7,200,0,False,data warehouse;cloud data warehouse;analytics database
-ETL and Data Pipelines,etl,git-merge,#8D8D1C,oklch(0.624 0.127 109.6),5.13,3.09,0.1707,0.3653,0.0480,0.0373,0.2327,thin,7,200,0,False,etl tool;data pipeline;data integration
-Databases,databases,database-zap,#FA5090,oklch(0.682 0.211 1.5),5.69,2.79,0.3545,0.2389,0.0373,0.0373,0.1314,thin,7,200,0,False,database;managed database;sql database
-API Tools,api-tools,plug,#AD9350,oklch(0.672 0.092 88.7),6.08,2.61,0.1630,0.3252,0.0477,0.0373,0.1897,thin,7,200,0,False,api client;api testing tool;api platform
-Authentication and Identity,identity,fingerprint,#0088F5,oklch(0.625 0.190 252.4),5.02,3.16,0.2674,0.1789,0.0476,0.0373,0.3990,thin,7,200,0,False,sso;identity provider;authentication service
-Device Management,mdm,tablet-smartphone,#09A3B9,oklch(0.657 0.113 211.7),5.98,2.65,0.1424,0.2639,0.0471,0.0373,0.3423,thin,7,200,0,False,mdm;device management;mobile device management
-Remote Desktop and Access,remote-desktop,monitor-smartphone,#C6719E,oklch(0.656 0.120 347.9),5.38,2.95,0.2773,0.1852,0.0386,0.0373,0.1727,thin,7,200,0,False,remote desktop;remote access;screen sharing
-RMM and MSP Tools,rmm,server-cog,#E880DC,oklch(0.744 0.170 331.5),7.36,2.16,0.3113,0.1765,0.0397,0.0373,0.2328,thin,7,200,0,False,rmm;msp software;remote monitoring
-Firewalls and Network Security,network-security,brick-wall,#B18500,oklch(0.642 0.132 85.1),5.35,2.96,0.1995,0.3560,0.0467,0.0373,0.1767,thin,7,200,0,False,firewall;network security;ngfw
-Email Providers,email-providers,inbox,#6097E7,oklch(0.674 0.133 257.7),6.09,2.61,0.2173,0.1741,0.0382,0.0373,0.3399,thin,7,200,0,False,email provider;email service;email hosting
-Transactional Email and SMS APIs,communication-apis,send,#C29301,oklch(0.689 0.141 85.6),6.42,2.47,0.1838,0.3704,0.0455,0.0373,0.1787,thin,7,200,0,False,transactional email;sms api;email api
-Newsletter Platforms,newsletters,newspaper,#AEA63B,oklch(0.712 0.127 105.0),7.15,2.22,0.1332,0.3739,0.0455,0.0373,0.2261,thin,7,200,0,False,newsletter platform;paid newsletter;newsletter service
-Podcast Hosting,podcast-hosting,mic,#CA76C0,oklch(0.682 0.141 331.4),5.90,2.69,0.2897,0.1515,0.0453,0.0373,0.2111,thin,7,200,0,False,podcast hosting;podcast host;podcast platform
-Video Hosting and Streaming,video-hosting,play,#A8D01D,oklch(0.800 0.189 122.8),10.07,1.58,0.1311,0.4634,0.0413,0.0373,0.3227,thin,7,200,0,False,video hosting;video platform;live streaming platform
-Screen Recording,screen-recording,screen-share,#5D9BC7,oklch(0.665 0.092 240.9),6.00,2.64,0.1743,0.2117,0.0430,0.0373,0.3148,thin,7,200,0,False,screen recorder;screen recording;screen capture
-Presentation Software,presentations,gallery-vertical-end,#59A9FE,oklch(0.722 0.147 251.8),7.34,2.16,0.2068,0.2034,0.0405,0.0373,0.3640,thin,7,200,0,False,presentation software;slide deck tool;presentation maker
-No-code App Builders,no-code,blocks,#DBBF57,oklch(0.809 0.127 94.3),9.98,1.59,0.1631,0.4028,0.0399,0.0373,0.2463,thin,7,200,0,False,no-code app builder;no code platform;app builder
-Workflow Automation,workflow-automation,zap,#059ED5,oklch(0.657 0.134 232.4),5.90,2.69,0.1831,0.2278,0.0421,0.0373,0.3597,thin,7,200,0,False,workflow automation;automation tool;integration platform
-Internal Tools and Admin Panels,internal-tools,wrench,#68A300,oklch(0.650 0.177 130.7),5.87,2.70,0.1327,0.4152,0.0420,0.0373,0.3022,thin,7,200,0,False,internal tool builder;admin panel;internal dashboard
-Spreadsheet Software,spreadsheets,table,#3D8CD4,oklch(0.625 0.134 249.0),5.07,3.13,0.2261,0.1869,0.0417,0.0373,0.3503,thin,7,200,0,False,spreadsheet;spreadsheet software;spreadsheet app
-Whiteboards and Diagramming,diagramming,spline,#8DA9F9,oklch(0.746 0.120 268.7),7.89,2.01,0.2118,0.1930,0.0417,0.0373,0.3277,thin,7,200,0,False,whiteboard tool;diagram tool;flowchart software
-Wikis and Knowledge Bases,wikis,library,#D089AF,oklch(0.713 0.099 346.6),6.78,2.34,0.2438,0.2061,0.0397,0.0373,0.1880,thin,7,200,0,False,wiki;team wiki;knowledge base software
-Translation and Localization,localization,languages,#D84D89,oklch(0.625 0.182 357.1),4.59,3.45,0.3441,0.2079,0.0412,0.0373,0.1466,thin,7,200,0,False,translation software;localization platform;translation management
-Grammar and Writing Assistants,writing-assistants,spell-check,#EA9EAA,oklch(0.777 0.092 9.1),8.57,1.85,0.2304,0.2707,0.0408,0.0373,0.1922,thin,7,200,0,False,grammar checker;writing assistant;proofreading tool
-AI Chat Assistants,ai-assistants,bot,#00A6FD,oklch(0.697 0.169 243.2),6.77,2.34,0.2103,0.2163,0.0405,0.0373,0.3889,thin,7,200,0,False,ai assistant;ai chatbot;llm
-AI Image Generation,ai-image,image-plus,#C55E9A,oklch(0.625 0.148 346.2),4.68,3.39,0.3151,0.1741,0.0400,0.0373,0.1771,thin,7,200,0,False,ai image generator;image generation;text to image
-AI Video Generation,ai-video,film,#E16890,oklch(0.674 0.156 1.3),5.66,2.80,0.3027,0.2198,0.0399,0.0373,0.1337,thin,7,200,0,False,ai video generator;ai video;text to video
-AI Coding Assistants,ai-coding,braces,#FE8EF5,oklch(0.800 0.183 330.1),8.95,1.77,0.3289,0.2143,0.0397,0.0373,0.2659,thin,7,200,0,False,ai coding assistant;code assistant;coding copilot
-Transcription and Meeting Notes,transcription,audio-lines,#EA86A9,oklch(0.737 0.128 358.3),7.29,2.17,0.2682,0.2329,0.0394,0.0373,0.1675,thin,7,200,0,False,transcription software;meeting notes app;ai notetaker
-Field Service Management,field-service,truck,#739358,oklch(0.624 0.091 131.8),5.20,3.05,0.1447,0.3295,0.0394,0.0373,0.2586,thin,7,200,0,False,field service software;field service management;dispatch software
-Construction Management,construction,hammer,#6389BF,oklch(0.624 0.093 257.2),5.04,3.15,0.2150,0.1828,0.0390,0.0373,0.3068,thin,7,200,0,False,construction software;construction management;job costing software
-Real Estate and Property Management,property-management,building-2,#FE79AB,oklch(0.744 0.169 358.3),7.34,2.16,0.3088,0.2405,0.0385,0.0373,0.1624,thin,7,200,0,False,property management software;landlord software;rental management
-Restaurant POS and Management,restaurant-pos,utensils,#809AE4,oklch(0.697 0.113 268.6),6.59,2.41,0.2121,0.1705,0.0382,0.0373,0.3127,thin,7,200,0,False,restaurant pos;restaurant software;restaurant management system
-Retail POS,pos,scan-barcode,#E797D9,oklch(0.777 0.127 333.2),8.45,1.88,0.2711,0.2141,0.0382,0.0373,0.2350,thin,7,200,0,False,pos system;point of sale;retail pos
-Inventory Management,inventory,package,#EC73C3,oklch(0.721 0.175 342.1),6.71,2.36,0.3185,0.1873,0.0381,0.0373,0.1973,thin,7,200,0,False,inventory management;inventory software;stock management
-Shipping and Fulfillment,shipping,package-check,#53C1F8,oklch(0.770 0.127 233.6),8.90,1.78,0.1607,0.2647,0.0379,0.0373,0.3686,thin,7,200,0,False,shipping software;fulfillment service;shipping label software
-Print on Demand,print-on-demand,shirt,#51B4E1,oklch(0.729 0.113 230.8),7.71,2.06,0.1478,0.2486,0.0378,0.0373,0.3462,thin,7,200,0,False,print on demand;pod service;print provider
-Legal Practice Management,legal-practice,scale,#DA58C5,oklch(0.664 0.204 334.4),5.32,2.98,0.3555,0.1414,0.0377,0.0373,0.2209,thin,7,200,0,False,legal practice management;law firm software;legal software
-Nonprofit and Church Management,nonprofit,hand-heart,#B077A2,oklch(0.642 0.092 335.9),5.17,3.07,0.2563,0.1749,0.0377,0.0373,0.2000,thin,7,200,0,False,nonprofit software;donor management;church management software
-Event Management and Ticketing,event-management,ticket,#B0C000,oklch(0.769 0.175 115.6),8.93,1.78,0.1301,0.4388,0.0375,0.0373,0.2854,thin,7,200,0,False,event management software;ticketing platform;event registration
-Community Platforms,community-platforms,users,#DA97BB,oklch(0.753 0.092 346.1),7.85,2.02,0.2352,0.2271,0.0374,0.0373,0.2050,thin,7,200,0,False,community platform;community software;membership community
-Personal Finance and Budgeting,budgeting,piggy-bank,#D6BC10,oklch(0.793 0.162 99.0),9.51,1.67,0.1666,0.4297,0.0374,0.0373,0.2521,thin,7,200,0,False,budgeting app;personal finance app;money app
-Tax Software,tax-software,landmark,#EC499A,oklch(0.657 0.211 354.0),5.15,3.08,0.3629,0.2090,0.0373,0.0373,0.1565,thin,7,200,0,False,tax software;tax filing;tax prep software
+CRM,crm,contact-round,#F8AAC1,oklch(0.819 0.096 0.2),9.9,1.6,0.2468,0.2857,0.0323,0.0308,0.2263,deep,4,600,17,,crm;pipeline;deal;lead;contact
+Project Management,project-management,square-kanban,#EB377F,oklch(0.632 0.219 2.1),4.63,3.42,0.3746,0.2377,0.0405,0.0308,0.132,standard,5,400,11,,project management;pm tool;kanban;sprint;task
+Accounting,accounting,calculator,#D5788A,oklch(0.680 0.117 8.3),5.92,2.68,0.2615,0.2312,0.0316,0.0308,0.1375,standard,5,400,7,,accounting;bookkeeping;invoice;ledger;expense
+HR and HRIS,hr,users-round,#9F8242,oklch(0.620 0.090 85.2),4.94,3.21,0.1955,0.3179,0.0385,0.0308,0.1888,standard,5,400,6,,hris;hr software;onboarding;payroll;people ops
+Email Marketing,email-marketing,mail,#E8B109,oklch(0.789 0.160 85.8),9.22,1.72,0.1921,0.4168,0.0367,0.0308,0.2192,thin,7,200,8,,email marketing;newsletter;esp;campaign;subscriber
+Marketing Automation,marketing-automation,megaphone,#BEA15B,oklch(0.720 0.096 87.5),7.26,2.19,0.151,0.3381,0.0317,0.0308,0.1958,deep,4,600,13,,marketing automation;lead nurture;drip;lifecycle
+Password Managers and Security,password-managers,key-round,#C5CA85,oklch(0.819 0.090 111.7),10.46,1.52,0.1317,0.3822,0.0334,0.0308,0.276,deep,4,600,10,,password manager;vault;passkey;2fa;credential
+Note-taking and Knowledge Management,note-taking,notebook-pen,#93DE04,oklch(0.820 0.220 130),10.91,1.45,0.1443,0.4975,0.0443,0.0308,0.3667,standard,5,400,7,,note taking;notes app;second brain;knowledge base;wiki
+Design and Prototyping,design,pen-tool,#6D9935,oklch(0.630 0.138 129.9),5.38,2.95,0.1391,0.3766,0.0399,0.0308,0.2785,deep,4,600,16,,design tool;prototyping;wireframe;ui design;mockup
+Video Editing,video-editing,clapperboard,#1A999A,oklch(0.621 0.101 195.7),5.22,3.04,0.149,0.2821,0.0350,0.0308,0.3286,deep,4,600,10,,video editing;editor;timeline;render;footage
+Help Desk and Customer Support,help-desk,headset,#79D4E5,oklch(0.819 0.090 211),10.63,1.49,0.131,0.3204,0.0380,0.0308,0.3568,thin,7,200,6,,help desk;ticketing;support tool;shared inbox;sla
+ERP,erp,factory,#18B8FF,oklch(0.741 0.155 236.1),8.03,1.97,0.1805,0.2494,0.0412,0.0308,0.3872,thin,7,200,7,,erp;inventory;manufacturing;supply chain;gl
+Business Intelligence and Analytics,business-intelligence,chart-column,#4D7AFF,oklch(0.620 0.204 266.4),4.77,3.33,0.304,0.1327,0.0405,0.0308,0.3933,deep,4,600,14,,bi tool;dashboard;analytics;data viz;warehouse
+eCommerce Platforms,ecommerce,shopping-cart,#7A90CA,oklch(0.659 0.090 267.9),5.74,2.76,0.2081,0.1733,0.0309,0.0308,0.2933,thin,7,200,6,,ecommerce platform;online store;storefront;checkout;cart
+Applicant Tracking and Recruiting,recruiting,user-search,#9DB6F5,oklch(0.781 0.095 267.5),8.98,1.77,0.1948,0.229,0.0314,0.0308,0.3205,thin,7,200,8,,ats;applicant tracking;recruiting software;hiring;candidate
+Payroll,payroll,banknote,#FE7AEE,oklch(0.771 0.209 332.2),7.94,2,0.3513,0.1939,0.0351,0.0308,0.2553,thin,7,200,5,,payroll;paycheck;contractor payments;eor;w2
+Cloud Hosting and Infrastructure,cloud-hosting,server,#B169A7,oklch(0.621 0.123 332.1),4.69,3.38,0.2923,0.1509,0.0346,0.0308,0.2094,standard,5,400,15,,hosting;deploy;vps;serverless;infrastructure
+Team Collaboration and Chat,team-chat,messages-square,#D68FCC,oklch(0.741 0.117 331.8),7.45,2.13,0.2586,0.1922,0.0330,0.0308,0.2212,deep,4,600,12,,team chat;collaboration tool;video call;huddle;channels
+Backup and Storage,backup-storage,hard-drive,#D245BF,oklch(0.630 0.220 333.7),4.6,3.45,0.3799,0.135,0.0375,0.0308,0.2324,standard,5,400,8,,backup;cloud storage;nas;sync;restore
+Payment Processing,payment-processing,credit-card,#FE65AD,oklch(0.720 0.199 354),6.6,2.4,0.3405,0.2236,0.0313,0.0308,0.1652,deep,4,600,6,,payment processor;merchant account;gateway;chargeback;payouts
+VPN Services,vpn,globe-lock,#0898EC,oklch(0.656 0.162 244.6),5.77,2.75,0.2214,0.2012,0.0322,0.0308,0.3792,thin,7,200,0,False,vpn;vpn service;vpn provider
+Antivirus and Endpoint Security,antivirus,shield-check,#AFB200,oklch(0.737 0.162 111.0),7.90,2.01,0.1320,0.4157,0.0334,0.0308,0.2572,thin,7,200,0,False,antivirus;endpoint protection;malware protection
+Web Hosting,web-hosting,panel-top,#53ABC4,oklch(0.697 0.092 219.0),6.87,2.31,0.1305,0.2531,0.0370,0.0308,0.3229,thin,7,200,0,False,web host;web hosting;wordpress hosting
+Domain Registrars,domain-registrars,at-sign,#7C9DFF,oklch(0.714 0.148 268.4),6.99,2.27,0.2355,0.1638,0.0342,0.0308,0.3439,thin,7,200,0,False,domain registrar;domain name;dns provider
+Website Builders,website-builders,layout-template,#FF869E,oklch(0.760 0.148 8.6),7.87,2.01,0.2833,0.2682,0.0311,0.0308,0.1546,thin,7,200,0,False,website builder;site builder;landing page builder
+SEO Tools,seo-tools,trending-up,#DC6CD0,oklch(0.697 0.184 331.5),6.11,2.60,0.3291,0.1459,0.0341,0.0308,0.2249,thin,7,200,0,False,seo tool;keyword research tool;rank tracker
+Social Media Management,social-media-management,share-2,#A69600,oklch(0.666 0.139 101.8),6.01,2.64,0.1618,0.3770,0.0371,0.0308,0.2156,thin,7,200,0,False,social media scheduler;social media management tool;posting tool
+Live Chat and Chatbots,live-chat,message-circle,#C9C900,oklch(0.809 0.176 109.8),10.18,1.56,0.1565,0.4536,0.0360,0.0308,0.2900,thin,7,200,0,False,live chat;chatbot;chat widget
+VoIP and Business Phone,voip,phone-call,#FC9AE5,oklch(0.810 0.148 336.0),9.37,1.69,0.2978,0.2369,0.0314,0.0308,0.2495,thin,7,200,0,False,voip;business phone system;virtual phone number
+Video Conferencing,video-conferencing,video,#DA5FA1,oklch(0.658 0.170 349.4),5.27,3.01,0.3240,0.1856,0.0344,0.0308,0.1653,thin,7,200,0,False,video conferencing;video call app;meeting software
+Webinar Platforms,webinars,presentation,#3A92BE,oklch(0.626 0.106 234.0),5.19,3.06,0.1915,0.2191,0.0351,0.0308,0.3333,thin,7,200,0,False,webinar platform;webinar software;online event platform
+Learning Management Systems,lms,graduation-cap,#BA83B2,oklch(0.680 0.092 331.7),6.00,2.64,0.2435,0.1770,0.0327,0.0308,0.2067,thin,7,200,0,False,lms;learning management system;training platform
+Online Course Platforms,course-platforms,book-open,#6EBDDF,oklch(0.760 0.092 227.7),8.61,1.84,0.1356,0.2660,0.0350,0.0308,0.3349,thin,7,200,0,False,course platform;online course software;course builder
+Form Builders,form-builders,clipboard-list,#6182DC,oklch(0.624 0.141 267.1),4.93,3.22,0.2567,0.1433,0.0335,0.0308,0.3376,thin,7,200,0,False,form builder;online form;form software
+Survey Tools,survey-tools,list-checks,#DC919F,oklch(0.736 0.092 7.4),7.39,2.15,0.2297,0.2475,0.0380,0.0308,0.1717,thin,7,200,0,False,survey tool;survey software;feedback tool
+Scheduling and Appointments,scheduling,calendar-clock,#B67081,oklch(0.625 0.091 4.3),4.84,3.28,0.2590,0.2164,0.0331,0.0308,0.1625,thin,7,200,0,False,scheduling software;appointment scheduling;booking software
+Time Tracking,time-tracking,timer,#23CFFC,oklch(0.794 0.141 221.9),9.81,1.62,0.1502,0.3030,0.0325,0.0308,0.3932,thin,7,200,0,False,time tracking;time tracker;timesheet software
+Invoicing and Billing,invoicing,receipt,#7FA7DE,oklch(0.720 0.092 256.5),7.30,2.17,0.1779,0.2075,0.0348,0.0308,0.3105,thin,7,200,0,False,invoicing software;billing software;invoice generator
+Expense Management,expense-management,wallet,#F983C6,oklch(0.761 0.162 346.5),7.82,2.03,0.3051,0.2207,0.0329,0.0308,0.2003,thin,7,200,0,False,expense management;expense tracking;expense report software
+E-signature,esignature,signature,#D2B36A,oklch(0.778 0.099 87.1),8.94,1.77,0.1542,0.3614,0.0328,0.0308,0.2195,thin,7,200,0,False,e-signature;electronic signature;document signing
+Document Management,document-management,folder-open,#8C9956,oklch(0.657 0.092 118.0),5.85,2.71,0.1334,0.3332,0.0349,0.0308,0.2359,thin,7,200,0,False,document management;dms;document storage
+PDF Tools,pdf-tools,file-text,#CE5C7C,oklch(0.625 0.147 4.7),4.68,3.39,0.3090,0.2215,0.0328,0.0308,0.1321,thin,7,200,0,False,pdf editor;pdf software;pdf converter
+Cloud Storage and File Sharing,cloud-storage,cloud,#DF79AF,oklch(0.706 0.141 348.3),6.44,2.46,0.2861,0.1973,0.0344,0.0308,0.1747,thin,7,200,0,False,cloud storage;file sharing;file sync
+Photo Editing,photo-editing,image,#DEA6D8,oklch(0.793 0.093 330.1),9.07,1.75,0.2393,0.2362,0.0314,0.0308,0.2471,thin,7,200,0,False,photo editor;photo editing software;image editor
+3D and CAD,cad,box,#CEA40F,oklch(0.736 0.148 89.8),7.69,2.06,0.1710,0.3913,0.0332,0.0308,0.2020,thin,7,200,0,False,cad software;3d modeling software;cad program
+Game Engines,game-engines,gamepad-2,#5B8EFE,oklch(0.666 0.175 263.9),5.80,2.73,0.2606,0.1481,0.0323,0.0308,0.3694,thin,7,200,0,False,game engine;game development engine;gamedev engine
+Code Editors and IDEs,ides,code,#80C9FF,oklch(0.808 0.106 241.8),10.08,1.57,0.1742,0.2749,0.0353,0.0308,0.3597,thin,7,200,0,False,ide;code editor;text editor
+Git and Code Hosting,code-hosting,git-branch,#DC409E,oklch(0.626 0.211 347.9),4.53,3.50,0.3735,0.1852,0.0317,0.0308,0.1815,thin,7,200,0,False,git hosting;code hosting;repository hosting
+CI/CD,ci-cd,workflow,#46A7E4,oklch(0.697 0.127 239.9),6.80,2.33,0.1774,0.2200,0.0331,0.0308,0.3509,thin,7,200,0,False,ci/cd;continuous integration;build pipeline
+Containers and Orchestration,containers,container,#8AA300,oklch(0.672 0.160 120.0),6.29,2.52,0.1313,0.4021,0.0349,0.0308,0.2672,thin,7,200,0,False,container orchestration;kubernetes distribution;container platform
+Infrastructure as Code,iac,layers,#EC56B9,oklch(0.682 0.211 343.7),5.67,2.79,0.3593,0.1791,0.0336,0.0308,0.1940,thin,7,200,0,False,infrastructure as code;iac tool;provisioning tool
+Monitoring and Observability,observability,activity,#C1BC4B,oklch(0.778 0.134 106.7),9.08,1.75,0.1320,0.4016,0.0322,0.0308,0.2543,thin,7,200,0,False,monitoring tool;observability platform;metrics platform
+Error Tracking,error-tracking,bug,#C65FB8,oklch(0.640 0.170 332.8),4.93,3.22,0.3290,0.1346,0.0325,0.0308,0.2145,thin,7,200,0,False,error tracking;error monitoring;crash reporting
+Feature Flags and A/B Testing,feature-flags,flag,#70B6FF,oklch(0.760 0.127 250.8),8.45,1.88,0.1903,0.2280,0.0337,0.0308,0.3555,thin,7,200,0,False,feature flags;feature flag service;ab testing tool
+Product Analytics,product-analytics,chart-line,#F37293,oklch(0.713 0.161 6.0),6.57,2.41,0.2988,0.2445,0.0311,0.0308,0.1304,thin,7,200,0,False,product analytics;event analytics;user analytics
+Web Analytics,web-analytics,chart-area,#F868D2,oklch(0.729 0.211 339.1),6.80,2.33,0.3537,0.1854,0.0311,0.0308,0.2192,thin,7,200,0,False,web analytics;website analytics;traffic analytics
+Session Replay and Heatmaps,session-replay,mouse-pointer-click,#00C0E4,oklch(0.745 0.134 217.7),8.31,1.91,0.1301,0.2849,0.0386,0.0308,0.3729,thin,7,200,0,False,session replay;heatmap tool;user recording
+Data Warehouses,data-warehouses,database,#F196BE,oklch(0.777 0.119 352.3),8.47,1.87,0.2626,0.2450,0.0308,0.0308,0.2015,thin,7,200,0,False,data warehouse;cloud data warehouse;analytics database
+ETL and Data Pipelines,etl,git-merge,#8D8D1C,oklch(0.624 0.127 109.6),5.13,3.09,0.1707,0.3653,0.0351,0.0308,0.2327,thin,7,200,0,False,etl tool;data pipeline;data integration
+Databases,databases,database-zap,#FA5090,oklch(0.682 0.211 1.5),5.69,2.79,0.3545,0.2389,0.0371,0.0308,0.1314,thin,7,200,0,False,database;managed database;sql database
+API Tools,api-tools,plug,#AD9350,oklch(0.672 0.092 88.7),6.08,2.61,0.1630,0.3252,0.0328,0.0308,0.1897,thin,7,200,0,False,api client;api testing tool;api platform
+Authentication and Identity,identity,fingerprint,#0088F5,oklch(0.625 0.190 252.4),5.02,3.16,0.2674,0.1789,0.0334,0.0308,0.3990,thin,7,200,0,False,sso;identity provider;authentication service
+Device Management,mdm,tablet-smartphone,#09A3B9,oklch(0.657 0.113 211.7),5.98,2.65,0.1424,0.2639,0.0343,0.0308,0.3423,thin,7,200,0,False,mdm;device management;mobile device management
+Remote Desktop and Access,remote-desktop,monitor-smartphone,#C6719E,oklch(0.656 0.120 347.9),5.38,2.95,0.2773,0.1852,0.0338,0.0308,0.1727,thin,7,200,0,False,remote desktop;remote access;screen sharing
+RMM and MSP Tools,rmm,server-cog,#E880DC,oklch(0.744 0.170 331.5),7.36,2.16,0.3113,0.1765,0.0344,0.0308,0.2328,thin,7,200,0,False,rmm;msp software;remote monitoring
+Firewalls and Network Security,network-security,brick-wall,#B18500,oklch(0.642 0.132 85.1),5.35,2.96,0.1995,0.3560,0.0392,0.0308,0.1767,thin,7,200,0,False,firewall;network security;ngfw
+Email Providers,email-providers,inbox,#6097E7,oklch(0.674 0.133 257.7),6.09,2.61,0.2173,0.1741,0.0320,0.0308,0.3399,thin,7,200,0,False,email provider;email service;email hosting
+Transactional Email and SMS APIs,communication-apis,send,#C29301,oklch(0.689 0.141 85.6),6.42,2.47,0.1838,0.3704,0.0455,0.0308,0.1787,thin,7,200,0,False,transactional email;sms api;email api
+Newsletter Platforms,newsletters,newspaper,#AEA63B,oklch(0.712 0.127 105.0),7.15,2.22,0.1332,0.3739,0.0339,0.0308,0.2261,thin,7,200,0,False,newsletter platform;paid newsletter;newsletter service
+Podcast Hosting,podcast-hosting,mic,#CA76C0,oklch(0.682 0.141 331.4),5.90,2.69,0.2897,0.1515,0.0344,0.0308,0.2111,thin,7,200,0,False,podcast hosting;podcast host;podcast platform
+Video Hosting and Streaming,video-hosting,play,#A8D01D,oklch(0.800 0.189 122.8),10.07,1.58,0.1311,0.4634,0.0413,0.0308,0.3227,thin,7,200,0,False,video hosting;video platform;live streaming platform
+Screen Recording,screen-recording,screen-share,#5D9BC7,oklch(0.665 0.092 240.9),6.00,2.64,0.1743,0.2117,0.0338,0.0308,0.3148,thin,7,200,0,False,screen recorder;screen recording;screen capture
+Presentation Software,presentations,gallery-vertical-end,#59A9FE,oklch(0.722 0.147 251.8),7.34,2.16,0.2068,0.2034,0.0312,0.0308,0.3640,thin,7,200,0,False,presentation software;slide deck tool;presentation maker
+No-code App Builders,no-code,blocks,#DBBF57,oklch(0.809 0.127 94.3),9.98,1.59,0.1631,0.4028,0.0321,0.0308,0.2463,thin,7,200,0,False,no-code app builder;no code platform;app builder
+Workflow Automation,workflow-automation,zap,#059ED5,oklch(0.657 0.134 232.4),5.90,2.69,0.1831,0.2278,0.0382,0.0308,0.3597,thin,7,200,0,False,workflow automation;automation tool;integration platform
+Internal Tools and Admin Panels,internal-tools,wrench,#68A300,oklch(0.650 0.177 130.7),5.87,2.70,0.1327,0.4152,0.0420,0.0308,0.3022,thin,7,200,0,False,internal tool builder;admin panel;internal dashboard
+Spreadsheet Software,spreadsheets,table,#3D8CD4,oklch(0.625 0.134 249.0),5.07,3.13,0.2261,0.1869,0.0335,0.0308,0.3503,thin,7,200,0,False,spreadsheet;spreadsheet software;spreadsheet app
+Whiteboards and Diagramming,diagramming,spline,#8DA9F9,oklch(0.746 0.120 268.7),7.89,2.01,0.2118,0.1930,0.0417,0.0308,0.3277,thin,7,200,0,False,whiteboard tool;diagram tool;flowchart software
+Wikis and Knowledge Bases,wikis,library,#D089AF,oklch(0.713 0.099 346.6),6.78,2.34,0.2438,0.2061,0.0323,0.0308,0.1880,thin,7,200,0,False,wiki;team wiki;knowledge base software
+Translation and Localization,localization,languages,#D84D89,oklch(0.625 0.182 357.1),4.59,3.45,0.3441,0.2079,0.0333,0.0308,0.1466,thin,7,200,0,False,translation software;localization platform;translation management
+Grammar and Writing Assistants,writing-assistants,spell-check,#EA9EAA,oklch(0.777 0.092 9.1),8.57,1.85,0.2304,0.2707,0.0338,0.0308,0.1922,thin,7,200,0,False,grammar checker;writing assistant;proofreading tool
+AI Chat Assistants,ai-assistants,bot,#00A6FD,oklch(0.697 0.169 243.2),6.77,2.34,0.2103,0.2163,0.0348,0.0308,0.3889,thin,7,200,0,False,ai assistant;ai chatbot;llm
+AI Image Generation,ai-image,image-plus,#C55E9A,oklch(0.625 0.148 346.2),4.68,3.39,0.3151,0.1741,0.0356,0.0308,0.1771,thin,7,200,0,False,ai image generator;image generation;text to image
+AI Video Generation,ai-video,film,#E16890,oklch(0.674 0.156 1.3),5.66,2.80,0.3027,0.2198,0.0319,0.0308,0.1337,thin,7,200,0,False,ai video generator;ai video;text to video
+AI Coding Assistants,ai-coding,braces,#FE8EF5,oklch(0.800 0.183 330.1),8.95,1.77,0.3289,0.2143,0.0341,0.0308,0.2659,thin,7,200,0,False,ai coding assistant;code assistant;coding copilot
+Transcription and Meeting Notes,transcription,audio-lines,#EA86A9,oklch(0.737 0.128 358.3),7.29,2.17,0.2682,0.2329,0.0334,0.0308,0.1675,thin,7,200,0,False,transcription software;meeting notes app;ai notetaker
+Field Service Management,field-service,truck,#739358,oklch(0.624 0.091 131.8),5.20,3.05,0.1447,0.3295,0.0353,0.0308,0.2586,thin,7,200,0,False,field service software;field service management;dispatch software
+Construction Management,construction,hammer,#6389BF,oklch(0.624 0.093 257.2),5.04,3.15,0.2150,0.1828,0.0330,0.0308,0.3068,thin,7,200,0,False,construction software;construction management;job costing software
+Real Estate and Property Management,property-management,building-2,#FE79AB,oklch(0.744 0.169 358.3),7.34,2.16,0.3088,0.2405,0.0319,0.0308,0.1624,thin,7,200,0,False,property management software;landlord software;rental management
+Restaurant POS and Management,restaurant-pos,utensils,#809AE4,oklch(0.697 0.113 268.6),6.59,2.41,0.2121,0.1705,0.0333,0.0308,0.3127,thin,7,200,0,False,restaurant pos;restaurant software;restaurant management system
+Retail POS,pos,scan-barcode,#E797D9,oklch(0.777 0.127 333.2),8.45,1.88,0.2711,0.2141,0.0347,0.0308,0.2350,thin,7,200,0,False,pos system;point of sale;retail pos
+Inventory Management,inventory,package,#EC73C3,oklch(0.721 0.175 342.1),6.71,2.36,0.3185,0.1873,0.0317,0.0308,0.1973,thin,7,200,0,False,inventory management;inventory software;stock management
+Shipping and Fulfillment,shipping,package-check,#53C1F8,oklch(0.770 0.127 233.6),8.90,1.78,0.1607,0.2647,0.0369,0.0308,0.3686,thin,7,200,0,False,shipping software;fulfillment service;shipping label software
+Print on Demand,print-on-demand,shirt,#51B4E1,oklch(0.729 0.113 230.8),7.71,2.06,0.1478,0.2486,0.0320,0.0308,0.3462,thin,7,200,0,False,print on demand;pod service;print provider
+Legal Practice Management,legal-practice,scale,#DA58C5,oklch(0.664 0.204 334.4),5.32,2.98,0.3555,0.1414,0.0325,0.0308,0.2209,thin,7,200,0,False,legal practice management;law firm software;legal software
+Nonprofit and Church Management,nonprofit,hand-heart,#B077A2,oklch(0.642 0.092 335.9),5.17,3.07,0.2563,0.1749,0.0377,0.0308,0.2000,thin,7,200,0,False,nonprofit software;donor management;church management software
+Event Management and Ticketing,event-management,ticket,#B0C000,oklch(0.769 0.175 115.6),8.93,1.78,0.1301,0.4388,0.0375,0.0308,0.2854,thin,7,200,0,False,event management software;ticketing platform;event registration
+Community Platforms,community-platforms,users,#DA97BB,oklch(0.753 0.092 346.1),7.85,2.02,0.2352,0.2271,0.0374,0.0308,0.2050,thin,7,200,0,False,community platform;community software;membership community
+Personal Finance and Budgeting,budgeting,piggy-bank,#D6BC10,oklch(0.793 0.162 99.0),9.51,1.67,0.1666,0.4297,0.0374,0.0308,0.2521,thin,7,200,0,False,budgeting app;personal finance app;money app
+Tax Software,tax-software,landmark,#EC499A,oklch(0.657 0.211 354.0),5.15,3.08,0.3629,0.2090,0.0349,0.0308,0.1565,thin,7,200,0,False,tax software;tax filing;tax prep software
+Sales Intelligence,sales-intelligence,binoculars,#0EABD4,oklch(0.689 0.127 223.3),6.70,2.37,0.1500,0.2520,0.0370,0.0308,0.3564,thin,7,200,0,False,sales intelligence;b2b contact data;lead enrichment;prospecting database;buyer intent data
+Affiliate and Referral Marketing,affiliate-referral-marketing,handshake,#BBAF54,oklch(0.745 0.113 101.9),8.06,1.97,0.1304,0.3696,0.0323,0.0308,0.2280,thin,7,200,0,False,affiliate marketing;referral marketing;affiliate tracking;referral program;partner marketing
+AI Agent Platforms,ai-agent-platforms,bot-message-square,#C2CA54,oklch(0.810 0.141 112.7),10.21,1.55,0.1341,0.4229,0.0359,0.0308,0.2841,thin,7,200,0,False,ai agent platform;ai agents;agent framework;ai agent builder;agent orchestration
+Sales Enablement,sales-enablement,book-check,#F8A1D2,oklch(0.810 0.119 345.3),9.48,1.67,0.2695,0.2561,0.0328,0.0308,0.2326,thin,7,200,0,False,sales enablement;sales content management;sales training;buyer enablement;sales readiness
+Music Production,music-production,music,#66CAED,oklch(0.792 0.106 223.5),9.66,1.64,0.1395,0.2909,0.0353,0.0308,0.3593,thin,7,200,0,False,music production;daw software;beat maker;audio production;music creation
+Wealth Management,wealth-management,gem,#8A9C37,oklch(0.658 0.127 118.7),5.93,2.68,0.1330,0.3684,0.0353,0.0308,0.2489,thin,7,200,0,False,wealth management software;portfolio management;investment management;financial advisor software;portfolio reporting
+Investment Research,investment-research,line-chart,#C17C94,oklch(0.665 0.091 357.4),5.66,2.80,0.2451,0.2095,0.0331,0.0308,0.1675,thin,7,200,0,False,investment research;stock research;market intelligence;investor intelligence;financial research
+Influencer Marketing,influencer-marketing,badge-check,#8B8C47,oklch(0.624 0.092 109.5),5.11,3.10,0.1662,0.3304,0.0347,0.0308,0.2255,thin,7,200,0,False,influencer marketing;creator marketing;influencer platform;creator campaigns;influencer analytics
+Cloud Cost Management,cloud-cost-management,cloud-cog,#DB69B8,oklch(0.681 0.169 340.6),5.78,2.74,0.3188,0.1663,0.0350,0.0308,0.1923,thin,7,200,0,False,finops;cloud cost management;cloud cost optimization;cloud spend;cloud savings
+Revenue Intelligence,revenue-intelligence,area-chart,#EC62A6,oklch(0.688 0.184 352.3),5.90,2.69,0.3302,0.2036,0.0310,0.0308,0.1600,thin,7,200,0,False,revenue intelligence;conversation intelligence;sales call intelligence;revenue operations;revops software
+Reputation Management,reputation-management,star,#D3B03F,oklch(0.768 0.134 91.4),8.64,1.83,0.1612,0.3903,0.0329,0.0308,0.2187,thin,7,200,0,False,reputation management;review management;customer reviews;online reviews;ratings and reviews
+Application Security Testing,application-security-testing,bug-play,#83B6EA,oklch(0.760 0.093 249.6),8.47,1.87,0.1680,0.2366,0.0348,0.0308,0.3260,thin,7,200,0,False,application security;appsec;code security;sast;software supply chain security
+Headless CMS,headless-cms,file-code,#CD51A6,oklch(0.624 0.183 341.9),4.58,3.46,0.3476,0.1602,0.0348,0.0308,0.1936,thin,7,200,0,False,headless cms;headless content management;cms api;composable cms;api-first cms
+Digital Adoption Platforms,digital-adoption-platforms,compass,#A19D4A,oklch(0.682 0.106 106.4),6.40,2.48,0.1360,0.3480,0.0347,0.0308,0.2201,thin,7,200,0,False,digital adoption;product adoption;user onboarding;in-app guidance;product tours
+Software Test Automation,software-test-automation,flask-conical,#419AFD,oklch(0.680 0.169 253.6),6.25,2.54,0.2341,0.1822,0.0312,0.0308,0.3776,thin,7,200,0,False,test automation;automated testing;qa automation;browser testing;visual testing
+Fitness Business Management,fitness-business-management,dumbbell,#1797AF,oklch(0.624 0.106 214.9),5.23,3.03,0.1682,0.2535,0.0343,0.0308,0.3373,thin,7,200,0,False,gym management;fitness business software;studio management;personal trainer software;fitness crm
+Contract Lifecycle Management,contract-lifecycle-management,file-signature,#FE7AD6,oklch(0.761 0.191 340.4),7.71,2.06,0.3341,0.2066,0.0311,0.0308,0.2211,thin,7,200,0,False,contract lifecycle management;clm software;contract management;contract automation;contract review
+Carbon Accounting and ESG Reporting,carbon-accounting-esg-reporting,leaf,#4B86EF,oklch(0.633 0.170 261.0),5.12,3.10,0.2640,0.1519,0.0341,0.0308,0.3696,thin,7,200,0,False,carbon accounting;esg reporting;sustainability reporting;emissions tracking;carbon reporting
+AML and Financial Crime,aml-financial-crime,shield-alert,#DA7BCC,oklch(0.714 0.154 332.7),6.61,2.40,0.2981,0.1640,0.0341,0.0308,0.2163,thin,7,200,0,False,aml software;anti money laundering;financial crime;transaction monitoring;kyc aml
+Advocacy Software,advocacy-software,heart-handshake,#F48CE0,oklch(0.777 0.162 334.5),8.32,1.91,0.3056,0.2074,0.0341,0.0308,0.2375,thin,7,200,0,False,advocacy software;grassroots advocacy;campaign advocacy;public affairs software;political outreach
+Financial Planning and Analysis,financial-planning-analysis,sigma,#A2A500,oklch(0.696 0.153 111.1),6.81,2.33,0.1362,0.3981,0.0339,0.0308,0.2449,thin,7,200,0,False,fp&a software;financial planning;budgeting software;financial forecasting;business planning
+Customer Success,customer-success,smile,#EB6AE2,oklch(0.721 0.211 330.3),6.62,2.40,0.3531,0.1547,0.0335,0.0308,0.2454,thin,7,200,0,False,customer success software;customer success platform;customer retention;customer health score;churn management
+Procurement Automation,procurement-automation,package-search,#E57F92,oklch(0.713 0.127 8.9),6.69,2.37,0.2641,0.2440,0.0334,0.0308,0.1395,thin,7,200,0,False,procurement software;procure to pay;p2p software;purchase to pay;procurement orchestration
+Sales Engagement,sales-engagement,send-horizontal,#C5B00C,oklch(0.752 0.155 100.6),8.25,1.92,0.1519,0.4094,0.0332,0.0308,0.2350,thin,7,200,0,False,sales engagement;sales outreach;outbound automation;sales cadence;email outreach
+Crypto Trading,crypto-trading,bitcoin,#699FDB,oklch(0.689 0.106 252.0),6.52,2.43,0.1869,0.1971,0.0331,0.0308,0.3220,thin,7,200,0,False,crypto trading;crypto bot;trading bot;crypto portfolio;copy trading
+Digital Asset Management,digital-asset-management,images,#BF678B,oklch(0.625 0.119 355.2),4.75,3.34,0.2871,0.1976,0.0323,0.0308,0.1621,thin,7,200,0,False,digital asset management;dam software;media asset management;creative asset management;brand assets
+Insurance Software,insurance-software,umbrella,#E584C3,oklch(0.737 0.141 341.7),7.24,2.19,0.2839,0.1985,0.0330,0.0308,0.2001,thin,7,200,0,False,insurance software;insurtech;claims management;underwriting software;policy administration
+Dental Practice Management,dental-practice-management,stethoscope,#5B92D2,oklch(0.649 0.113 253.2),5.58,2.84,0.2079,0.1836,0.0313,0.0308,0.3261,thin,7,200,0,False,dental software;dental practice management;dental office software;dental billing;dental ehr
+Privacy Management,privacy-management,lock-keyhole,#DCBD7A,oklch(0.810 0.093 85.6),9.98,1.59,0.1638,0.3701,0.0328,0.0308,0.2377,thin,7,200,0,False,privacy management;privacy compliance;data privacy;consent management;privacy operations
+Equity Management,equity-management,pie-chart,#9F903B,oklch(0.650 0.107 99.3),5.61,2.83,0.1640,0.3425,0.0328,0.0308,0.2064,thin,7,200,0,False,cap table;equity management;equity compensation;stock options;share plan
+Blockchain Infrastructure,blockchain-infrastructure,boxes,#C886C1,oklch(0.706 0.112 330.4),6.57,2.41,0.2567,0.1741,0.0327,0.0308,0.2133,thin,7,200,0,False,blockchain infrastructure;web3 infrastructure;node infrastructure;blockchain api;web3 developer platform
+Configure Price Quote,configure-price-quote,tag,#3ED6EF,oklch(0.809 0.127 211.2),10.38,1.53,0.1302,0.3256,0.0325,0.0308,0.3857,thin,7,200,0,False,cpq software;configure price quote;sales quoting;quote software;proposal quoting
+Marketing Attribution,marketing-attribution,route,#FD9AB0,oklch(0.794 0.121 5.8),8.97,1.77,0.2620,0.2771,0.0325,0.0308,0.1919,thin,7,200,0,False,marketing attribution;attribution software;mobile attribution;multi-touch attribution;campaign attribution
+Security Operations Automation,security-operations-automation,radar,#C36BAF,oklch(0.650 0.140 336.2),5.20,3.05,0.2984,0.1534,0.0325,0.0308,0.1986,thin,7,200,0,False,security automation;soc automation;security operations;soar platform;automated threat response
+Customer Data Platforms,customer-data-platforms,contact,#C96B7D,oklch(0.640 0.120 8.9),5.06,3.13,0.2765,0.2267,0.0323,0.0308,0.1347,thin,7,200,0,False,customer data platform;cdp software;customer 360;customer data;unified customer profile
+Intelligent Document Processing,intelligent-document-processing,scan-text,#C7BF6B,oklch(0.793 0.106 103.7),9.54,1.66,0.1337,0.3822,0.0321,0.0308,0.2521,thin,7,200,0,False,intelligent document processing;document ai;document extraction;invoice extraction;ocr automation
+Farm Management,farm-management,sprout,#7292F4,oklch(0.680 0.149 268.6),6.13,2.59,0.2437,0.1472,0.0320,0.0308,0.3411,thin,7,200,0,False,farm management;agriculture software;farm software;crop management;livestock management
+Automotive Retail and Repair,automotive-retail-repair,car,#E5578D,oklch(0.657 0.182 359.8),5.23,3.03,0.3332,0.2189,0.0319,0.0308,0.1335,thin,7,200,0,False,auto repair software;dealership management;shop management;auto dealer software;automotive crm
+Sports Management,sports-management,trophy,#DF4BB2,oklch(0.649 0.212 342.1),4.98,3.19,0.3675,0.1660,0.0317,0.0308,0.1989,thin,7,200,0,False,sports management;youth sports software;team management;athlete management;sports organization software
+Proposal and RFP Software,proposal-rfp-software,file-check,#CDA751,oklch(0.746 0.114 85.5),7.95,2.00,0.1600,0.3603,0.0317,0.0308,0.1985,thin,7,200,0,False,proposal software;rfp software;proposal management;rfp response;proposal automation
+LLM Operations,llm-operations,brain-circuit,#CE8598,oklch(0.697 0.092 2.8),6.39,2.48,0.2366,0.2258,0.0316,0.0308,0.1636,thin,7,200,0,False,llmops;llm operations;llm evaluation;prompt monitoring;ai observability
+Voice AI,voice-ai,mic-vocal,#FF92CF,oklch(0.793 0.149 346.4),8.83,1.80,0.2952,0.2422,0.0314,0.0308,0.2183,thin,7,200,0,False,voice ai;ai voice agent;conversational voice ai;text to speech api;ai phone agent
+Backend as a Service,backend-as-a-service,hard-drive-download,#9FC2FD,oklch(0.810 0.092 260.7),9.98,1.59,0.1927,0.2569,0.0314,0.0308,0.3366,thin,7,200,0,False,backend as a service;baas platform;app backend;backend platform;serverless backend
+Hotel Management,hotel-management,hotel,#63AEEE,oklch(0.729 0.120 246.2),7.58,2.09,0.1782,0.2205,0.0312,0.0308,0.3448,thin,7,200,0,False,hotel management software;hotel pms;hospitality software;hotel operations;hotel revenue management
+Cloud Security Posture Management,cloud-security-posture-management,cloud-alert,#FE6597,oklch(0.713 0.191 2.9),6.47,2.45,0.3296,0.2451,0.0312,0.0308,0.1340,thin,7,200,0,False,cloud security;cspm;cloud workload security;cloud posture management;cloud native security
+Wedding Business Software,wedding-business-software,heart,#0094FF,oklch(0.658 0.189 250.5),5.74,2.76,0.2502,0.1880,0.0312,0.0308,0.3989,thin,7,200,0,False,wedding planning software;bridal software;wedding crm;wedding venue software;wedding business management
+Email Security,email-security,mail-warning,#FD89B5,oklch(0.769 0.148 357.1),8.10,1.96,0.2891,0.2480,0.0311,0.0308,0.1818,thin,7,200,0,False,email security;email protection;phishing protection;secure email gateway;inbox security
+Electronic Health Records,electronic-health-records,clipboard-plus,#FE6EC3,oklch(0.738 0.197 346.5),7.08,2.24,0.3396,0.2102,0.0311,0.0308,0.1951,thin,7,200,0,False,ehr software;electronic health records;medical records;clinical records;emr software
+Public Relations Software,public-relations-software,quote,#F170A7,oklch(0.714 0.168 355.4),6.55,2.42,0.3106,0.2189,0.0310,0.0308,0.1568,thin,7,200,0,False,pr software;media relations;pr outreach;media monitoring;public relations platform
+Loan Management,loan-management,banknote-arrow-up,#708BD8,oklch(0.649 0.120 268.3),5.48,2.89,0.2319,0.1534,0.0309,0.0308,0.3165,thin,7,200,0,False,loan management;loan origination;loan servicing;lending software;credit decisioning
+Healthcare Data Platforms,healthcare-data-platforms,activity-square,#E9A3C4,oklch(0.792 0.092 349.6),9.03,1.76,0.2393,0.2555,0.0308,0.0308,0.2214,thin,7,200,0,False,healthcare data platform;health data interoperability;clinical data platform;fhir platform;healthcare api
