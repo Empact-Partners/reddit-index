@@ -61,7 +61,7 @@ def counts():
             FROM brands b
             LEFT JOIN mentions m ON m.brand_id = b.id
             LEFT JOIN mention_sentiment ms ON ms.brand_id = m.brand_id
-                 AND ms.doc_id = m.doc_id AND ms.created_utc = m.created_utc
+                 AND ms.doc_id = m.doc_id
             WHERE b.slug = ANY(%s)
             GROUP BY b.slug
         """, (slugs,))
