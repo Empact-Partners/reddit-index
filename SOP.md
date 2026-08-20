@@ -40,6 +40,80 @@ Expected: healthcheck fails coverage/backlog assertions on a bounded rehearsal �
 
 **Run at least weekly.** Collection is the only stage that loses data to waiting (decisions/0010): past ~7 days, `/new`'s reach is outrun by ~1 subreddit in 49 and threads leave the 72h comment-revisit window; past ~14 days, ~3 subs. Classify/score/publish lose nothing to waiting, ever.
 
+## Adding a brand, or a whole category
+
+There was no runbook for this until the never-replied expansion needed one
+([decisions/0012](decisions/0012-never-replied-expansion.md)). The mechanics existed; the
+order did not. Both procedures are **hand-run**, like everything else here (0010).
+
+**Serialize anything that touches Reddit.** `daily.py`, `sweep.py`, `backfill_posts.py` and
+`discover_v2.py --stage evidence` each drive `worker/reddit_client.py`, and a second
+concurrent client stacks a second 0.75 s floor over the ~100 req/min app budget. Run them one
+at a time. Nothing in this section may be backgrounded alongside another Reddit stage.
+
+### A brand, into a category that already exists
+
+```bash
+# 1. append a row to data/brand-seed-expand.csv (or use data/import_roster.py for a roster)
+python3 data/gen_brands.py                    # append-only merge, 6 gates
+python3 worker/load.py --seed                 # the category row must already exist
+python3 data/expansion_status.py --parity     # seed_brands drops missing-category rows SILENTLY
+python3 worker/backfill_posts.py              # ~30 min: historical POST mentions, re-resolved
+python3 worker/classify_brands.py --slugs-file /tmp/slugs.txt --allow-metered
+```
+
+`backfill_posts.py` is the whole historical recovery for a new brand, and it only recovers
+posts. Comment bodies are never stored unless they resolved to a brand at collection time, so
+a new brand has no comment history and nothing local to re-scan. Comments accrue from the next
+`update.sh`. Re-sweeping trees to recover them costs 31+ hours of API time for a number that
+arrives free by waiting — don't.
+
+**Always run the parity check.** `seed_brands()` inserts through
+`JOIN categories c ON c.slug = v.cat_slug`, so a brand whose category is not seeded is
+filtered out of the VALUES join with no error and no warning.
+
+### A category
+
+```bash
+# 1. taxonomy row, then colour + icon + the TS module
+#    (append to data/taxonomy-100.csv — the file may only GROW; a removal orphans a
+#     published page and gen-categories throws on it)
+node scripts/gen-categories-100.mjs           # existing rows are byte-frozen; only new placed
+pnpm gen                                      # re-stamps CATEGORIES_SOURCE_SHA256
+pnpm gates:pre && pnpm gates:post && pnpm test
+
+# 2. the brand roster for it
+python3 data/enumerate_brands.py --expand --only <slug>
+python3 data/gen_brands.py
+
+# 3. subreddits  [REDDIT API — serialize]
+python3 data/discover_v2.py --stage enumerate --category <slug>
+#   ... evidence, rescue, siblings, candidates, then qualify --dry-run before the real one
+
+# 4. core subs — ADDITIVE, never the global mode
+python3 data/select_core_subs.py --add-categories <slug>[,<slug>...] --apply
+
+# 5. seed, then depth  [REDDIT API — serialize]
+python3 worker/load.py --seed
+python3 worker/sweep.py --days 90 --only <core subs>
+python3 worker/update.sh
+```
+
+**Never run `select_core_subs.py --apply` globally to add a category.** It reallocates the
+entire thread budget from scratch and evicts existing core slots to fund the new floors —
+existing categories' collection narrows and their scores drift, silently. `--add-categories`
+freezes every existing `is_core` row and counts already-core subs as swept, so a shared sub
+costs the incremental budget nothing.
+
+**`update.sh` alone is not enough for a new category.** `daily.py` reads `/new` plus a 72 h
+revisit window, so a brand-new subreddit launches its board on days of data. One
+`sweep.py --days 90` per new category is what gives it a real corpus.
+
+**Colour is a finite resource.** 151 categories sit at min pairwise ΔE 0.0308 against a
+0.030 floor. `gen-categories-100.mjs` throws rather than placing a colour it cannot separate,
+and that throw is correct — it means the next expansion needs a decisions-level call, not a
+code change.
+
 ## When something fails
 
 **Re-run `worker/update.sh`.** Every stage is idempotent: collect resumes from watermarks, classify is an anti-join (already-labelled items are never re-paid; on-disk caches also skip entity-rejects), score is a full recompute, delete-sync walks a cursor, publish is a rebuild. There is no partial-state cleanup, ever.
