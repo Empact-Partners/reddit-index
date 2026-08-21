@@ -71,7 +71,12 @@ CSV_PATH = os.path.join(HERE, "category-subreddits.csv")
 RUN_ID_V2 = "v2-" + time.strftime("%Y%m%d", time.gmtime())
 
 SERVER = "local-mac"
-MAX_INFLIGHT = 40
+# Overridable because 40 is not a universal constant — it is what THIS box could sustain in
+# August when it was idle. On 2026-08-21, with swap at 33.8 GB of 34.8 and a runaway system
+# process, 40-wide put 80 enumerate jobs into the 25-minute timeout without a single
+# completion: each session was starved, not stuck. Fleet width has to track the machine, so
+# set RI_FLEET_WIDTH rather than editing this line.
+MAX_INFLIGHT = int(os.environ.get("RI_FLEET_WIDTH", "40"))
 fleet = CodexFleet()
 
 # Reddit subreddit names: 2-21 chars, alnum + underscore, not a profile sub.
