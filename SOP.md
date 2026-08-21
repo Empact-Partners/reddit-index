@@ -114,6 +114,45 @@ revisit window, so a brand-new subreddit launches its board on days of data. One
 and that throw is correct — it means the next expansion needs a decisions-level call, not a
 code change.
 
+## Fleet safety (added 2026-08-21, after an OOM)
+
+The Mac hit "out of application memory" during this project. The cause was a detached
+`/tmp/discovery_chain.sh` looping for hours, resubmitting 25-minute-timeout jobs on top of
+in-flight ones, on a box already carrying eight Claude Code sessions. Three rules came out of
+it, and they are not optional.
+
+**Preflight before any fan-out.** `~/.claude/scripts/fleet-preflight.py` refuses on swap
+>= 70%, load >= 40, a wave larger than the fleet cap, or codex processes already running.
+Run it, or import `preflight()`. `data/run_discovery_safe.py` does both for you.
+
+**Reconcile before resubmitting.** A killed Bash call does NOT kill fleet jobs — the harness
+SIGTERMs the submitter's process tree while the worker keeps going. Cancel the superseded job
+ids first (`fleet_preflight.reconcile()`), or the retry lands on top of live work. That is
+precisely how a retry loop becomes a memory bomb.
+
+**One stage per invocation, never a loop.** `data/run_discovery_safe.py --stage <name>` runs
+one stage and exits; progress is on disk. A long unattended loop around a fleet is the wrong
+shape regardless of how small each wave is.
+
+Supporting facts worth keeping:
+
+- `FLEET_MAX_CONCURRENCY` is **12** in `~/.codex-openai/fleet.env` (was 60). Raise it only
+  deliberately, and never while other sessions share the box.
+- `MAX_INFLIGHT` in `discover_v2.py` is now `RI_FLEET_WIDTH`. The old hardcoded 40 was
+  measured on an idle machine in August; on a loaded one it put **80 enumerate jobs into the
+  25-minute timeout with zero completions**. The sessions were starved, not stuck. Widths
+  that actually worked here under load: 5 to 8.
+- **Two fleet lanes deadlock each other.** Discovery and a brand-expansion run submitting
+  into the same slots both stalled, and each driver's "no progress" timer kept resubmitting
+  for progress the other was equally unable to make. Serialize fleet lanes the same way the
+  Reddit lane is serialized.
+- Detached work must use `subprocess.Popen(..., start_new_session=True)`. `nohup ... &` dies
+  with the tool call's process-group SIGTERM.
+- `caffeinate -i -m -s`, started the same way, keeps a long collection alive through an idle
+  screen.
+- When the worker reports `codex=unavailable: 'codex --version' timed out`, that is the box,
+  not the binary. Do not start a wave.
+
 ## When something fails
 
 **Re-run `worker/update.sh`.** Every stage is idempotent: collect resumes from watermarks, classify is an anti-join (already-labelled items are never re-paid; on-disk caches also skip entity-rejects), score is a full recompute, delete-sync walks a cursor, publish is a rebuild. There is no partial-state cleanup, ever.
