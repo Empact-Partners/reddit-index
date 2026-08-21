@@ -27,12 +27,31 @@ for STAGE in enumerate evidence rescue siblings candidates; do
   [ $rc -ne 0 ] && echo "   (continuing — the chain is deliberately not set -e, like update.sh)"
 done
 
+# Snapshot BEFORE qualify. qualify rewrites the WHOLE csv, so a snapshot taken after it
+# compares two post-qualify states and reports 0 drift even if qualify destroyed a column —
+# which is exactly what it used to do to is_core. The freeze-check below is only meaningful
+# because this copy happens first.
+cp data/category-subreddits.csv /tmp/cs_before_qualify.csv
+CORE_BEFORE=$(python3 -c "
+import csv;print(sum(1 for r in csv.DictReader(open('/tmp/cs_before_qualify.csv')) if r.get('is_core')=='True'))")
+echo "core slots before qualify: $CORE_BEFORE"
+
 echo ""; echo "-- stage qualify (dry run first) --"
 python3 data/discover_v2.py --stage qualify $SLUGS --dry-run
 echo ""
 read -r -p "apply qualification to category-subreddits.csv? [y/N] " ans
 [ "$ans" = "y" ] || { echo "stopped before write"; exit 0; }
 python3 data/discover_v2.py --stage qualify $SLUGS
+
+echo ""; echo "-- post-qualify integrity: is_core must have survived --"
+CORE_AFTER=$(python3 -c "
+import csv;print(sum(1 for r in csv.DictReader(open('data/category-subreddits.csv')) if r.get('is_core')=='True'))")
+echo "core slots after qualify: $CORE_AFTER (was $CORE_BEFORE)"
+if [ "$CORE_AFTER" != "$CORE_BEFORE" ]; then
+  echo "ABORT: qualify changed the core slot count — restoring and stopping"
+  cp /tmp/cs_before_qualify.csv data/category-subreddits.csv
+  exit 1
+fi
 
 echo ""; echo "-- core selection (ADDITIVE — existing is_core rows are frozen) --"
 cp data/category-subreddits.csv /tmp/cs_before_core.csv

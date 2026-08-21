@@ -992,12 +992,31 @@ def stage_qualify(dry_run=False):
     bak = os.path.join(V2, "category-subreddits.v1.bak.csv")
     if not os.path.exists(bak):
         shutil.copy2(CSV_PATH, bak)
-    cols = V1_COLS + V2_COLS
+    # Preserve every column the live CSV already carries. This wrote V1_COLS + V2_COLS with
+    # extrasaction="ignore", which SILENTLY DROPS any column added after this function was
+    # written — and `is_core` was added later (8628130). A qualify run would have wiped all
+    # 1,741 core slots across 527 subs, collapsed `daily.py --core-only` for the shipped 100
+    # categories, and then crashed select_core_subs on a fieldname mismatch. Nothing would
+    # have raised. The union below, plus the round-trip assertion, is why it cannot recur.
+    existing_cols = []
+    if os.path.exists(CSV_PATH):
+        with open(CSV_PATH, newline="") as f:
+            existing_cols = next(csv.reader(f), [])
+    cols = list(dict.fromkeys(V1_COLS + V2_COLS + existing_cols))
+    lost = [c for c in existing_cols if c not in cols]
+    if lost:
+        raise SystemExit(f"refusing to write: would drop columns {lost}")
     with open(CSV_PATH + ".tmp", "w", newline="") as f:
         w = csv.DictWriter(f, fieldnames=cols, extrasaction="ignore")
         w.writeheader()
         for row in sorted(out_rows, key=lambda r: (r["category_slug"], r["subreddit"].lower())):
-            w.writerow(row)
+            w.writerow({c: row.get(c, "") for c in cols})
+    # a preserved column must survive with its VALUES, not just its header
+    with open(CSV_PATH + ".tmp", newline="") as f:
+        wrote = next(csv.reader(f), [])
+    if set(existing_cols) - set(wrote):
+        os.remove(CSV_PATH + ".tmp")
+        raise SystemExit(f"refusing to write: header lost {set(existing_cols) - set(wrote)}")
     os.replace(CSV_PATH + ".tmp", CSV_PATH)
     print(f"category-subreddits.csv written: {len(out_rows)} rows "
           f"(backup: {bak})", flush=True)
