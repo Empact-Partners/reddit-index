@@ -21172,7 +21172,7 @@ cashfeed,cashfeed.com,domain,SAFE,0,False
 cassidy-ai,Cassidy AI,canonical,SAFE,0,False
 cassidy-ai,CassidyAI,alias,SAFE,0,False
 cassidy-ai,cassidyai.com,domain,SAFE,0,False
-cats,CATS,canonical,HOSTILE,2,False
+cats,CATS,canonical,HOSTILE,2,True
 cats,CATSone,alias,HOSTILE,2,False
 cats,CATS One,alias,SAFE,0,False
 cats,catsone.com,domain,SAFE,0,False
@@ -21363,7 +21363,7 @@ cubbit,cubbit.io,domain,SAFE,0,False
 cue,Cue,canonical,HOSTILE,2,True
 cue,cuedesk.com,domain,SAFE,0,False
 cue,Cuedesk,alias,HOSTILE,2,False
-things,Things,canonical,HOSTILE,2,False
+things,Things,canonical,HOSTILE,2,True
 things,Things 3,alias,SAFE,0,False
 things,culturedcode.com,domain,SAFE,0,False
 cumul,Cumul,canonical,AMBIGUOUS,1,False
@@ -21460,7 +21460,7 @@ devskiller,DevSkiller,canonical,SAFE,0,False
 devskiller,devskiller.com,domain,SAFE,0,False
 diffusion-studio,Diffusion Studio,canonical,SAFE,0,False
 diffusion-studio,diffusion.studio,domain,SAFE,0,False
-digits,Digits,canonical,HOSTILE,2,False
+digits,Digits,canonical,HOSTILE,2,True
 digits,digits.com,domain,SAFE,0,False
 dispatchtrack,DispatchTrack,canonical,SAFE,0,False
 dispatchtrack,dispatchtrack.com,domain,SAFE,0,False
@@ -22790,7 +22790,7 @@ profitwell,ProfitWell Metrics,alias,SAFE,0,False
 projectionlab,ProjectionLab,canonical,AMBIGUOUS,1,False
 projectionlab,Projection Lab,alias,SAFE,0,False
 projectionlab,projectionlab.com,domain,SAFE,0,False
-projections,Projections,canonical,HOSTILE,2,False
+projections,Projections,canonical,HOSTILE,2,True
 projections,projections.io,domain,SAFE,0,False
 promo-com,Promo.com,domain,SAFE,0,False
 promptless,Promptless,canonical,SAFE,0,False
@@ -23018,7 +23018,7 @@ senseforth,senseforth.ai,domain,SAFE,0,False
 sense,Sense,canonical,HOSTILE,2,True
 sense,Sense HQ,alias,SAFE,0,False
 sense,sensehq.com,domain,SAFE,0,False
-seo,SEO,canonical,HOSTILE,2,False
+seo,SEO,canonical,HOSTILE,2,True
 seo,seo.ai,domain,SAFE,0,False
 serra,Serra,canonical,AMBIGUOUS,1,True
 serra,serra.com,domain,SAFE,0,False
@@ -23245,7 +23245,7 @@ tabapay,tabapay.com,domain,SAFE,0,False
 tablecheck,TableCheck,canonical,AMBIGUOUS,1,False
 tablecheck,tablecheck.com,domain,SAFE,0,False
 tablecheck,TableCheck Pay,alias,SAFE,0,False
-tabs,Tabs,canonical,HOSTILE,2,False
+tabs,Tabs,canonical,HOSTILE,2,True
 tabs,tabs.com,domain,SAFE,0,False
 tailwind-ui,Tailwind UI,canonical,SAFE,0,False
 tailwind-ui,tailwindui.com,domain,SAFE,0,False
@@ -23960,7 +23960,7 @@ beam-ai,Beam AI,canonical,SAFE,0,False
 beam-ai,beam.ai,domain,SAFE,0,False
 beamable,Beamable,canonical,SAFE,0,False
 beamable,beamable.com,domain,SAFE,0,False
-beans,Beans,canonical,HOSTILE,2,False
+beans,Beans,canonical,HOSTILE,2,True
 beans,Beans.ai,domain,SAFE,0,False
 beanvest,Beanvest,canonical,SAFE,0,False
 beanvest,beanvest.com,domain,SAFE,0,False
@@ -24448,7 +24448,7 @@ ezfacility,EZFacility,canonical,SAFE,0,False
 ezfacility,ezfacility.com,domain,SAFE,0,False
 fabius,Fabius,canonical,HOSTILE,2,False
 fabius,fabius.io,domain,SAFE,0,False
-factors,Factors,canonical,HOSTILE,2,False
+factors,Factors,canonical,HOSTILE,2,True
 factors,Factors AI,alias,SAFE,0,False
 factors,factors.ai,domain,SAFE,0,False
 fairmarkit,Fairmarkit,canonical,SAFE,0,False
@@ -24646,7 +24646,7 @@ hoteltime,HotelTime Solutions,alias,SAFE,0,False
 hoteltime,hoteltime.com,domain,SAFE,0,False
 hudson-labs,Hudson Labs,canonical,SAFE,0,False
 hudson-labs,hudson-labs.com,domain,SAFE,0,False
-hunters,Hunters,canonical,HOSTILE,2,False
+hunters,Hunters,canonical,HOSTILE,2,True
 hunters,hunters.ai,domain,SAFE,0,False
 hygraph,Hygraph,canonical,SAFE,0,True
 hygraph,GraphCMS,alias,SAFE,0,True
@@ -24935,7 +24935,7 @@ modash,Modash,canonical,SAFE,0,False
 modash,modash.io,domain,SAFE,0,False
 modelfa,ModelFA,canonical,SAFE,0,False
 modelfa,modelfa.com,domain,SAFE,0,False
-moises,Moises,canonical,AMBIGUOUS,1,False
+moises,Moises,canonical,AMBIGUOUS,1,True
 moises,moises.ai,domain,SAFE,0,False
 moneyguidepro,MoneyGuidePro,canonical,SAFE,0,False
 moneyguidepro,MoneyGuide Pro,alias,SAFE,0,False
@@ -25142,7 +25142,7 @@ photoshelter,PhotoShelter,canonical,SAFE,0,False
 photoshelter,photoshelter.com,domain,SAFE,0,False
 photoslurp,Photoslurp,canonical,SAFE,0,False
 photoslurp,photoslurp.com,domain,SAFE,0,False
-pics,Pics,canonical,HOSTILE,2,False
+pics,Pics,canonical,HOSTILE,2,True
 pics,pics.io,domain,SAFE,0,False
 pier-cloud,Pier Cloud,canonical,SAFE,0,False
 pier-cloud,piercloud.com,domain,SAFE,0,False
@@ -25173,7 +25173,7 @@ portkey,portkey.ai,domain,SAFE,0,False
 portkey,Portkey AI,alias,SAFE,0,False
 post-affiliate-pro,Post Affiliate Pro,canonical,SAFE,0,False
 post-affiliate-pro,postaffiliatepro.com,domain,SAFE,0,False
-pr,PR,canonical,HOSTILE,2,False
+pr,PR,canonical,HOSTILE,2,True
 pr,pr.co,domain,SAFE,0,False
 practice-by-numbers,Practice by Numbers,canonical,SAFE,0,False
 practice-by-numbers,practicenumbers.com,domain,SAFE,0,False
@@ -25879,7 +25879,7 @@ walkme,WalkMe,canonical,AMBIGUOUS,1,False
 walkme,walkme.com,domain,SAFE,0,False
 wallarm,Wallarm,canonical,SAFE,0,False
 wallarm,wallarm.com,domain,SAFE,0,False
-walls,Walls,canonical,HOSTILE,2,False
+walls,Walls,canonical,HOSTILE,2,True
 walls,walls.io,domain,SAFE,0,False
 walnut,Walnut,canonical,HOSTILE,2,True
 walnut,walnut.io,domain,SAFE,0,False

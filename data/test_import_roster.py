@@ -7,7 +7,7 @@ decoration. These run offline (no fleet, no DNS beyond two real lookups).
 import os, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
-from import_roster import reserved_slugs, english_words, resolve_domain
+from import_roster import reserved_slugs, english_words, resolve_domain, is_english_word, category_nouns
 from gen_brands import slugify
 
 FAILS, N = [], 0
@@ -51,6 +51,29 @@ must("a 3-char brand name cannot enter as low ('Kit')",
 must("a distinctive coinage keeps low ('Klaviyo')",
      strictness("Klaviyo", "low") == "low")
 must("a fleet 'high' is never weakened", strictness("Front", "high") == "high")
+
+# plural guard — /usr/share/dict/words ships singulars only
+W = english_words()
+must("a plural English word is caught ('things' — 628 false mentions before this)",
+     is_english_word("things", W))
+must("a plural English word is caught ('cats' — 122 false mentions before this)",
+     is_english_word("cats", W))
+# NOTE: pick a base verified present in THIS word list. It is idiosyncratic — it has
+# "cat" and "thing" but not "box", so a fixture written from intuition tests the
+# dictionary's coverage rather than this function.
+_es = next((b for b in ("class", "patch", "bench", "branch", "match") if b in W), None)
+must("an -es plural is caught", _es is not None and is_english_word(_es + "es", W),
+     f"base={_es}")
+must("a distinctive coinage is still NOT a word ('klaviyo')",
+     not is_english_word("klaviyo", W))
+must("a real singular still passes ('close')", is_english_word("close", W))
+
+# category-noun self-corroboration — resolve.py counts a category noun in the title AND one
+# near the match as two of the signals a HOSTILE bare token needs, so a brand named after
+# its own category corroborates itself
+CN = category_nouns()
+must("seo-tools lists 'seo' as one of its nouns (the self-corroboration trap)",
+     any("seo" == n or "seo" in n.split() for n in CN.get("seo-tools", set())))
 
 # G5: a stop-context must contain the bare token
 name = "Close"

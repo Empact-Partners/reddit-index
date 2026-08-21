@@ -45,6 +45,26 @@ def english_words():
     except Exception:
         return set()
 
+
+def is_english_word(w, words):
+    """True for plurals too. /usr/share/dict/words ships singulars ONLY, so a naive
+    membership test passes "things" and "cats" straight through — and a HOSTILE brand
+    whose bare name survives is not inert: resolve.py accepts a hostile bare token on >=2
+    corroborating signals, and ordinary English text supplies those trivially. That gap put
+    628 false 'things' and 122 false 'cats' mentions into the index before it was caught."""
+    w = w.lower()
+    if w in words:
+        return True
+    for suf, base in (('s', w[:-1]), ('es', w[:-2]), ('ies', w[:-3] + 'y')):
+        if w.endswith(suf) and len(base) > 2 and base in words:
+            return True
+    return False
+
+
+def category_nouns():
+    return {r['slug']: {n.strip().lower() for n in (r['nouns'] or '').split(';') if n.strip()}
+            for r in csv.DictReader(open(os.path.join(HERE, 'categories.csv')))}
+
 def reserved_slugs():
     """Category slugs + framework paths + site routes, read from their sources of truth."""
     res = {r['slug'] for r in csv.DictReader(open(os.path.join(HERE, 'categories.csv')))}
@@ -156,6 +176,7 @@ def merge():
     cohort = load_cohort('existing') + load_cohort('new')
     words = english_words()
     reserved = reserved_slugs()
+    cat_nouns = category_nouns()
 
     # existing gazetteer for G1
     existing_slugs, existing_domains = {}, {}
@@ -182,7 +203,7 @@ def merge():
         amb = str(d.get('ambiguity') or 'medium').lower()
         if amb not in ORDER: amb = 'medium'
         # stricter-by-default: an English-word or very short name can never enter as low
-        if name.lower() in words or len(name) <= 3:
+        if is_english_word(name, words) or len(name) <= 3:
             amb = max(amb, 'medium', key=lambda a: ORDER[a])
         bslug = slugify(name, c['domain'])
         # flat-namespace pre-check (the publish-time build bomb)
@@ -211,9 +232,20 @@ def merge():
         if len(pool) > 1:
             for b in claimants: bare_disabled.setdefault(b, set()).add(form)
     for r in rows:
+        own_nouns = cat_nouns.get(r['cat'], set())
         for form in [r['name']] + r['aliases']:
             f = form.lower()
-            if ' ' not in f and '.' not in f and f in words:
+            if ' ' in f or '.' in f:
+                continue
+            # (a) an English word, plurals included
+            if is_english_word(f, words):
+                bare_disabled.setdefault(r['slug'], set()).add(f); continue
+            # (b) the bare name IS one of its own category's nouns. resolve.py counts
+            # "a category noun appears in the title" and "a category noun appears near the
+            # match" as two of the corroborating signals a HOSTILE token needs — so a brand
+            # literally named after its category satisfies the rule with itself. `seo` in
+            # seo-tools collected 346 false mentions exactly this way.
+            if any(f == n or f in n.split() for n in own_nouns):
                 bare_disabled.setdefault(r['slug'], set()).add(f)
 
     # G4 with a retry pass
