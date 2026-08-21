@@ -85,14 +85,30 @@ def split():
     roster = [r['domain'] for r in json.load(open(f'{RI}/roster.json'))]
     inx = already_in()
 
+    # a company can be in the gazetteer under a brand slug whose domain list does not carry
+    # THIS domain variant — abacum.io deduped onto the existing `abacum` (abacum.ai). One
+    # company, one brand row, which is correct. Resolving by slug as well as by domain stops
+    # 144 such rows reading as a seeding gap when nothing is missing.
+    import sys as _sys
+    _sys.path.insert(0, HERE)
+    from gen_brands import slugify as _slugify
+    all_slugs = {r['slug'] for r in csv.DictReader(open(os.path.join(HERE, 'brands.csv')))}
+    roster_by_dom = {r['domain']: r for r in json.load(open(f'{RI}/roster.json'))}
+
     def bucket(dom):
-        slug = None
-        if dom in bydom: slug = bydom[dom]
+        slug = bydom.get(dom)
+        if slug is None:
+            r = roster_by_dom.get(dom)
+            if r:
+                cand = _slugify(r.get('company') or dom.split('.')[0], dom)
+                if cand in all_slugs:
+                    slug = cand
         c = counts_.get(slug or '', {'mentions': 0, 'n_op': 0})
         if dom in dead: return 'g4_dead', c
         if slug is None:
             m = mapping.get(dom, {})
-            return ('unmapped_new_category' if not m.get('category_slug') else 'not_seeded'), c
+            return ('unmapped_new_category' if not m.get('category_slug')
+                    else 'assigned_but_unseeded'), c
         if c['mentions'] >= 5: return 'wave2_emailable', c
         if c['mentions'] >= 1: return 'page_below_floor', c
         return 'zero_mentions', c
