@@ -1,5 +1,6 @@
 import { getRegistry } from "@/lib/routing";
 import { getSnapshot } from "@/lib/data/snapshot";
+import { buildBoards } from "@/lib/data/boards";
 import { SITE_URL } from "@/lib/env";
 import { CATEGORY_BY_SLUG, type CategorySlug } from "@/lib/generated/categories";
 
@@ -16,17 +17,23 @@ export const dynamic = "force-static";
  */
 export async function GET() {
   const [reg, snap] = await Promise.all([getRegistry(), getSnapshot()]);
+  const boards = buildBoards(snap);
   const totalMentions = [...snap.companies.values()]
     .reduce((a, c) => a + c.totalMentions, 0);
+  // Ranked = what is actually ON a board. Reading brand_category_scores undercounts by
+  // every brand in a category with no mapped scoring subreddits, and post-0011 the boards
+  // are built from pageScore rather than those rows.
   const ranked = new Set(
-    snap.categories.flatMap((c) => c.scores.map((s) => s.brandSlug)),
+    Object.values(boards).flatMap((b) => b.rows.map((r) => r.brandSlug)),
   ).size;
 
   const categories = reg.categories
     .map((slug) => {
       const c = CATEGORY_BY_SLUG[slug as CategorySlug];
-      const cat = snap.categories.find((x) => x.slug === slug);
-      const n = cat?.scores.length ?? 0;
+      // Count what the board SHOWS. cat.scores (brand_category_scores) is empty for any
+      // category whose scoring subreddits are not mapped yet, so this shipped
+      // "0 companies scored" to LLM crawlers for categories with populated boards.
+      const n = boards[slug]?.rows.length ?? 0;
       return `- [${c.name}](${SITE_URL}/${slug}/): ${n} companies scored`;
     })
     .join("\n");
@@ -49,10 +56,11 @@ little evidence scores low until it earns more, so thin data cannot outrank a
 well-measured competitor. Neutral mentions are counted and published but are
 not in the denominator. Methodology version ${snap.methodologyVersion}.
 
-A company is ranked in a category once it carries at least that category's
-threshold of opinionated mentions — the category's own median, never fewer
-than 3 and never more than 30. The pooled all-categories board additionally
-requires 10 opinionated mentions.
+A company is ranked in a category once it carries at least ONE opinionated
+mention. There is no separate visibility threshold: thin evidence is handled
+by the estimator, which shrinks a company with little evidence toward its
+category's baseline rather than hiding it. The pooled all-categories board
+additionally requires 10 opinionated mentions.
 
 ## Key pages
 

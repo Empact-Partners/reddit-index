@@ -43,7 +43,12 @@ export async function generateMetadata(
     // board — a meta description that contradicts the page it describes.
     const boardRows = buildBoards(snap)[slug]?.rows ?? [];
     const n = boardRows.length;
-    const mentions = cat?.scores.reduce((a, s) => a + s.n, 0) ?? 0;
+    // Sum the mentions the BOARD shows, not cat.scores. brand_category_scores is populated
+    // only for brands in a category with mapped scoring subreddits, so for a category whose
+    // subreddits are not mapped yet it is empty — and the description shipped as
+    // "16 ai agent platforms ranked ... from 0 real mentions" on a page showing 16 ranked
+    // rows. Post-0011 the board is built from pageScore, so the board is the honest source.
+    const mentions = boardRows.reduce((a, r) => a + r.mentions, 0);
     const top = boardRows[0]?.brandName;
     const bottom = boardRows[boardRows.length - 1]?.brandName;
     // ABSOLUTE title: the layout template appends " · Reddit Brand Index",

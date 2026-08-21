@@ -131,14 +131,13 @@ Reddit Love Score = round(100 · Q₀.₁₀(posterior))`}</Pre>
           scale.
         </p>
         <p>
-          A company is ranked in a category once it carries at least that
-          category&apos;s <strong>threshold</strong> of opinionated mentions.
-          The threshold is the category&apos;s own median: a company must hold
-          at least as much evidence as the typical brand it is being ranked
-          against, never fewer than 3 and never more than 30. A category where
-          the typical brand has four opinions asks for four; one where the
-          typical brand has twenty asks for twenty. Nothing about the bar is
-          chosen by hand, and it moves as the corpus grows.
+          A company is ranked in a category once it carries at least{" "}
+          <strong>one opinionated mention</strong> &mdash; one comment or post
+          that is positive or negative rather than neutral. There is no
+          separate visibility threshold: thin evidence is handled by the
+          estimator, which shrinks a company with little evidence toward its
+          category&apos;s baseline rather than hiding it. A single positive
+          comment buys a position near the middle of the board, never the top.
         </p>
         <p>
           Separately, <code>n_eff ≥ n_min</code> decides whether a published

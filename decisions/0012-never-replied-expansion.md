@@ -55,11 +55,21 @@ against a 0.030 floor, down from 0.0373 at 100. An expansion of this size again 
 place. Doing it needs a decisions-level call first: widen the legal region, lower the floor,
 or accept collisions. It is not a code change.
 
-**Publication bars in existing categories will move.** A category's display floor is the
-median opinionated-mention count across its scored brands, clamped [3,30]. 96 companies
-land in `recruiting`, 83 in `marketing-automation`, 64 in `help-desk`. The baseline was
-captured before the import (`data/threshold_baseline.py`) so the movement is measured
-rather than discovered later.
+**Publication bars in existing categories will NOT move.** ~~A category's display floor is
+the median opinionated-mention count across its scored brands, clamped [3,30], so mass-
+injecting thin brands drags it down.~~ Corrected 2026-08-21: that floor is **dead code**.
+0011 moved the boards onto `pageScore`, and `CategoryView.threshold`,
+`CompanyView.primaryThreshold` and `CategoryView.rankable` are computed in
+`lib/data/snapshot.ts` and read by nothing. `data/threshold_baseline.py` measures a number
+no renderer consumes; it is kept only as a record. The real gate on whether a board
+populates is **classification** — a mention with `label IS NULL` yields no `pageScore` — not
+any threshold.
+
+**A category with no mapped scoring subreddits gets no `brand_category_scores` rows at all**,
+at any mention volume, because `score_db.py` buckets mentions to categories only through
+`category_subreddits WHERE is_scoring`. Its board still populates from `pageScore`, but
+anything reading the score rows undercounts: the category meta description and `llms.txt`
+both did, and were fixed to read the board instead.
 
 **Historical comments are not recoverable for new brands.** Comment bodies are only stored
 when they resolve to a known brand, so a brand added today has no comment history and no
