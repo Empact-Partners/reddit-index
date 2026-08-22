@@ -40,7 +40,9 @@ def enum_done():
 def run_stage(stage, width):
     print(f'\n=== {stage} · {time.strftime("%H:%M:%S")} ===', flush=True)
     preflight(want=width)
-    reconcile()
+    # scoped to OUR jobs only. The fleet is shared between Claude Code sessions and a blanket
+    # cancel killed seven of another session's long synthesis jobs on 2026-08-22.
+    reconcile(match='subreddit')
     before = core_count()
     args = [sys.executable, f'{HERE}/discover_v2.py', '--stage', stage]
     for s in slugs():
