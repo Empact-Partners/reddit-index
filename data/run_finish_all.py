@@ -102,8 +102,12 @@ def main():
             cwd=PD) != 0:
         return 1
 
-    for repo, msg in ((ROOT, 'Expansion collection complete: new categories populated'),
-                      (PD, 'Wave 2 rebuilt on the completed expansion')):
+    # Messages state what this run did, not what it hopes happened. An earlier version
+    # committed "Expansion collection complete" from a rehearsal in which collection had not
+    # run at all, which is the kind of claim a git log is later trusted for.
+    stamp = time.strftime('%Y-%m-%d %H:%M')
+    for repo, msg in ((ROOT, f'Expansion measured and split after collection ({stamp})'),
+                      (PD, f'Wave 2 rebuilt from the live index ({stamp})')):
         subprocess.call(['git', 'add', '-A'], cwd=repo)
         rc = subprocess.call(['git', 'diff', '--cached', '--quiet'], cwd=repo)
         if rc == 0:
