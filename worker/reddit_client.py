@@ -20,11 +20,19 @@ import urllib.error, urllib.parse, urllib.request
 NET_MAX_WAIT = float(os.environ.get("RI_NET_MAX_WAIT", "3600"))
 
 
+class TokenUnavailable(RuntimeError):
+    """Token refresh exhausted its own retry. Always caused by the link being down (a bad
+    credential fails fast and definitively), so callers must treat it as network loss and
+    wait, not as an attempt spent."""
+
+
 def _is_network_error(e):
     """A dead link, not a bad request. An HTTPError is a real answer from
     Reddit and is NOT network loss, so it is deliberately excluded."""
     if isinstance(e, urllib.error.HTTPError):
         return False
+    if isinstance(e, TokenUnavailable):
+        return True
     return isinstance(e, (urllib.error.URLError, socket.timeout, socket.gaierror,
                           ConnectionError, TimeoutError, ssl.SSLError,
                           http.client.HTTPException, OSError))
@@ -82,12 +90,18 @@ def stats():
 
 
 def _access_token(tries=6):
-    """Refresh with backoff.
+    """Refresh with backoff, riding out a dead link up to NET_MAX_WAIT.
 
     This sat outside `get()`'s try/except and took the whole harvest down on a
     single DNS blip — `[Errno 8] nodename nor servname provided` — fourteen
     categories in. Every other call retries; the one that authorises them all
     did not.
+
+    That was fixed twice, because the first fix was incomplete. Hardening the retry HERE did
+    not help while the CALL still sat outside `get()`'s try: exhaustion raised out of the
+    loop that exists to wait for the network. It killed a 14-hour qualify run on 2026-08-23
+    on a phone hotspot. Now the call is inside the try and this raises TokenUnavailable,
+    which `_is_network_error` accepts — so a token failure waits like any other outage.
     """
     if _token["v"] and time.time() - _token["t"] < 3000:
         return _token["v"]
@@ -115,7 +129,8 @@ def _access_token(tries=6):
             if net and time.time() >= deadline:
                 break
             time.sleep(min(60, 3 * min(attempt, 4) ** 2))
-    raise RuntimeError(f"could not obtain a Reddit token after {attempt} attempts: {last}")
+    raise TokenUnavailable(
+        f"could not obtain a Reddit token after {attempt} attempts: {last}")
 
 
 def _cache_path(path, params, bucket):
@@ -155,14 +170,22 @@ def get(path, params=None, bucket="misc", tries=3, use_cache=True):
         url = "https://oauth.reddit.com" + path
         if params:
             url += "?" + urllib.parse.urlencode(params)
-        req = urllib.request.Request(
-            url, headers={"User-Agent": USER_AGENT,
-                          "Authorization": "Bearer " + _access_token()})
         # Pace start-to-start, not end-to-start: request latency (~0.6s from
         # Chile) used to stack on top of the floor, so a 0.75s floor produced
         # ~44 req/min against a ~100 QPM budget. The floor is a PERIOD.
         _last_call[0] = time.time()
         try:
+            # INSIDE the try, deliberately. _access_token has its own retry, but when that
+            # finally gives up it raises RuntimeError — which is not a network error, so
+            # building the Request out here meant a token failure bypassed this loop's
+            # network handling entirely and killed the caller outright. That is what ended
+            # a 14-hour qualify run on 2026-08-23 at 13:30, on a phone hotspot whose DNS
+            # dropped: "could not obtain a Reddit token after 7 attempts". The function's
+            # own docstring already named this failure; the earlier fix hardened the token
+            # retry but left the call site unprotected.
+            req = urllib.request.Request(
+                url, headers={"User-Agent": USER_AGENT,
+                              "Authorization": "Bearer " + _access_token()})
             with urllib.request.urlopen(req, timeout=40) as f:
                 _stats["calls"] += 1
                 _read_ratelimit(f.headers)
