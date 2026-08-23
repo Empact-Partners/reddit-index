@@ -39,6 +39,7 @@ STAGES = ['enumerate', 'evidence', 'rescue', 'siblings', 'candidates', 'qualify'
 # any of these alive means a lane is already running; we wait, we never race it
 LANE_PATTERNS = [
     'resume_chain.py', 'run_discovery_all.py', 'run_collection_all.py',
+    'run_finish_all.py', 'enumerate_brands.py',
     'discover_v2.py', 'worker/sweep.py', 'worker/daily.py',
     'classify_brands.py', 'backfill_posts.py', 'delete_sync.py', 'publish.py',
 ]
@@ -96,15 +97,30 @@ def lane_pids():
     return sorted(set(out))
 
 
+# The chain that was already running when this supervisor was installed writes to a log in
+# the session scratchpad. Its completion markers must be visible here or the supervisor would
+# restart work that had already finished — and the scratchpad is wiped on reboot, which is why
+# everything new writes to LOG instead.
+LEGACY = ('/private/tmp/claude-501/-Users-vladshvets--claude/'
+          'a1692ad3-6a83-4c15-a278-cf20122c2225/scratchpad/chain_rest.log')
+
+
 def log_text():
-    try:
-        return open(LOG, errors='replace').read()
-    except Exception:
-        return ''
+    out = []
+    for p in (LOG, LEGACY):
+        try:
+            out.append(open(p, errors='replace').read())
+        except Exception:
+            pass
+    return '\n'.join(out)
 
 
 def collection_done():
     return 'COLLECTION COMPLETE' in log_text()
+
+
+def finish_done():
+    return 'FINISH COMPLETE' in log_text()
 
 
 def discovery_done():
@@ -147,7 +163,8 @@ def run(args, label):
 
 
 def attempt():
-    """One full pass: finish discovery if needed, then collection. Finite. No inner retries."""
+    """One full pass: discovery, then collection, then the finishing leg. Each part is
+    skipped if its completion marker is already in the log. Finite; no inner retries."""
     if not discovery_done():
         st = resume_stage()
         args = [sys.executable, f'{HERE}/run_discovery_all.py', '--width', '6']
@@ -161,16 +178,28 @@ def attempt():
     else:
         say('discovery already complete — going straight to collection')
 
-    if not gate(2):
+    if not collection_done():
+        if not gate(2):
+            return 90
+        rc = run([sys.executable, f'{HERE}/run_collection_all.py'], 'collection')
+        if rc != 0:
+            return rc
+    else:
+        say('collection already complete — going straight to the finishing leg')
+
+    # outreach expansion + wave-2 queues + gates. The only fleet stage in it runs alone,
+    # because discovery is finished by the time we get here.
+    if not gate(6):
         return 90
-    return run([sys.executable, f'{HERE}/run_collection_all.py'], 'collection')
+    return run([sys.executable, f'{HERE}/run_finish_all.py'], 'finish')
 
 
 def status():
     s = state()
     lanes = lane_pids()
-    print(f'done={collection_done()} discovery_done={discovery_done()} '
-          f'attempts={s["attempts"]}/{MAX_ATTEMPTS} gave_up={s.get("gave_up")}')
+    print(f'discovery={discovery_done()} collection={collection_done()} '
+          f'finish={finish_done()} attempts={s["attempts"]}/{MAX_ATTEMPTS} '
+          f'gave_up={s.get("gave_up")}')
     print(f'resume stage: {resume_stage()}')
     print(f'lanes alive: {lanes if lanes else "none"}')
     tail = log_text().splitlines()[-5:]
@@ -190,9 +219,9 @@ def main():
     say(f'supervising (cap {MAX_ATTEMPTS} attempts, cooldown {COOLDOWN_S}s)')
 
     while True:
-        if collection_done():
+        if finish_done():
             s = state(); s['done'] = True; save(s)
-            say('COLLECTION COMPLETE seen in log — pipeline finished, supervision ends')
+            say('FINISH COMPLETE seen in log — pipeline done end to end, supervision ends')
             return 0
 
         s = state()
@@ -226,7 +255,7 @@ def main():
         s = state()
         s['history'][-1]['rc'] = rc
         save(s)
-        if rc == 0 and collection_done():
+        if rc == 0 and finish_done():
             s['done'] = True; save(s)
             say('pipeline finished cleanly')
             return 0
