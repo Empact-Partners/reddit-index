@@ -42,7 +42,7 @@ STAGES = ['enumerate', 'evidence', 'rescue', 'siblings', 'candidates', 'qualify'
 # any of these alive means a lane is already running; we wait, we never race it
 LANE_PATTERNS = [
     'resume_chain.py', 'run_discovery_all.py', 'run_collection_all.py',
-    'run_finish_all.py', 'enumerate_brands.py',
+    'run_finish_all.py', 'enumerate_brands.py', 'run_collection_fast.py',
     'discover_v2.py', 'worker/sweep.py', 'worker/daily.py',
     'classify_brands.py', 'backfill_posts.py', 'delete_sync.py', 'publish.py',
 ]
@@ -204,7 +204,7 @@ def attempt():
     if not collection_done():
         if not gate(2):
             return 90
-        rc = run([sys.executable, f'{HERE}/run_collection_all.py'], 'collection')
+        rc = run([sys.executable, f'{HERE}/run_collection_fast.py'], 'collection')
         if rc != 0:
             return rc
     else:
