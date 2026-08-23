@@ -31,6 +31,9 @@ PDIR = os.path.join(HERE, '.pipeline')
 LOG = os.path.join(PDIR, 'pipeline.log')
 STATE = os.path.join(PDIR, 'state.json')
 
+AGENT_LABEL = 'com.vladshvets.reddit-index-pipeline'
+AGENT_PLIST = os.path.expanduser(f'~/Library/LaunchAgents/{AGENT_LABEL}.plist')
+
 MAX_ATTEMPTS = 6
 COOLDOWN_S = 600
 POLL_S = 60
@@ -45,6 +48,26 @@ LANE_PATTERNS = [
 ]
 
 sys.path.insert(0, os.path.expanduser('~/.claude/scripts'))
+
+
+def uninstall():
+    """Remove the launchd agent. This is what keeps the supervisor from becoming the thing
+    decisions/0010 bans.
+
+    0010 forbids schedulers, watchdogs and auto-resumers in this repo, because an unbounded
+    one cost $513 for zero completions. The exception granted for this run is that a bounded
+    supervisor may carry ONE already-started job to its end. A job that has ended has no
+    supervisor: the plist is deleted so it cannot come back at next login, and the agent is
+    booted out. Nothing here survives the run it was installed for."""
+    try:
+        if os.path.exists(AGENT_PLIST):
+            os.remove(AGENT_PLIST)
+            say(f'removed {AGENT_PLIST}')
+        subprocess.call(['launchctl', 'bootout', f'gui/{os.getuid()}/{AGENT_LABEL}'],
+                        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        say('launchd agent uninstalled — no automation left behind (decisions/0010)')
+    except Exception as e:
+        say(f'could not uninstall the agent ({e}) — remove {AGENT_PLIST} by hand')
 
 
 def say(msg):
@@ -224,16 +247,19 @@ def main():
         # finished would redo a multi-day run from the start.
         if state().get('done'):
             say('state.json says this run finished — nothing to do')
+            uninstall()
             return 0
         if finish_done():
             s = state(); s['done'] = True; save(s)
             say('FINISH COMPLETE seen in log — pipeline done end to end, supervision ends')
+            uninstall()
             return 0
 
         s = state()
         if s.get('gave_up'):
             say(f'already gave up after {s["attempts"]} attempts — not restarting. '
                 f'A human must look at {LOG}')
+            uninstall()
             return 0
 
         lanes = lane_pids()
@@ -245,6 +271,7 @@ def main():
         if s['attempts'] >= MAX_ATTEMPTS:
             s['gave_up'] = True; save(s)
             say(f'GIVING UP after {MAX_ATTEMPTS} attempts. Nothing further will start.')
+            uninstall()
             return 0
 
         if s.get('history'):
@@ -264,6 +291,7 @@ def main():
         if rc == 0 and finish_done():
             s['done'] = True; save(s)
             say('pipeline finished cleanly')
+            uninstall()
             return 0
         say(f'attempt returned {rc}; cooling down {COOLDOWN_S}s before reconsidering')
         time.sleep(COOLDOWN_S)

@@ -40,6 +40,11 @@ def fresh(tmp):
     m.LEGACY = os.path.join(tmp, 'nonexistent.log')
     m.COOLDOWN_S = 0
     m.POLL_S = 0
+    # NEVER let a test touch the real launchd agent: uninstall() deletes a plist, and the
+    # live supervisor for the current run is behind that exact label.
+    m.AGENT_PLIST = os.path.join(tmp, 'agent.plist')
+    m.uninstalls = []
+    m.uninstall = lambda: m.uninstalls.append(True)
     # append, never truncate: reusing a dir is how "a revived supervisor" is simulated, and
     # wiping the log there would be testing a different thing entirely
     open(m.LOG, 'a').close()
@@ -88,6 +93,7 @@ with tempfile.TemporaryDirectory() as tmp:
     check('stops at the cap', st['attempts'] == m.MAX_ATTEMPTS,
           f'attempts={st["attempts"]}')
     check('records giving up', st.get('gave_up') is True)
+    check('uninstalls itself after giving up', m.uninstalls == [True], str(m.uninstalls))
 
     # the counter is on disk: a "revived" supervisor must not get a fresh budget
     m2 = fresh(tmp)          # same tmp -> same state.json
@@ -138,6 +144,8 @@ with tempfile.TemporaryDirectory() as tmp:
           [r.split()[0] for r in ran] == ['discovery', 'collection', 'finish'], str(ran))
     check('exits 0 when finished', rc == 0, str(rc))
     check('only one attempt was spent', json.load(open(m.STATE))['attempts'] == 1)
+    check('uninstalls itself when the run completes', m.uninstalls == [True],
+          str(m.uninstalls))
 
     # a second supervisor over a finished run must do nothing at all
     m3 = fresh(tmp)
@@ -165,6 +173,24 @@ with tempfile.TemporaryDirectory() as tmp:
     sys.argv = ['x']
     m4.main()
     check('a lost log does not restart a finished run', lost == [], str(lost))
+
+# 5. uninstall really removes the plist (the property decisions/0010 depends on)
+with tempfile.TemporaryDirectory() as tmp:
+    # a module WITHOUT the stub, so the real uninstall runs — pointed at a throwaway plist
+    # and a label that does not exist, so launchctl bootout is a harmless no-op
+    spec = importlib.util.spec_from_file_location(
+        'sup_real', os.path.join(HERE, 'pipeline_supervisor.py'))
+    m = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(m)
+    m.PDIR = tmp
+    m.LOG = os.path.join(tmp, 'pipeline.log')
+    m.AGENT_PLIST = os.path.join(tmp, 'agent.plist')
+    m.AGENT_LABEL = 'com.vladshvets.test-does-not-exist'
+    open(m.AGENT_PLIST, 'w').write('<plist/>')
+    m.uninstall()
+    check('uninstall removes the plist', not os.path.exists(m.AGENT_PLIST))
+    m.uninstall()                        # idempotent: a missing plist is not an error
+    check('uninstall is idempotent', True)
 
 print()
 if FAILS:

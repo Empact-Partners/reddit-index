@@ -123,7 +123,7 @@ it, and they are not optional.
 
 **Preflight before any fan-out.** `~/.claude/scripts/fleet-preflight.py` refuses on swap
 >= 70%, load >= 40, a wave larger than the fleet cap, or codex processes already running.
-Run it, or import `preflight()`. `data/run_discovery_safe.py` does both for you.
+Run it, or import `preflight()`. `data/run_discovery_all.py` does both for you, per stage.
 
 **Reconcile before resubmitting.** A killed Bash call does NOT kill fleet jobs — the harness
 SIGTERMs the submitter's process tree while the worker keeps going. Cancel the superseded job
@@ -152,6 +152,40 @@ Supporting facts worth keeping:
   screen.
 - When the worker reports `codex=unavailable: 'codex --version' timed out`, that is the box,
   not the binary. Do not start a wave.
+
+## Running unattended (decisions/0013)
+
+Two launchd agents exist, and they are not the same kind of thing.
+
+`com.vladshvets.caffeinate` is **permanent**. It keeps the Mac awake with `caffeinate -i -m -s`
+under `KeepAlive`. Start caffeinate from inside a tool call and the harness SIGTERMs it when
+the call ends — that is how a nine-hour run was lost to the lid-open machine sleeping on mains
+power on 2026-08-22.
+
+`com.vladshvets.reddit-index-pipeline` is **temporary and self-removing**. It carries one
+already-started multi-day run to its end and then deletes its own plist. It starts nothing
+while a lane is alive, is capped at 6 attempts counted on disk (a SIGKILL and a launchd revival
+do not reset it), and preflights RAM before each attempt. This is the narrow exception to
+0010's ban on watchdogs; read 0013 before touching it.
+
+```bash
+python3 data/pipeline_supervisor.py --status     # what stage, what is alive, attempts spent
+tail -f data/.pipeline/pipeline.log              # the run itself
+python3 data/test_pipeline_supervisor.py         # 16 safety checks
+
+# stop supervision by hand
+launchctl bootout gui/$UID/com.vladshvets.reddit-index-pipeline
+rm ~/Library/LaunchAgents/com.vladshvets.reddit-index-pipeline.plist
+```
+
+**After a long run, check the pipeline agent is gone.** It should uninstall itself; if
+`launchctl print gui/$UID/com.vladshvets.reddit-index-pipeline` still returns something once
+the run is finished, remove it. A supervisor that outlives its job is the thing 0010 bans.
+
+The full sequence it drives, each a finite sequence that aborts rather than retries:
+`data/run_discovery_all.py` (subreddit mapping, core selection, seed) ->
+`data/run_collection_all.py` (90-day sweep, classify, score, delete-sync, publish) ->
+`data/run_finish_all.py` (outreach-pool expansion, wave-2 queues, gates).
 
 ## When something fails
 
