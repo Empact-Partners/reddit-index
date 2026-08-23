@@ -109,7 +109,13 @@ def split():
             m = mapping.get(dom, {})
             return ('unmapped_new_category' if not m.get('category_slug')
                     else 'assigned_but_unseeded'), c
-        if c['mentions'] >= 5: return 'wave2_emailable', c
+        # >=5 mentions AND >=1 opinionated. The opinionated arm is not a refinement, it is
+        # the condition for a score EXISTING: the Love Score is computed over opinionated
+        # mentions alone, so a company with 40 neutral mentions and no opinion renders a
+        # dash. On the first build 41 companies passed the 5-mention bar with zero opinion,
+        # and an email promising "your Reddit score" would have linked a page showing a dash
+        # to the person it is about.
+        if c['mentions'] >= 5 and c['n_op'] >= 1: return 'wave2_emailable', c
         if c['mentions'] >= 1: return 'page_below_floor', c
         return 'zero_mentions', c
 
