@@ -168,8 +168,18 @@ while a lane is alive, is capped at 6 attempts counted on disk (a SIGKILL and a 
 do not reset it), and preflights RAM before each attempt. This is the narrow exception to
 0010's ban on watchdogs; read 0013 before touching it.
 
+**Never `launchctl kickstart` the supervisor while a lane is alive.** It kills the whole job
+including its children. Lanes now start in their own session so they survive it, but a
+supervisor running older code does not have that yet — check `--status` for a live lane first.
+Code edits need no restart: they apply at the next lane spawn.
+
+Two budgets, and the difference matters. `attempts` (cap 6) is the runaway guard for GENUINE
+failures. `net_attempts` (cap 40) absorbs dropped links, which are not a bug in the pipeline —
+six bad wifi moments must not stop a multi-day run. Which budget a failure charges is decided
+from the log TAIL after the fact.
+
 ```bash
-python3 data/pipeline_supervisor.py --status     # what stage, what is alive, attempts spent
+python3 data/pipeline_supervisor.py --status     # what stage, what is alive, budgets spent
 tail -f data/.pipeline/pipeline.log              # the run itself
 python3 data/test_pipeline_supervisor.py         # 16 safety checks
 
