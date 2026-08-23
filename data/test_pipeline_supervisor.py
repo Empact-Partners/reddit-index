@@ -39,6 +39,7 @@ def fresh(tmp):
     m.STATE = os.path.join(tmp, 'state.json')
     m.LEGACY = os.path.join(tmp, 'nonexistent.log')
     m.COOLDOWN_S = 0
+    m.NET_COOLDOWN_S = 0
     m.POLL_S = 0
     # NEVER let a test touch the real launchd agent: uninstall() deletes a plist, and the
     # live supervisor for the current run is behind that exact label.
@@ -143,7 +144,9 @@ with tempfile.TemporaryDirectory() as tmp:
     check('runs discovery, collection and finish in order',
           [r.split()[0] for r in ran] == ['discovery', 'collection', 'finish'], str(ran))
     check('exits 0 when finished', rc == 0, str(rc))
-    check('only one attempt was spent', json.load(open(m.STATE))['attempts'] == 1)
+    check('a successful run spends no budget at all',
+          json.load(open(m.STATE))['attempts'] == 0
+          and json.load(open(m.STATE)).get('net_attempts', 0) == 0)
     check('uninstalls itself when the run completes', m.uninstalls == [True],
           str(m.uninstalls))
 
@@ -191,6 +194,55 @@ with tempfile.TemporaryDirectory() as tmp:
     check('uninstall removes the plist', not os.path.exists(m.AGENT_PLIST))
     m.uninstall()                        # idempotent: a missing plist is not an error
     check('uninstall is idempotent', True)
+
+
+# 6. a flaky link must not spend the runaway budget
+with tempfile.TemporaryDirectory() as tmp:
+    m = fresh(tmp)
+    m.lane_pids = lambda: []
+    m.gate = lambda w: True
+    m.time.sleep = lambda s: None
+
+    def net_fail(args, label):
+        open(m.LOG, 'a').write('  network unreachable (URLError) — waiting 10s, attempt 1\n')
+        return 1
+    m.run = net_fail
+    sys.argv = ['x']
+    m.main()
+    st = json.load(open(m.STATE))
+    check('a network failure spends the NETWORK budget',
+          st.get('net_attempts') == m.MAX_NET_ATTEMPTS, str(st.get('net_attempts')))
+    check('a network failure spends NO genuine budget', st['attempts'] == 0,
+          f'genuine={st["attempts"]}')
+    check('it still stops at the network cap', st.get('gave_up') is True)
+
+with tempfile.TemporaryDirectory() as tmp:
+    m = fresh(tmp)
+    m.lane_pids = lambda: []
+    m.gate = lambda w: True
+    m.time.sleep = lambda s: None
+
+    def real_fail(args, label):
+        open(m.LOG, 'a').write('Traceback (most recent call last):\nKeyError: slug\n')
+        return 1
+    m.run = real_fail
+    sys.argv = ['x']
+    m.main()
+    st = json.load(open(m.STATE))
+    check('a genuine failure spends the genuine budget',
+          st['attempts'] == m.MAX_ATTEMPTS, str(st['attempts']))
+    check('a genuine failure spends no network budget',
+          st.get('net_attempts', 0) == 0, str(st.get('net_attempts')))
+
+# a network sign from HOURS ago must not excuse a genuine failure now
+with tempfile.TemporaryDirectory() as tmp:
+    m = fresh(tmp)
+    open(m.LOG, 'w').write('  network unreachable (URLError)\n' + ('filler line\n' * 200)
+                           + 'Traceback (most recent call last):\nKeyError: slug\n')
+    check('an old network sign does not excuse a fresh genuine failure',
+          m.looked_like_network() is False)
+    open(m.LOG, 'a').write('  network unreachable (URLError) — waiting 40s\n')
+    check('a fresh network sign is detected', m.looked_like_network() is True)
 
 print()
 if FAILS:

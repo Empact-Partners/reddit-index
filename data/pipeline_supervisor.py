@@ -34,8 +34,20 @@ STATE = os.path.join(PDIR, 'state.json')
 AGENT_LABEL = 'com.vladshvets.reddit-index-pipeline'
 AGENT_PLIST = os.path.expanduser(f'~/Library/LaunchAgents/{AGENT_LABEL}.plist')
 
-MAX_ATTEMPTS = 6
+MAX_ATTEMPTS = 6            # GENUINE failures. This is the runaway guard; do not raise it.
+MAX_NET_ATTEMPTS = 40       # network drops. Losing wifi is not a bug in the pipeline.
 COOLDOWN_S = 600
+NET_COOLDOWN_S = 120        # waiting does not fix a bug, but it does fix a dead link
+
+# A failure whose tail looks like this is the link, not the code. reddit_client already rides
+# out a drop for NET_MAX_WAIT (60 min); past that it gives up and the stage aborts, and that
+# abort must NOT spend the runaway budget or six bad wifi moments would stop the run for good.
+NET_SIGNS = (
+    'network unreachable', 'urlerror', 'network down >', 'nodename nor servname',
+    'temporary failure in name resolution', 'connection reset', 'connection refused',
+    'timed out', 'name or service not known', 'ssl', 'errno 8', 'errno 51', 'errno 54',
+    'errno 60', 'errno 65',
+)
 POLL_S = 60
 STAGES = ['enumerate', 'evidence', 'rescue', 'siblings', 'candidates', 'qualify']
 
@@ -82,7 +94,8 @@ def state():
     try:
         return json.load(open(STATE))
     except Exception:
-        return {'attempts': 0, 'done': False, 'gave_up': False, 'history': []}
+        return {'attempts': 0, 'net_attempts': 0, 'done': False, 'gave_up': False,
+                'history': []}
 
 
 def save(s):
@@ -160,6 +173,15 @@ def resume_stage():
     return None
 
 
+def looked_like_network(tail_lines=80):
+    """Did the attempt that just died do so because the link went away?
+
+    Judged from the END of the log only: a network sign near the tail is the thing that
+    actually stopped it, whereas one from hours ago is just history."""
+    tail = '\n'.join(log_text().splitlines()[-tail_lines:]).lower()
+    return any(sign in tail for sign in NET_SIGNS)
+
+
 def gate(width):
     """Refuse to start a wave on a box that cannot carry it. Absolute headroom + swap GROWTH,
     never % of the macOS swap pool."""
@@ -176,10 +198,29 @@ def gate(width):
 
 
 def run(args, label):
+    """Start a lane in its OWN session, then wait on it.
+
+    start_new_session=True is the whole point. With subprocess.call the lane is a child in
+    the supervisor's process group, so `launchctl kickstart -k` — or anything that kills the
+    supervisor — takes the lane down with it. That cost an hour of in-memory work on
+    2026-08-23 when the supervisor was restarted to pick up a code change.
+
+    In its own session the lane outlives its supervisor. A revived supervisor sees the lane
+    still alive in lane_pids() and waits for it instead of starting a second one, which is
+    the behaviour that was already designed for and was being defeated by the process group.
+    """
     say(f'starting {label}: {" ".join(os.path.basename(a) for a in args[1:3])}')
     with open(LOG, 'a', buffering=1) as f:
         f.write(f'\n{time.strftime("%H:%M:%S")} SUPERVISOR START {label}\n')
-        rc = subprocess.call(args, cwd=ROOT, stdout=f, stderr=subprocess.STDOUT)
+        p = subprocess.Popen(args, cwd=ROOT, stdout=f, stderr=subprocess.STDOUT,
+                             start_new_session=True)
+        try:
+            rc = p.wait()
+        except KeyboardInterrupt:
+            # we are going down; the lane is not. Leave it running and let the next
+            # supervisor adopt it rather than orphan-killing hours of work.
+            say(f'supervisor interrupted — leaving {label} (pid {p.pid}) running')
+            raise
         f.write(f'{time.strftime("%H:%M:%S")} SUPERVISOR {label} exited {rc}\n')
     say(f'{label} exited {rc}')
     return rc
@@ -221,7 +262,8 @@ def status():
     s = state()
     lanes = lane_pids()
     print(f'discovery={discovery_done()} collection={collection_done()} '
-          f'finish={finish_done()} attempts={s["attempts"]}/{MAX_ATTEMPTS} '
+          f'finish={finish_done()} genuine={s["attempts"]}/{MAX_ATTEMPTS} '
+          f'network={s.get("net_attempts", 0)}/{MAX_NET_ATTEMPTS} '
           f'gave_up={s.get("gave_up")}')
     print(f'resume stage: {resume_stage()}')
     print(f'lanes alive: {lanes if lanes else "none"}')
@@ -257,7 +299,8 @@ def main():
 
         s = state()
         if s.get('gave_up'):
-            say(f'already gave up after {s["attempts"]} attempts — not restarting. '
+            say(f'already gave up after {s["attempts"]} genuine / '
+                f'{s.get("net_attempts", 0)} network attempts — not restarting. '
                 f'A human must look at {LOG}')
             uninstall()
             return 0
@@ -270,31 +313,51 @@ def main():
 
         if s['attempts'] >= MAX_ATTEMPTS:
             s['gave_up'] = True; save(s)
-            say(f'GIVING UP after {MAX_ATTEMPTS} attempts. Nothing further will start.')
+            say(f'GIVING UP after {MAX_ATTEMPTS} genuine failures. Nothing further will start.')
+            uninstall()
+            return 0
+        if s.get('net_attempts', 0) >= MAX_NET_ATTEMPTS:
+            s['gave_up'] = True; save(s)
+            say(f'GIVING UP after {MAX_NET_ATTEMPTS} network-caused restarts. The link, not '
+                f'the pipeline, is the problem.')
             uninstall()
             return 0
 
         if s.get('history'):
-            since = time.time() - s['history'][-1]['at']
-            if since < COOLDOWN_S:
-                time.sleep(min(POLL_S, COOLDOWN_S - since))
+            last = s['history'][-1]
+            wait = NET_COOLDOWN_S if last.get('kind') == 'network' else COOLDOWN_S
+            since = time.time() - last['at']
+            if since < wait:
+                time.sleep(min(POLL_S, wait - since))
                 continue
 
-        s['attempts'] += 1
-        s.setdefault('history', []).append({'at': time.time(), 'n': s['attempts']})
+        s.setdefault('history', []).append({'at': time.time()})
         save(s)
-        say(f'no lane running and work outstanding — attempt {s["attempts"]}/{MAX_ATTEMPTS}')
+        say(f'no lane running and work outstanding — restarting '
+            f'(genuine {s["attempts"]}/{MAX_ATTEMPTS}, '
+            f'network {s.get("net_attempts", 0)}/{MAX_NET_ATTEMPTS})')
         rc = attempt()
+
+        # charge the RIGHT budget, decided after the fact from what actually killed it
         s = state()
-        s['history'][-1]['rc'] = rc
+        kind = 'network' if (rc != 0 and looked_like_network()) else 'genuine'
+        if rc != 0:
+            if kind == 'network':
+                s['net_attempts'] = s.get('net_attempts', 0) + 1
+                say('that failure was the link, not the pipeline — charged to the network '
+                    f'budget ({s["net_attempts"]}/{MAX_NET_ATTEMPTS})')
+            else:
+                s['attempts'] += 1
+        s['history'][-1].update({'rc': rc, 'kind': kind})
         save(s)
         if rc == 0 and finish_done():
             s['done'] = True; save(s)
             say('pipeline finished cleanly')
             uninstall()
             return 0
-        say(f'attempt returned {rc}; cooling down {COOLDOWN_S}s before reconsidering')
-        time.sleep(COOLDOWN_S)
+        wait = NET_COOLDOWN_S if kind == 'network' else COOLDOWN_S
+        say(f'attempt returned {rc} ({kind}); cooling down {wait}s before reconsidering')
+        time.sleep(wait)
 
 
 if __name__ == '__main__':

@@ -40,6 +40,10 @@ sys.path.insert(0, os.path.join(ROOT, 'worker'))
 # depth, so nothing about score comparability changes once the last wave lands.
 WAVES = [(2, 30), (2, 90), (3, 90), (None, 90)]
 
+# subreddits swept before progress is written to disk. Small enough that a dropped link costs
+# minutes, large enough that process startup is not the dominant cost.
+CHUNK = 20
+
 # Reddit's app-only budget is ~100 QPM and the client paces start-to-start, so 0.75s spends
 # only 80 of it. The client also reads x-ratelimit-remaining and widens itself when the
 # budget runs low, so this is bounded by the server's own signal rather than by hope.
@@ -106,31 +110,51 @@ def mark(subs, days):
     json.dump(d, open(STATE, 'w'), indent=0, sort_keys=True)
 
 
+def _db(fn, label):
+    """Run a query with reconnect-on-drop. db.connect() retries the CONNECT, but a link that
+    dies mid-query still raises, and on a flaky connection that would kill a multi-hour
+    collection over a status read. db.run rolls back, reconnects and retries a transient
+    failure while still surfacing a genuine query error immediately."""
+    import db
+    state = {"conn": db.connect()}
+    try:
+        return db.run(state, fn, label=label)
+    finally:
+        try:
+            state["conn"].close()
+        except Exception:
+            pass
+
+
 def seeded(subs):
     """sweep_sub SKIPS a sub that is not in the Postgres subreddits table, SILENTLY — it
     would report success having collected nothing."""
-    import db
-    with db.connect() as cx, cx.cursor() as cur:
-        cur.execute('SELECT lower(name) FROM subreddits WHERE lower(name) = ANY(%s)',
-                    ([s.lower() for s in subs],))
-        return {r[0] for r in cur.fetchall()}
+    def q(cx):
+        with cx.cursor() as cur:
+            cur.execute('SELECT lower(name) FROM subreddits WHERE lower(name) = ANY(%s)',
+                        ([s.lower() for s in subs],))
+            return {r[0] for r in cur.fetchall()}
+    return _db(q, 'seeded')
 
 
 def boards_live():
     """How many of the 51 new boards currently have at least one scored company."""
-    import db
     new = new_slugs()
-    with db.connect() as cx, cx.cursor() as cur:
-        cur.execute("""
-            SELECT c.slug, count(DISTINCT m.brand_id)
-            FROM categories c
-            JOIN brands b ON b.primary_category_id = c.id
-            JOIN mentions m ON m.brand_id = b.id
-            JOIN mention_sentiment ms ON ms.brand_id = m.brand_id AND ms.doc_id = m.doc_id
-            WHERE c.slug = ANY(%s) AND ms.label IN (1,2)
-            GROUP BY c.slug
-        """, (sorted(new),))
-        rows = dict(cur.fetchall())
+
+    def q(cx):
+        with cx.cursor() as cur:
+            cur.execute("""
+                SELECT c.slug, count(DISTINCT m.brand_id)
+                FROM categories c
+                JOIN brands b ON b.primary_category_id = c.id
+                JOIN mentions m ON m.brand_id = b.id
+                JOIN mention_sentiment ms ON ms.brand_id = m.brand_id
+                     AND ms.doc_id = m.doc_id
+                WHERE c.slug = ANY(%s) AND ms.label IN (1,2)
+                GROUP BY c.slug
+            """, (sorted(new),))
+            return dict(cur.fetchall())
+    rows = _db(q, 'boards_live')
     return len(rows), len(new), rows
 
 
@@ -204,14 +228,24 @@ def main():
 
         print(f'\n########## WAVE {i}: {len(subs)} subreddits at {days}d '
               f'· {time.strftime("%H:%M:%S")} ##########', flush=True)
-        rc = step(f'wave {i}: sweep',
-                  [sys.executable, f'{ROOT}/worker/sweep.py', '--days', str(days),
-                   '--only', ','.join(subs)],
-                  env={'RI_SLEEP': FLOOR})
-        if rc != 0:
-            print('sweep failed — not shipping a half-collected wave', file=sys.stderr)
-            return rc
-        mark(subs, days)
+
+        # Sweep in chunks and bank each one. A wave is ~100 subreddits and hours long; on a
+        # flaky link that is a long way to fall back. Chunked, an interruption costs at most
+        # CHUNK subs, and the next run skips everything already banked.
+        for c0 in range(0, len(subs), CHUNK):
+            chunk = subs[c0:c0 + CHUNK]
+            rc = step(f'wave {i}: sweep {c0 + 1}-{c0 + len(chunk)} of {len(subs)}',
+                      [sys.executable, f'{ROOT}/worker/sweep.py', '--days', str(days),
+                       '--only', ','.join(chunk)],
+                      env={'RI_SLEEP': FLOOR})
+            if rc != 0:
+                # everything banked so far still counts; only this chunk is redone
+                print(f'sweep failed at chunk {c0 // CHUNK + 1}. '
+                      f'{c0} subreddits banked; rerun to continue from here.',
+                      file=sys.stderr)
+                return rc
+            mark(chunk, days)
+            print(f'  banked {c0 + len(chunk)}/{len(subs)}', flush=True)
         ship(days, f'wave {i}')
 
     print(f'\nCOLLECTION COMPLETE {time.strftime("%H:%M:%S")}', flush=True)
