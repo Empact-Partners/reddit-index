@@ -39,6 +39,34 @@ def gaz_slug_by_domain():
             if d: m.setdefault(d.strip().lower(), r['slug'])
     return m
 
+def resolve_all():
+    """Every input domain -> the brand slug the index actually holds it under.
+
+    Two arms, because one is not enough: by domain, then by the slug the roster row would
+    generate (abacum.io dedupes onto the existing abacum). Both counts() and split() must use
+    THIS, or they disagree — counts() used to cover only source='roster-import-2026-08'
+    brands, so a never-replied company that resolved onto a brand the index already held
+    under another source read as zero. CapCut, at 1,843 mentions, was filed as
+    'zero_mentions'."""
+    import sys as _sys
+    _sys.path.insert(0, HERE)
+    from gen_brands import slugify as _slugify
+    bydom = gaz_slug_by_domain()
+    all_slugs = {r['slug'] for r in csv.DictReader(open(os.path.join(HERE, 'brands.csv')))}
+    roster_by_dom = {r['domain']: r for r in json.load(open(f'{RI}/roster.json'))}
+    out = {}
+    for dom in list(roster_by_dom) + already_in():
+        slug = bydom.get(dom)
+        if slug is None:
+            r = roster_by_dom.get(dom)
+            if r:
+                cand = _slugify(r.get('company') or dom.split('.')[0], dom)
+                if cand in all_slugs:
+                    slug = cand
+        out[dom] = slug
+    return out
+
+
 def parity():
     ours = roster_slugs()
     with db.connect() as cx, cx.cursor() as cur:
@@ -51,9 +79,7 @@ def parity():
 
 def counts():
     ours = roster_slugs()
-    bydom = gaz_slug_by_domain()
-    extra = {bydom[d]: d for d in already_in() if d in bydom}
-    slugs = sorted(set(ours) | set(extra))
+    slugs = sorted(set(ours) | {s for s in resolve_all().values() if s})
     with db.connect() as cx, cx.cursor() as cur:
         cur.execute("""
             SELECT b.slug, count(m.doc_id) AS mentions,
@@ -74,35 +100,19 @@ def counts():
 
 def split():
     counts_ = json.load(open(f'{RI}/counts.json'))
-    ours = roster_slugs()
-    bydom = gaz_slug_by_domain()
-    dom_by_slug = {}
-    for r in csv.DictReader(open(os.path.join(HERE, 'brands.csv'))):
-        d = (r['domains'] or '').split(';')[0].strip().lower()
-        dom_by_slug[r['slug']] = d
+    resolved = resolve_all()
     mapping = {m['domain']: m for m in json.load(open(f'{RI}/mapping.json'))}
     dead = set(json.load(open(f'{RI}/g4_dead.json'))) if os.path.exists(f'{RI}/g4_dead.json') else set()
     roster = [r['domain'] for r in json.load(open(f'{RI}/roster.json'))]
     inx = already_in()
 
-    # a company can be in the gazetteer under a brand slug whose domain list does not carry
-    # THIS domain variant — abacum.io deduped onto the existing `abacum` (abacum.ai). One
-    # company, one brand row, which is correct. Resolving by slug as well as by domain stops
-    # 144 such rows reading as a seeding gap when nothing is missing.
-    import sys as _sys
-    _sys.path.insert(0, HERE)
-    from gen_brands import slugify as _slugify
-    all_slugs = {r['slug'] for r in csv.DictReader(open(os.path.join(HERE, 'brands.csv')))}
-    roster_by_dom = {r['domain']: r for r in json.load(open(f'{RI}/roster.json'))}
-
+    # Resolution lives in resolve_all(), which counts() also uses. A company can be in the
+    # gazetteer under a brand slug whose domain list does not carry THIS domain variant —
+    # abacum.io deduped onto the existing `abacum` (abacum.ai). One company, one brand row,
+    # which is correct. Resolving by slug as well as by domain stops 144 such rows reading as
+    # a seeding gap when nothing is missing.
     def bucket(dom):
-        slug = bydom.get(dom)
-        if slug is None:
-            r = roster_by_dom.get(dom)
-            if r:
-                cand = _slugify(r.get('company') or dom.split('.')[0], dom)
-                if cand in all_slugs:
-                    slug = cand
+        slug = resolved.get(dom)
         c = counts_.get(slug or '', {'mentions': 0, 'n_op': 0})
         if dom in dead: return 'g4_dead', c
         if slug is None:
