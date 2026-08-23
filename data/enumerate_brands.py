@@ -250,6 +250,39 @@ def resolve_domain(d):
         return False
 
 
+SEED_COLS = ["brand", "primary_category_slug", "also_in_category_slugs",
+             "aliases", "ambiguity_class", "ambiguity_note", "domains",
+             "stop_contexts", "bare_disabled_forms", "source"]
+
+
+def carry_forward_rows(out_fp, touched):
+    """Rows in an existing seed CSV belonging to categories this run did not touch.
+
+    The writer rebuilds the file from `rows`, which comes from `cats`, which --only narrows.
+    Without this, `--expand --only <51 slugs>` rewrites the CSV with only those categories
+    and silently destroys the rest. Same shape as the is_core wipe in discover_v2: a scoped
+    run rewriting a whole-file artifact."""
+    if not os.path.exists(out_fp):
+        return []
+    return [[prev.get(k, "") for k in SEED_COLS]
+            for prev in csv.DictReader(open(out_fp))
+            if prev.get("primary_category_slug") not in touched]
+
+
+def assert_no_shrink(out_fp, tmp_fp, touched):
+    """Refuse to replace a seed CSV with one holding fewer untouched-category rows."""
+    if not os.path.exists(out_fp):
+        return
+    def untouched(fp):
+        return sum(1 for r in csv.DictReader(open(fp))
+                   if r.get("primary_category_slug") not in touched)
+    before, after = untouched(out_fp), untouched(tmp_fp)
+    if after < before:
+        os.remove(tmp_fp)
+        raise SystemExit(f"refusing to write {out_fp}: would drop {before - after} rows "
+                         f"for categories this run did not touch")
+
+
 def main():
     global RUN
     ap = argparse.ArgumentParser()
@@ -455,6 +488,23 @@ def main():
                 w.writerow([er["brand"], er["primary_category_slug"],
                             ";".join(extra), "", er["ambiguity_class"], "",
                             "", "", "", source_tag + "-widen"])
+
+        # Carry forward every row for a category this run did not touch.
+        #
+        # The writer rebuilds the file from `rows`, and `rows` comes from `cats`, which
+        # --only narrows. So `--expand --only <51 slugs>` used to rewrite the CSV with only
+        # those 51 categories' brands, silently destroying the other 100 categories' rows —
+        # 4,298 of them, plus 1,062 imported ones. Same shape as the is_core wipe in
+        # discover_v2: a scoped run rewriting a whole-file artifact.
+        touched = {c["slug"] for c in cats}
+        carried = carry_forward_rows(out_fp, touched)
+        for row in carried:
+            w.writerow(row)
+        if carried:
+            print(f"  carried forward {len(carried)} rows for categories this run "
+                  f"did not touch", flush=True)
+
+    assert_no_shrink(out_fp, out_fp + ".tmp", touched)
     os.replace(out_fp + ".tmp", out_fp)
 
     json.dump({"rejects": rejects,
