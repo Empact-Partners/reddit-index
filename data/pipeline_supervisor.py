@@ -219,6 +219,12 @@ def main():
     say(f'supervising (cap {MAX_ATTEMPTS} attempts, cooldown {COOLDOWN_S}s)')
 
     while True:
+        # done is recorded in BOTH places on purpose. The log is the detailed record but it
+        # is a file that can be rotated, truncated or lost, and a supervisor that forgets it
+        # finished would redo a multi-day run from the start.
+        if state().get('done'):
+            say('state.json says this run finished — nothing to do')
+            return 0
         if finish_done():
             s = state(); s['done'] = True; save(s)
             say('FINISH COMPLETE seen in log — pipeline done end to end, supervision ends')
