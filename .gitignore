@@ -44,3 +44,4 @@ data/.roster-import/*
 !data/.roster-import/split.json
 !data/.roster-import/g4_dead.json
 !data/.roster-import/already_in_gazetteer.json
+data/.pipeline/
