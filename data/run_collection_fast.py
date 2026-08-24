@@ -35,12 +35,19 @@ sys.path.insert(0, os.path.join(ROOT, 'worker'))
 
 # (subs per category, sweep depth in days). None = "everything remaining".
 #
+# Vlad's call 2026-08-24: 30 days for EVERYTHING now, deepen to 90 later, after sending has
+# started. The earlier 30/90/90/90 ladder cost 416 subreddit-passes against 285 unique
+# subreddits — a third of the work was re-reading subreddits already read, and it projected
+# to 49 hours. One pass at 30 days over all 285 is ~13 hours and every company still gets
+# scored; what changes is statistical power, not coverage. Deepening is a later background
+# pass, not a prerequisite for the outreach list.
+#
 # Wave 1 is deliberately SHALLOW. Thread trees are cached on disk, so deepening a sub from 30
 # to 90 days later pays only for the extra listings and the trees it has not already fetched —
 # a 30-day first pass is very nearly free to re-deepen. That buys a populated board in under
 # an hour instead of after the whole 90-day sweep, and the end state is still uniform 90-day
 # depth, so nothing about score comparability changes once the last wave lands.
-WAVES = [(2, 30), (2, 90), (3, 90), (None, 90)]
+WAVES = [(2, 30), (None, 30)]
 
 # subreddits swept before progress is written to disk. Small enough that a dropped link costs
 # minutes, large enough that process startup is not the dominant cost.
