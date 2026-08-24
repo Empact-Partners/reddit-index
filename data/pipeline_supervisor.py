@@ -196,6 +196,21 @@ def refused_for_headroom(tail_lines=25):
     return 'REFUSING:' in tail
 
 
+CODE_SIGNS = ('traceback (most recent call last)', 'modulenotfounderror', 'importerror',
+              'syntaxerror', 'nameerror', 'attributeerror', 'keyerror', 'typeerror')
+
+
+def looked_like_code_bug(tail_lines=40):
+    """A traceback in the tail is a code failure and must outrank the network heuristic.
+
+    On 2026-08-24 a ModuleNotFoundError (the launchd python had no psycopg) was charged to
+    the NETWORK budget, because hours-old 'network unreachable' lines were still in the tail.
+    That is the wrong budget and, worse, the wrong diagnosis: it would have retried a
+    deterministic crash 40 times."""
+    tail = '\n'.join(log_text().splitlines()[-tail_lines:]).lower()
+    return any(sign in tail for sign in CODE_SIGNS)
+
+
 def looked_like_network(tail_lines=80):
     """Did the attempt that just died do so because the link went away?
 
@@ -386,6 +401,8 @@ def main():
         # distinctive line; that is the reliable signal.
         if rc == PREFLIGHT_REFUSED_RC or refused_for_headroom():
             kind = 'busy'
+        elif rc != 0 and looked_like_code_bug():
+            kind = 'genuine'
         elif rc != 0 and looked_like_network():
             kind = 'network'
         elif rc != 0:

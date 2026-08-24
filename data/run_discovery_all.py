@@ -91,6 +91,14 @@ def main():
     print(f'\n=== seed · {time.strftime("%H:%M:%S")} ===', flush=True)
     rc = subprocess.call([sys.executable, f'{ROOT}/worker/load.py', '--seed'], cwd=ROOT)
     print(f'load --seed exited {rc}', flush=True)
+    if rc != 0:
+        # DISCOVERY COMPLETE is a MARKER other stages trust: the supervisor skips discovery
+        # when it sees it. Printing it after a failed seed told the pipeline the subreddits
+        # were registered when they were not, and the next stage would have swept nothing
+        # while reporting success. A completion marker must never outrun the work.
+        print('NOT writing DISCOVERY COMPLETE: the seed failed, so the new subreddits are '
+              'not in Postgres and any sweep would collect nothing.', flush=True)
+        return rc
     print(f'\nDISCOVERY COMPLETE {time.strftime("%H:%M:%S")}', flush=True)
     return rc
 
