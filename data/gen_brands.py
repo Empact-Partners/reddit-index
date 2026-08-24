@@ -291,6 +291,14 @@ STOP_CONTEXTS = {
 }
 
 
+def _count_unowned(fp, owned):
+    """Brands in an existing brands.csv that this generator does not produce."""
+    try:
+        return sum(1 for r in csv.DictReader(open(fp)) if r.get("source") not in owned)
+    except OSError:
+        return 0
+
+
 def main():
     cats = {r["slug"]: r["category"] for r in
             csv.DictReader(open(os.path.join(HERE, "categories.csv")))}
@@ -421,6 +429,54 @@ def main():
                 "min_corroborating": MIN_CORROB[eff],
                 "bare_disabled": disabled,
             })
+
+    # ── carry forward brands this generator does not own ───────────────────
+    # gen_brands rebuilds brands.csv AND brand-aliases.csv from the hand dicts +
+    # brand-seed-new.csv + brand-seed-expand.csv. Anything written by ANOTHER path is
+    # invisible to it and is silently deleted on the next run.
+    #
+    # Not hypothetical: import_roster.py writes roster brands straight into brands.csv, and on
+    # 2026-08-24 an expansion run destroyed 989 of them — the never-replied companies the whole
+    # wave was built on. resolve.py loads its gazetteer from these files, so the collection
+    # then ran for an hour discarding every mention of those companies while reporting success.
+    #
+    # BOTH files must be carried. brands.csv has no alias column, so restoring a brand without
+    # its surface forms leaves it in the gazetteer and still unmatchable — which is exactly
+    # what a first attempt at this fix produced.
+    OWNED_SOURCES = {"gazetteer", "seed-brands", "fleet-enum", "fleet-enum-2026-08",
+                     "fleet-expand-2026-08", "fleet-expand-2026-08-widen"}
+    existing_b = os.path.join(HERE, "brands.csv")
+    existing_a = os.path.join(HERE, "brand-aliases.csv")
+    if os.path.exists(existing_b):
+        have = {r["slug"] for r in brand_rows}
+        carried = [prev for prev in csv.DictReader(open(existing_b))
+                   if prev.get("source") not in OWNED_SOURCES and prev["slug"] not in have]
+        carried_slugs = {r["slug"] for r in carried}
+        if carried:
+            brand_rows.extend(carried)
+            if os.path.exists(existing_a):
+                keep = [a for a in csv.DictReader(open(existing_a))
+                        if a["brand_slug"] in carried_slugs]
+                alias_rows.extend(keep)
+                print(f"carried forward {len(carried)} brands and {len(keep)} surface forms "
+                      f"from sources this generator does not own")
+            else:
+                raise SystemExit("carrying brands forward but brand-aliases.csv is missing — "
+                                 "they would be in the gazetteer and unmatchable.")
+
+        before = _count_unowned(existing_b, OWNED_SOURCES)
+        after = sum(1 for r in brand_rows if r.get("source") not in OWNED_SOURCES)
+        if after < before:
+            raise SystemExit(
+                f"refusing to write: would drop {before - after} brands from sources this "
+                f"generator does not own (e.g. roster-import). resolve.py reads its gazetteer "
+                f"from these files, so those companies would silently stop being found.")
+        # every carried brand must have at least one surface form, or it is dead weight
+        with_alias = {a["brand_slug"] for a in alias_rows}
+        orphan = sorted(carried_slugs - with_alias)
+        if orphan:
+            raise SystemExit(f"refusing to write: {len(orphan)} carried brands have no surface "
+                             f"form (e.g. {orphan[:5]}) — unmatchable in every future sweep.")
 
     for name, rows, cols in [
         ("brands.csv", brand_rows,
