@@ -254,10 +254,13 @@ def attempt():
     skipped if its completion marker is already in the log. Finite; no inner retries."""
     if not discovery_done():
         st = resume_stage()
-        args = [sys.executable, f'{HERE}/run_discovery_all.py', '--width', '6']
+        # 10, not 6: measured 2026-08-24, the fleet ran topicality at 4.2 jobs/min at
+        # width 6 against a ~2,400-job stage. Width 12 fails preflight on this box
+        # (needs 2,940 MB free, has ~2,890); 10 needs 2,700 and passes.
+        args = [sys.executable, f'{HERE}/run_discovery_all.py', '--width', '10']
         if st:
             args += ['--from', st]
-        if not gate(6):
+        if not gate(10):
             return 90
         rc = run(args, f'discovery (from {st or "start"})')
         if rc != 0:

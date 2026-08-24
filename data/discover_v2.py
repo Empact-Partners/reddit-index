@@ -851,10 +851,22 @@ def topicality_fill(pairs, cat_names):
         jobs.append((bid, task, fp, chunk))
     run_fleet([(b, t, fp) for b, t, fp, _ in jobs], "topicality",
               model="gpt-5.6-luna", effort="low", job_timeout=300)
+    # A batch that comes back SHORT loses its missing pairs silently: they stay uncoded, so
+    # topicality_of() returns None, so topic_ok is False, so the pair fails qualification —
+    # with no error anywhere. Measured 2026-08-24 at batch 25: 40/40 batches complete. If
+    # that ever changes (a bigger batch, a slower model, a tighter timeout) this says so
+    # instead of quietly shrinking the mapping.
+    short_batches, missing_pairs = 0, 0
     for bid, _, fp, chunk in jobs:
         obj = parse_out(fp)
         if not isinstance(obj, dict):
+            short_batches += 1
+            missing_pairs += len(chunk)
             continue
+        got = sum(1 for iid, _, _ in chunk if iid in obj)
+        if got < len(chunk):
+            short_batches += 1
+            missing_pairs += len(chunk) - got
         for iid, slug, sub in chunk:
             v = obj.get(iid)
             try:
@@ -864,6 +876,10 @@ def topicality_fill(pairs, cat_names):
             if t in (0.0, 0.5, 1.0):
                 tf = os.path.join(TOPIC, re.sub(r"[^a-z0-9|]+", "_", iid.lower()) + ".json")
                 json.dump({"t": t}, open(tf, "w"))
+    if short_batches:
+        print(f"  !! {short_batches} topicality batches came back short — {missing_pairs} "
+              f"pairs left uncoded and will FAIL qualification silently. Re-run the stage to "
+              f"fill them before trusting the mapping.", flush=True)
 
 
 def vendor_of(sub, verdict):
