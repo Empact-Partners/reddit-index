@@ -38,6 +38,13 @@ MAX_ATTEMPTS = 6            # GENUINE failures. This is the runaway guard; do no
 MAX_NET_ATTEMPTS = 40       # network drops. Losing wifi is not a bug in the pipeline.
 COOLDOWN_S = 600
 NET_COOLDOWN_S = 120        # waiting does not fix a bug, but it does fix a dead link
+BUSY_COOLDOWN_S = 900       # the box needs headroom back; 120s of retrying cannot give it
+
+# Preflight refusing is a THIRD outcome, and conflating it with the other two is how a
+# supervisor becomes a runaway. It is not a bug (nothing ran) and not the link. Retried on the
+# network cadence it burned 3 budget in 5 minutes on 2026-08-23 while the box sat at 95% swap,
+# heading for a permanent give-up in ~80 minutes without a single attempt having started.
+PREFLIGHT_REFUSED_RC = 90
 
 # A failure whose tail looks like this is the link, not the code. reddit_client already rides
 # out a drop for NET_MAX_WAIT (60 min); past that it gives up and the stage aborts, and that
@@ -171,6 +178,15 @@ def resume_stage():
         if s in STAGES:
             return s
     return None
+
+
+def refused_for_headroom(tail_lines=25):
+    """Did the attempt refuse to start because the box had no memory headroom?
+
+    Distinct from both budgets: nothing ran, so nothing is owed. Retrying on the network
+    cadence turned a busy box into a budget-burning busy-loop on 2026-08-23."""
+    tail = '\n'.join(log_text().splitlines()[-tail_lines:])
+    return 'REFUSING:' in tail
 
 
 def looked_like_network(tail_lines=80):
@@ -325,7 +341,8 @@ def main():
 
         if s.get('history'):
             last = s['history'][-1]
-            wait = NET_COOLDOWN_S if last.get('kind') == 'network' else COOLDOWN_S
+            wait = {'network': NET_COOLDOWN_S,
+                    'busy': BUSY_COOLDOWN_S}.get(last.get('kind'), COOLDOWN_S)
             since = time.time() - last['at']
             if since < wait:
                 time.sleep(min(POLL_S, wait - since))
@@ -340,14 +357,28 @@ def main():
 
         # charge the RIGHT budget, decided after the fact from what actually killed it
         s = state()
-        kind = 'network' if (rc != 0 and looked_like_network()) else 'genuine'
-        if rc != 0:
-            if kind == 'network':
-                s['net_attempts'] = s.get('net_attempts', 0) + 1
-                say('that failure was the link, not the pipeline — charged to the network '
-                    f'budget ({s["net_attempts"]}/{MAX_NET_ATTEMPTS})')
-            else:
-                s['attempts'] += 1
+        # run_discovery_all runs its OWN preflight and exits 1, not 90, so the return code
+        # alone cannot tell "refused for headroom" from "crashed". The refusal prints a
+        # distinctive line; that is the reliable signal.
+        if rc == PREFLIGHT_REFUSED_RC or refused_for_headroom():
+            kind = 'busy'
+        elif rc != 0 and looked_like_network():
+            kind = 'network'
+        elif rc != 0:
+            kind = 'genuine'
+        else:
+            kind = 'ok'
+        if kind == 'busy':
+            # nothing ran, so nothing is owed to either budget. Just wait for headroom.
+            s['busy_waits'] = s.get('busy_waits', 0) + 1
+            say(f'preflight refused — the box has no headroom. Nothing started, so no budget '
+                f'spent. Waiting {BUSY_COOLDOWN_S}s (wait #{s["busy_waits"]}).')
+        elif kind == 'network':
+            s['net_attempts'] = s.get('net_attempts', 0) + 1
+            say('that failure was the link, not the pipeline — charged to the network '
+                f'budget ({s["net_attempts"]}/{MAX_NET_ATTEMPTS})')
+        elif kind == 'genuine':
+            s['attempts'] += 1
         s['history'][-1].update({'rc': rc, 'kind': kind})
         save(s)
         if rc == 0 and finish_done():
@@ -355,7 +386,7 @@ def main():
             say('pipeline finished cleanly')
             uninstall()
             return 0
-        wait = NET_COOLDOWN_S if kind == 'network' else COOLDOWN_S
+        wait = {'network': NET_COOLDOWN_S, 'busy': BUSY_COOLDOWN_S}.get(kind, COOLDOWN_S)
         say(f'attempt returned {rc} ({kind}); cooling down {wait}s before reconsidering')
         time.sleep(wait)
 
