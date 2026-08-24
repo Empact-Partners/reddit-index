@@ -49,6 +49,24 @@ def cpu_seconds(pid):
 
 
 PIPELINE_LOG = os.path.join(HERE, '.pipeline', 'pipeline.log')
+# Fleet stages write one file per completed batch. During those, the Python process is
+# BLOCKED waiting on Codex, so its CPU is legitimately zero — treating that as a stall would
+# fire every cadence for hours and train me to ignore the alarm, which is worse than no alarm.
+FLEET_OUT = {
+    'topicality': os.path.join(HERE, '.discover-v2', 'topic-out'),
+    'posture': os.path.join(HERE, '.discover-v2', 'posture-out'),
+}
+
+
+def fleet_outputs():
+    """{stage: completed batch files}. Growth here is progress even at zero CPU."""
+    out = {}
+    for name, d in FLEET_OUT.items():
+        try:
+            out[name] = len(os.listdir(d))
+        except OSError:
+            out[name] = 0
+    return out
 
 
 def position():
@@ -83,6 +101,7 @@ def say(line):
 def main():
     order = slugs()
     last_idx, last_move, last_cpu = None, time.time(), None
+    last_fleet = None
     say(f'probe started · {len(order)} categories in the loop')
 
     while True:
@@ -93,6 +112,16 @@ def main():
 
         cpu = cpu_seconds(pid)
         burning = (last_cpu is not None and cpu is not None and cpu - last_cpu > 1)
+        fleet = fleet_outputs()
+        fleet_moved = last_fleet is not None and any(
+            fleet[k] > last_fleet.get(k, 0) for k in fleet)
+        if fleet_moved:
+            grew = {k: fleet[k] - last_fleet.get(k, 0) for k in fleet
+                    if fleet[k] > last_fleet.get(k, 0)}
+            for k, d in grew.items():
+                say(f'{k}: {fleet[k]:,} batches done (+{d} since last check)')
+            last_move = time.time()
+        last_fleet = fleet
         pos = position()
 
         if pos:
@@ -112,8 +141,15 @@ def main():
             # no counter line yet: this build predates them, or we are between loops.
             # CPU burn is still a liveness signal even without a position.
             if time.time() - last_move > STALL_AFTER:
-                say(f'no counter for {(time.time() - last_move) / 60:.0f}m · '
-                    f'cpu {"burning (alive, position unknown)" if burning else "IDLE — check it"}')
+                # Idle CPU is only a problem if the fleet is not moving either. On a fleet
+                # stage the process SHOULD be blocked at zero CPU.
+                if burning:
+                    detail = 'cpu burning (alive, position unknown)'
+                elif fleet_moved:
+                    detail = 'cpu idle but the fleet is completing batches — normal'
+                else:
+                    detail = 'cpu IDLE and no fleet progress — investigate now'
+                say(f'no counter for {(time.time() - last_move) / 60:.0f}m · {detail}')
                 last_move = time.time()
 
         last_cpu = cpu
