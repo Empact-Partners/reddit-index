@@ -952,8 +952,15 @@ def stage_qualify(dry_run=False):
 
     # q3b: topicality fill — only pairs where every cheap bar already passes
     # (for anything else topicality cannot change the outcome)
+    # Both loops below walk 283,113 pairs and used to print NOTHING until they finished.
+    # On 2026-08-23 that silence hid a network bug for three hours: "no output" and "no
+    # progress" are indistinguishable from outside, and memoising the cache reads removed
+    # even the lsof signal a probe could have used. A counter costs nothing and makes the
+    # phase observable.
     need_topic = []
-    for (slug, k), name in pairs.items():
+    for _i, ((slug, k), name) in enumerate(pairs.items()):
+        if _i % 10000 == 0:
+            print(f"  cheap bars {_i}/{len(pairs)} · {slug}", flush=True)
         if topicality_of(slug, name) is not None:
             continue
         m, q, open_ok, alive_ok, ev, evidence_ok = cheap_bars(slug, k, name)
@@ -965,7 +972,9 @@ def stage_qualify(dry_run=False):
 
     # q4: evaluate the six bars
     out_rows, report, drops = [], collections.defaultdict(lambda: [0, 0]), []
-    for (slug, k), name in sorted(pairs.items()):
+    for _i, ((slug, k), name) in enumerate(sorted(pairs.items())):
+        if _i % 10000 == 0:
+            print(f"  verdicts {_i}/{len(pairs)} · {slug}", flush=True)
         m, q, open_ok, alive_ok, ev, evidence_ok = cheap_bars(slug, k, name)
         verdict = posture_verdict(name)
         t = topicality_of(slug, name)
