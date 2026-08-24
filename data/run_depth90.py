@@ -125,29 +125,43 @@ def seeded(subs):
         return {r[0] for r in cur.fetchall()}
 
 
-def category_slugs_file(slug):
-    fp = os.path.join(HERE, '.pipeline', f'classify_{slug}.txt')
+def category_slugs_file(slugs):
+    """Brand slugs for a batch of categories, primary or also_in."""
+    want = set(slugs)
+    fp = os.path.join(HERE, '.pipeline', 'classify_batch.txt')
     os.makedirs(os.path.dirname(fp), exist_ok=True)
     rows = {r['slug'] for r in csv.DictReader(open(f'{HERE}/brands.csv'))
-            if r['primary_category_slug'] == slug
-            or slug in (r.get('also_in_category_slugs') or '').split(';')}
+            if r['primary_category_slug'] in want
+            or want & set((r.get('also_in_category_slugs') or '').split(';'))}
     open(fp, 'w').write('\n'.join(sorted(rows)) + '\n')
     return fp, len(rows)
 
 
-def ship_category(slug):
-    """classify -> score -> publish, for ONE category. The plan's cadence: a category comes
-    online whole before the next one starts."""
-    fp, n = category_slugs_file(slug)
-    step(f'{slug}: classify ({n} brands)',
+def ship_batch(slugs):
+    """classify -> score -> delete-sync -> publish, for a BATCH of categories.
+
+    The plan (:159-166) asks that categories come online WHOLE rather than everything
+    half-done. It does not ask for a Vercel build per category, and measured here that is what
+    the per-category cadence actually costs:
+
+        sweep 12m52s · classify 7m36s · score 2m38s · delete-sync 2m08s · publish 6m09s
+
+    Over 51 categories the ship half is 15.7 h against 10.9 h of actual collection — and score
+    is a FULL-INDEX recompute whose cost does not shrink with the category, while publish is a
+    fixed ~6 min Vercel build. Batching five at a time keeps the property that matters (a
+    category is complete when it appears, boards land every ~1.5 h) and returns ~12 h.
+    """
+    fp, n = category_slugs_file(slugs)
+    label = f'{len(slugs)} categories ({slugs[0]}…{slugs[-1]})' if len(slugs) > 1 else slugs[0]
+    step(f'ship {label}: classify ({n} brands)',
          [sys.executable, f'{ROOT}/worker/classify_brands.py', '--slugs-file', fp,
           '--allow-metered'], fatal=False)
-    step(f'{slug}: score', [sys.executable, f'{ROOT}/worker/score_db.py'], fatal=False)
+    step(f'ship {label}: score', [sys.executable, f'{ROOT}/worker/score_db.py'], fatal=False)
     # decisions/0002: delete-sync is a legal condition of showing comment text at all.
-    step(f'{slug}: delete-sync',
+    step(f'ship {label}: delete-sync',
          [sys.executable, f'{ROOT}/worker/delete_sync.py', '--limit', '20000',
           '--publish-follows'], fatal=False)
-    step(f'{slug}: publish', [sys.executable, f'{ROOT}/worker/publish.py'], fatal=False)
+    step(f'ship {label}: publish', [sys.executable, f'{ROOT}/worker/publish.py'], fatal=False)
 
 
 def main():
@@ -155,6 +169,8 @@ def main():
     ap.add_argument('--plan', action='store_true')
     ap.add_argument('--only', default='', help='comma-separated category slugs')
     ap.add_argument('--chunk', type=int, default=10, help='subs per sweep invocation')
+    ap.add_argument('--ship-every', type=int, default=5,
+                    help='categories per classify/score/publish cycle')
     a = ap.parse_args()
 
     days, cap = pinned_mode()
@@ -179,6 +195,7 @@ def main():
         print(f'  already banked: {len(done_subs())} subreddits')
         return 0
 
+    pending = []
     for i, slug in enumerate(order, 1):
         subs = [s for _, s in by_cat[slug]]
         todo = [s for s in subs if s.lower() not in done_subs()]
@@ -204,9 +221,14 @@ def main():
                           file=sys.stderr)
                     return rc
                 mark(chunk)
-        ship_category(slug)
-        print(f'\n>>> {slug} COMPLETE ({i}/{len(order)}) · {time.strftime("%H:%M:%S")}',
-              flush=True)
+        pending.append(slug)
+        if len(pending) >= a.ship_every or i == len(order):
+            ship_batch(pending)
+            for c in pending:
+                print(f'>>> {c} COMPLETE · {time.strftime("%H:%M:%S")}', flush=True)
+            print(f'>>> shipped {len(pending)} categories · {i}/{len(order)} done · '
+                  f'{time.strftime("%H:%M:%S")}', flush=True)
+            pending = []
 
     print(f'\nCOLLECTION COMPLETE {time.strftime("%H:%M:%S")}', flush=True)
     return 0
