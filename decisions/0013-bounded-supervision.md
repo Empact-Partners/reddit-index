@@ -29,7 +29,7 @@ means a human has to sit with it. That is the thing being fixed, not the rule.
    This one is permanent and is not an exception to anything.
 2. **`data/pipeline_supervisor.py`** may run under launchd for the duration of one started
    run. Its properties are the reason it is allowed, and each is asserted in
-   `data/test_pipeline_supervisor.py` (16 checks) rather than described:
+   `data/test_pipeline_supervisor.py` (24 checks) rather than described:
    - it starts nothing while any lane is alive — one Reddit client, one fleet lane
    - `MAX_ATTEMPTS = 6`, counted in `state.json` on disk, so a SIGKILL and a launchd revival
      do not hand it a fresh budget

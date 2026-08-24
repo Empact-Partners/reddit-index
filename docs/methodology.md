@@ -49,6 +49,23 @@ forms. `p_tilde` (the mean) is still computed and published as evidence.
   imports, so the stored body is byte-identical whichever lane minted it,
   and `worker/backfill_posts.py` re-read every stored thread through
   `/api/info` to recover the historical posts.
+- **Coverage is complete for normal subreddits and approximate for the
+  busiest ones, and this is a floor rather than a census.** The collector
+  pages `/new` back to the window's cutoff, which fully covers any
+  subreddit under ~11 posts/day. Where Reddit's ~1,000-post listing cap is
+  younger than the cutoff, the subreddit is marked `coverage="approximate"`
+  and supplemented with `/top` (month and year, client-filtered) plus
+  per-noun scoped search. Separately, the sweep fetches the **150
+  highest-comment qualifying threads per subreddit** (`decisions/0014`),
+  ordered richest-first on a measured yield curve — a 100+-comment thread
+  returns 9.2 mentions against 1.2 for a 2-comment thread — so a capped
+  subreddit contributes its most opinion-dense threads, not an arbitrary
+  slice. Raising the cap and re-running is additive: already-swept threads
+  are recorded, so a deeper pass continues rather than repeating.
+  **Every count this produces is therefore a floor.** This paragraph was
+  promised by `docs/depth-execution-plan.md:216` in August 2026 and was
+  missing until 2026-08-24; the number that was never written down anywhere
+  is what made a later sweep run ~50x the intended work.
 - Only brands whose **category membership** includes the scored category —
   a mention of Google Drive in r/CRM stays on Google Drive's page and out
   of the CRM leaderboard.

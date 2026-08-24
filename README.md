@@ -68,7 +68,7 @@ asks whether the index MOVED, not whether it ran.
 |---|---|
 | `app/`, `components/`, `lib/` | The Next.js site (static, direct SQL to a read-only role, no anon key) |
 | `worker/` | The pipeline. Live: `daily.py` (the Railway fetch), `classify_api.py`, `score_db.py`, `delete_sync.py`, `healthcheck.py`, `backfill_posts.py`, `sweep.py`, `qa_audit.py`. `harvest.py` is no longer a driver — it survives as the shared document builders (`post_doc`, `tree_docs`) that `daily.py`, `sweep.py` and `backfill_posts.py` import between them. Several files are dead; see [Superseded](#superseded-do-not-run-these) |
-| `data/` | The taxonomy (100 categories), brand gazetteer, subreddit mapping, and their generators |
+| `data/` | The taxonomy (151 categories), brand gazetteer (10,510 brands), subreddit mapping, and their generators |
 | `supabase/migrations/` | The schema: partitioned mentions, sentiment, scores, RLS + published views |
 | `scripts/` | Build gates (`gates/` — seven of them: category constraints, icons, contrast, fonts, trade dress, slugs, CSS law; each proven by `pnpm gates:selftest` to fail when violated), plus `qa-sweep.mjs` (reads every built page) and `device-shot.mjs` (real device-metric screenshots) |
 | `tests/` | `pnpm test`: vitest for the board and company components, `node:test` for the resolver and for the two collection defects fixed on 2026-08-17 |
@@ -86,6 +86,12 @@ asks whether the index MOVED, not whether it ran.
 - [how-the-index-updates.md](docs/how-the-index-updates.md) — cadence, the no-history rule, why publish = rebuild
 - [qa-platform.md](docs/qa-platform.md) — the full site sweep: every built page, the design gates, responsive, SEO
 - [qa-audit.md](docs/qa-audit.md) — the corpus audit: invariants, recall, precision, entity resolution
+- [depth-execution-plan.md](docs/depth-execution-plan.md) — **the collection spec.** Stage 3
+  (90 days, category by category) plus "What ACTUALLY ran": the 150-tree-per-subreddit cap the
+  shipped index was built with. **Read this before changing how collection runs**
+- [post-mortem-2026-08-24.md](docs/post-mortem-2026-08-24.md) — the 51-category expansion: 21
+  incidents, ~19h of measurable loss, what caused each, and the 13 that still have no
+  regression test
 
 ## Operating it
 

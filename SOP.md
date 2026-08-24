@@ -40,6 +40,23 @@ Expected: healthcheck fails coverage/backlog assertions on a bounded rehearsal �
 
 **Run at least weekly.** Collection is the only stage that loses data to waiting (decisions/0010): past ~7 days, `/new`'s reach is outrun by ~1 subreddit in 49 and threads leave the 72h comment-revisit window; past ~14 days, ~3 subs. Classify/score/publish lose nothing to waiting, ever.
 
+## Before you change how collection runs — READ THE SPEC
+
+`docs/depth-execution-plan.md` is the collection methodology. It specifies Stage 3 in full:
+`--days 90`, category by category, classify/score/publish after each so categories come online
+whole. On 2026-08-24 that document was NOT read before the 51-category expansion was designed,
+and the resulting invented scheme (30-day waves across all categories at once) cost most of a
+day. `docs/post-mortem-2026-08-24.md` is the receipt.
+
+Two things that document now states and did not before:
+
+- **`--tree-cap` is mandatory on every sweep.** `sweep.py`'s default is 100000 — effectively
+  uncapped — but the shipped index was built at **150 trees per subreddit**, a number that
+  lived only in `worker/.cache/depth/mode.json` and appeared in no doc. Omitting it runs ~50x
+  the work per subreddit. See `decisions/0014`.
+- **Use `data/run_depth90.py`** for a batch of new categories. It reads the cap from the pinned
+  mode file and refuses to run if that pin is missing, rather than inheriting the default.
+
 ## Adding a brand, or a whole category
 
 There was no runbook for this until the never-replied expansion needed one
@@ -95,8 +112,16 @@ python3 data/select_core_subs.py --add-categories <slug>[,<slug>...] --apply
 
 # 5. seed, then depth  [REDDIT API — serialize]
 python3 worker/load.py --seed
-python3 worker/sweep.py --days 90 --only <core subs>
+# --tree-cap is MANDATORY. sweep.py's default is 100000 (effectively uncapped); the
+# shipped index was built at 150/sub. Omitting it runs ~50x the work per subreddit —
+# see decisions/0014 and docs/post-mortem-2026-08-24.md.
+python3 worker/sweep.py --days 90 --tree-cap 150 --only <core subs>
 python3 worker/update.sh
+
+# ...or, for a whole batch of new categories, the Stage 3 driver, which reads the cap
+# from worker/.cache/depth/mode.json and refuses to run if that pin is missing:
+python3 data/run_depth90.py --plan     # category order + cost
+python3 data/run_depth90.py
 ```
 
 **Never run `select_core_subs.py --apply` globally to add a category.** It reallocates the
@@ -181,7 +206,7 @@ from the log TAIL after the fact.
 ```bash
 python3 data/pipeline_supervisor.py --status     # what stage, what is alive, budgets spent
 tail -f data/.pipeline/pipeline.log              # the run itself
-python3 data/test_pipeline_supervisor.py         # 16 safety checks
+python3 data/test_pipeline_supervisor.py         # 24 safety checks
 
 # stop supervision by hand
 launchctl bootout gui/$UID/com.vladshvets.reddit-index-pipeline
