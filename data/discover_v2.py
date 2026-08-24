@@ -30,7 +30,7 @@ Doctrine carried over from v1's measured failures:
 - ONE HTTP client only (worker/reddit_client.py): a second client means a
   second independent 0.75s floor stacking above the ~100 QPM app budget.
 """
-import argparse
+import argparse, functools
 import collections
 import csv
 import hashlib
@@ -253,6 +253,13 @@ def add_candidate(cands, sub, angle, type_tag=None, confidence=None, why=None,
 def evidence_state(slug):
     fp = os.path.join(EVID, f"{slug}.json")
     return json.load(open(fp)) if os.path.exists(fp) else {"queries": {}, "tally": {}, "examples": {}}
+
+
+def evidence_tally(slug):
+    """Read-only tally for the qualify loop. evidence_state() is left uncached because
+    stage_evidence MUTATES what it returns."""
+    rec = _json_cached(os.path.join(EVID, f"{slug}.json"))
+    return (rec or {}).get("tally", {})
 
 
 def build_candidates(slugs=None):
@@ -483,8 +490,7 @@ def get_about(sub):
 
 
 def posture_verdict(sub):
-    fp = os.path.join(POSTURE, f"{sub.lower()}.json")
-    return json.load(open(fp)) if os.path.exists(fp) else None
+    return _json_cached(os.path.join(POSTURE, f"{sub.lower()}.json"))
 
 
 def universe_subs(cands=None):
@@ -649,16 +655,64 @@ def stage_candidates():
     print(f"\ncandidates.csv written: {fp}")
 
 
+# ──────────────────────────────────────────────────── cache-file memoisation
+# qualify walks 283,113 (category, subreddit) pairs, and every reader below used to do
+# json.load(open(fp)) on each call: ~2.8M parses of ~30K distinct files. Measured on
+# 2026-08-23 the stage was 52% done after 176 minutes, i.e. ~5.7 hours of almost pure JSON
+# decoding, and a restart paid it again from scratch.
+#
+# Keyed by (path, mtime) so a file rewritten mid-run is re-read rather than served stale.
+# Bounded because bodies files are large — an unbounded cache over 29,658 subs is gigabytes
+# on a box that has already hit an OOM once.
+#
+# ONLY read-only callers use these. evidence_state() stays uncached: stage_evidence does
+# st.setdefault("names", {}) on the result, and a shared mutable dict there would leak the
+# mutation into every later reader.
+@functools.lru_cache(maxsize=40_000)
+def _json_at(fp, _mtime):
+    try:
+        with open(fp) as f:
+            return json.load(f)
+    except Exception:
+        return None
+
+
+def _json_cached(fp):
+    try:
+        return _json_at(fp, os.path.getmtime(fp))
+    except OSError:
+        return None
+
+
+# Subs whose qual_rec fetch failed THIS RUN. qualify walks ~9.5 pairs per subreddit, and
+# qual_rec is the one reader that returns None WITHOUT writing a cache file, so a single
+# unreachable subreddit paid a full network timeout plus 10-40s of backoff about nine times
+# over. (measure_v2 always writes its record, even "unavailable", so it self-caches.)
+# Measured 2026-08-23: the stage was network-bound (libcrypto+libssl+dnssd dominated the
+# profile, _json was noise) and ran at ~5.7 hours.
+#
+# A failure is remembered for the run only — nothing is written to disk, so the next run
+# still retries, which is the documented behaviour ("retried next run").
+_fetch_failed = set()
+
+
+@functools.lru_cache(maxsize=1024)
+def _bodies_at(fp, _mtime):
+    try:
+        with open(fp) as f:
+            return tuple(json.load(f).get("bodies") or ())
+    except Exception:
+        return ()
+
+
 # ──────────────────────────────────────────────────────────── qualification
 
 def measure_v2(sub):
     """v1-schema probe record for a sub, from cache or 2 fresh calls."""
     fp = os.path.join(CACHE, sub.lower() + ".json")
-    if os.path.exists(fp):
-        try:
-            return json.load(open(fp))
-        except Exception:
-            pass
+    hit = _json_cached(fp)
+    if hit is not None:
+        return hit
     rec = {"subreddit": sub, "source": "discover_v2", "run_id": RUN_ID_V2}
     about = get_about(sub)
     if about is None:
@@ -697,11 +751,15 @@ def measure_v2(sub):
 
 def qual_rec(sub):
     fp = os.path.join(QUAL, f"{sub.lower()}.json")
-    if os.path.exists(fp):
-        return json.load(open(fp))
+    hit = _json_cached(fp)
+    if hit is not None:
+        return hit
+    if ("q", sub.lower()) in _fetch_failed:
+        return None
     nl = rc.get(f"/r/{sub}/new", {"limit": 25, "raw_json": 1}, bucket="new_v2")
     if "_err" in nl:
-        return None  # retried next run
+        _fetch_failed.add(("q", sub.lower()))
+        return None  # retried next run, not nine more times in this one
     now = time.time()
     posts = [x["data"] for x in nl.get("data", {}).get("children", [])
              if not x["data"].get("stickied")]
@@ -746,12 +804,11 @@ def matcher(slug, terms_map, nouns_map):
 
 def topicality_of(slug, sub):
     fp = os.path.join(TOPIC, re.sub(r"[^a-z0-9|]+", "_", f"{slug}|{sub}".lower()) + ".json")
-    if os.path.exists(fp):
-        try:
-            return json.load(open(fp))["t"]
-        except Exception:
-            return None
-    return None
+    rec = _json_cached(fp)
+    try:
+        return rec["t"]
+    except (TypeError, KeyError):
+        return None
 
 
 TOPIC_SYSTEM = """You judge whether a Reddit community is a place where a named
@@ -821,12 +878,10 @@ def vendor_of(sub, verdict):
 
 def bodies_of(sub):
     fp = os.path.join(BODIES, sub.lower() + ".json")
-    if os.path.exists(fp):
-        try:
-            return json.load(open(fp)).get("bodies") or []
-        except Exception:
-            return []
-    return []
+    try:
+        return _bodies_at(fp, os.path.getmtime(fp))
+    except OSError:
+        return ()
 
 
 def stage_qualify(dry_run=False):
@@ -876,7 +931,7 @@ def stage_qualify(dry_run=False):
                    and m.get("subreddit_type") in (None, "public")
                    and not m.get("over18") and not m.get("quarantine"))
         alive_ok = (q.get("alive_n14") or 0) >= 4
-        ev = evidence_state(slug)["tally"].get(k, 0)
+        ev = evidence_tally(slug).get(k, 0)
         mm = matcher(slug, terms_map, nouns_map)
         evidence_ok = ev >= 1 or bool(mm and open_ok and (
             any(mm.search(b) for b in bodies_of(name))
