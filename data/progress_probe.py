@@ -22,7 +22,12 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 LOG = os.path.join(HERE, '.pipeline', 'progress.log')
 EVERY = 180          # sample cadence
 STALL_AFTER = 900    # no movement for this long, with CPU burning, is a stall
-SAMPLES = 300        # lsof passes per sample; the loop is fast, so we need many
+
+# There is deliberately NO lsof sampling here any more. Sampling a busy process's open files
+# costs ~72 ms per pass on this box, so the few hundred passes it takes to catch a fast loop
+# is a minute of CPU contention stolen from the thing being measured. On 2026-08-24 that made
+# the probe report "cpu IDLE — investigate now" about a perfectly healthy lane: the lane was
+# idle because the probe was starving it. Read counters the stage prints; never sample it.
 
 
 def slugs():
@@ -72,10 +77,11 @@ def fleet_outputs():
 def position():
     """Position from the stage's own counter lines, not from open files.
 
-    lsof was the original signal, but memoising the cache readers removed the file opens it
-    depended on — a probe that reads a side effect breaks the moment the side effect is
-    optimised away. discover_v2 now prints "cheap bars i/N" and "verdicts i/N" every 10,000
-    pairs; that is a first-class signal that cannot be optimised out from under us.
+    lsof was the original signal and it failed twice over: memoising the cache readers removed
+    the file opens it depended on, and sampling hard enough to catch a fast loop STARVED the
+    process, which then genuinely looked idle. A probe must not perturb what it measures.
+    discover_v2 now prints "cheap bars i/N" and "verdicts i/N" every 10,000 pairs; a counter
+    the stage emits costs it nothing and cannot be optimised out from under us.
 
     Returns (label, done, total) or None."""
     try:
@@ -99,10 +105,9 @@ def say(line):
 
 
 def main():
-    order = slugs()
     last_idx, last_move, last_cpu = None, time.time(), None
     last_fleet = None
-    say(f'probe started · {len(order)} categories in the loop')
+    say('probe started · reading stage counters and fleet batch output')
 
     while True:
         pid = lane_pid()
