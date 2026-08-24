@@ -179,6 +179,37 @@ Classification burns run supervised back-to-back until the backlog is
 empty; the nightly cap only bounds the unattended 03:30 job. Cash: $0;
 watch Supabase storage/egress (Pro $25/mo likely at ~1M+ rows).
 
+### What ACTUALLY ran — the tree cap this plan does not name
+
+The paragraph above says "every qualifying 90-day thread", and the 527-subreddit sweep that
+built the shipped index **did not run that way**. It ran at **150 trees per subreddit**,
+richest-first.
+
+That number lives in `worker/collector.py:53` and on disk in
+`worker/.cache/depth/mode.json` (`{"days": 90, "tree_cap": 150}`). Until 2026-08-24 it
+appeared in **no markdown file in this repo**, while:
+
+- `worker/sweep.py`'s `--tree-cap` default is **100000** — effectively uncapped
+- `data/run_collection_all.py` passed **no cap at all**
+- `worker/depth_run.py`'s default is `0` → `10 ** 9`
+
+So every new-category sweep after the original build ran ~50x the per-subreddit work that
+built the index, and nothing anywhere would tell you. On 2026-08-24 a 51-category sweep hit
+this: r/SideProject alone queued 4,769 trees and r/AI_Agents 3,235, against 150 apiece under
+the method that actually shipped. Projected 33 hours instead of ~12. See
+`docs/post-mortem-2026-08-24.md`.
+
+**Why a cap is not a quality cut.** `sweep.py:283-289` orders threads richest-first on a
+measured yield curve — a 2-comment thread returns 1.2 mentions, a 10-24-comment thread 3.8, a
+100+-comment thread 9.2. The cap therefore takes the *most valuable* threads, not an arbitrary
+slice by post id, and `sub_complete` (`:373-390`) is cap-aware so a capped sub still reads as
+finished. The tail is recoverable later by raising the cap and re-running: `swept` tracks post
+ids, so a higher cap continues rather than redoing.
+
+**Rule going forward (decisions/0014).** Every sweep invocation states its cap explicitly, and
+the pinned mode file is the only source for it. `data/run_depth90.py` reads it and REFUSES to
+run if the pin is missing, rather than inheriting 100000.
+
 **Gate 3 (rolling report):** after each batch of ~10 categories, the
 per-category table + spot-check links.
 

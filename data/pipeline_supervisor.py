@@ -62,7 +62,7 @@ STAGES = ['enumerate', 'evidence', 'rescue', 'siblings', 'candidates', 'qualify'
 LANE_PATTERNS = [
     'resume_chain.py', 'run_discovery_all.py', 'run_collection_all.py',
     'run_finish_all.py', 'enumerate_brands.py', 'run_collection_fast.py',
-    'run_expansion.py',
+    'run_expansion.py', 'run_depth90.py',
     'discover_v2.py', 'worker/sweep.py', 'worker/daily.py',
     'classify_brands.py', 'backfill_posts.py', 'delete_sync.py', 'publish.py',
 ]
@@ -299,7 +299,7 @@ def attempt():
     if not collection_done():
         if not gate(2):
             return 90
-        rc = run([sys.executable, f'{HERE}/run_collection_fast.py'], 'collection')
+        rc = run([sys.executable, f'{HERE}/run_depth90.py'], 'collection')
         if rc != 0:
             return rc
     else:
