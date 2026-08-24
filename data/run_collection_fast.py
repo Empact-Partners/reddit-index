@@ -29,6 +29,8 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 RI = os.path.join(HERE, '.roster-import')
 STATE = os.path.join(HERE, '.pipeline', 'collected_subs.json')
+# Written by the expansion leg once its brands are in the gazetteer AND seeded to Postgres.
+EXPANSION_MARKER = os.path.join(HERE, '.pipeline', 'expansion_seeded')
 sys.path.insert(0, os.path.join(ROOT, 'worker'))
 
 # (subs per category, sweep depth in days). None = "everything remaining".
@@ -48,6 +50,23 @@ CHUNK = 20
 # only 80 of it. The client also reads x-ratelimit-remaining and widens itself when the
 # budget runs low, so this is bounded by the server's own signal rather than by hope.
 FLOOR = os.environ.get('RI_SLEEP', '0.62')
+
+
+def expansion_ready():
+    """Has the outreach-pool expansion been seeded yet?
+
+    A sweep resolves each comment tree against the gazetteer AS IT STORES IT. A brand seeded
+    after its subreddit was swept is therefore not attached to that subreddit's stored
+    threads, and the companies the 51 new categories were supposed to surface would score
+    zero while every log line said success. Waiting costs hours; discovering it later costs
+    the wave.
+
+    Override with RI_SKIP_EXPANSION_GATE=1 only when the expansion is deliberately not part
+    of this run."""
+    if os.environ.get('RI_SKIP_EXPANSION_GATE') == '1':
+        print('expansion gate: SKIPPED by RI_SKIP_EXPANSION_GATE=1', flush=True)
+        return True
+    return os.path.exists(EXPANSION_MARKER)
 
 
 def new_slugs():
@@ -209,6 +228,15 @@ def main():
         print(f'\ncurrently {live}/{total} new boards have a scored company')
         print(f'reddit floor for the sweep: {FLOOR}s')
         return 0
+
+    if not expansion_ready():
+        print(f'ABORT: no expansion marker at {EXPANSION_MARKER}.\n'
+              f'  The sweep resolves comments against the gazetteer as it stores them, so\n'
+              f'  brands seeded afterwards are never attached to already-swept threads.\n'
+              f'  Run the expansion leg first (enumerate_brands --expand -> load.py --seed),\n'
+              f'  or set RI_SKIP_EXPANSION_GATE=1 to collect without it deliberately.',
+              file=sys.stderr)
+        return 1
 
     todo = [(i, w, d) for i, (w, d) in enumerate(ws, 1) if not a.wave or i == a.wave]
 

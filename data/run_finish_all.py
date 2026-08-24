@@ -6,11 +6,11 @@ sequence where a failure ABORTS rather than retries — because that shape, not 
 concurrency number, is what stops a runaway.
 
   QA         the collection actually produced mentions, before anything is built on it
-  EXPAND     enumerate_brands --expand over the 51 new categories. brands.csv is the
-             exclusion set, so this surfaces competitors and neighbours we do NOT hold:
-             the outreach pool getting bigger, which was the point of the new categories.
   QUALIFY    suppression (Monday board by domain AND folded name, CompanyOS, everyone
-             already emailed) turns those candidates into approachable companies
+             already emailed) turns the expansion's candidates into approachable companies.
+             The enumeration itself now lives in data/run_expansion.py and runs BEFORE
+             collection — a brand seeded after its subreddit is swept is never attached to
+             that subreddit's stored threads.
   MEASURE    parity, live counts, and the stamped split artifact
   QUEUES     rebuild wave 2 in partner-development, verifying every tier-A page renders a
              score rather than trusting the database
@@ -78,13 +78,8 @@ def main():
         return 1
 
     if not a.skip_expand:
-        if not gate_fleet(a.width):
-            return 90
-        rc = step(f'expand the outreach pool over {len(new)} categories',
-                  [sys.executable, f'{HERE}/enumerate_brands.py', '--expand',
-                   '--only', ','.join(new)])
-        if rc != 0:
-            return rc
+        # Enumeration already happened in run_expansion.py before collection. What is left
+        # is turning those brands into approachable companies.
         if step('qualify the expansion roster (suppression)',
                 [sys.executable, f'{HERE}/qualify_expansion_roster.py']) != 0:
             return 1

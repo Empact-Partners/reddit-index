@@ -133,6 +133,10 @@ with tempfile.TemporaryDirectory() as tmp:
 
     def stepping(args, label):
         ran.append(label)
+        if label.split()[0] == 'expansion':
+            # the real leg signals completion with a marker file, not a log line
+            open(os.path.join(m.PDIR, 'expansion_seeded'), 'w').write('{}')
+            return 0
         marker = {'collection': 'COLLECTION COMPLETE', 'finish': 'FINISH COMPLETE'}
         text = marker.get(label.split()[0], 'DISCOVERY COMPLETE')
         open(m.LOG, 'a').write(text + '\n')
@@ -141,8 +145,12 @@ with tempfile.TemporaryDirectory() as tmp:
     m.time.sleep = lambda s: None
     sys.argv = ['x']
     rc = m.main()
-    check('runs discovery, collection and finish in order',
-          [r.split()[0] for r in ran] == ['discovery', 'collection', 'finish'], str(ran))
+    check('runs discovery, expansion, collection, finish in order',
+          [r.split()[0] for r in ran] == ['discovery', 'expansion', 'collection', 'finish'],
+          str(ran))
+    check('expansion runs BEFORE collection (brands must exist before a sweep stores)',
+          [r.split()[0] for r in ran].index('expansion')
+          < [r.split()[0] for r in ran].index('collection'))
     check('exits 0 when finished', rc == 0, str(rc))
     check('a successful run spends no budget at all',
           json.load(open(m.STATE))['attempts'] == 0

@@ -62,6 +62,7 @@ STAGES = ['enumerate', 'evidence', 'rescue', 'siblings', 'candidates', 'qualify'
 LANE_PATTERNS = [
     'resume_chain.py', 'run_discovery_all.py', 'run_collection_all.py',
     'run_finish_all.py', 'enumerate_brands.py', 'run_collection_fast.py',
+    'run_expansion.py',
     'discover_v2.py', 'worker/sweep.py', 'worker/daily.py',
     'classify_brands.py', 'backfill_posts.py', 'delete_sync.py', 'publish.py',
 ]
@@ -156,6 +157,12 @@ def log_text():
         except Exception:
             pass
     return '\n'.join(out)
+
+
+def expansion_done():
+    # PDIR, not a hardcoded path: the tests rebind it to a temp dir, and a state check that
+    # ignores that would read the REAL run's marker and skip the stage under test.
+    return os.path.exists(os.path.join(PDIR, 'expansion_seeded'))
 
 
 def collection_done():
@@ -258,6 +265,19 @@ def attempt():
     else:
         say('discovery already complete — going straight to collection')
 
+    # Expansion BEFORE collection, not after. A sweep resolves comments against the
+    # gazetteer as it stores them, so brands seeded later never attach to already-swept
+    # threads — the companies the new categories exist to surface would score zero while
+    # every log line said success.
+    if not expansion_done():
+        if not gate(6):
+            return 90
+        rc = run([sys.executable, f'{HERE}/run_expansion.py'], 'expansion')
+        if rc != 0:
+            return rc
+    else:
+        say('expansion already seeded — going straight to collection')
+
     if not collection_done():
         if not gate(2):
             return 90
@@ -277,7 +297,8 @@ def attempt():
 def status():
     s = state()
     lanes = lane_pids()
-    print(f'discovery={discovery_done()} collection={collection_done()} '
+    print(f'discovery={discovery_done()} expansion={expansion_done()} '
+          f'collection={collection_done()} '
           f'finish={finish_done()} genuine={s["attempts"]}/{MAX_ATTEMPTS} '
           f'network={s.get("net_attempts", 0)}/{MAX_NET_ATTEMPTS} '
           f'gave_up={s.get("gave_up")}')
