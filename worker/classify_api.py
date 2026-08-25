@@ -42,6 +42,7 @@ as a fallback for a day the DeepSeek API is down.
 """
 import argparse
 import csv
+import collections
 import json
 import os
 import queue
@@ -79,6 +80,7 @@ STATS = {"haiku": [0, 0, 0], "deepseek": [0, 0, 0]}   # [committed, batches, pro
 DEAD = {"haiku": 0, "deepseek": 0}    # consecutive failures per lane
 PARSE_FAIL = {"haiku": 0, "deepseek": 0}   # items dropped, output unparseable
 PARSE_RETRY: dict = {}                     # batch key -> attempts, retry-once
+UNMATCHED = [0]                            # answers returned but not keyed to an item
 DEAD_MAX = 12                          # ~36s of solid failure before giving up
 SPEND = {"in": 0, "out": 0, "calls": 0, "truncated": 0}
 
@@ -228,9 +230,32 @@ def call_deepseek(prompt, key, n_items):
 # ── worker ──────────────────────────────────────────────────────────────────
 
 def rows_from(obj, items, mv):
-    rows = []
+    """Map the model's answer back onto the items we sent.
+
+    THE KEY IS `doc_id:brand_slug` and the model does not always use it. Measured
+    across the on-disk cache on 2026-08-25: **3.01% of judgments came back keyed
+    by the bare doc_id**, and 78 of 4,000 batch files were keyed that way
+    ENTIRELY — 100% of a paid batch discarded, 816 opinionated labels in those
+    files alone. The old code did `obj.get(it["item_id"])` and `continue`, which
+    put a missing answer down the SAME branch as a deliberate entity rejection:
+    no row, no counter, no log line, while STATS still counted the batch
+    processed. So the loss was invisible and indistinguishable from the normal
+    ~1/3 entity-reject rate, and it reached a published score in the same minute,
+    because ship_batch runs score_db and publish right after.
+
+    A bare doc_id is accepted ONLY when exactly one item in this batch carries
+    that doc_id. Two brands discussed in one comment share a doc_id, and guessing
+    there would attach a label to the WRONG brand — worse than losing it.
+    """
+    by_doc = collections.Counter(it["doc_id"] for it in items)
+    rows, missing = [], 0
     for it in items:
         r = obj.get(it["item_id"])
+        if r is None and by_doc[it["doc_id"]] == 1:
+            r = obj.get(it["doc_id"])          # unambiguous bare key
+        if r is None:
+            missing += 1
+            continue
         if not isinstance(r, dict) or r.get("entity_ok") is False:
             continue
         rows.append((it["doc_id"], mv,
@@ -240,6 +265,14 @@ def rows_from(obj, items, mv):
                      STAGE_LLM, bool(r.get("comparative")),
                      bool(r.get("recommendation")), bool(r.get("category_gripe")),
                      pg_text(r.get("evidence"), 300), it["brand_slug"]))
+    if missing:
+        # SAY IT. An answer we cannot find is lost work we already paid for, and
+        # it must never again be silent or look like an entity rejection.
+        with _lock:
+            UNMATCHED[0] += missing
+        print(f"  {missing}/{len(items)} answers had no matching key "
+              f"(model keyed them differently) — {UNMATCHED[0]} unmatched so far",
+              flush=True)
     return rows
 
 
