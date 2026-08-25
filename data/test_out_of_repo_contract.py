@@ -35,6 +35,7 @@ import ast
 import importlib
 import importlib.util
 import inspect
+import json
 import os
 import plistlib
 import re
@@ -47,6 +48,10 @@ ROOT = os.path.dirname(HERE)
 SUPERVISOR = os.path.join(HERE, 'pipeline_supervisor.py')
 FAILS = []
 XFAILS = []
+
+
+def skip(name, why):
+    print(f"  skip {name}  [{why}]")
 
 
 def check(name, ok, detail=''):
@@ -121,18 +126,50 @@ print('subject 1 - the launchd plist')
 # --------------------------------------------------------------------------------- the plist
 PLIST = os.environ.get('PIPELINE_PLIST') or sup.AGENT_PLIST
 d = None
-check('the launchd agent is installed where uninstall() looks for it',
-      os.path.isfile(sup.AGENT_PLIST), f'missing {sup.AGENT_PLIST}')
+# THE AGENT'S ABSENCE IS CORRECT WHEN THE RUN IS OVER. decisions/0013 grants a
+# bounded supervisor for ONE already-started job and requires it to leave nothing
+# behind: uninstall() deletes this plist on completion. The first version of this
+# fixture asserted the plist EXISTS, which made a clean finish look like a
+# failure — it went red the moment the pipeline did exactly what the decision
+# demands (2026-08-25 06:18, "pipeline finished cleanly ... removed <plist>").
+#
+# The real invariant is conditional:
+#   run in progress  -> the plist must exist AND be correct
+#   run finished     -> the plist must be GONE
+# state.json's `done` flag is the supervisor's own record of which it is.
+# Read the LIVE state file, not sup.state(). load_supervisor() rebinds the
+# module's paths to a tempdir so the fixture cannot touch a running pipeline —
+# which also means sup.state() answers about the tempdir, not the machine. The
+# first version asked the stub and got {}, concluded a run was outstanding, and
+# failed on a plist that was correctly absent.
+_live_state = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                           '.pipeline', 'state.json')
+try:
+    with open(_live_state) as _f:
+        _run_done = bool(json.load(_f).get('done'))
+except Exception:
+    _run_done = False
+
+if _run_done:
+    check('a finished run left no launchd agent behind (decisions/0013)',
+          not os.path.isfile(sup.AGENT_PLIST),
+          f'{sup.AGENT_PLIST} survived a completed run - that is the automation 0013 bans')
+else:
+    check('a run in progress has its agent installed where uninstall() looks',
+          os.path.isfile(sup.AGENT_PLIST), f'missing {sup.AGENT_PLIST}')
+
 if os.path.isfile(PLIST):
     try:
         with open(PLIST, 'rb') as f:
             d = plistlib.load(f)
     except Exception as e:
         check('the plist parses', False, f'{PLIST}: {e}')
-else:
+elif not _run_done:
     check('the plist under test exists', False,
-          f'{PLIST} is absent - the supervisor has no agent, so nothing re-arms it after a '
-          f'sleep, a crash or a reboot')
+          f'{PLIST} is absent while a run is outstanding - the supervisor has no agent, so '
+          f'nothing re-arms it after a sleep, a crash or a reboot')
+else:
+    skip('the plist contract checks', 'run finished and the agent is correctly gone')
 
 if d is not None:
     argv = d.get('ProgramArguments') or []
