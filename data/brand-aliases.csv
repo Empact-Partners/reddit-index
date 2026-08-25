@@ -13122,9 +13122,9 @@ vocaloid,Yamaha Vocaloid,alias,SAFE,0,False
 vocaloid,vocaloid.com,domain,SAFE,0,False
 vocus-io,Vocus.io,domain,SAFE,0,False
 vocus-io,Vocus,alias,SAFE,0,False
-voice-ai,Voice.ai,domain,SAFE,0,False
-voice-ai,Voice AI voice changer,alias,SAFE,0,False
-voice-ai,Voice.ai changer,alias,SAFE,0,False
+voice-ai-software,Voice.ai,domain,SAFE,0,False
+voice-ai-software,Voice AI voice changer,alias,SAFE,0,False
+voice-ai-software,Voice.ai changer,alias,SAFE,0,False
 voicemod,Voicemod,canonical,SAFE,0,False
 voicemod,Voice Mod,alias,SAFE,0,False
 voicemod,VM soundboard,alias,SAFE,0,False

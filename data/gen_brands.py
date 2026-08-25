@@ -478,6 +478,31 @@ def main():
             raise SystemExit(f"refusing to write: {len(orphan)} carried brands have no surface "
                              f"form (e.g. {orphan[:5]}) — unmatchable in every future sweep.")
 
+    # NO COMPANY MAY OWN A CATEGORY'S SLUG. The site is one flat /[slug]/
+    # namespace, so a company that slugs to a category slug shadows that
+    # category's board — a publish-time collision the expansion QA gate catches
+    # only after collection has already finished.
+    #
+    # import_roster.merge() already applies this rewrite (:211, decisions/0007 —
+    # disambiguate the COMPANY, not the category; 444 brands carry the suffix).
+    # The expansion path did not, so `voice-ai` reached the DB on 2026-08-25
+    # inside the category `voice-ai`, and the finish leg aborted on it. Two paths
+    # create brands; only one reserved slugs. This is the gate for the other.
+    cat_slugs = {r["slug"] for r in csv.DictReader(open(os.path.join(HERE, "categories.csv")))}
+    renamed = {}
+    for r in brand_rows:
+        if r["slug"] in cat_slugs:
+            new_slug = f'{r["slug"]}-software'
+            renamed[r["slug"]] = new_slug
+            r["slug"] = new_slug
+    if renamed:
+        # LOUD, because it changes a live URL.
+        for a in alias_rows:
+            if a["brand_slug"] in renamed:
+                a["brand_slug"] = renamed[a["brand_slug"]]
+        for old, nw in sorted(renamed.items()):
+            print(f"RENAMED {old} -> {nw}: a company cannot own the category slug {old!r}")
+
     for name, rows, cols in [
         ("brands.csv", brand_rows,
          ["brand", "slug", "primary_category_slug", "also_in_category_slugs", "ambiguity_class",
