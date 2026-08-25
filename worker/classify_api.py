@@ -76,6 +76,8 @@ MV = {"haiku": "haiku-4.5-absa-1", "deepseek": "deepseek-v4-flash-absa-1"}
 _stop = threading.Event()
 _lock = threading.Lock()
 STATS = {"haiku": [0, 0, 0], "deepseek": [0, 0, 0]}   # [committed, batches, processed]
+DEAD = {"haiku": 0, "deepseek": 0}    # consecutive failures per lane
+DEAD_MAX = 12                          # ~36s of solid failure before giving up
 SPEND = {"in": 0, "out": 0, "calls": 0, "truncated": 0}
 
 INSERT = """
@@ -303,7 +305,31 @@ def worker(kind, q, state, dblock, brand_names, key, min_swap):
                 STATS[kind][2] += len(items)
         except Exception as e:
             print(f"  [{kind}] batch error: {str(e).splitlines()[0][:100]}", flush=True)
+            with _lock:
+                DEAD[kind] = DEAD.get(kind, 0) + 1
+                n_dead = DEAD[kind]
+            # A LANE THAT CANNOT BILL MUST NOT SPIN. Both providers can go away
+            # without raising anything this loop distinguishes: the DeepSeek
+            # balance went negative on 2026-08-24, and the Max-plan Haiku lane
+            # stops the moment a session limit trips. Catch-print-sleep-loop then
+            # runs forever, committing nothing, while every log line still says
+            # the stage is working -- the exact silent stall this project has
+            # paid for before. So a lane that fails DEAD_MAX times in a row with
+            # nothing committed gives up and lets the process exit non-zero.
+            # ship_batch() calls classify with fatal=False, so score and publish
+            # still run on whatever labels already exist and the category ships;
+            # re-run classification when a lane can bill again.
+            if n_dead >= DEAD_MAX and STATS[kind][0] == 0:
+                print(f"  [{kind}] GIVING UP: {n_dead} consecutive failures, "
+                      f"0 items committed. The lane cannot bill -- check the "
+                      f"DeepSeek balance and the Claude session limit.",
+                      flush=True)
+                _stop.set()
+                return
             time.sleep(3)
+        else:
+            with _lock:
+                DEAD[kind] = 0
 
 
 def reporter(t0, start_backlog):

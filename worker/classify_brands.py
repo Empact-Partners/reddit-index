@@ -71,8 +71,21 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--slugs", default="", help="comma-separated brand slugs")
     ap.add_argument("--slugs-file", default="", help="file, one brand slug per line")
-    ap.add_argument("--deepseek", type=int, default=16)
-    ap.add_argument("--haiku", type=int, default=0)
+    # 2026-08-24: the DeepSeek balance went negative (-$0.82, is_available
+    # false) mid-run, so the lane decisions/0010 rules as THE lane cannot bill.
+    # A dead balance does not fail loudly here: worker() catches, prints
+    # "[deepseek] batch error", sleeps 3s and loops forever, so with
+    # --haiku 0 classification would STALL while still looking alive.
+    # Defaults therefore fall back to the free Max-plan Haiku lane, which is
+    # already wired, writes under its own MODEL_VERSION, and agreed with the
+    # codex baseline on 34/40 with an identical label distribution.
+    # This is a deviation from 0010 forced by billing, not a reversal of it:
+    # 0010's reasoning still holds (Haiku spends the interactive quota and is
+    # ~3.5x slower), so top the balance up and pass --deepseek 16 --haiku 0
+    # to restore the ruled path. worker/update.sh passes its lanes explicitly
+    # and is unaffected by these defaults.
+    ap.add_argument("--deepseek", type=int, default=0)
+    ap.add_argument("--haiku", type=int, default=24)
     ap.add_argument("--allow-metered", action="store_true")
     ap.add_argument("--dry-run", action="store_true", help="count and cost only")
     ap.add_argument("--rejudge", action="store_true",
