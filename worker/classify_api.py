@@ -283,9 +283,14 @@ def worker(kind, q, state, dblock, brand_names, key, min_swap):
             return
         # the machine comes first: a swapping box helps nobody
         if _swap_free_mb() < min_swap:
-            time.sleep(20)
-            q.put(items)
-            continue
+            # Hold the batch HERE rather than q.put()-ing it back: the queue is
+            # bounded, so a worker that requeues can block on a full queue while
+            # the feeder is also blocked putting — see the deadlock note below.
+            # Sleeping in place keeps the item in this worker and cannot wedge.
+            while _swap_free_mb() < min_swap and not _stop.is_set():
+                time.sleep(20)
+            if _stop.is_set():
+                return
         try:
             prompt = build_prompt(items, brand_names, terse=(kind == "deepseek"))
             obj = (call_haiku(prompt) if kind == "haiku"
@@ -300,19 +305,24 @@ def worker(kind, q, state, dblock, brand_names, key, min_swap):
                 # 400 exactly this way, with ZERO error lines in the log.
                 # Retry once — a truncated or preamble-wrapped generation usually
                 # parses on a second attempt — then count it and say so.
-                bkey = items[0]["item_id"]
-                with _lock:
-                    n_try = PARSE_RETRY.get(bkey, 0)
-                    PARSE_RETRY[bkey] = n_try + 1
-                if n_try == 0:
-                    q.put(items)
-                else:
+                # RETRY INLINE, NEVER BY REQUEUEING. The first version of this
+                # called q.put(items) to try again later, and that DEADLOCKS: the
+                # queue is bounded (maxsize = workers + 8), so once enough batches
+                # fail every worker blocks in q.put while the feeder blocks in
+                # q.put too, and nothing is left to consume. Observed 2026-08-25
+                # on ship batch 8 — main thread and all 8 workers parked in
+                # lock_PyThread_acquire_lock, zero `claude` children, zero
+                # progress, load 3, no output. A worker must never put back into
+                # the queue it drains.
+                obj = call_haiku(prompt) if kind == "haiku" else \
+                    call_deepseek(prompt, key, len(items))
+                if not obj:
                     with _lock:
                         PARSE_FAIL[kind] = PARSE_FAIL.get(kind, 0) + len(items)
+                        lost = PARSE_FAIL[kind]
                     print(f"  [{kind}] UNPARSEABLE after a retry — dropping "
-                          f"{len(items)} items ({PARSE_FAIL[kind]} lost so far)",
-                          flush=True)
-                continue
+                          f"{len(items)} items ({lost} lost so far)", flush=True)
+                    continue
             # cache to disk BEFORE the DB, so a crash never loses paid work
             bid = f"{kind}_{items[0]['item_id'][:24]}_{len(items)}"
             bid = re.sub(r"[^A-Za-z0-9_.-]", "_", bid)
