@@ -335,7 +335,19 @@ def commit(state, dblock, rows):
         with dblock:
             db.run(state, _ins, label="api commit")
         return len(rows)
-    except Exception:
+    except Exception as bulk_err:
+        # ROLL BACK FIRST. A server-side abort leaves the shared connection in a
+        # failed transaction (SQLSTATE 25P02), and every subsequent statement on
+        # it raises InFailedSqlTransaction — which db.is_transient() does not
+        # match, so db.run re-raises without reconnecting and all 40 per-row
+        # retries land in `except Exception: pass`. The comment below says one
+        # poison row must not block 39; without this line the inverse happens and
+        # one poison row blocks all 40.
+        try:
+            with dblock:
+                state["conn"].rollback()
+        except Exception:
+            pass
         good = 0
         for row in rows:                      # one poison row must not block 39
             try:
@@ -348,6 +360,15 @@ def commit(state, dblock, rows):
                 good += 1
             except Exception:
                 pass
+        if good < len(rows):
+            # SAY IT. Nothing compared this return against len(rows), so a short
+            # write was silent — and worse than silent: the disk cache is written
+            # one caller up BEFORE commit, so load_judged() adds these ids to a
+            # permanent skip-set and no later run will ever retry them. A label
+            # lost here is lost for good unless somebody reads this line.
+            print(f"  commit wrote {good}/{len(rows)} rows "
+                  f"({str(bulk_err).splitlines()[0][:80]}) — the rest are cached "
+                  f"as judged and will NOT be retried", flush=True)
         return good
 
 
