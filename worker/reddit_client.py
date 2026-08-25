@@ -78,7 +78,22 @@ def _read_ratelimit(headers):
             return
         rem = float(rem)
         rst = float(headers.get("x-ratelimit-reset") or 60.0)
+        prev = _adaptive[0]
         _adaptive[0] = max(SLEEP, rst / max(rem, 1.0)) if rem < 30 else SLEEP
+        # SAY SO. With remaining at 0 this sets the inter-call floor to the whole
+        # reset window — up to ~600s — and get() then sleeps it at :169 in total
+        # silence. On 2026-08-24 that produced 14.5 minutes of a live sweep making
+        # no log entry at all: the process sat in time_sleep at 0% CPU, the
+        # supervisor reported the lane alive, and it was indistinguishable from a
+        # hang. It took a sample(1) and a header read to establish the sweep was
+        # fine. Progress is a counter the code PRINTS; so is a deliberate wait.
+        if _adaptive[0] >= 30 and _adaptive[0] > prev * 1.5:
+            print(f"  rate limit: {rem:.0f} left, reset in {rst:.0f}s — pacing at "
+                  f"{_adaptive[0]:.0f}s/call until the window rolls (not a hang)",
+                  flush=True)
+        elif prev >= 30 and _adaptive[0] < 30:
+            print(f"  rate limit cleared ({rem:.0f} left) — back to {SLEEP}s/call",
+                  flush=True)
     except (TypeError, ValueError):
         pass
 
