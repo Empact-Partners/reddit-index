@@ -70,6 +70,9 @@ CACHE = os.path.join(HERE, ".cache", "api-absa")
 os.makedirs(CACHE, exist_ok=True)
 
 HAIKU_MODEL = "claude-haiku-4-5-20251001"
+HAIKU_SYSTEM = ("You are a precise sentiment labeller. Follow the user's "
+                "instructions exactly and reply with JSON only, no preamble, "
+                "no commentary, no code fences.")
 DS_MODEL = "deepseek-v4-flash"
 OUT_TOK_PER_ITEM = 333          # measured for deepseek-v4-flash
 MV = {"haiku": "haiku-4.5-absa-1", "deepseek": "deepseek-v4-flash-absa-1"}
@@ -209,7 +212,26 @@ def call_haiku(prompt):
     global CLAUDE_BIN
     if CLAUDE_BIN is None:
         CLAUDE_BIN = _claude_bin()
-    p = subprocess.run([CLAUDE_BIN, "-p", "--model", HAIKU_MODEL],
+    # --system-prompt AND --setting-sources: run this as a LABELLER, not as an
+    # assistant. Without them `claude -p` auto-discovers the user and project
+    # CLAUDE.md, loads settings and fires SessionStart hooks, so every call drags
+    # the whole global config in before it sees the batch — the model literally
+    # answers "I've absorbed the full CLAUDE.md context". Two consequences:
+    #
+    #   COST: that context is re-sent on every one of thousands of calls, and it
+    #   is what pushes a 40-item batch past the window. Measured 2026-08-25 on
+    #   the same 40-item prompt: baseline rc=1 "Prompt is too long", 0/40
+    #   answers; with these flags rc=0 and 40/40. The whole night's "unparseable"
+    #   epidemic was this.
+    #
+    #   CORRECTNESS, which matters more: that config is a marketing assistant's
+    #   brief — brand voice, content rules, an identity. Handing it to a
+    #   sentiment labeller invites exactly the drift the MODEL_VERSION scheme
+    #   exists to keep track of. A classifier should see the classification
+    #   prompt and nothing else.
+    p = subprocess.run([CLAUDE_BIN, "-p", "--model", HAIKU_MODEL,
+                        "--setting-sources", "",
+                        "--system-prompt", HAIKU_SYSTEM],
                        input=prompt, capture_output=True, text=True, timeout=900)
     out = (p.stdout or "") + (p.stderr or "")
     if p.returncode != 0 and "too long" in out.lower():
