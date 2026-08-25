@@ -160,11 +160,20 @@ async function loadSnapshotOnce(): Promise<Snapshot> {
   // the collection pipeline was writing, and the live site silently stopped
   // taking new data. The read is pure, so retrying is free — the comment above
   // withRetry already argues this for the connection-drop case.
+  // Array.from(), NOT rows.some(). The row set comes back SPARSE — it has holes,
+  // not nulls — and `map` preserves holes, so `new Map()` iterates them as
+  // undefined and throws. Array.prototype.some SKIPS holes, so the first version
+  // of this guard walked straight past the very thing it was written to catch and
+  // the build failed again at the same line. Array.from materialises a hole as
+  // undefined, which is what makes it visible.
+  //   [1, , 3].some(r => r == null)              -> false
+  //   Array.from([1, , 3]).some(r => r == null)  -> true
   const bad = ([["categories", catRows], ["brands", brandRows],
                 ["scores", scoreRows], ["subCounts", subCounts],
                 ["mentions", mentionRows], ["mentionAgg", mentionAgg],
                 ["threads", threadRows]] as [string, unknown[]][])
-    .filter(([, rows]) => !Array.isArray(rows) || rows.some((r) => r == null));
+    .filter(([, rows]) => !Array.isArray(rows)
+                          || Array.from(rows).some((r) => r == null));
   if (bad.length) {
     throw new Error(
       `PARTIAL_RESULT: ${bad.map(([n]) => n).join(", ")} came back with a null row — ` +
