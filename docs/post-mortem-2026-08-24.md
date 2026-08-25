@@ -366,6 +366,39 @@ Recovered 62 scored companies immediately (400 -> 462) by re-running the batches
 reported success. **Cost: two ship batches published without scores, both re-runnable, no
 data lost — mentions are banked and a label is computable later.**
 
+### I6 · I shipped the defect this document is about, two hours after describing it
+
+The I5 fix for silently-dropped batches retried them by calling `q.put(items)`. The queue is
+bounded — `maxsize = workers + 8`. Once enough batches failed, every worker blocked in
+`q.put` while the feeder was also blocked in `q.put`, and nothing was left to consume.
+
+Ship batch 8 wedged at 03:13. **Main thread and all eight workers parked in
+`lock_PyThread_acquire_lock`, zero `claude` children, zero progress, load 3, no output.**
+
+It was worse than a hang. The stall detector that would have stopped it — the one widened
+from 5 to 20 minutes ninety minutes earlier — runs on the MAIN thread, which was itself
+blocked in `q.put`. **It could never fire.** The batch could not self-recover, and the
+pipeline would have sat there until morning; it moved on only because the classify was killed
+by hand.
+
+Found by sampling the stuck process instead of reasoning about it: a healthy provider (`rc=0`
+in 12.8s on a direct probe) next to a classify pid with **zero children** is a deadlock, not
+an outage. The two facts together name it in one step; either alone is ambiguous.
+
+**The rule:** a worker must never put back into the queue it drains. The retry is now inline.
+The pre-existing swap-pressure path had the identical shape — `sleep(20)` then `q.put(items)`
+— and is now a wait-in-place loop that also honours `_stop`, so it can neither wedge nor
+outlive the run.
+
+**Cost: ~12 minutes of a wedged batch, no data lost.** But the honest entry is not the cost.
+This document's thesis, written eight hours earlier, is that the defining defect of this
+project is *a failure that presents as success or as a different failure*. I5, three hours
+before, catalogued three of them. Then I shipped one: a retry that made the system stop
+retrying, in a path whose own supervisor could not observe it.
+
+The reviewing discipline held even where the writing discipline did not — the deadlock was
+found in twelve minutes by measuring rather than assuming. That is the part worth keeping.
+
 ## Wall-clock loss, ranked
 
 | # | Incident | Loss |
