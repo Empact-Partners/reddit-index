@@ -327,6 +327,45 @@ its 635k-item disk skip-set, so nothing was lost. **Cost: 0.** The catch-up is d
 collection finishes rather than run thin, because the sweep is rate-limit bound and will not
 go faster for having the CPU.
 
+### I5 · Three bugs in the classification lane, all reporting success
+
+Batch 6 shipped five categories with **zero labels**. So did batch 7. Both printed
+`stalled at 0/N — stopping` and exited 0, and the lane was fine — probed `rc=0` in 8.7s
+seconds after batch 7 gave up. Pulling that one thread found three separate defects, each of
+which loses work while the run looks healthy.
+
+**The stall window was calibrated for the wrong lane.** `classify_brands.py:162` stopped after
+5 minutes with no progress. That is right for DeepSeek, where a batch returns in seconds. The
+Haiku lane is one local `claude` process per worker at 100-300s a call with a 900s internal
+timeout, so a 300s window **kills a healthy lane before its first batch can land**. Now
+lane-aware: 20 min for the CLI lane, 5 for HTTP.
+
+**The default width was the latency.** `--haiku` defaulted to 24. With a local process per
+worker, going wide makes every call slower rather than the pass faster: 24 workers beside a
+live sweep finished nothing at load 76; 8 workers commit 123 labels in 2 minutes at load 7.
+Default is now 8 — the number `classify_api.py`'s own header had been arguing for all along
+(see I4, where I ignored it).
+
+**And the one that matters most — a batch that did not parse was thrown away in silence.**
+
+    if not obj:
+        continue
+
+No error, no counter, no requeue: 40 items gone per occurrence. `STATS` advances only on
+success, so `processed` flatlines and the run then reports **"stalled at 688/1088"** — naming
+a stall while it is actually discarding work. Measured on one pass: **420 committed, 400
+dropped, zero error lines, exit 0.** It now retries once (a truncated or preamble-wrapped
+generation usually parses on the second attempt), counts what it still cannot read, and says
+so both inline and in the final summary.
+
+The pattern across all three is the one this document exists for: **a failure that presents
+as a different failure, or as success.** A stall that was really a discard. A healthy lane
+reported as stalled. A default that made the thing it was supposed to speed up slower.
+
+Recovered 62 scored companies immediately (400 -> 462) by re-running the batches that had
+reported success. **Cost: two ship batches published without scores, both re-runnable, no
+data lost — mentions are banked and a label is computable later.**
+
 ## Wall-clock loss, ranked
 
 | # | Incident | Loss |
