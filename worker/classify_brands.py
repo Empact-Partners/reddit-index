@@ -183,6 +183,13 @@ def main():
     for t in threads:
         t.join(timeout=300)
 
+    lost = sum(CA.PARSE_FAIL.values())
+    if lost:
+        # Say it at the END too. The per-batch line scrolls past in a long run,
+        # and a pass that dropped work must not summarise as if it did not.
+        print(f"!! {lost} items dropped as UNPARSEABLE — they stay unlabelled and "
+              f"will be picked up by a re-run (see SOP: catching up classification)",
+              flush=True)
     tot = sum(v[0] for v in CA.STATS.values())
     print(f"committed {tot:,} labels in {(time.time()-t0)/60:.1f} min · "
           f"deepseek spend ~${CA.SPEND['in']/1e6*0.28 + CA.SPEND['out']/1e6*0.42:.2f}",

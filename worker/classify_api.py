@@ -77,6 +77,8 @@ _stop = threading.Event()
 _lock = threading.Lock()
 STATS = {"haiku": [0, 0, 0], "deepseek": [0, 0, 0]}   # [committed, batches, processed]
 DEAD = {"haiku": 0, "deepseek": 0}    # consecutive failures per lane
+PARSE_FAIL = {"haiku": 0, "deepseek": 0}   # items dropped, output unparseable
+PARSE_RETRY: dict = {}                     # batch key -> attempts, retry-once
 DEAD_MAX = 12                          # ~36s of solid failure before giving up
 SPEND = {"in": 0, "out": 0, "calls": 0, "truncated": 0}
 
@@ -289,6 +291,27 @@ def worker(kind, q, state, dblock, brand_names, key, min_swap):
             obj = (call_haiku(prompt) if kind == "haiku"
                    else call_deepseek(prompt, key, len(items)))
             if not obj:
+                # A BATCH THAT DOES NOT PARSE IS LOST WORK, NOT A NO-OP. This was
+                # a bare `continue`: no error, no counter, no requeue — 40 items
+                # gone per occurrence, in silence. STATS only advances on success,
+                # so the reporter's `processed` line flatlines and the run then
+                # reports "stalled at N/M" while it is actually discarding work.
+                # Measured 2026-08-25: a 1,088-item pass committed 420 and dropped
+                # 400 exactly this way, with ZERO error lines in the log.
+                # Retry once — a truncated or preamble-wrapped generation usually
+                # parses on a second attempt — then count it and say so.
+                bkey = items[0]["item_id"]
+                with _lock:
+                    n_try = PARSE_RETRY.get(bkey, 0)
+                    PARSE_RETRY[bkey] = n_try + 1
+                if n_try == 0:
+                    q.put(items)
+                else:
+                    with _lock:
+                        PARSE_FAIL[kind] = PARSE_FAIL.get(kind, 0) + len(items)
+                    print(f"  [{kind}] UNPARSEABLE after a retry — dropping "
+                          f"{len(items)} items ({PARSE_FAIL[kind]} lost so far)",
+                          flush=True)
                 continue
             # cache to disk BEFORE the DB, so a crash never loses paid work
             bid = f"{kind}_{items[0]['item_id'][:24]}_{len(items)}"
