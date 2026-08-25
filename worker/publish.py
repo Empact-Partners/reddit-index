@@ -96,7 +96,29 @@ def main():
         if state in ("READY", "ERROR", "CANCELED"):
             mins = (time.time() - t0) / 60
             print(f"{state} in {mins:.1f} min", flush=True)
-            return 0 if state == "READY" else 1
+            if state == "READY":
+                return 0
+            # A BUILD THAT LOST A RACE IS NOT A FAILED PUBLISH. Every git push to
+            # this repo triggers its own GitHub-integration build, and on
+            # 2026-08-25 twelve pushes in one night meant three builds in flight
+            # at once; one was superseded and came back ERROR while a sibling
+            # deployment of the same commit went READY and carried the same data
+            # (verified on the rendered page). ship_batch runs publish with
+            # fatal=False, so a false failure here is silent — it just makes the
+            # log claim a publish failed when the site is current.
+            # Only forgive it when a NEWER deployment is actually READY: that is
+            # the difference between "someone else shipped it" and "nothing
+            # shipped". A genuine build break still returns 1.
+            ok, lst = api(f"/v6/deployments?limit=8&projectId={PROJECT_ID}&teamId={TEAM}")
+            newer = [d for d in (lst.get("deployments") or [])
+                     if d.get("created", 0) > dep.get("createdAt", 0)
+                     and d.get("state") == "READY"]
+            if newer:
+                print(f"  superseded: {newer[0].get('uid')} is READY and newer — "
+                      f"the site has this data, not treating as a failed publish",
+                      flush=True)
+                return 0
+            return 1
     print(f"still building after {args.timeout}s — not waiting further", flush=True)
     return 0
 

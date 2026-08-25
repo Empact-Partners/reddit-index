@@ -72,7 +72,7 @@ async function withRetry<T>(fn: () => Promise<T>, tries = 4): Promise<T> {
     } catch (e) {
       last = e;
       const msg = String((e as { message?: string })?.message ?? e);
-      const transient = /CONNECTION_CLOSED|ECONNRESET|ETIMEDOUT|socket|terminat|statement timeout|57014/i.test(msg);
+      const transient = /CONNECTION_CLOSED|ECONNRESET|ETIMEDOUT|socket|terminat|statement timeout|57014|PARTIAL_RESULT/i.test(msg);
       if (!transient || i === tries - 1) throw e;
       await new Promise((r) => setTimeout(r, 1500 * 2 ** i));
     }
@@ -149,6 +149,28 @@ async function loadSnapshotOnce(): Promise<Snapshot> {
     // 0.24s and the map is built in JS.
     s`select id, link_title from published.threads`,
   ]);
+
+  // A PARTIAL READ MUST RETRY, NOT KILL THE BUILD. Under prerender load the
+  // Supabase transaction pooler can hand back a row set containing an undefined
+  // entry, and `new Map(rows.map(...))` then throws
+  // "TypeError: Iterator value undefined is not an entry object" — an opaque
+  // message that does NOT match withRetry's transient pattern, so the retry this
+  // file already implements never fires and the whole build dies. Three
+  // consecutive production builds failed exactly this way on 2026-08-25 while
+  // the collection pipeline was writing, and the live site silently stopped
+  // taking new data. The read is pure, so retrying is free — the comment above
+  // withRetry already argues this for the connection-drop case.
+  const bad = ([["categories", catRows], ["brands", brandRows],
+                ["scores", scoreRows], ["subCounts", subCounts],
+                ["mentions", mentionRows], ["mentionAgg", mentionAgg],
+                ["threads", threadRows]] as [string, unknown[]][])
+    .filter(([, rows]) => !Array.isArray(rows) || rows.some((r) => r == null));
+  if (bad.length) {
+    throw new Error(
+      `PARTIAL_RESULT: ${bad.map(([n]) => n).join(", ")} came back with a null row — ` +
+      `the pooler returned an incomplete set. Retrying rather than building a ` +
+      `site that is missing rows.`);
+  }
 
   const catById = new Map(catRows.map((c) => [String(c.id), c]));
   const brandById = new Map(brandRows.map((b) => [String(b.id), b]));
