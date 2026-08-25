@@ -399,6 +399,52 @@ retrying, in a path whose own supervisor could not observe it.
 The reviewing discipline held even where the writing discipline did not — the deadlock was
 found in twelve minutes by measuring rather than assuming. That is the part worth keeping.
 
+### I7 · The root cause was one sentence, four layers below where it showed
+
+    $ claude -p --model haiku < 10KB-prompt
+    rc=1
+    Prompt is too long
+
+`BATCH = 40` builds a ~10 KB prompt. The CLI refuses it in 3.6 seconds.
+`subprocess.run` does not raise without `check=True`, so that plain-text refusal
+was handed to `parse_obj`, came back `None`, and was recorded as a garbled model
+response.
+
+**148 consecutive batches "unparseable", 0 committed, 25.9 minutes — with the
+lane perfectly healthy.** A 1-item prompt answers correctly; 15 items returns
+15/15 properly keyed; 8 returns 8/8. `BATCH=40` was tuned for DeepSeek, an HTTP
+provider with its own `max_tokens` scaling. Nothing had ever sized a batch for
+the CLI lane, and nothing checked its exit code.
+
+**The chain of misreporting, from fault to symptom:**
+
+    prompt refused  ->  "unparseable"  ->  no progress  ->  "stalled at 0/5913"
+
+Four layers, and **each layer had its own genuine bug that had to be fixed before
+the next one became visible**: the stall window calibrated for the wrong lane
+(I5), the width-is-latency default (I5), the silent discard of unparseable
+batches (I5), a deadlock introduced by the fix for that (I6). All four were real.
+None of them was this. The honesty fix is what finally exposed it — once dropped
+batches were counted and printed, "148 unparseable" was on the screen, and a
+two-minute experiment at 40/15/8 items ended the search.
+
+**The fix does not pick a batch size.** Prompt length is driven by comment
+length, so any fixed number is too large for some batches and wasteful for
+others. `call_haiku` now distinguishes a REFUSAL (nonzero exit) from a bad
+answer, and `call_lane` halves the batch and recurses when refused. It self-tunes
+to the actual text and leaves no constant for anyone to maintain.
+
+Proven on the exact 40-item batch that had been returning nothing: **40/40
+answers, all properly keyed.** Re-running batch 9's slug file: 57 labels in 2
+minutes, against 0 in 25.9 minutes an hour earlier.
+
+**The lesson worth keeping is not "check exit codes."** It is that a diagnosis
+which explains the symptom is not thereby correct. "The stall window is too
+short" explained the stall. "Batches are being dropped silently" explained the
+flatline. Both were true, both were worth fixing, and both were three layers
+above the fault. The thing that ended it was making the system say what it was
+actually doing, and then reading the number.
+
 ## Wall-clock loss, ranked
 
 | # | Incident | Loss |
