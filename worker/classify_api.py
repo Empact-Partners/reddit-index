@@ -308,6 +308,17 @@ def worker(kind, q, state, dblock, brand_names, key, min_swap):
             with _lock:
                 DEAD[kind] = DEAD.get(kind, 0) + 1
                 n_dead = DEAD[kind]
+            # SCOPE, stated plainly because a comment that overclaims is the same
+            # defect as a check that cannot fail: this catches a lane that RAISES.
+            # It does NOT catch a lane that HANGS — call_haiku waits up to 900s on
+            # its subprocess, so a quota-limited `claude -p` that never returns
+            # produces no exception and never increments DEAD. On 2026-08-25 at
+            # 00:40 that is exactly what happened: 0 batches in 6 minutes, no
+            # errors, no give-up. What caught it was the pre-existing aggregate
+            # stall detector ("stalled at 0/N — stopping"), which is the right
+            # mechanism for that shape. Do not add a second one here; do not
+            # assume this guard covers it.
+            #
             # A LANE THAT CANNOT BILL MUST NOT SPIN. Both providers can go away
             # without raising anything this loop distinguishes: the DeepSeek
             # balance went negative on 2026-08-24, and the Max-plan Haiku lane
