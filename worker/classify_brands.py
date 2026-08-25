@@ -150,7 +150,22 @@ def main():
                       "subreddit": sub, "link_title": title, "doc_id": doc_id,
                       "marked": mark_target(body or "", form or "", max(0, off))})
     for i in range(0, len(items), CA.BATCH):
-        q.put(items[i:i + CA.BATCH])
+        # A give-up sets _stop and the workers exit at the top of their loop. An
+        # unconditional put into a 16-slot queue then blocks forever with nothing
+        # left to drain it, and run_depth90's step() is a subprocess.call with no
+        # timeout — an indefinite hang on the critical path. Put with a timeout
+        # and re-check.
+        chunk = items[i:i + CA.BATCH]
+        while not CA._stop.is_set():
+            try:
+                q.put(chunk, timeout=5)
+                break
+            except queue.Full:
+                continue
+        if CA._stop.is_set():
+            print(f"lane stopped while feeding — {i} of {len(items)} items queued",
+                  flush=True)
+            break
     # An empty QUEUE is not a finished run: the last N batches are still inside
     # the workers when the queue drains, and signalling _stop then abandons
     # calls we already paid for (measured: 312 of 1,452 items, 18 labels). Wait
@@ -168,8 +183,18 @@ def main():
     stall_ticks = 240 if args.haiku else 60      # 20 min for the CLI lane, 5 for HTTP
     last, stalled = -1, 0
     while True:
-        done = sum(v[2] for v in CA.STATS.values())
+        # EVERY TERMINAL OUTCOME, not just success. STATS[..][2] advances only
+        # when a batch commits, so a single dropped batch used to leave this loop
+        # sitting the full 240 ticks (20 min) with every worker idle and all the
+        # work already done — and then printing "stalled at N/fed", the same
+        # string a genuinely broken lane prints. The live log carries that shape
+        # repeatedly: "stalled at 495/535", "stalled at 7676/8156".
+        done = (sum(v[2] for v in CA.STATS.values())
+                + sum(CA.PARSE_FAIL.values()) + sum(CA.DROPPED.values()))
         if done >= fed:
+            break
+        if CA._stop.is_set():                  # a lane that gave up ends the wait
+            print(f"lane stopped at {done}/{fed}", flush=True)
             break
         stalled = 0 if done != last else stalled + 1
         last = done
@@ -183,6 +208,12 @@ def main():
     for t in threads:
         t.join(timeout=300)
 
+    dropped = sum(CA.DROPPED.values())
+    if dropped:
+        print(f"!! {dropped} items dropped to ERRORS — re-runnable, see the batch "
+              f"error lines above", flush=True)
+    if CA.UNMATCHED[0]:
+        print(f"!! {CA.UNMATCHED[0]} answers came back with no matching key", flush=True)
     lost = sum(CA.PARSE_FAIL.values())
     if lost:
         # Say it at the END too. The per-batch line scrolls past in a long run,

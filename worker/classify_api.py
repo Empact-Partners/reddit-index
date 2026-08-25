@@ -81,6 +81,7 @@ DEAD = {"haiku": 0, "deepseek": 0}    # consecutive failures per lane
 PARSE_FAIL = {"haiku": 0, "deepseek": 0}   # items dropped, output unparseable
 PARSE_RETRY: dict = {}                     # batch key -> attempts, retry-once
 UNMATCHED = [0]                            # answers returned but not keyed to an item
+DROPPED = {"haiku": 0, "deepseek": 0}      # items lost to an exception
 DEAD_MAX = 12                          # ~36s of solid failure before giving up
 SPEND = {"in": 0, "out": 0, "calls": 0, "truncated": 0}
 
@@ -370,7 +371,18 @@ def worker(kind, q, state, dblock, brand_names, key, min_swap):
                 STATS[kind][1] += 1
                 STATS[kind][2] += len(items)
         except Exception as e:
-            print(f"  [{kind}] batch error: {str(e).splitlines()[0][:100]}", flush=True)
+            # SAME TREATMENT AS THE PARSE PATH. This branch also drops 40 items,
+            # and until now recorded them nowhere: DEAD is a per-lane CONSECUTIVE
+            # counter that any sibling worker's success resets, and no summary
+            # printed it. So an exception-dropped run announced "committed N
+            # labels" as though N were the whole job. Reachable through
+            # call_haiku's 900s TimeoutExpired and through a non-numeric
+            # intensity in rows_from.
+            with _lock:
+                DROPPED[kind] = DROPPED.get(kind, 0) + len(items)
+                gone = DROPPED[kind]
+            print(f"  [{kind}] batch error: {str(e).splitlines()[0][:100]} "
+                  f"— dropping {len(items)} items ({gone} dropped so far)", flush=True)
             with _lock:
                 DEAD[kind] = DEAD.get(kind, 0) + 1
                 n_dead = DEAD[kind]
