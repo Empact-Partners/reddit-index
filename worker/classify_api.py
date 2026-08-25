@@ -319,11 +319,19 @@ def worker(kind, q, state, dblock, brand_names, key, min_swap):
             # ship_batch() calls classify with fatal=False, so score and publish
             # still run on whatever labels already exist and the category ships;
             # re-run classification when a lane can bill again.
-            if n_dead >= DEAD_MAX and STATS[kind][0] == 0:
-                print(f"  [{kind}] GIVING UP: {n_dead} consecutive failures, "
-                      f"0 items committed. The lane cannot bill -- check the "
-                      f"DeepSeek balance and the Claude session limit.",
-                      flush=True)
+            # Consecutive, NOT lifetime: the else-branch below resets the
+            # counter on any success, so DEAD_MAX in a row means the lane is
+            # down right now. An earlier version also required
+            # STATS[kind][0] == 0, which looked safer and was strictly worse —
+            # a quota that trips PART WAY through a run (the common shape: a
+            # Max-plan bucket empties mid-batch) leaves committed > 0 forever,
+            # so the give-up could never fire and the lane span until morning.
+            if n_dead >= DEAD_MAX:
+                print(f"  [{kind}] GIVING UP: {n_dead} consecutive failures "
+                      f"with no success in between ({STATS[kind][0]} items "
+                      f"committed earlier this run). The lane cannot bill -- "
+                      f"check the DeepSeek balance and the Claude session "
+                      f"limit. Re-run classification when one can.", flush=True)
                 _stop.set()
                 return
             time.sleep(3)
