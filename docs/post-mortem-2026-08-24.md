@@ -302,6 +302,31 @@ subagents in writing never to do it.
 instead, and one of its checks asserts the live state was never written. **Cost: 0. Verified
 undamaged — 172 banked, valid, before and after.**
 
+### I4 · Twenty CLI workers, against the warning in the file's own header
+
+With the quota back at 00:50 and 26,457 items unlabelled, I started a catch-up classification
+at `--haiku 20`. Five minutes later: load 76, **swap at 24,629 MB of 25,600 — 971 MB free**,
+44 `claude` processes. That is the shape that OOM'd a fleet on 2026-08-21, with a sweep 92
+subreddits from done as the thing it would have taken down.
+
+`classify_api.py`'s own header says it, in the section titled CONCURRENCY, THE LESSON THAT
+COST A MORNING:
+
+> a local agent process costs kernel scheduling, not RAM. So this module never trusts a
+> resource gauge alone — it measures COMPLETED ITEMS PER MINUTE and the operator ramps on
+> that number. HTTP providers cost almost nothing locally and can go wide; **the claude CLI
+> pool is a local process per worker and must be ramped carefully.**
+
+I went straight to 20 without ramping, on a box already running the sweep, a Vercel build and
+another session's work. **This is the root cause of the entire episode this document is about,
+recurring on its last page: the guidance existed, in the file I was invoking, and I did not
+read it before acting.**
+
+Stopped at 5 minutes. 506 labels were already committed and kept — the stage is resumable off
+its 635k-item disk skip-set, so nothing was lost. **Cost: 0.** The catch-up is deferred until
+collection finishes rather than run thin, because the sweep is rate-limit bound and will not
+go faster for having the CPU.
+
 ## Wall-clock loss, ranked
 
 | # | Incident | Loss |
