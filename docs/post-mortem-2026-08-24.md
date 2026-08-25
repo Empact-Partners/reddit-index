@@ -242,6 +242,66 @@ property that cost 72 minutes is never exercised.
 
 ---
 
+## Class I — the evening of 2026-08-24, after this document was written
+
+Three more, all of them existing classes recurring rather than anything new. That is the
+useful part: the taxonomy held, and each was found by the discipline this document argues
+for rather than by luck.
+
+### I1 · The DeepSeek balance went negative mid-run — and would have spun until morning
+
+Classification runs on the DeepSeek API by `decisions/0010`. At roughly 22:15 the balance was
+**-$0.82, `is_available: false`**. The Max-plan Haiku fallback exists and is wired, but the
+defaults were `--deepseek 16 --haiku 0`, so the next ship would have gone entirely to a lane
+that could not bill.
+
+What made it dangerous was not the outage. `worker()` catches the billing error, prints one
+line, sleeps 3 seconds, and loops — forever, committing nothing, while every reporter line
+still says the stage is working. **Class F, exactly: the expensive silent one.**
+
+Defaults now fall back to the free Haiku lane, and a lane that fails `DEAD_MAX` times in a row
+gives up and exits rather than spinning. `ship_batch` calls classify with `fatal=False`, so
+score and publish still run and the category ships with the labels that exist.
+
+**The first version of that guard was wrong in an instructive way.** It also required
+`STATS[kind][0] == 0` — no items committed. That reads as the safer condition and is strictly
+worse: the common shape is a quota dying PART WAY through a run, which leaves committed > 0
+forever, so the give-up could never fire. Consecutive failures is the right measure, because
+any success resets the counter. Found by testing the guard under a simulated dead lane instead
+of trusting it. **Cost: 0, caught before the batch.** Test: proven both from a cold start and
+after 500 prior commits.
+
+### I2 · Fourteen and a half minutes of a live sweep writing nothing
+
+The log went silent at 23:04. Both lanes reported alive; the sweep process sat at **0.0% CPU**.
+It looked exactly like a hang, and this project has lost hours to real ones.
+
+It was not a hang. `sample(1)` on the pid put it in `time_sleep`, and a direct header read
+returned **429, remaining 0, used 1000**. `_read_ratelimit` sets the inter-call floor to
+`reset/remaining`, which at zero remaining is the entire window — up to ~600s — and `get()`
+then sleeps it in complete silence. It resumed on its own at 23:21, correct throughout.
+
+The behaviour is right. The silence is **Class D**: this document already rules that progress
+is a counter the code PRINTS, never a side effect inferred from outside. A deliberate
+multi-minute wait needs the same treatment, or the next person spends fifteen minutes proving
+nothing is broken. It now announces the wait once and the recovery once. **Cost: ~15 min of
+diagnosis, 0 of collection.**
+
+### I3 · A fixture that wrote the live pipeline's state file
+
+While fixturing the wave-2 preflight, the first version wrote synthetic state into the LIVE
+`depth90_done.json` — the file the running sweep reads and rewrites as it banks each
+subreddit — and restored it afterwards.
+
+It got away with it. "Restored it afterwards" is not a safety property: a subreddit banked
+inside that window is simply lost, and the loss is invisible. This is **Class G, operational
+self-harm**, and it was committed by the same session that had spent the evening telling six
+subagents in writing never to do it.
+
+`INDEX_ROOT` is now a constant the fixture overrides, so the test builds a sandbox index
+instead, and one of its checks asserts the live state was never written. **Cost: 0. Verified
+undamaged — 172 banked, valid, before and after.**
+
 ## Wall-clock loss, ranked
 
 | # | Incident | Loss |
