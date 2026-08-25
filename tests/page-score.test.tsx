@@ -21,8 +21,25 @@ describe("page-score parity with worker/score.py", () => {
       expect(pageScore(f.pos, f.neg, alpha0, beta0)).toBe(f.score);
     });
   }
-  it("no opinion -> no score", () => {
-    expect(pageScore(0, 0, 5, 5)).toBeNull();
+  // 2026-08-25: this used to assert null. A brand Reddit discusses without
+  // praising or damning it now scores at the CATEGORY BASELINE — with pos = neg
+  // = 0 the posterior is the prior, so the same quantile call answers "we know
+  // nothing beyond this category", which is the truth. Nothing is invented.
+  // The null case moved up a level: snapshot.ts returns null when there is no
+  // LABELLED mention at all, because "discussed neutrally" and "never mentioned"
+  // are different facts that used to render identically.
+  it("no opinion -> the category baseline, not null", () => {
+    const s = pageScore(0, 0, 5, 5);
+    expect(s).not.toBeNull();
+    expect(s).toBe(30);
+  });
+  // The property that makes this safe: a neutral brand can never outrank an
+  // evidenced one, because every score is the same lower-bound quantile.
+  it("a neutral brand sits between damned and praised", () => {
+    const neutral = pageScore(0, 0, 5, 5)!;
+    expect(pageScore(0, 10, 5, 5)!).toBeLessThan(neutral);
+    expect(pageScore(10, 0, 5, 5)!).toBeGreaterThan(neutral);
+    expect(pageScore(1, 0, 5, 5)!).toBeGreaterThan(neutral);
   });
   it("betainc is a CDF", () => {
     expect(betainc(2, 3, 0)).toBe(0);

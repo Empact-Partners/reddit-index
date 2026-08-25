@@ -351,7 +351,31 @@ def score_category(cat_slug, mentions, categories):
             score = round(100 * beta_quantile(pos + alpha0, neg + beta0,
                                               SCORE_QUANTILE))
             polarization = 2 * min(pos, neg) / n_op if n_op > 0 else None
+        elif neu + abstain > 0:
+            # A LABELLED-BUT-NEUTRAL BRAND HAS A READING, AND IT IS THE BASELINE.
+            # decisions/0011 gave a score only to brands with an opinionated
+            # mention, so a company Reddit discusses without praising or damning
+            # showed a bare dash — indistinguishable, to a reader, from a company
+            # nobody has ever mentioned. Those are different facts and the page
+            # should say so.
+            #
+            # Nothing is invented here. With pos = neg = 0 the posterior IS the
+            # prior, so the same beta_quantile call returns the category baseline
+            # — the honest answer to "what do we know about this brand's rate?"
+            # when the answer is "nothing beyond its category". It uses the same
+            # SCORE_QUANTILE lower bound as every other score, so a neutral brand
+            # lands mid-table by construction and can never outrank an evidenced
+            # one. p_tilde and polarization stay None: there is no rate to publish
+            # and no polarization without opinions.
+            #
+            # Vlad's call, 2026-08-25: every company in the outreach set must
+            # carry a score. 44 of the 95 unscored companies are this case.
+            score = round(100 * beta_quantile(alpha0, beta0, SCORE_QUANTILE))
+            p_tilde = None
+            polarization = None
         else:
+            # No labelled mention at all — nothing was measured, so nothing is
+            # published. This is the one case that stays a dash.
             p_tilde = None
             score = None
             polarization = None

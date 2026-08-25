@@ -311,8 +311,13 @@ async function loadSnapshotOnce(): Promise<Snapshot> {
     arr.push([String(b.slug), agg.pos, agg.pos + agg.neg]);
     countsByCat.set(cat, arr);
   }
-  const pageScoreFor = (slug: string, catId: string, pos: number, neg: number): number | null => {
-    if (pos + neg <= 0) return null;
+  const pageScoreFor = (slug: string, catId: string, pos: number, neg: number,
+                        neu = 0): number | null => {
+    // No opinion but SOME labelled mention -> the prior, i.e. the category
+    // baseline. No labelled mention at all -> still a dash. The distinction is
+    // the point: "discussed neutrally" and "never mentioned" are different facts
+    // and used to render identically.
+    if (pos + neg <= 0 && neu <= 0) return null;
     const others = (countsByCat.get(catId) ?? []).filter((x) => x[0] !== slug)
       .map((x) => [x[1], x[2]] as [number, number]);
     const { alpha0, beta0 } = fitPriorPooled(others);
@@ -335,7 +340,7 @@ async function loadSnapshotOnce(): Promise<Snapshot> {
         : 3,
       scores: mine,
       pageScore: pageScoreFor(slug, b.primary_category_id ? String(b.primary_category_id) : "",
-                              agg.pos, agg.neg),
+                              agg.pos, agg.neg, agg.neu),
       pageNOp: agg.pos + agg.neg,
       mentions: [],
       totalMentions: agg.pos + agg.neg + agg.neu,

@@ -103,9 +103,17 @@ export function fitPriorPooled(counts: Array<[number, number]>): {
   return { alpha0: PRIOR_K * p0, beta0: PRIOR_K * (1 - p0), fallback: on < PRIOR_POOL_MIN };
 }
 
-/** The published number: round(100 × the 0.10 posterior quantile). Null with no opinion. */
+/** The published number: round(100 × the 0.10 posterior quantile).
+ *
+ * With pos = neg = 0 the posterior IS the prior, so this returns the category
+ * baseline rather than null — the honest reading for a brand Reddit discusses
+ * without praising or damning it. The caller decides whether that case applies
+ * (it must have LABELLED mentions; a brand with no data at all still gets no
+ * score). Same SCORE_QUANTILE lower bound as every other score, so a neutral
+ * brand lands mid-table by construction and cannot outrank an evidenced one.
+ *
+ * Line-for-line parity with worker/score.py per decisions/0011.
+ */
 export function pageScore(pos: number, neg: number, alpha0: number, beta0: number): number | null {
-  const nOp = pos + neg;
-  if (nOp <= 0) return null;
   return Math.round(100 * betaQuantile(pos + alpha0, neg + beta0, SCORE_QUANTILE));
 }
