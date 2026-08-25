@@ -1,5 +1,5 @@
 {
- "generated": "2026-08-22",
+ "generated": "2026-08-25",
  "note": "RECOMPUTE AT SEND TIME - counts accrue with every update.sh",
  "buckets": {
   "zero_mentions": [
@@ -24,27 +24,12 @@
     "n_op": 0
    },
    {
-    "domain": "2iqresearch.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "2short.ai",
     "mentions": 0,
     "n_op": 0
    },
    {
-    "domain": "3commas.io",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "4degrees.ai",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "55-ip.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -70,11 +55,6 @@
    },
    {
     "domain": "aavenir.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "abcfitness.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -144,27 +124,12 @@
     "n_op": 0
    },
    {
-    "domain": "admetrics.io",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "adsbridge.com",
     "mentions": 0,
     "n_op": 0
    },
    {
     "domain": "advisorengine.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "advyzon.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "aembit.io",
     "mentions": 0,
     "n_op": 0
    },
@@ -319,22 +284,12 @@
     "n_op": 0
    },
    {
-    "domain": "alignedup.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "alineops.com",
     "mentions": 0,
     "n_op": 0
    },
    {
     "domain": "alkymi.io",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "all-hands.dev",
     "mentions": 0,
     "n_op": 0
    },
@@ -369,17 +324,7 @@
     "n_op": 0
    },
    {
-    "domain": "altered.ai",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "altify.app",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "altrady.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -414,6 +359,11 @@
     "n_op": 0
    },
    {
+    "domain": "amilia.com",
+    "mentions": 0,
+    "n_op": 0
+   },
+   {
     "domain": "amount.com",
     "mentions": 0,
     "n_op": 0
@@ -425,11 +375,6 @@
    },
    {
     "domain": "amper.xyz",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "amuse.io",
     "mentions": 0,
     "n_op": 0
    },
@@ -450,11 +395,6 @@
    },
    {
     "domain": "anedot.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "ankr.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -480,11 +420,6 @@
    },
    {
     "domain": "antimetal.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "anvilogic.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -574,11 +509,6 @@
     "n_op": 0
    },
    {
-    "domain": "archera.ai",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "archform.co",
     "mentions": 0,
     "n_op": 0
@@ -620,11 +550,6 @@
    },
    {
     "domain": "aslan.io",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "aspire.io",
     "mentions": 0,
     "n_op": 0
    },
@@ -689,11 +614,6 @@
     "n_op": 0
    },
    {
-    "domain": "audiotool.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "aurigo.com",
     "mentions": 0,
     "n_op": 0
@@ -735,11 +655,6 @@
    },
    {
     "domain": "autoleadstar.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "autorfp.ai",
     "mentions": 0,
     "n_op": 0
    },
@@ -794,11 +709,6 @@
     "n_op": 0
    },
    {
-    "domain": "axelar.network",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "axiad.com",
     "mentions": 0,
     "n_op": 0
@@ -815,11 +725,6 @@
    },
    {
     "domain": "aye-q.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "azaleahealth.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -844,17 +749,12 @@
     "n_op": 0
    },
    {
-    "domain": "ballparkhq.com",
+    "domain": "balto.ai",
     "mentions": 0,
     "n_op": 0
    },
    {
     "domain": "bamsales.io",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "bamsec.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -1069,17 +969,7 @@
     "n_op": 0
    },
    {
-    "domain": "blackduck.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "blendee.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "blings.io",
     "mentions": 0,
     "n_op": 0
    },
@@ -1094,17 +984,7 @@
     "n_op": 0
    },
    {
-    "domain": "blockdaemon.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "blockpass.org",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "bluecataudio.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -1135,11 +1015,6 @@
    },
    {
     "domain": "boldcommerce.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "boldpenguin.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -1289,11 +1164,6 @@
     "n_op": 0
    },
    {
-    "domain": "broadridge.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "bryq.com",
     "mentions": 0,
     "n_op": 0
@@ -1305,11 +1175,6 @@
    },
    {
     "domain": "buddy.ai",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "bugbug.io",
     "mentions": 0,
     "n_op": 0
    },
@@ -1339,11 +1204,6 @@
     "n_op": 0
    },
    {
-    "domain": "bunnyshell.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "buster.so",
     "mentions": 0,
     "n_op": 0
@@ -1359,22 +1219,12 @@
     "n_op": 0
    },
    {
-    "domain": "buyapowa.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "buzzoole.com",
     "mentions": 0,
     "n_op": 0
    },
    {
     "domain": "caisy.io",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "cake.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -1420,6 +1270,11 @@
    },
    {
     "domain": "campus-xr.org",
+    "mentions": 0,
+    "n_op": 0
+   },
+   {
+    "domain": "candu.ai",
     "mentions": 0,
     "n_op": 0
    },
@@ -1484,6 +1339,11 @@
     "n_op": 0
    },
    {
+    "domain": "carta.healthcare",
+    "mentions": 0,
+    "n_op": 0
+   },
+   {
     "domain": "cartconvert.co",
     "mentions": 0,
     "n_op": 0
@@ -1510,11 +1370,6 @@
    },
    {
     "domain": "cassidyai.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "catsone.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -1569,11 +1424,6 @@
     "n_op": 0
    },
    {
-    "domain": "chainstack.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "champcloud.com",
     "mentions": 0,
     "n_op": 0
@@ -1615,11 +1465,6 @@
    },
    {
     "domain": "chatinc.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "chatling.ai",
     "mentions": 0,
     "n_op": 0
    },
@@ -1669,12 +1514,12 @@
     "n_op": 0
    },
    {
-    "domain": "circleblack.com",
+    "domain": "circlehd.com",
     "mentions": 0,
     "n_op": 0
    },
    {
-    "domain": "circlehd.com",
+    "domain": "cirrusinsight.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -1695,11 +1540,6 @@
    },
    {
     "domain": "clausebase.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "clay.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -1734,11 +1574,6 @@
     "n_op": 0
    },
    {
-    "domain": "clicksend.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "clientpoint.net",
     "mentions": 0,
     "n_op": 0
@@ -1750,6 +1585,11 @@
    },
    {
     "domain": "climate.com",
+    "mentions": 0,
+    "n_op": 0
+   },
+   {
+    "domain": "climatiq.io",
     "mentions": 0,
     "n_op": 0
    },
@@ -1824,7 +1664,7 @@
     "n_op": 0
    },
    {
-    "domain": "cobalt.io",
+    "domain": "coachnow.io",
     "mentions": 0,
     "n_op": 0
    },
@@ -1855,11 +1695,6 @@
    },
    {
     "domain": "codemate.ai",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "coefficient.io",
     "mentions": 0,
     "n_op": 0
    },
@@ -1934,6 +1769,11 @@
     "n_op": 0
    },
    {
+    "domain": "commonpaper.com",
+    "mentions": 0,
+    "n_op": 0
+   },
+   {
     "domain": "commun.it",
     "mentions": 0,
     "n_op": 0
@@ -1950,11 +1790,6 @@
    },
    {
     "domain": "compensia.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "components.ai",
     "mentions": 0,
     "n_op": 0
    },
@@ -1985,11 +1820,6 @@
    },
    {
     "domain": "contentquo.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "contentstack.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -2034,17 +1864,17 @@
     "n_op": 0
    },
    {
+    "domain": "convin.ai",
+    "mentions": 0,
+    "n_op": 0
+   },
+   {
     "domain": "coolbitx.com",
     "mentions": 0,
     "n_op": 0
    },
    {
     "domain": "copernica.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "corelight.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -2074,6 +1904,11 @@
     "n_op": 0
    },
    {
+    "domain": "coveragebook.com",
+    "mentions": 0,
+    "n_op": 0
+   },
+   {
     "domain": "covey.io",
     "mentions": 0,
     "n_op": 0
@@ -2089,11 +1924,6 @@
     "n_op": 0
    },
    {
-    "domain": "craftercms.org",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "craftly.ai",
     "mentions": 0,
     "n_op": 0
@@ -2104,17 +1934,7 @@
     "n_op": 0
    },
    {
-    "domain": "crate.io",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "crawlbase.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "crd.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -2144,11 +1964,6 @@
     "n_op": 0
    },
    {
-    "domain": "cropin.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "cropx.com",
     "mentions": 0,
     "n_op": 0
@@ -2165,11 +1980,6 @@
    },
    {
     "domain": "crunchydata.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "cryptio.co",
     "mentions": 0,
     "n_op": 0
    },
@@ -2224,17 +2034,7 @@
     "n_op": 0
    },
    {
-    "domain": "curemd.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "curvedental.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "custify.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -2250,11 +2050,6 @@
    },
    {
     "domain": "cutanddry.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "cycode.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -2290,11 +2085,6 @@
    },
    {
     "domain": "dashhudson.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "datafold.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -2345,16 +2135,6 @@
    },
    {
     "domain": "dealersync.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "dealfront.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "debank.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -2414,11 +2194,6 @@
     "n_op": 0
    },
    {
-    "domain": "demoboost.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "demodesk.com",
     "mentions": 0,
     "n_op": 0
@@ -2435,11 +2210,6 @@
    },
    {
     "domain": "dental-monitoring.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "dentalintel.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -2465,6 +2235,11 @@
    },
    {
     "domain": "devskiller.com",
+    "mentions": 0,
+    "n_op": 0
+   },
+   {
+    "domain": "didomi.io",
     "mentions": 0,
     "n_op": 0
    },
@@ -2519,17 +2294,7 @@
     "n_op": 0
    },
    {
-    "domain": "dock.us",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "documill.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "docyt.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -2539,17 +2304,7 @@
     "n_op": 0
    },
    {
-    "domain": "doit.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "dokka.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "dolby.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -2589,6 +2344,11 @@
     "n_op": 0
    },
    {
+    "domain": "doubleverify.com",
+    "mentions": 0,
+    "n_op": 0
+   },
+   {
     "domain": "doxel.ai",
     "mentions": 0,
     "n_op": 0
@@ -2599,17 +2359,7 @@
     "n_op": 0
    },
    {
-    "domain": "drchrono.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "dreamwave.ai",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "drivecentric.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -2624,22 +2374,12 @@
     "n_op": 0
    },
    {
-    "domain": "dualentry.com",
+    "domain": "dub.co",
     "mentions": 0,
     "n_op": 0
    },
    {
     "domain": "dubverse.ai",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "dune.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "dust.tt",
     "mentions": 0,
     "n_op": 0
    },
@@ -2749,11 +2489,6 @@
     "n_op": 0
    },
    {
-    "domain": "educative.io",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "egress.com",
     "mentions": 0,
     "n_op": 0
@@ -2825,6 +2560,11 @@
    },
    {
     "domain": "endgame.io",
+    "mentions": 0,
+    "n_op": 0
+   },
+   {
+    "domain": "endtest.io",
     "mentions": 0,
     "n_op": 0
    },
@@ -2919,6 +2659,11 @@
     "n_op": 0
    },
    {
+    "domain": "eventtemple.com",
+    "mentions": 0,
+    "n_op": 0
+   },
+   {
     "domain": "eventus.com",
     "mentions": 0,
     "n_op": 0
@@ -2934,7 +2679,12 @@
     "n_op": 0
    },
    {
-    "domain": "everflow.io",
+    "domain": "eversports.com",
+    "mentions": 0,
+    "n_op": 0
+   },
+   {
+    "domain": "evidentlyai.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -2959,17 +2709,22 @@
     "n_op": 0
    },
    {
-    "domain": "exercise.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "exirio.com",
     "mentions": 0,
     "n_op": 0
    },
    {
+    "domain": "exostellar.ai",
+    "mentions": 0,
+    "n_op": 0
+   },
+   {
     "domain": "exponea.com",
+    "mentions": 0,
+    "n_op": 0
+   },
+   {
+    "domain": "exterro.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -3004,22 +2759,22 @@
     "n_op": 0
    },
    {
-    "domain": "factors.ai",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "fairmarkit.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "farmeye.ie",
     "mentions": 0,
     "n_op": 0
    },
    {
     "domain": "farmlogs.com",
+    "mentions": 0,
+    "n_op": 0
+   },
+   {
+    "domain": "farmqa.com",
+    "mentions": 0,
+    "n_op": 0
+   },
+   {
+    "domain": "farmraise.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -3089,17 +2844,22 @@
     "n_op": 0
    },
    {
-    "domain": "finout.io",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "firstbeat.com",
     "mentions": 0,
     "n_op": 0
    },
    {
     "domain": "firsthand.ai",
+    "mentions": 0,
+    "n_op": 0
+   },
+   {
+    "domain": "fiscalnote.com",
+    "mentions": 0,
+    "n_op": 0
+   },
+   {
+    "domain": "fiserv.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -3159,11 +2919,6 @@
     "n_op": 0
    },
    {
-    "domain": "floatbot.ai",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "flockjay.com",
     "mentions": 0,
     "n_op": 0
@@ -3175,11 +2930,6 @@
    },
    {
     "domain": "flowaccount.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "flowbox.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -3344,6 +3094,16 @@
     "n_op": 0
    },
    {
+    "domain": "garageplug.com",
+    "mentions": 0,
+    "n_op": 0
+   },
+   {
+    "domain": "gatling.io",
+    "mentions": 0,
+    "n_op": 0
+   },
+   {
     "domain": "gc.com",
     "mentions": 0,
     "n_op": 0
@@ -3399,11 +3159,6 @@
     "n_op": 0
    },
    {
-    "domain": "getflowbox.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "getgist.com",
     "mentions": 0,
     "n_op": 0
@@ -3415,6 +3170,16 @@
    },
    {
     "domain": "getgymini.com",
+    "mentions": 0,
+    "n_op": 0
+   },
+   {
+    "domain": "getkion.com",
+    "mentions": 0,
+    "n_op": 0
+   },
+   {
+    "domain": "getkoala.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -3469,17 +3234,17 @@
     "n_op": 0
    },
    {
+    "domain": "getweave.com",
+    "mentions": 0,
+    "n_op": 0
+   },
+   {
     "domain": "getwhelp.com",
     "mentions": 0,
     "n_op": 0
    },
    {
     "domain": "getwilson.ai",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "ghostinspector.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -3510,11 +3275,6 @@
    },
    {
     "domain": "glasskube.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "glean.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -3609,11 +3369,6 @@
     "n_op": 0
    },
    {
-    "domain": "gradium.ai",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "grafbase.com",
     "mentions": 0,
     "n_op": 0
@@ -3634,6 +3389,16 @@
     "n_op": 0
    },
    {
+    "domain": "grata.com",
+    "mentions": 0,
+    "n_op": 0
+   },
+   {
+    "domain": "gratapro.com",
+    "mentions": 0,
+    "n_op": 0
+   },
+   {
     "domain": "gratifii.com",
     "mentions": 0,
     "n_op": 0
@@ -3650,11 +3415,6 @@
    },
    {
     "domain": "greylabs.ai",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "grin.co",
     "mentions": 0,
     "n_op": 0
    },
@@ -3684,11 +3444,6 @@
     "n_op": 0
    },
    {
-    "domain": "gurufocus.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "gust.com",
     "mentions": 0,
     "n_op": 0
@@ -3700,11 +3455,6 @@
    },
    {
     "domain": "gypsum.ai",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "halcyon.ai",
     "mentions": 0,
     "n_op": 0
    },
@@ -3724,7 +3474,7 @@
     "n_op": 0
    },
    {
-    "domain": "harver.com",
+    "domain": "harmonic.fun",
     "mentions": 0,
     "n_op": 0
    },
@@ -3755,16 +3505,6 @@
    },
    {
     "domain": "healthcatalyst.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "hebbia.ai",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "heepsy.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -3815,6 +3555,11 @@
    },
    {
     "domain": "helloumi.com",
+    "mentions": 0,
+    "n_op": 0
+   },
+   {
+    "domain": "hellowalla.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -3889,11 +3634,6 @@
     "n_op": 0
    },
    {
-    "domain": "hitnmix.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "hivebotics.tech",
     "mentions": 0,
     "n_op": 0
@@ -3919,11 +3659,6 @@
     "n_op": 0
    },
    {
-    "domain": "hookdeck.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "hoppycopy.co",
     "mentions": 0,
     "n_op": 0
@@ -3939,7 +3674,7 @@
     "n_op": 0
    },
    {
-    "domain": "hover.to",
+    "domain": "howgood.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -3999,7 +3734,17 @@
     "n_op": 0
    },
    {
-    "domain": "hygraph.com",
+    "domain": "hustle.com",
+    "mentions": 0,
+    "n_op": 0
+   },
+   {
+    "domain": "hustle.life",
+    "mentions": 0,
+    "n_op": 0
+   },
+   {
+    "domain": "hypercomply.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -4094,11 +3839,6 @@
     "n_op": 0
    },
    {
-    "domain": "inaccord.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "inbenta.com",
     "mentions": 0,
     "n_op": 0
@@ -4110,6 +3850,11 @@
    },
    {
     "domain": "indicative.com",
+    "mentions": 0,
+    "n_op": 0
+   },
+   {
+    "domain": "indicodata.ai",
     "mentions": 0,
     "n_op": 0
    },
@@ -4150,11 +3895,6 @@
    },
    {
     "domain": "inflo.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "influencity.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -4224,6 +3964,16 @@
     "n_op": 0
    },
    {
+    "domain": "insurity.com",
+    "mentions": 0,
+    "n_op": 0
+   },
+   {
+    "domain": "integritynext.com",
+    "mentions": 0,
+    "n_op": 0
+   },
+   {
     "domain": "intellimize.com",
     "mentions": 0,
     "n_op": 0
@@ -4234,7 +3984,7 @@
     "n_op": 0
    },
    {
-    "domain": "interviewer.ai",
+    "domain": "intruder.io",
     "mentions": 0,
     "n_op": 0
    },
@@ -4284,16 +4034,6 @@
     "n_op": 0
    },
    {
-    "domain": "jit.io",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "jobscore.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "jobylon.com",
     "mentions": 0,
     "n_op": 0
@@ -4324,6 +4064,11 @@
     "n_op": 0
    },
    {
+    "domain": "jupiterone.com",
+    "mentions": 0,
+    "n_op": 0
+   },
+   {
     "domain": "kaaj.ai",
     "mentions": 0,
     "n_op": 0
@@ -4340,11 +4085,6 @@
    },
    {
     "domain": "kdanmobile.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "keelvar.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -4414,7 +4154,7 @@
     "n_op": 0
    },
    {
-    "domain": "klarity.ai",
+    "domain": "kitmanlabs.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -4450,11 +4190,6 @@
    },
    {
     "domain": "knockrentals.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "kochava.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -4534,7 +4269,7 @@
     "n_op": 0
    },
    {
-    "domain": "kryptos.io",
+    "domain": "kukui.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -4584,11 +4319,6 @@
     "n_op": 0
    },
    {
-    "domain": "landr.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "landytech.com",
     "mentions": 0,
     "n_op": 0
@@ -4625,6 +4355,11 @@
    },
    {
     "domain": "leaddyno.com",
+    "mentions": 0,
+    "n_op": 0
+   },
+   {
+    "domain": "leadershipconnect.io",
     "mentions": 0,
     "n_op": 0
    },
@@ -4824,11 +4559,6 @@
     "n_op": 0
    },
    {
-    "domain": "livedocs.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "liveflow.io",
     "mentions": 0,
     "n_op": 0
@@ -4860,6 +4590,11 @@
    },
    {
     "domain": "loadmill.com",
+    "mentions": 0,
+    "n_op": 0
+   },
+   {
+    "domain": "loanpro.io",
     "mentions": 0,
     "n_op": 0
    },
@@ -4904,11 +4639,6 @@
     "n_op": 0
    },
    {
-    "domain": "loopio.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "lootlocker.com",
     "mentions": 0,
     "n_op": 0
@@ -4919,7 +4649,7 @@
     "n_op": 0
    },
    {
-    "domain": "lovo.ai",
+    "domain": "loox.io",
     "mentions": 0,
     "n_op": 0
    },
@@ -4950,6 +4680,11 @@
    },
    {
     "domain": "luminai.com",
+    "mentions": 0,
+    "n_op": 0
+   },
+   {
+    "domain": "luminance.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -5009,6 +4744,11 @@
     "n_op": 0
    },
    {
+    "domain": "magnolia.com",
+    "mentions": 0,
+    "n_op": 0
+   },
+   {
     "domain": "maileon.nl",
     "mentions": 0,
     "n_op": 0
@@ -5039,6 +4779,11 @@
     "n_op": 0
    },
    {
+    "domain": "mambu.com",
+    "mentions": 0,
+    "n_op": 0
+   },
+   {
     "domain": "mansasys.com",
     "mentions": 0,
     "n_op": 0
@@ -5050,11 +4795,6 @@
    },
    {
     "domain": "marketdojo.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "marsello.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -5080,11 +4820,6 @@
    },
    {
     "domain": "masttro.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "material.security",
     "mentions": 0,
     "n_op": 0
    },
@@ -5119,17 +4854,12 @@
     "n_op": 0
    },
    {
+    "domain": "mechanicdesk.com.au",
+    "mentions": 0,
+    "n_op": 0
+   },
+   {
     "domain": "mediashield.net",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "mediavalet.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "medius.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -5184,11 +4914,6 @@
     "n_op": 0
    },
    {
-    "domain": "metaplane.dev",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "metarouter.io",
     "mentions": 0,
     "n_op": 0
@@ -5224,17 +4949,17 @@
     "n_op": 0
    },
    {
+    "domain": "mindsdb.com",
+    "mentions": 0,
+    "n_op": 0
+   },
+   {
     "domain": "mindset.ai",
     "mentions": 0,
     "n_op": 0
    },
    {
     "domain": "minion.ai",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "mitchell1.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -5269,11 +4994,6 @@
     "n_op": 0
    },
    {
-    "domain": "modartt.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "modelence.com",
     "mentions": 0,
     "n_op": 0
@@ -5294,12 +5014,17 @@
     "n_op": 0
    },
    {
-    "domain": "moises.ai",
+    "domain": "momentic.ai",
     "mentions": 0,
     "n_op": 0
    },
    {
     "domain": "momento.fm",
+    "mentions": 0,
+    "n_op": 0
+   },
+   {
+    "domain": "momentum.io",
     "mentions": 0,
     "n_op": 0
    },
@@ -5404,17 +5129,17 @@
     "n_op": 0
    },
    {
-    "domain": "mygrin.it",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "myko.ai",
     "mentions": 0,
     "n_op": 0
    },
    {
     "domain": "mynameflow.com",
+    "mentions": 0,
+    "n_op": 0
+   },
+   {
+    "domain": "mypthub.net",
     "mentions": 0,
     "n_op": 0
    },
@@ -5464,6 +5189,11 @@
     "n_op": 0
    },
    {
+    "domain": "nektar.ai",
+    "mentions": 0,
+    "n_op": 0
+   },
+   {
     "domain": "nelly-solutions.com",
     "mentions": 0,
     "n_op": 0
@@ -5494,22 +5224,12 @@
     "n_op": 0
    },
    {
-    "domain": "neuraldsp.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "neuraltext.com",
     "mentions": 0,
     "n_op": 0
    },
    {
     "domain": "neutrina.ai",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "newconstructs.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -5584,17 +5304,7 @@
     "n_op": 0
    },
    {
-    "domain": "nops.io",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "normative.io",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "northpass.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -5605,6 +5315,11 @@
    },
    {
     "domain": "novalya.com",
+    "mentions": 0,
+    "n_op": 0
+   },
+   {
+    "domain": "novata.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -5650,11 +5365,6 @@
    },
    {
     "domain": "nutanix.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "nx.dev",
     "mentions": 0,
     "n_op": 0
    },
@@ -5719,6 +5429,11 @@
     "n_op": 0
    },
    {
+    "domain": "okendo.io",
+    "mentions": 0,
+    "n_op": 0
+   },
+   {
     "domain": "oleeo.com",
     "mentions": 0,
     "n_op": 0
@@ -5730,6 +5445,11 @@
    },
    {
     "domain": "olympe.io",
+    "mentions": 0,
+    "n_op": 0
+   },
+   {
+    "domain": "omeda.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -5779,6 +5499,16 @@
     "n_op": 0
    },
    {
+    "domain": "onclusive.com",
+    "mentions": 0,
+    "n_op": 0
+   },
+   {
+    "domain": "ondato.com",
+    "mentions": 0,
+    "n_op": 0
+   },
+   {
     "domain": "onebillsoftware.com",
     "mentions": 0,
     "n_op": 0
@@ -5814,17 +5544,7 @@
     "n_op": 0
    },
    {
-    "domain": "onramp.us",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "ontop.ai",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "openbb.co",
     "mentions": 0,
     "n_op": 0
    },
@@ -5844,7 +5564,7 @@
     "n_op": 0
    },
    {
-    "domain": "openstatus.dev",
+    "domain": "opexfit.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -5865,6 +5585,11 @@
    },
    {
     "domain": "optioincentives.com",
+    "mentions": 0,
+    "n_op": 0
+   },
+   {
+    "domain": "optionstrat.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -5950,11 +5675,6 @@
    },
    {
     "domain": "overflow.co",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "overloop.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -6114,11 +5834,6 @@
     "n_op": 0
    },
    {
-    "domain": "perception-point.io",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "percolate.com",
     "mentions": 0,
     "n_op": 0
@@ -6179,6 +5894,11 @@
     "n_op": 0
    },
    {
+    "domain": "photonengine.com",
+    "mentions": 0,
+    "n_op": 0
+   },
+   {
     "domain": "photoslurp.com",
     "mentions": 0,
     "n_op": 0
@@ -6210,16 +5930,6 @@
    },
    {
     "domain": "pipelinersales.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "pitchbook.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "pitchbox.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -6289,22 +5999,17 @@
     "n_op": 0
    },
    {
-    "domain": "plugin-alliance.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "plum.io",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "plural.sh",
     "mentions": 0,
     "n_op": 0
    },
    {
     "domain": "plushforums.com",
+    "mentions": 0,
+    "n_op": 0
+   },
+   {
+    "domain": "pocket.network",
     "mentions": 0,
     "n_op": 0
    },
@@ -6340,11 +6045,6 @@
    },
    {
     "domain": "postaffiliatepro.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "postal.io",
     "mentions": 0,
     "n_op": 0
    },
@@ -6434,11 +6134,6 @@
     "n_op": 0
    },
    {
-    "domain": "prezly.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "prezo.ai",
     "mentions": 0,
     "n_op": 0
@@ -6460,11 +6155,6 @@
    },
    {
     "domain": "procureport.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "procurify.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -6514,17 +6204,17 @@
     "n_op": 0
    },
    {
-    "domain": "prosperops.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "protracker.com",
     "mentions": 0,
     "n_op": 0
    },
    {
     "domain": "pulley.com",
+    "mentions": 0,
+    "n_op": 0
+   },
+   {
+    "domain": "pulsargroup.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -6609,6 +6299,11 @@
     "n_op": 0
    },
    {
+    "domain": "qualifacts.com",
+    "mentions": 0,
+    "n_op": 0
+   },
+   {
     "domain": "qualitia.ai",
     "mentions": 0,
     "n_op": 0
@@ -6625,6 +6320,11 @@
    },
    {
     "domain": "quantia.ai",
+    "mentions": 0,
+    "n_op": 0
+   },
+   {
+    "domain": "quantified.ai",
     "mentions": 0,
     "n_op": 0
    },
@@ -6664,17 +6364,22 @@
     "n_op": 0
    },
    {
-    "domain": "quiverquant.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "quorum.us",
     "mentions": 0,
     "n_op": 0
    },
    {
     "domain": "quoter.com",
+    "mentions": 0,
+    "n_op": 0
+   },
+   {
+    "domain": "quotewerks.com",
+    "mentions": 0,
+    "n_op": 0
+   },
+   {
+    "domain": "quotientapp.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -6724,6 +6429,11 @@
     "n_op": 0
    },
    {
+    "domain": "reach.vote",
+    "mentions": 0,
+    "n_op": 0
+   },
+   {
     "domain": "reachmail.com",
     "mentions": 0,
     "n_op": 0
@@ -6740,11 +6450,6 @@
    },
    {
     "domain": "reap.video",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "reaper.fm",
     "mentions": 0,
     "n_op": 0
    },
@@ -6854,11 +6559,6 @@
     "n_op": 0
    },
    {
-    "domain": "rently.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "rephrase.ai",
     "mentions": 0,
     "n_op": 0
@@ -6884,11 +6584,6 @@
     "n_op": 0
    },
    {
-    "domain": "resistant.ai",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "respell.ai",
     "mentions": 0,
     "n_op": 0
@@ -6910,11 +6605,6 @@
    },
    {
     "domain": "revenoid.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "revenue.io",
     "mentions": 0,
     "n_op": 0
    },
@@ -6974,11 +6664,6 @@
     "n_op": 0
    },
    {
-    "domain": "reyrey.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "rezdy.com",
     "mentions": 0,
     "n_op": 0
@@ -7014,11 +6699,6 @@
     "n_op": 0
    },
    {
-    "domain": "riskalyze.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "roadie.io",
     "mentions": 0,
     "n_op": 0
@@ -7044,7 +6724,7 @@
     "n_op": 0
    },
    {
-    "domain": "rotki.com",
+    "domain": "roomraccoon.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -7129,11 +6809,6 @@
     "n_op": 0
    },
    {
-    "domain": "saleo.io",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "salesai.com",
     "mentions": 0,
     "n_op": 0
@@ -7179,12 +6854,22 @@
     "n_op": 0
    },
    {
+    "domain": "santiment.net",
+    "mentions": 0,
+    "n_op": 0
+   },
+   {
     "domain": "sapia.ai",
     "mentions": 0,
     "n_op": 0
    },
    {
     "domain": "sarbacane.com",
+    "mentions": 0,
+    "n_op": 0
+   },
+   {
+    "domain": "sardine.ai",
     "mentions": 0,
     "n_op": 0
    },
@@ -7209,17 +6894,17 @@
     "n_op": 0
    },
    {
-    "domain": "schedulicity.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "schematichq.com",
     "mentions": 0,
     "n_op": 0
    },
    {
     "domain": "scienaptic.com",
+    "mentions": 0,
+    "n_op": 0
+   },
+   {
+    "domain": "scorechain.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -7319,6 +7004,11 @@
     "n_op": 0
    },
    {
+    "domain": "sendtrumpet.com",
+    "mentions": 0,
+    "n_op": 0
+   },
+   {
     "domain": "sendyourmedia.com",
     "mentions": 0,
     "n_op": 0
@@ -7334,7 +7024,7 @@
     "n_op": 0
    },
    {
-    "domain": "seo.ai",
+    "domain": "sentimentrader.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -7350,6 +7040,11 @@
    },
    {
     "domain": "serviceform.com",
+    "mentions": 0,
+    "n_op": 0
+   },
+   {
+    "domain": "servicepath.co",
     "mentions": 0,
     "n_op": 0
    },
@@ -7459,17 +7154,7 @@
     "n_op": 0
    },
    {
-    "domain": "sievo.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "sigma-rh.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "signalwire.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -7479,12 +7164,12 @@
     "n_op": 0
    },
    {
-    "domain": "silverfin.com",
+    "domain": "signpost.com",
     "mentions": 0,
     "n_op": 0
    },
    {
-    "domain": "silverfort.com",
+    "domain": "silverfin.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -7544,17 +7229,17 @@
     "n_op": 0
    },
    {
-    "domain": "skeepers.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "sketchlist.com",
     "mentions": 0,
     "n_op": 0
    },
    {
     "domain": "skipify.com",
+    "mentions": 0,
+    "n_op": 0
+   },
+   {
+    "domain": "skit.ai",
     "mentions": 0,
     "n_op": 0
    },
@@ -7575,6 +7260,11 @@
    },
    {
     "domain": "skygeni.com",
+    "mentions": 0,
+    "n_op": 0
+   },
+   {
+    "domain": "skylead.io",
     "mentions": 0,
     "n_op": 0
    },
@@ -7614,6 +7304,11 @@
     "n_op": 0
    },
    {
+    "domain": "smile.io",
+    "mentions": 0,
+    "n_op": 0
+   },
+   {
     "domain": "smilesnap.com",
     "mentions": 0,
     "n_op": 0
@@ -7640,6 +7335,11 @@
    },
    {
     "domain": "snipfeed.co",
+    "mentions": 0,
+    "n_op": 0
+   },
+   {
+    "domain": "snitcher.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -7699,6 +7399,11 @@
     "n_op": 0
    },
    {
+    "domain": "socotra.com",
+    "mentions": 0,
+    "n_op": 0
+   },
+   {
     "domain": "sodamarketing.ai",
     "mentions": 0,
     "n_op": 0
@@ -7710,11 +7415,6 @@
    },
    {
     "domain": "solitics.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "solo.io",
     "mentions": 0,
     "n_op": 0
    },
@@ -7749,11 +7449,6 @@
     "n_op": 0
    },
    {
-    "domain": "soundtrap.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "sourcepoint.com",
     "mentions": 0,
     "n_op": 0
@@ -7764,12 +7459,12 @@
     "n_op": 0
    },
    {
-    "domain": "speedcurve.com",
+    "domain": "spellbook.legal",
     "mentions": 0,
     "n_op": 0
    },
    {
-    "domain": "spellbook.legal",
+    "domain": "sphera.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -7780,11 +7475,6 @@
    },
    {
     "domain": "spiro.ai",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "splice.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -7809,17 +7499,17 @@
     "n_op": 0
    },
    {
-    "domain": "spotio.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "spotlightreporting.com",
     "mentions": 0,
     "n_op": 0
    },
    {
     "domain": "springbot.com",
+    "mentions": 0,
+    "n_op": 0
+   },
+   {
+    "domain": "sproutstudio.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -7874,11 +7564,6 @@
     "n_op": 0
    },
    {
-    "domain": "starmind.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "startree.ai",
     "mentions": 0,
     "n_op": 0
@@ -7890,11 +7575,6 @@
    },
    {
     "domain": "steamship.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "stedi.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -7935,6 +7615,11 @@
    },
    {
     "domain": "storekeeper.nl",
+    "mentions": 0,
+    "n_op": 0
+   },
+   {
+    "domain": "stormforge.io",
     "mentions": 0,
     "n_op": 0
    },
@@ -7989,17 +7674,7 @@
     "n_op": 0
    },
    {
-    "domain": "subgraph.tech",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "subject7.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "sublimesecurity.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -8045,6 +7720,16 @@
    },
    {
     "domain": "sustain.life",
+    "mentions": 0,
+    "n_op": 0
+   },
+   {
+    "domain": "sweep.io",
+    "mentions": 0,
+    "n_op": 0
+   },
+   {
+    "domain": "sweep.net",
     "mentions": 0,
     "n_op": 0
    },
@@ -8099,6 +7784,11 @@
     "n_op": 0
    },
    {
+    "domain": "syndica.io",
+    "mentions": 0,
+    "n_op": 0
+   },
+   {
     "domain": "synergysuite.com",
     "mentions": 0,
     "n_op": 0
@@ -8130,16 +7820,6 @@
    },
    {
     "domain": "tablecheck.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "tabs.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "tabs.inc",
     "mentions": 0,
     "n_op": 0
    },
@@ -8219,11 +7899,6 @@
     "n_op": 0
    },
    {
-    "domain": "taranis.net",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "tave.com",
     "mentions": 0,
     "n_op": 0
@@ -8244,16 +7919,6 @@
     "n_op": 0
    },
    {
-    "domain": "tc2000.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "tealbook.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "teamleader.eu",
     "mentions": 0,
     "n_op": 0
@@ -8270,11 +7935,6 @@
    },
    {
     "domain": "tegus.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "teller.io",
     "mentions": 0,
     "n_op": 0
    },
@@ -8304,6 +7964,11 @@
     "n_op": 0
    },
    {
+    "domain": "termly.io",
+    "mentions": 0,
+    "n_op": 0
+   },
+   {
     "domain": "termscout.com",
     "mentions": 0,
     "n_op": 0
@@ -8315,11 +7980,6 @@
    },
    {
     "domain": "tesseral.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "tessian.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -8424,11 +8084,6 @@
     "n_op": 0
    },
    {
-    "domain": "tigera.io",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "tilde.io",
     "mentions": 0,
     "n_op": 0
@@ -8459,17 +8114,7 @@
     "n_op": 0
    },
    {
-    "domain": "tina.io",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "tingai.io",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "tipranks.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -8505,6 +8150,11 @@
    },
    {
     "domain": "toolso.io",
+    "mentions": 0,
+    "n_op": 0
+   },
+   {
+    "domain": "toornament.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -8550,11 +8200,6 @@
    },
    {
     "domain": "traackr.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "traceloop.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -8669,6 +8314,11 @@
     "n_op": 0
    },
    {
+    "domain": "trychameleon.com",
+    "mentions": 0,
+    "n_op": 0
+   },
+   {
     "domain": "tryfinch.com",
     "mentions": 0,
     "n_op": 0
@@ -8695,6 +8345,11 @@
    },
    {
     "domain": "trytruffle.ai",
+    "mentions": 0,
+    "n_op": 0
+   },
+   {
+    "domain": "turnkey-lender.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -8770,6 +8425,11 @@
    },
    {
     "domain": "upflow.io",
+    "mentions": 0,
+    "n_op": 0
+   },
+   {
+    "domain": "uplandsoftware.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -8874,17 +8534,7 @@
     "n_op": 0
    },
    {
-    "domain": "vadesecure.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "vainu.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "valant.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -8930,21 +8580,6 @@
    },
    {
     "domain": "veezoo.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "velaris.io",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "veloxy.io",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "veremark.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -9035,11 +8670,6 @@
    },
    {
     "domain": "virti.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "visiblealpha.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -9149,11 +8779,6 @@
     "n_op": 0
    },
    {
-    "domain": "webiny.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "webmecanik.com",
     "mentions": 0,
     "n_op": 0
@@ -9169,7 +8794,7 @@
     "n_op": 0
    },
    {
-    "domain": "wellsaidlabs.com",
+    "domain": "wellsky.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -9179,7 +8804,7 @@
     "n_op": 0
    },
    {
-    "domain": "whise.eu",
+    "domain": "whalewisdom.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -9264,11 +8889,6 @@
     "n_op": 0
    },
    {
-    "domain": "wonderlic.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "wordkraft.ai",
     "mentions": 0,
     "n_op": 0
@@ -9284,11 +8904,6 @@
     "n_op": 0
    },
    {
-    "domain": "worktango.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "worldfavor.com",
     "mentions": 0,
     "n_op": 0
@@ -9300,6 +8915,11 @@
    },
    {
     "domain": "wrapbook.com",
+    "mentions": 0,
+    "n_op": 0
+   },
+   {
+    "domain": "xactlycorp.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -9349,11 +8969,6 @@
     "n_op": 0
    },
    {
-    "domain": "ycharts.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "yesware.com",
     "mentions": 0,
     "n_op": 0
@@ -9370,11 +8985,6 @@
    },
    {
     "domain": "youai.ai",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "youdontneedacrm.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -9474,17 +9084,7 @@
     "n_op": 0
    },
    {
-    "domain": "zint.io",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "ziphq.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "zipsec.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -9520,11 +9120,6 @@
    },
    {
     "domain": "6connex.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "abridge.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -9664,11 +9259,6 @@
     "n_op": 0
    },
    {
-    "domain": "cordial.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "covideo.com",
     "mentions": 0,
     "n_op": 0
@@ -9685,11 +9275,6 @@
    },
    {
     "domain": "cyberlink.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "cycloid.io",
     "mentions": 0,
     "n_op": 0
    },
@@ -9724,11 +9309,6 @@
     "n_op": 0
    },
    {
-    "domain": "dubb.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "e-builder.net",
     "mentions": 0,
     "n_op": 0
@@ -9759,22 +9339,12 @@
     "n_op": 0
    },
    {
-    "domain": "ellipsis.dev",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "elmah.io",
     "mentions": 0,
     "n_op": 0
    },
    {
     "domain": "emburse.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "engagingnetworks.net",
     "mentions": 0,
     "n_op": 0
    },
@@ -9815,16 +9385,6 @@
    },
    {
     "domain": "firebolt.io",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "flair.ai",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "float.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -9924,22 +9484,12 @@
     "n_op": 0
    },
    {
-    "domain": "gymcatch.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "happay.com",
     "mentions": 0,
     "n_op": 0
    },
    {
     "domain": "helpjuice.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "highlight.io",
     "mentions": 0,
     "n_op": 0
    },
@@ -9964,11 +9514,6 @@
     "n_op": 0
    },
    {
-    "domain": "huggingface.co",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "icons8.com",
     "mentions": 0,
     "n_op": 0
@@ -9989,17 +9534,7 @@
     "n_op": 0
    },
    {
-    "domain": "instabug.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "instatext.io",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "intakeq.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -10015,11 +9550,6 @@
    },
    {
     "domain": "itsacheckmate.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "jiminny.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -10040,11 +9570,6 @@
    },
    {
     "domain": "justinmind.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "kissflow.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -10109,11 +9634,6 @@
     "n_op": 0
    },
    {
-    "domain": "meltwater.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "missiveapp.com",
     "mentions": 0,
     "n_op": 0
@@ -10124,22 +9644,12 @@
     "n_op": 0
    },
    {
-    "domain": "modjo.ai",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "moin.ai",
     "mentions": 0,
     "n_op": 0
    },
    {
     "domain": "moqups.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "moxo.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -10209,27 +9719,12 @@
     "n_op": 0
    },
    {
-    "domain": "oneflow.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "ongage.com",
     "mentions": 0,
     "n_op": 0
    },
    {
     "domain": "onlypult.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "ontraport.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "openreplay.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -10244,22 +9739,7 @@
     "n_op": 0
    },
    {
-    "domain": "parasoft.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "phorest.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "pigment.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "pike13.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -10300,11 +9780,6 @@
    },
    {
     "domain": "plezi.co",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "polytomic.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -10404,11 +9879,6 @@
     "n_op": 0
    },
    {
-    "domain": "qwilr.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "readycloud.com",
     "mentions": 0,
     "n_op": 0
@@ -10454,17 +9924,7 @@
     "n_op": 0
    },
    {
-    "domain": "richpanel.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "rilldata.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "rowy.io",
     "mentions": 0,
     "n_op": 0
    },
@@ -10475,11 +9935,6 @@
    },
    {
     "domain": "ryver.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "salesmanago.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -10495,11 +9950,6 @@
    },
    {
     "domain": "seguno.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "seismic.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -10564,11 +10014,6 @@
     "n_op": 0
    },
    {
-    "domain": "snowplow.io",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "soldo.com",
     "mentions": 0,
     "n_op": 0
@@ -10580,11 +10025,6 @@
    },
    {
     "domain": "speedscale.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "spekit.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -10619,11 +10059,6 @@
     "n_op": 0
    },
    {
-    "domain": "stonly.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "stormboard.com",
     "mentions": 0,
     "n_op": 0
@@ -10640,11 +10075,6 @@
    },
    {
     "domain": "superoffice.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "supertokens.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -10719,11 +10149,6 @@
     "n_op": 0
    },
    {
-    "domain": "tonkean.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "trackjs.com",
     "mentions": 0,
     "n_op": 0
@@ -10749,11 +10174,6 @@
     "n_op": 0
    },
    {
-    "domain": "trugrid.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "typito.com",
     "mentions": 0,
     "n_op": 0
@@ -10769,11 +10189,6 @@
     "n_op": 0
    },
    {
-    "domain": "useinsider.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "usemultiplier.com",
     "mentions": 0,
     "n_op": 0
@@ -10785,11 +10200,6 @@
    },
    {
     "domain": "ustudio.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "venasolutions.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -10844,11 +10254,6 @@
     "n_op": 0
    },
    {
-    "domain": "webengage.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "webexpenses.com",
     "mentions": 0,
     "n_op": 0
@@ -10885,11 +10290,6 @@
    },
    {
     "domain": "workcast.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "workfusion.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -10942,11 +10342,6 @@
   "unmapped_new_category": [
    {
     "domain": "10xbanking.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "17hats.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -11052,11 +10447,6 @@
    },
    {
     "domain": "adtelligent.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "advancedmd.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -11207,11 +10597,6 @@
    },
    {
     "domain": "amiesocial.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "amilia.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -11487,11 +10872,6 @@
    },
    {
     "domain": "backlight.co",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "balto.ai",
     "mentions": 0,
     "n_op": 0
    },
@@ -11801,11 +11181,6 @@
     "n_op": 0
    },
    {
-    "domain": "callrail.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "calypsoai.com",
     "mentions": 0,
     "n_op": 0
@@ -11817,11 +11192,6 @@
    },
    {
     "domain": "canditech.io",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "candu.ai",
     "mentions": 0,
     "n_op": 0
    },
@@ -11842,16 +11212,6 @@
    },
    {
     "domain": "captivated.works",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "carecloud.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "carta.healthcare",
     "mentions": 0,
     "n_op": 0
    },
@@ -11912,11 +11272,6 @@
    },
    {
     "domain": "certik.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "chainalysis.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -12011,11 +11366,6 @@
     "n_op": 0
    },
    {
-    "domain": "cirrusinsight.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "citizenlab.co",
     "mentions": 0,
     "n_op": 0
@@ -12066,11 +11416,6 @@
     "n_op": 0
    },
    {
-    "domain": "cleanlab.ai",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "clear.ml",
     "mentions": 0,
     "n_op": 0
@@ -12096,17 +11441,7 @@
     "n_op": 0
    },
    {
-    "domain": "climatiq.io",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "clinicalnotes.ai",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "cloudbeds.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -12132,16 +11467,6 @@
    },
    {
     "domain": "coachcare.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "coachmeplus.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "coachnow.io",
     "mentions": 0,
     "n_op": 0
    },
@@ -12271,11 +11596,6 @@
     "n_op": 0
    },
    {
-    "domain": "commonpaper.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "commsor.com",
     "mentions": 0,
     "n_op": 0
@@ -12341,11 +11661,6 @@
     "n_op": 0
    },
    {
-    "domain": "consentmanager.net",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "consider.it",
     "mentions": 0,
     "n_op": 0
@@ -12386,11 +11701,6 @@
     "n_op": 0
    },
    {
-    "domain": "convin.ai",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "cookie3.co",
     "mentions": 0,
     "n_op": 0
@@ -12417,11 +11727,6 @@
    },
    {
     "domain": "courtreserve.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "coveragebook.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -12467,11 +11772,6 @@
    },
    {
     "domain": "crosbylegal.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "cryptoquant.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -12586,11 +11886,6 @@
     "n_op": 0
    },
    {
-    "domain": "dealerbuilt.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "dealmachine.com",
     "mentions": 0,
     "n_op": 0
@@ -12656,11 +11951,6 @@
     "n_op": 0
    },
    {
-    "domain": "dehavilland.co.uk",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "delenta.com",
     "mentions": 0,
     "n_op": 0
@@ -12721,17 +12011,7 @@
     "n_op": 0
    },
    {
-    "domain": "didomi.io",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "diffbot.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "dify.ai",
     "mentions": 0,
     "n_op": 0
    },
@@ -12816,22 +12096,12 @@
     "n_op": 0
    },
    {
-    "domain": "doubleverify.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "dovetail.com",
     "mentions": 0,
     "n_op": 0
    },
    {
     "domain": "dozuki.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "dreamdata.io",
     "mentions": 0,
     "n_op": 0
    },
@@ -12856,17 +12126,7 @@
     "n_op": 0
    },
    {
-    "domain": "dub.co",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "dubber.net",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "duckcreek.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -12892,11 +12152,6 @@
    },
    {
     "domain": "ecamm.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "ecovadis.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -12986,11 +12241,6 @@
     "n_op": 0
    },
    {
-    "domain": "endtest.io",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "enlitic.com",
     "mentions": 0,
     "n_op": 0
@@ -13046,11 +12296,6 @@
     "n_op": 0
    },
    {
-    "domain": "eventtemple.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "evenuplaw.com",
     "mentions": 0,
     "n_op": 0
@@ -13066,22 +12311,12 @@
     "n_op": 0
    },
    {
-    "domain": "eversports.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "everstream.ai",
     "mentions": 0,
     "n_op": 0
    },
    {
     "domain": "evervault.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "evidentlyai.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -13101,16 +12336,6 @@
     "n_op": 0
    },
    {
-    "domain": "exostellar.ai",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "expandi.io",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "expel.com",
     "mentions": 0,
     "n_op": 0
@@ -13126,11 +12351,6 @@
     "n_op": 0
    },
    {
-    "domain": "exterro.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "eyespy360.com",
     "mentions": 0,
     "n_op": 0
@@ -13141,32 +12361,12 @@
     "n_op": 0
    },
    {
-    "domain": "factset.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "fanbasis.com",
     "mentions": 0,
     "n_op": 0
    },
    {
     "domain": "farmersedge.ca",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "farmqa.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "farmraise.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "fastdemocracy.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -13241,11 +12441,6 @@
     "n_op": 0
    },
    {
-    "domain": "fiscalnote.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "fitbod.me",
     "mentions": 0,
     "n_op": 0
@@ -13297,11 +12492,6 @@
    },
    {
     "domain": "flow.club",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "flowiseai.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -13421,16 +12611,6 @@
     "n_op": 0
    },
    {
-    "domain": "garageplug.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "gatling.io",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "gatsby.ai",
     "mentions": 0,
     "n_op": 0
@@ -13476,16 +12656,6 @@
     "n_op": 0
    },
    {
-    "domain": "getkion.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "getkoala.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "getmeez.com",
     "mentions": 0,
     "n_op": 0
@@ -13526,32 +12696,12 @@
     "n_op": 0
    },
    {
-    "domain": "getthru.io",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "getweave.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "giskard.ai",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "gitkraken.com",
     "mentions": 0,
     "n_op": 0
    },
    {
     "domain": "glass.health",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "glassnode.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -13637,16 +12787,6 @@
    },
    {
     "domain": "grapecity.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "grata.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "gratapro.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -13771,11 +12911,6 @@
     "n_op": 0
    },
    {
-    "domain": "hackerone.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "halotechs.com",
     "mentions": 0,
     "n_op": 0
@@ -13787,11 +12922,6 @@
    },
    {
     "domain": "happyrobot.ai",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "harmonic.fun",
     "mentions": 0,
     "n_op": 0
    },
@@ -13827,11 +12957,6 @@
    },
    {
     "domain": "hellopearl.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "hellowalla.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -13926,11 +13051,6 @@
     "n_op": 0
    },
    {
-    "domain": "howgood.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "hqo.co",
     "mentions": 0,
     "n_op": 0
@@ -13961,27 +13081,7 @@
     "n_op": 0
    },
    {
-    "domain": "hume.ai",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "hustle.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "hustle.life",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "hypeinnovation.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "hypercomply.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -14081,11 +13181,6 @@
     "n_op": 0
    },
    {
-    "domain": "indicodata.ai",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "inferact.ai",
     "mentions": 0,
     "n_op": 0
@@ -14141,17 +13236,7 @@
     "n_op": 0
    },
    {
-    "domain": "insurity.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "integrate.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "integritynext.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -14172,11 +13257,6 @@
    },
    {
     "domain": "intrinio.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "intruder.io",
     "mentions": 0,
     "n_op": 0
    },
@@ -14271,11 +13351,6 @@
     "n_op": 0
    },
    {
-    "domain": "jfrog.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "jigsawtrading.com",
     "mentions": 0,
     "n_op": 0
@@ -14352,11 +13427,6 @@
    },
    {
     "domain": "jupiterintel.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "jupiterone.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -14476,11 +13546,6 @@
     "n_op": 0
    },
    {
-    "domain": "kitmanlabs.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "kliktik.com",
     "mentions": 0,
     "n_op": 0
@@ -14526,11 +13591,6 @@
     "n_op": 0
    },
    {
-    "domain": "kukui.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "kwant.ai",
     "mentions": 0,
     "n_op": 0
@@ -14556,17 +13616,7 @@
     "n_op": 0
    },
    {
-    "domain": "landing.ai",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "landlordwebsolutions.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "langchain.dev",
     "mentions": 0,
     "n_op": 0
    },
@@ -14622,11 +13672,6 @@
    },
    {
     "domain": "layerzero.network",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "leadershipconnect.io",
     "mentions": 0,
     "n_op": 0
    },
@@ -14741,16 +13786,6 @@
     "n_op": 0
    },
    {
-    "domain": "llamaindex.ai",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "loanpro.io",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "locus.sh",
     "mentions": 0,
     "n_op": 0
@@ -14801,22 +13836,12 @@
     "n_op": 0
    },
    {
-    "domain": "loox.io",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "loris.ai",
     "mentions": 0,
     "n_op": 0
    },
    {
     "domain": "loyalshops.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "loyaltylion.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -14842,11 +13867,6 @@
    },
    {
     "domain": "lumenlearning.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "luminance.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -14911,11 +13931,6 @@
     "n_op": 0
    },
    {
-    "domain": "magnolia.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "mails.ai",
     "mentions": 0,
     "n_op": 0
@@ -14932,11 +13947,6 @@
    },
    {
     "domain": "malt-ai.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "mambu.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -15016,22 +14026,12 @@
     "n_op": 0
    },
    {
-    "domain": "mechanicdesk.com.au",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "medable.com",
     "mentions": 0,
     "n_op": 0
    },
    {
     "domain": "medmehealth.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "medplum.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -15052,11 +14052,6 @@
    },
    {
     "domain": "mercurygate.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "merklescience.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -15121,11 +14116,6 @@
     "n_op": 0
    },
    {
-    "domain": "mindsdb.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "mirabeltechnologies.com",
     "mentions": 0,
     "n_op": 0
@@ -15166,22 +14156,7 @@
     "n_op": 0
    },
    {
-    "domain": "modmed.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "moloco.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "momentic.ai",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "momentum.io",
     "mentions": 0,
     "n_op": 0
    },
@@ -15226,11 +14201,6 @@
     "n_op": 0
    },
    {
-    "domain": "muckrack.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "multion.ai",
     "mentions": 0,
     "n_op": 0
@@ -15267,11 +14237,6 @@
    },
    {
     "domain": "mypebble.co.uk",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "mypthub.net",
     "mentions": 0,
     "n_op": 0
    },
@@ -15326,17 +14291,7 @@
     "n_op": 0
    },
    {
-    "domain": "nektar.ai",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "neptune.ai",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "nethermind.io",
     "mentions": 0,
     "n_op": 0
    },
@@ -15431,11 +14386,6 @@
     "n_op": 0
    },
    {
-    "domain": "northbeam.io",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "nota.ai",
     "mentions": 0,
     "n_op": 0
@@ -15467,11 +14417,6 @@
    },
    {
     "domain": "novacredit.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "novata.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -15526,11 +14471,6 @@
     "n_op": 0
    },
    {
-    "domain": "ocrolus.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "octane.ai",
     "mentions": 0,
     "n_op": 0
@@ -15551,32 +14491,12 @@
     "n_op": 0
    },
    {
-    "domain": "okendo.io",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "okteto.com",
     "mentions": 0,
     "n_op": 0
    },
    {
-    "domain": "omeda.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "omnitok.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "onclusive.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "ondato.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -15646,11 +14566,6 @@
     "n_op": 0
    },
    {
-    "domain": "opexfit.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "opslevel.com",
     "mentions": 0,
     "n_op": 0
@@ -15672,16 +14587,6 @@
    },
    {
     "domain": "optionalpha.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "optionsplay.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "optionstrat.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -15861,11 +14766,6 @@
     "n_op": 0
    },
    {
-    "domain": "pbssystems.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "peckshield.com",
     "mentions": 0,
     "n_op": 0
@@ -15907,11 +14807,6 @@
    },
    {
     "domain": "petscreening.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "photonengine.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -16001,11 +14896,6 @@
     "n_op": 0
    },
    {
-    "domain": "pocket.network",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "pocus.com",
     "mentions": 0,
     "n_op": 0
@@ -16027,11 +14917,6 @@
    },
    {
     "domain": "poggio.io",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "poly.ai",
     "mentions": 0,
     "n_op": 0
    },
@@ -16201,11 +15086,6 @@
     "n_op": 0
    },
    {
-    "domain": "proxmox.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "publicinput.com",
     "mentions": 0,
     "n_op": 0
@@ -16222,11 +15102,6 @@
    },
    {
     "domain": "pubrio.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "pulsargroup.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -16261,16 +15136,6 @@
     "n_op": 0
    },
    {
-    "domain": "qualifacts.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "quantified.ai",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "quantower.com",
     "mentions": 0,
     "n_op": 0
@@ -16287,11 +15152,6 @@
    },
    {
     "domain": "quibim.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "quicknode.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -16326,27 +15186,12 @@
     "n_op": 0
    },
    {
-    "domain": "quotewerks.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "quotientapp.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "qure.ai",
     "mentions": 0,
     "n_op": 0
    },
    {
     "domain": "qventus.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "qwoted.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -16387,11 +15232,6 @@
    },
    {
     "domain": "rcanalytics.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "reach.vote",
     "mentions": 0,
     "n_op": 0
    },
@@ -16521,22 +15361,12 @@
     "n_op": 0
    },
    {
-    "domain": "resnexus.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "resolver.com",
     "mentions": 0,
     "n_op": 0
    },
    {
     "domain": "resolvergroup.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "respeecher.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -16696,11 +15526,6 @@
     "n_op": 0
    },
    {
-    "domain": "roomraccoon.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "rootly.com",
     "mentions": 0,
     "n_op": 0
@@ -16806,16 +15631,6 @@
     "n_op": 0
    },
    {
-    "domain": "santiment.net",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "sardine.ai",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "satoricyber.com",
     "mentions": 0,
     "n_op": 0
@@ -16871,11 +15686,6 @@
     "n_op": 0
    },
    {
-    "domain": "scorechain.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "scoutbee.com",
     "mentions": 0,
     "n_op": 0
@@ -16902,11 +15712,6 @@
    },
    {
     "domain": "secondmeasure.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "secondnature.ai",
     "mentions": 0,
     "n_op": 0
    },
@@ -16956,11 +15761,6 @@
     "n_op": 0
    },
    {
-    "domain": "sendtrumpet.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "sense.hr",
     "mentions": 0,
     "n_op": 0
@@ -16977,11 +15777,6 @@
    },
    {
     "domain": "sentera.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "sentimentrader.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -17007,11 +15802,6 @@
    },
    {
     "domain": "serrala.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "servicepath.co",
     "mentions": 0,
     "n_op": 0
    },
@@ -17047,11 +15837,6 @@
    },
    {
     "domain": "shodan.io",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "shootproof.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -17096,17 +15881,7 @@
     "n_op": 0
    },
    {
-    "domain": "signal-ai.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "signos.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "signpost.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -17196,16 +15971,6 @@
     "n_op": 0
    },
    {
-    "domain": "skit.ai",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "skylead.io",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "sleeknote.com",
     "mentions": 0,
     "n_op": 0
@@ -17241,11 +16006,6 @@
     "n_op": 0
    },
    {
-    "domain": "smile.io",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "smint.io",
     "mentions": 0,
     "n_op": 0
@@ -17261,11 +16021,6 @@
     "n_op": 0
    },
    {
-    "domain": "snitcher.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "soapboxhq.com",
     "mentions": 0,
     "n_op": 0
@@ -17277,11 +16032,6 @@
    },
    {
     "domain": "socialscan.io",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "socotra.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -17317,11 +16067,6 @@
    },
    {
     "domain": "solutionreach.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "sonarsource.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -17366,11 +16111,6 @@
     "n_op": 0
    },
    {
-    "domain": "speak4.co",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "speccheckrx.com",
     "mentions": 0,
     "n_op": 0
@@ -17392,11 +16132,6 @@
    },
    {
     "domain": "spendgo.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "sphera.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -17432,11 +16167,6 @@
    },
    {
     "domain": "sprintzen.app",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "sproutstudio.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -17491,16 +16221,6 @@
     "n_op": 0
    },
    {
-    "domain": "stockanalysis.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "stormforge.io",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "storyteq.com",
     "mentions": 0,
     "n_op": 0
@@ -17542,11 +16262,6 @@
    },
    {
     "domain": "strumplatform.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "studioninja.co",
     "mentions": 0,
     "n_op": 0
    },
@@ -17616,16 +16331,6 @@
     "n_op": 0
    },
    {
-    "domain": "sweep.io",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "sweep.net",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "swellai.com",
     "mentions": 0,
     "n_op": 0
@@ -17676,11 +16381,6 @@
     "n_op": 0
    },
    {
-    "domain": "syndica.io",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "syndicate.io",
     "mentions": 0,
     "n_op": 0
@@ -17717,11 +16417,6 @@
    },
    {
     "domain": "talent2go.de",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "talkwalker.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -17771,17 +16466,7 @@
     "n_op": 0
    },
    {
-    "domain": "teambuildr.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "teammstrd.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "tebra.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -17811,17 +16496,7 @@
     "n_op": 0
    },
    {
-    "domain": "tenderly.co",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "tennr.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "termly.io",
     "mentions": 0,
     "n_op": 0
    },
@@ -17836,17 +16511,7 @@
     "n_op": 0
    },
    {
-    "domain": "testrigor.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "tetrate.io",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "texau.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -17876,11 +16541,6 @@
     "n_op": 0
    },
    {
-    "domain": "thelevel.ai",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "themis.com",
     "mentions": 0,
     "n_op": 0
@@ -17892,11 +16552,6 @@
    },
    {
     "domain": "thinknum.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "thirdweb.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -17922,11 +16577,6 @@
    },
    {
     "domain": "tigereye.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "tiingo.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -17981,17 +16631,7 @@
     "n_op": 0
    },
    {
-    "domain": "toornament.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "toothfairyai.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "traceable.ai",
     "mentions": 0,
     "n_op": 0
    },
@@ -18002,11 +16642,6 @@
    },
    {
     "domain": "tractable.ai",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "tracxn.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -18027,16 +16662,6 @@
    },
    {
     "domain": "tradervue.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "trainerize.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "trainheroic.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -18071,22 +16696,12 @@
     "n_op": 0
    },
    {
-    "domain": "trigify.io",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "triplelift.com",
     "mentions": 0,
     "n_op": 0
    },
    {
     "domain": "triptease.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "trmlabs.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -18107,11 +16722,6 @@
    },
    {
     "domain": "trustmapp.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "trychameleon.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -18137,16 +16747,6 @@
    },
    {
     "domain": "turing.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "turnkey-lender.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "tveyes.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -18222,11 +16822,6 @@
    },
    {
     "domain": "upguard.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "uplandsoftware.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -18331,11 +16926,6 @@
     "n_op": 0
    },
    {
-    "domain": "vellum.ai",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "vendorvue.io",
     "mentions": 0,
     "n_op": 0
@@ -18426,11 +17016,6 @@
     "n_op": 0
    },
    {
-    "domain": "voicemod.net",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "voize.de",
     "mentions": 0,
     "n_op": 0
@@ -18471,22 +17056,12 @@
     "n_op": 0
    },
    {
-    "domain": "waalaxy.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
     "domain": "wails.io",
     "mentions": 0,
     "n_op": 0
    },
    {
     "domain": "wandb.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "wappalyzer.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -18542,16 +17117,6 @@
    },
    {
     "domain": "welldoc.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "wellsky.com",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "whalewisdom.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -18677,11 +17242,6 @@
    },
    {
     "domain": "wyzard.ai",
-    "mentions": 0,
-    "n_op": 0
-   },
-   {
-    "domain": "xactlycorp.com",
     "mentions": 0,
     "n_op": 0
    },
@@ -18836,7 +17396,137 @@
     "n_op": 0
    },
    {
-    "domain": "zywave.com",
+    "domain": "cordial.com",
+    "mentions": 0,
+    "n_op": 0
+   },
+   {
+    "domain": "cycloid.io",
+    "mentions": 0,
+    "n_op": 0
+   },
+   {
+    "domain": "engagingnetworks.net",
+    "mentions": 0,
+    "n_op": 0
+   },
+   {
+    "domain": "float.com",
+    "mentions": 0,
+    "n_op": 0
+   },
+   {
+    "domain": "gymcatch.com",
+    "mentions": 0,
+    "n_op": 0
+   },
+   {
+    "domain": "haiilo.com",
+    "mentions": 0,
+    "n_op": 0
+   },
+   {
+    "domain": "jiminny.com",
+    "mentions": 0,
+    "n_op": 0
+   },
+   {
+    "domain": "kissflow.com",
+    "mentions": 0,
+    "n_op": 0
+   },
+   {
+    "domain": "meltwater.com",
+    "mentions": 0,
+    "n_op": 0
+   },
+   {
+    "domain": "modjo.ai",
+    "mentions": 0,
+    "n_op": 0
+   },
+   {
+    "domain": "moxo.com",
+    "mentions": 0,
+    "n_op": 0
+   },
+   {
+    "domain": "oneflow.com",
+    "mentions": 0,
+    "n_op": 0
+   },
+   {
+    "domain": "parasoft.com",
+    "mentions": 0,
+    "n_op": 0
+   },
+   {
+    "domain": "pigment.com",
+    "mentions": 0,
+    "n_op": 0
+   },
+   {
+    "domain": "pike13.com",
+    "mentions": 0,
+    "n_op": 0
+   },
+   {
+    "domain": "qwilr.com",
+    "mentions": 0,
+    "n_op": 0
+   },
+   {
+    "domain": "rowy.io",
+    "mentions": 0,
+    "n_op": 0
+   },
+   {
+    "domain": "salesmanago.com",
+    "mentions": 0,
+    "n_op": 0
+   },
+   {
+    "domain": "seismic.com",
+    "mentions": 0,
+    "n_op": 0
+   },
+   {
+    "domain": "snowplow.io",
+    "mentions": 0,
+    "n_op": 0
+   },
+   {
+    "domain": "spekit.com",
+    "mentions": 0,
+    "n_op": 0
+   },
+   {
+    "domain": "stonly.com",
+    "mentions": 0,
+    "n_op": 0
+   },
+   {
+    "domain": "tonkean.com",
+    "mentions": 0,
+    "n_op": 0
+   },
+   {
+    "domain": "useinsider.com",
+    "mentions": 0,
+    "n_op": 0
+   },
+   {
+    "domain": "venasolutions.com",
+    "mentions": 0,
+    "n_op": 0
+   },
+   {
+    "domain": "webengage.com",
+    "mentions": 0,
+    "n_op": 0
+   },
+   {
+    "domain": "workfusion.com",
     "mentions": 0,
     "n_op": 0
    }
@@ -18849,31 +17539,66 @@
    },
    {
     "domain": "1mind.com",
+    "mentions": 2,
+    "n_op": 0
+   },
+   {
+    "domain": "2iqresearch.com",
+    "mentions": 1,
+    "n_op": 0
+   },
+   {
+    "domain": "55-ip.com",
     "mentions": 1,
     "n_op": 0
    },
    {
     "domain": "abacum.ai",
-    "mentions": 2,
-    "n_op": 0
+    "mentions": 4,
+    "n_op": 1
    },
    {
     "domain": "abacum.io",
-    "mentions": 2,
-    "n_op": 0
+    "mentions": 4,
+    "n_op": 1
+   },
+   {
+    "domain": "abcfitness.com",
+    "mentions": 1,
+    "n_op": 1
    },
    {
     "domain": "abstrakt.ai",
-    "mentions": 2,
+    "mentions": 3,
     "n_op": 0
    },
    {
     "domain": "accelq.com",
+    "mentions": 4,
+    "n_op": 2
+   },
+   {
+    "domain": "addepar.com",
+    "mentions": 2,
+    "n_op": 0
+   },
+   {
+    "domain": "admetrics.io",
     "mentions": 1,
     "n_op": 0
    },
    {
-    "domain": "addepar.com",
+    "domain": "advancedmd.com",
+    "mentions": 2,
+    "n_op": 0
+   },
+   {
+    "domain": "advyzon.com",
+    "mentions": 4,
+    "n_op": 1
+   },
+   {
+    "domain": "aembit.io",
     "mentions": 1,
     "n_op": 0
    },
@@ -18889,12 +17614,12 @@
    },
    {
     "domain": "agilecrm.com",
-    "mentions": 2,
+    "mentions": 3,
     "n_op": 2
    },
    {
     "domain": "agiloft.com",
-    "mentions": 1,
+    "mentions": 4,
     "n_op": 0
    },
    {
@@ -18904,17 +17629,12 @@
    },
    {
     "domain": "air.inc",
-    "mentions": 1,
-    "n_op": 0
-   },
-   {
-    "domain": "aisdr.com",
-    "mentions": 4,
+    "mentions": 2,
     "n_op": 0
    },
    {
     "domain": "aiseo.ai",
-    "mentions": 3,
+    "mentions": 9,
     "n_op": 0
    },
    {
@@ -18923,13 +17643,8 @@
     "n_op": 0
    },
    {
-    "domain": "akeyless.io",
-    "mentions": 2,
-    "n_op": 1
-   },
-   {
     "domain": "akiflow.com",
-    "mentions": 2,
+    "mentions": 4,
     "n_op": 1
    },
    {
@@ -18938,33 +17653,68 @@
     "n_op": 1
    },
    {
-    "domain": "allbound.com",
+    "domain": "alignedup.com",
+    "mentions": 3,
+    "n_op": 2
+   },
+   {
+    "domain": "all-hands.dev",
     "mentions": 2,
+    "n_op": 0
+   },
+   {
+    "domain": "allbound.com",
+    "mentions": 3,
     "n_op": 1
    },
    {
-    "domain": "amperity.com",
+    "domain": "altered.ai",
     "mentions": 1,
+    "n_op": 1
+   },
+   {
+    "domain": "altrady.com",
+    "mentions": 1,
+    "n_op": 0
+   },
+   {
+    "domain": "amperity.com",
+    "mentions": 2,
     "n_op": 0
    },
    {
     "domain": "amplemarket.com",
-    "mentions": 1,
-    "n_op": 0
+    "mentions": 3,
+    "n_op": 2
+   },
+   {
+    "domain": "amuse.io",
+    "mentions": 2,
+    "n_op": 2
+   },
+   {
+    "domain": "ankr.com",
+    "mentions": 4,
+    "n_op": 2
    },
    {
     "domain": "anodot.com",
+    "mentions": 2,
+    "n_op": 1
+   },
+   {
+    "domain": "anvilogic.com",
     "mentions": 1,
     "n_op": 0
    },
    {
     "domain": "any.do",
-    "mentions": 1,
+    "mentions": 3,
     "n_op": 0
    },
    {
     "domain": "anyonehome.com",
-    "mentions": 3,
+    "mentions": 6,
     "n_op": 0
    },
    {
@@ -18973,24 +17723,19 @@
     "n_op": 0
    },
    {
-    "domain": "anysphere.inc",
-    "mentions": 4,
-    "n_op": 1
-   },
-   {
     "domain": "appcast.io",
     "mentions": 3,
     "n_op": 0
    },
    {
     "domain": "appcues.com",
-    "mentions": 2,
+    "mentions": 3,
     "n_op": 0
    },
    {
-    "domain": "applitools.com",
-    "mentions": 2,
-    "n_op": 2
+    "domain": "archera.ai",
+    "mentions": 1,
+    "n_op": 1
    },
    {
     "domain": "archive.com",
@@ -19008,6 +17753,11 @@
     "n_op": 1
    },
    {
+    "domain": "aspire.io",
+    "mentions": 1,
+    "n_op": 0
+   },
+   {
     "domain": "astria.ai",
     "mentions": 1,
     "n_op": 0
@@ -19018,32 +17768,52 @@
     "n_op": 0
    },
    {
+    "domain": "audiotool.com",
+    "mentions": 3,
+    "n_op": 2
+   },
+   {
     "domain": "authory.com",
     "mentions": 3,
     "n_op": 3
    },
    {
-    "domain": "autoleap.com",
-    "mentions": 1,
-    "n_op": 1
+    "domain": "autorfp.ai",
+    "mentions": 2,
+    "n_op": 0
    },
    {
     "domain": "autosoftdms.com",
-    "mentions": 1,
+    "mentions": 2,
     "n_op": 0
    },
    {
     "domain": "awario.com",
+    "mentions": 2,
+    "n_op": 0
+   },
+   {
+    "domain": "axelar.network",
+    "mentions": 1,
+    "n_op": 0
+   },
+   {
+    "domain": "azaleahealth.com",
     "mentions": 1,
     "n_op": 0
    },
    {
     "domain": "back4app.com",
+    "mentions": 2,
+    "n_op": 0
+   },
+   {
+    "domain": "ballparkhq.com",
     "mentions": 1,
     "n_op": 0
    },
    {
-    "domain": "barchart.com",
+    "domain": "bamsec.com",
     "mentions": 1,
     "n_op": 0
    },
@@ -19053,23 +17823,8 @@
     "n_op": 0
    },
    {
-    "domain": "bazaarvoice.com",
-    "mentions": 2,
-    "n_op": 0
-   },
-   {
-    "domain": "beam.ai",
-    "mentions": 3,
-    "n_op": 0
-   },
-   {
-    "domain": "beefree.io",
-    "mentions": 4,
-    "n_op": 1
-   },
-   {
     "domain": "beekeeperstudio.io",
-    "mentions": 1,
+    "mentions": 3,
     "n_op": 1
    },
    {
@@ -19084,17 +17839,17 @@
    },
    {
     "domain": "billtrust.com",
-    "mentions": 1,
+    "mentions": 3,
     "n_op": 0
    },
    {
-    "domain": "bitquery.io",
+    "domain": "blackduck.com",
     "mentions": 1,
-    "n_op": 0
+    "n_op": 1
    },
    {
     "domain": "blackline.com",
-    "mentions": 2,
+    "mentions": 4,
     "n_op": 1
    },
    {
@@ -19103,8 +17858,28 @@
     "n_op": 1
    },
    {
+    "domain": "blings.io",
+    "mentions": 1,
+    "n_op": 0
+   },
+   {
+    "domain": "blockdaemon.com",
+    "mentions": 4,
+    "n_op": 0
+   },
+   {
+    "domain": "bluecataudio.com",
+    "mentions": 1,
+    "n_op": 0
+   },
+   {
+    "domain": "boldpenguin.com",
+    "mentions": 1,
+    "n_op": 0
+   },
+   {
     "domain": "bolna.dev",
-    "mentions": 3,
+    "mentions": 7,
     "n_op": 0
    },
    {
@@ -19118,33 +17893,38 @@
     "n_op": 0
    },
    {
-    "domain": "breakcold.com",
-    "mentions": 4,
-    "n_op": 2
-   },
-   {
     "domain": "bringg.com",
-    "mentions": 1,
+    "mentions": 2,
     "n_op": 0
    },
    {
     "domain": "budy.bot",
-    "mentions": 1,
+    "mentions": 3,
     "n_op": 0
    },
    {
     "domain": "bug0.com",
+    "mentions": 3,
+    "n_op": 1
+   },
+   {
+    "domain": "bugbug.io",
+    "mentions": 2,
+    "n_op": 0
+   },
+   {
+    "domain": "bunnyshell.com",
     "mentions": 1,
     "n_op": 0
    },
    {
-    "domain": "buzzstream.com",
+    "domain": "buyapowa.com",
     "mentions": 2,
-    "n_op": 2
+    "n_op": 0
    },
    {
     "domain": "bynder.com",
-    "mentions": 2,
+    "mentions": 4,
     "n_op": 1
    },
    {
@@ -19153,13 +17933,28 @@
     "n_op": 0
    },
    {
+    "domain": "cake.com",
+    "mentions": 1,
+    "n_op": 0
+   },
+   {
     "domain": "calabrio.com",
-    "mentions": 2,
+    "mentions": 5,
+    "n_op": 0
+   },
+   {
+    "domain": "callrail.com",
+    "mentions": 4,
     "n_op": 0
    },
    {
     "domain": "canarytechnologies.com",
-    "mentions": 1,
+    "mentions": 2,
+    "n_op": 0
+   },
+   {
+    "domain": "carecloud.com",
+    "mentions": 5,
     "n_op": 0
    },
    {
@@ -19174,18 +17969,13 @@
    },
    {
     "domain": "catapultsports.com",
-    "mentions": 1,
+    "mentions": 2,
     "n_op": 0
    },
    {
-    "domain": "cbinsights.com",
-    "mentions": 3,
-    "n_op": 1
-   },
-   {
-    "domain": "celonis.com",
-    "mentions": 3,
-    "n_op": 1
+    "domain": "catsone.com",
+    "mentions": 145,
+    "n_op": 0
    },
    {
     "domain": "century.tech",
@@ -19193,8 +17983,18 @@
     "n_op": 0
    },
    {
+    "domain": "chainstack.com",
+    "mentions": 3,
+    "n_op": 0
+   },
+   {
     "domain": "channel.io",
     "mentions": 3,
+    "n_op": 0
+   },
+   {
+    "domain": "chatling.ai",
+    "mentions": 1,
     "n_op": 0
    },
    {
@@ -19204,41 +18004,56 @@
    },
    {
     "domain": "checklyhq.com",
-    "mentions": 6,
+    "mentions": 10,
     "n_op": 0
    },
    {
     "domain": "churnkey.co",
-    "mentions": 2,
+    "mentions": 3,
     "n_op": 1
    },
    {
     "domain": "churnzero.com",
-    "mentions": 3,
+    "mentions": 11,
     "n_op": 0
    },
    {
     "domain": "cincom.com",
-    "mentions": 2,
+    "mentions": 4,
     "n_op": 0
    },
    {
-    "domain": "cision.com",
-    "mentions": 15,
-    "n_op": 0
-   },
-   {
-    "domain": "clearwateranalytics.com",
+    "domain": "circleblack.com",
     "mentions": 1,
     "n_op": 0
    },
    {
-    "domain": "clickfunnels.com",
-    "mentions": 5,
+    "domain": "cision.com",
+    "mentions": 32,
+    "n_op": 0
+   },
+   {
+    "domain": "clay.com",
+    "mentions": 2,
+    "n_op": 0
+   },
+   {
+    "domain": "cleanlab.ai",
+    "mentions": 1,
+    "n_op": 0
+   },
+   {
+    "domain": "clearwateranalytics.com",
+    "mentions": 2,
     "n_op": 0
    },
    {
     "domain": "clickpointsoftware.com",
+    "mentions": 1,
+    "n_op": 0
+   },
+   {
+    "domain": "clicksend.com",
     "mentions": 1,
     "n_op": 0
    },
@@ -19248,19 +18063,24 @@
     "n_op": 0
    },
    {
+    "domain": "cloudbeds.com",
+    "mentions": 7,
+    "n_op": 0
+   },
+   {
     "domain": "clueso.io",
-    "mentions": 1,
+    "mentions": 2,
+    "n_op": 0
+   },
+   {
+    "domain": "cobalt.io",
+    "mentions": 2,
     "n_op": 0
    },
    {
     "domain": "cockos.com",
-    "mentions": 1,
+    "mentions": 5,
     "n_op": 0
-   },
-   {
-    "domain": "coconstruct.com",
-    "mentions": 4,
-    "n_op": 3
    },
    {
     "domain": "codacy.com",
@@ -19268,18 +18088,18 @@
     "n_op": 2
    },
    {
-    "domain": "codeium.com",
-    "mentions": 4,
-    "n_op": 1
-   },
-   {
-    "domain": "cometly.com",
+    "domain": "coefficient.io",
     "mentions": 1,
     "n_op": 0
    },
    {
+    "domain": "cometly.com",
+    "mentions": 2,
+    "n_op": 0
+   },
+   {
     "domain": "cometly.io",
-    "mentions": 1,
+    "mentions": 2,
     "n_op": 0
    },
    {
@@ -19288,18 +18108,8 @@
     "n_op": 0
    },
    {
-    "domain": "commercelayer.io",
-    "mentions": 4,
-    "n_op": 1
-   },
-   {
-    "domain": "commonroom.io",
-    "mentions": 4,
-    "n_op": 1
-   },
-   {
     "domain": "communitybrands.com",
-    "mentions": 3,
+    "mentions": 4,
     "n_op": 0
    },
    {
@@ -19308,38 +18118,53 @@
     "n_op": 0
    },
    {
-    "domain": "confident-ai.com",
-    "mentions": 4,
-    "n_op": 2
-   },
-   {
-    "domain": "continu.com",
-    "mentions": 5,
-    "n_op": 0
-   },
-   {
-    "domain": "contrario.ai",
-    "mentions": 26,
-    "n_op": 0
-   },
-   {
-    "domain": "conversion.ai",
+    "domain": "components.ai",
     "mentions": 1,
     "n_op": 0
    },
    {
+    "domain": "consentmanager.net",
+    "mentions": 1,
+    "n_op": 0
+   },
+   {
+    "domain": "contentstack.com",
+    "mentions": 1,
+    "n_op": 0
+   },
+   {
+    "domain": "continu.com",
+    "mentions": 7,
+    "n_op": 0
+   },
+   {
+    "domain": "contrario.ai",
+    "mentions": 34,
+    "n_op": 0
+   },
+   {
+    "domain": "conversion.ai",
+    "mentions": 2,
+    "n_op": 0
+   },
+   {
     "domain": "convex.dev",
+    "mentions": 2,
+    "n_op": 0
+   },
+   {
+    "domain": "corelight.com",
     "mentions": 1,
     "n_op": 0
    },
    {
     "domain": "corgea.com",
-    "mentions": 1,
+    "mentions": 2,
     "n_op": 0
    },
    {
     "domain": "coroot.com",
-    "mentions": 2,
+    "mentions": 3,
     "n_op": 2
    },
    {
@@ -19348,12 +18173,32 @@
     "n_op": 3
    },
    {
-    "domain": "cresta.ai",
-    "mentions": 4,
+    "domain": "craftercms.org",
+    "mentions": 1,
+    "n_op": 0
+   },
+   {
+    "domain": "crate.io",
+    "mentions": 1,
+    "n_op": 0
+   },
+   {
+    "domain": "crd.com",
+    "mentions": 2,
+    "n_op": 0
+   },
+   {
+    "domain": "cropin.com",
+    "mentions": 1,
     "n_op": 1
    },
    {
     "domain": "crosschq.com",
+    "mentions": 2,
+    "n_op": 0
+   },
+   {
+    "domain": "cryptio.co",
     "mentions": 1,
     "n_op": 0
    },
@@ -19363,14 +18208,24 @@
     "n_op": 0
    },
    {
+    "domain": "cryptoquant.com",
+    "mentions": 1,
+    "n_op": 0
+   },
+   {
     "domain": "csdisco.com",
     "mentions": 3,
     "n_op": 0
    },
    {
-    "domain": "culturedcode.com",
-    "mentions": 4,
-    "n_op": 1
+    "domain": "curemd.com",
+    "mentions": 1,
+    "n_op": 0
+   },
+   {
+    "domain": "custify.com",
+    "mentions": 3,
+    "n_op": 0
    },
    {
     "domain": "cyberdesk.io",
@@ -19378,8 +18233,13 @@
     "n_op": 0
    },
    {
-    "domain": "d3security.com",
+    "domain": "cycode.com",
     "mentions": 1,
+    "n_op": 0
+   },
+   {
+    "domain": "d3security.com",
+    "mentions": 2,
     "n_op": 0
    },
    {
@@ -19394,52 +18254,92 @@
    },
    {
     "domain": "dashworks.ai",
-    "mentions": 2,
+    "mentions": 4,
     "n_op": 0
    },
    {
-    "domain": "datawrapper.de",
-    "mentions": 9,
-    "n_op": 0
-   },
-   {
-    "domain": "datocms.com",
+    "domain": "datafold.com",
     "mentions": 1,
     "n_op": 0
    },
    {
-    "domain": "dealhub.io",
-    "mentions": 3,
-    "n_op": 1
+    "domain": "datocms.com",
+    "mentions": 13,
+    "n_op": 0
    },
    {
-    "domain": "deepnote.com",
+    "domain": "dealerbuilt.com",
+    "mentions": 1,
+    "n_op": 0
+   },
+   {
+    "domain": "dealfront.com",
+    "mentions": 2,
+    "n_op": 0
+   },
+   {
+    "domain": "debank.com",
     "mentions": 4,
     "n_op": 0
    },
    {
     "domain": "defitax.us",
-    "mentions": 1,
-    "n_op": 0
-   },
-   {
-    "domain": "detectify.com",
     "mentions": 2,
     "n_op": 0
    },
    {
-    "domain": "diffusion.studio",
+    "domain": "dehavilland.co.uk",
     "mentions": 1,
+    "n_op": 0
+   },
+   {
+    "domain": "demoboost.com",
+    "mentions": 3,
+    "n_op": 1
+   },
+   {
+    "domain": "dentalintel.com",
+    "mentions": 2,
+    "n_op": 1
+   },
+   {
+    "domain": "detectify.com",
+    "mentions": 4,
+    "n_op": 0
+   },
+   {
+    "domain": "diffusion.studio",
+    "mentions": 2,
     "n_op": 0
    },
    {
     "domain": "dlv.de",
+    "mentions": 2,
+    "n_op": 0
+   },
+   {
+    "domain": "dock.us",
+    "mentions": 1,
+    "n_op": 1
+   },
+   {
+    "domain": "docsumo.com",
+    "mentions": 20,
+    "n_op": 0
+   },
+   {
+    "domain": "docyt.com",
+    "mentions": 2,
+    "n_op": 0
+   },
+   {
+    "domain": "doit.com",
     "mentions": 1,
     "n_op": 0
    },
    {
-    "domain": "docsumo.com",
-    "mentions": 3,
+    "domain": "dolby.com",
+    "mentions": 1,
     "n_op": 0
    },
    {
@@ -19449,21 +18349,61 @@
    },
    {
     "domain": "dragonflydb.io",
+    "mentions": 2,
+    "n_op": 0
+   },
+   {
+    "domain": "drchrono.com",
+    "mentions": 1,
+    "n_op": 0
+   },
+   {
+    "domain": "dreamdata.io",
+    "mentions": 1,
+    "n_op": 1
+   },
+   {
+    "domain": "drivecentric.com",
     "mentions": 1,
     "n_op": 0
    },
    {
     "domain": "driveworks.co.uk",
-    "mentions": 1,
+    "mentions": 2,
     "n_op": 0
    },
    {
+    "domain": "dualentry.com",
+    "mentions": 3,
+    "n_op": 0
+   },
+   {
+    "domain": "duckcreek.com",
+    "mentions": 10,
+    "n_op": 0
+   },
+   {
+    "domain": "dune.com",
+    "mentions": 2,
+    "n_op": 2
+   },
+   {
+    "domain": "dust.tt",
+    "mentions": 2,
+    "n_op": 1
+   },
+   {
     "domain": "ebsta.com",
-    "mentions": 1,
+    "mentions": 2,
     "n_op": 0
    },
    {
     "domain": "eclinicalworks.com",
+    "mentions": 12,
+    "n_op": 0
+   },
+   {
+    "domain": "ecovadis.com",
     "mentions": 2,
     "n_op": 0
    },
@@ -19473,18 +18413,23 @@
     "n_op": 0
    },
    {
-    "domain": "eightfold.ai",
+    "domain": "educative.io",
     "mentions": 1,
     "n_op": 0
    },
    {
+    "domain": "eightfold.ai",
+    "mentions": 3,
+    "n_op": 0
+   },
+   {
     "domain": "eisgroup.com",
-    "mentions": 2,
+    "mentions": 3,
     "n_op": 1
    },
    {
     "domain": "elationhealth.com",
-    "mentions": 2,
+    "mentions": 5,
     "n_op": 0
    },
    {
@@ -19494,7 +18439,7 @@
    },
    {
     "domain": "elfsight.com",
-    "mentions": 1,
+    "mentions": 3,
     "n_op": 0
    },
    {
@@ -19514,43 +18459,53 @@
    },
    {
     "domain": "emoneyadvisor.com",
-    "mentions": 1,
-    "n_op": 0
-   },
-   {
-    "domain": "endclose.com",
-    "mentions": 64,
-    "n_op": 0
-   },
-   {
-    "domain": "eodhistoricaldata.com",
-    "mentions": 3,
-    "n_op": 2
-   },
-   {
-    "domain": "equaltime.io",
-    "mentions": 6,
-    "n_op": 0
-   },
-   {
-    "domain": "esker.com",
-    "mentions": 1,
-    "n_op": 0
-   },
-   {
-    "domain": "everyonesocial.com",
     "mentions": 2,
     "n_op": 0
    },
    {
-    "domain": "exabeam.com",
-    "mentions": 1,
+    "domain": "endclose.com",
+    "mentions": 72,
     "n_op": 0
+   },
+   {
+    "domain": "equaltime.io",
+    "mentions": 11,
+    "n_op": 0
+   },
+   {
+    "domain": "esker.com",
+    "mentions": 2,
+    "n_op": 0
+   },
+   {
+    "domain": "everyonesocial.com",
+    "mentions": 4,
+    "n_op": 0
+   },
+   {
+    "domain": "exercise.com",
+    "mentions": 1,
+    "n_op": 1
+   },
+   {
+    "domain": "factors.ai",
+    "mentions": 4,
+    "n_op": 0
+   },
+   {
+    "domain": "fairmarkit.com",
+    "mentions": 2,
+    "n_op": 1
    },
    {
     "domain": "fareye.com",
     "mentions": 1,
     "n_op": 1
+   },
+   {
+    "domain": "fastdemocracy.com",
+    "mentions": 1,
+    "n_op": 0
    },
    {
     "domain": "favro.com",
@@ -19564,21 +18519,21 @@
    },
    {
     "domain": "financialmodelingprep.com",
-    "mentions": 2,
-    "n_op": 1
+    "mentions": 4,
+    "n_op": 2
    },
    {
-    "domain": "finnhub.io",
-    "mentions": 8,
-    "n_op": 0
-   },
-   {
-    "domain": "finviz.com",
-    "mentions": 3,
-    "n_op": 0
+    "domain": "finout.io",
+    "mentions": 4,
+    "n_op": 2
    },
    {
     "domain": "fisiononline.com",
+    "mentions": 1,
+    "n_op": 0
+   },
+   {
+    "domain": "floatbot.ai",
     "mentions": 1,
     "n_op": 0
    },
@@ -19593,24 +18548,34 @@
     "n_op": 3
    },
    {
+    "domain": "flowbox.com",
+    "mentions": 1,
+    "n_op": 1
+   },
+   {
     "domain": "fluidstack.io",
-    "mentions": 4,
+    "mentions": 6,
     "n_op": 0
    },
    {
     "domain": "galileo.ai",
-    "mentions": 2,
+    "mentions": 3,
     "n_op": 0
    },
    {
     "domain": "galileo.io",
-    "mentions": 2,
+    "mentions": 3,
     "n_op": 0
    },
    {
     "domain": "gen.xyz",
-    "mentions": 2,
+    "mentions": 3,
     "n_op": 0
+   },
+   {
+    "domain": "getflowbox.com",
+    "mentions": 1,
+    "n_op": 1
    },
    {
     "domain": "getknit.dev",
@@ -19619,13 +18584,8 @@
    },
    {
     "domain": "getleo.ai",
-    "mentions": 1,
-    "n_op": 1
-   },
-   {
-    "domain": "getsubly.com",
     "mentions": 2,
-    "n_op": 0
+    "n_op": 1
    },
    {
     "domain": "getthera.com",
@@ -19633,13 +18593,38 @@
     "n_op": 0
    },
    {
-    "domain": "getzipline.com",
-    "mentions": 1,
+    "domain": "getthru.io",
+    "mentions": 14,
     "n_op": 0
    },
    {
+    "domain": "getzipline.com",
+    "mentions": 2,
+    "n_op": 0
+   },
+   {
+    "domain": "ghostinspector.com",
+    "mentions": 1,
+    "n_op": 1
+   },
+   {
+    "domain": "giskard.ai",
+    "mentions": 1,
+    "n_op": 1
+   },
+   {
     "domain": "gitguardian.com",
-    "mentions": 5,
+    "mentions": 11,
+    "n_op": 0
+   },
+   {
+    "domain": "glassnode.com",
+    "mentions": 1,
+    "n_op": 1
+   },
+   {
+    "domain": "glean.com",
+    "mentions": 1,
     "n_op": 0
    },
    {
@@ -19649,12 +18634,12 @@
    },
    {
     "domain": "gloo.us",
-    "mentions": 1,
+    "mentions": 3,
     "n_op": 0
    },
    {
     "domain": "gmass.co",
-    "mentions": 1,
+    "mentions": 4,
     "n_op": 0
    },
    {
@@ -19664,22 +18649,17 @@
    },
    {
     "domain": "goperfect.com",
-    "mentions": 1,
+    "mentions": 4,
     "n_op": 0
    },
    {
     "domain": "gradient-labs.ai",
-    "mentions": 2,
+    "mentions": 6,
     "n_op": 0
    },
    {
-    "domain": "graviteesource.com",
-    "mentions": 4,
-    "n_op": 2
-   },
-   {
     "domain": "gravitysketch.com",
-    "mentions": 1,
+    "mentions": 2,
     "n_op": 0
    },
    {
@@ -19693,6 +18673,11 @@
     "n_op": 0
    },
    {
+    "domain": "grin.co",
+    "mentions": 1,
+    "n_op": 1
+   },
+   {
     "domain": "growsurf.com",
     "mentions": 1,
     "n_op": 1
@@ -19703,13 +18688,28 @@
     "n_op": 0
    },
    {
+    "domain": "gurufocus.com",
+    "mentions": 5,
+    "n_op": 0
+   },
+   {
     "domain": "gymdesk.com",
-    "mentions": 2,
+    "mentions": 3,
     "n_op": 2
    },
    {
+    "domain": "hackerone.com",
+    "mentions": 5,
+    "n_op": 0
+   },
+   {
+    "domain": "halcyon.ai",
+    "mentions": 1,
+    "n_op": 0
+   },
+   {
     "domain": "happyclient.fr",
-    "mentions": 3,
+    "mentions": 11,
     "n_op": 0
    },
    {
@@ -19718,23 +18718,28 @@
     "n_op": 1
    },
    {
-    "domain": "hasura.io",
-    "mentions": 4,
-    "n_op": 2
+    "domain": "harver.com",
+    "mentions": 2,
+    "n_op": 0
    },
    {
     "domain": "headset.io",
+    "mentions": 2,
+    "n_op": 0
+   },
+   {
+    "domain": "hebbia.ai",
     "mentions": 1,
     "n_op": 0
    },
    {
-    "domain": "helius.xyz",
+    "domain": "heepsy.com",
     "mentions": 2,
     "n_op": 1
    },
    {
     "domain": "heroiclabs.com",
-    "mentions": 3,
+    "mentions": 4,
     "n_op": 1
    },
    {
@@ -19744,27 +18749,22 @@
    },
    {
     "domain": "highnote.com",
-    "mentions": 13,
+    "mentions": 14,
     "n_op": 0
    },
    {
     "domain": "highnote.fm",
-    "mentions": 13,
+    "mentions": 14,
     "n_op": 0
    },
    {
-    "domain": "highspot.com",
-    "mentions": 4,
-    "n_op": 1
-   },
-   {
     "domain": "himarley.com",
-    "mentions": 1,
+    "mentions": 2,
     "n_op": 0
    },
    {
     "domain": "hippocratic.ai",
-    "mentions": 1,
+    "mentions": 2,
     "n_op": 0
    },
    {
@@ -19774,7 +18774,7 @@
    },
    {
     "domain": "hiredscore.com",
-    "mentions": 1,
+    "mentions": 2,
     "n_op": 0
    },
    {
@@ -19783,8 +18783,13 @@
     "n_op": 4
    },
    {
-    "domain": "hivebrite.com",
+    "domain": "hitnmix.com",
     "mentions": 1,
+    "n_op": 1
+   },
+   {
+    "domain": "hivebrite.com",
+    "mentions": 2,
     "n_op": 1
    },
    {
@@ -19793,23 +18798,33 @@
     "n_op": 1
    },
    {
-    "domain": "huly.io",
-    "mentions": 1,
+    "domain": "hookdeck.com",
+    "mentions": 4,
     "n_op": 0
    },
    {
-    "domain": "hypeauditor.com",
+    "domain": "hover.to",
+    "mentions": 2,
+    "n_op": 0
+   },
+   {
+    "domain": "huly.io",
     "mentions": 3,
     "n_op": 0
    },
    {
+    "domain": "hygraph.com",
+    "mentions": 1,
+    "n_op": 0
+   },
+   {
     "domain": "hyperspell.com",
-    "mentions": 2,
+    "mentions": 3,
     "n_op": 1
    },
    {
     "domain": "hyro.ai",
-    "mentions": 1,
+    "mentions": 2,
     "n_op": 0
    },
    {
@@ -19819,66 +18834,81 @@
    },
    {
     "domain": "ijungo.com",
-    "mentions": 1,
+    "mentions": 3,
     "n_op": 0
    },
    {
     "domain": "ikas.com",
-    "mentions": 2,
+    "mentions": 4,
     "n_op": 0
    },
    {
     "domain": "imagekit.io",
-    "mentions": 2,
+    "mentions": 3,
     "n_op": 1
    },
    {
     "domain": "imagino.com",
-    "mentions": 32,
+    "mentions": 37,
     "n_op": 0
    },
    {
-    "domain": "infracost.io",
-    "mentions": 4,
-    "n_op": 2
+    "domain": "inaccord.com",
+    "mentions": 1,
+    "n_op": 0
+   },
+   {
+    "domain": "influencity.com",
+    "mentions": 2,
+    "n_op": 1
    },
    {
     "domain": "inkeep.com",
-    "mentions": 1,
+    "mentions": 2,
     "n_op": 0
    },
    {
     "domain": "instanda.com",
-    "mentions": 2,
+    "mentions": 3,
     "n_op": 0
    },
    {
     "domain": "intentsify.io",
-    "mentions": 2,
+    "mentions": 4,
+    "n_op": 1
+   },
+   {
+    "domain": "interviewer.ai",
+    "mentions": 1,
     "n_op": 0
    },
    {
     "domain": "investcloud.com",
-    "mentions": 1,
+    "mentions": 2,
     "n_op": 0
    },
    {
     "domain": "ironscales.com",
-    "mentions": 1,
+    "mentions": 8,
     "n_op": 0
    },
    {
     "domain": "ispringsolutions.com",
-    "mentions": 1,
-    "n_op": 0
-   },
-   {
-    "domain": "iubenda.com",
-    "mentions": 4,
+    "mentions": 2,
     "n_op": 0
    },
    {
     "domain": "jeeva.ai",
+    "mentions": 2,
+    "n_op": 0
+   },
+   {
+    "domain": "jit.io",
+    "mentions": 2,
+    "n_op": 0
+   },
+   {
+    "domain": "jobscore.com",
     "mentions": 1,
     "n_op": 0
    },
@@ -19898,11 +18928,6 @@
     "n_op": 1
    },
    {
-    "domain": "kaspr.io",
-    "mentions": 2,
-    "n_op": 0
-   },
-   {
     "domain": "keboola.com",
     "mentions": 6,
     "n_op": 0
@@ -19913,64 +18938,59 @@
     "n_op": 1
    },
    {
+    "domain": "keelvar.com",
+    "mentions": 2,
+    "n_op": 0
+   },
+   {
     "domain": "kenjo.io",
     "mentions": 1,
     "n_op": 0
    },
    {
-    "domain": "keywordsai.co",
-    "mentions": 4,
-    "n_op": 1
-   },
-   {
     "domain": "kick.co",
-    "mentions": 397,
+    "mentions": 499,
     "n_op": 0
    },
    {
     "domain": "kits.ai",
-    "mentions": 2,
-    "n_op": 0
-   },
-   {
-    "domain": "kixie.com",
-    "mentions": 2,
-    "n_op": 1
-   },
-   {
-    "domain": "knak.com",
-    "mentions": 1,
-    "n_op": 0
-   },
-   {
-    "domain": "knak.io",
-    "mentions": 1,
-    "n_op": 0
-   },
-   {
-    "domain": "konghq.com",
-    "mentions": 3,
-    "n_op": 1
-   },
-   {
-    "domain": "koyfin.com",
-    "mentions": 1,
-    "n_op": 0
-   },
-   {
-    "domain": "lakera.ai",
     "mentions": 4,
     "n_op": 0
    },
    {
-    "domain": "lang.ai",
-    "mentions": 9,
+    "domain": "klarity.ai",
+    "mentions": 1,
     "n_op": 0
    },
    {
-    "domain": "langdock.com",
-    "mentions": 3,
-    "n_op": 1
+    "domain": "knak.com",
+    "mentions": 2,
+    "n_op": 0
+   },
+   {
+    "domain": "knak.io",
+    "mentions": 2,
+    "n_op": 0
+   },
+   {
+    "domain": "kochava.com",
+    "mentions": 1,
+    "n_op": 0
+   },
+   {
+    "domain": "kryptos.io",
+    "mentions": 1,
+    "n_op": 0
+   },
+   {
+    "domain": "landing.ai",
+    "mentions": 1,
+    "n_op": 0
+   },
+   {
+    "domain": "lang.ai",
+    "mentions": 13,
+    "n_op": 0
    },
    {
     "domain": "latchel.com",
@@ -19979,7 +18999,7 @@
    },
    {
     "domain": "lately.ai",
-    "mentions": 15,
+    "mentions": 16,
     "n_op": 0
    },
    {
@@ -19989,22 +19009,17 @@
    },
    {
     "domain": "lawmatics.com",
-    "mentions": 2,
+    "mentions": 7,
     "n_op": 0
    },
    {
     "domain": "lawpay.com",
-    "mentions": 2,
-    "n_op": 1
-   },
-   {
-    "domain": "layerx.co.jp",
     "mentions": 3,
     "n_op": 1
    },
    {
     "domain": "leadanywhere.com",
-    "mentions": 21,
+    "mentions": 26,
     "n_op": 0
    },
    {
@@ -20014,22 +19029,17 @@
    },
    {
     "domain": "leadgenius.com",
-    "mentions": 1,
+    "mentions": 2,
     "n_op": 0
    },
    {
-    "domain": "leadiq.com",
-    "mentions": 4,
-    "n_op": 2
-   },
-   {
     "domain": "leadloft.com",
-    "mentions": 1,
+    "mentions": 3,
     "n_op": 0
    },
    {
     "domain": "leadmanager.co.il",
-    "mentions": 6,
+    "mentions": 7,
     "n_op": 0
    },
    {
@@ -20038,28 +19048,18 @@
     "n_op": 1
    },
    {
-    "domain": "letterly.io",
-    "mentions": 4,
-    "n_op": 3
-   },
-   {
-    "domain": "lifetimely.io",
-    "mentions": 3,
-    "n_op": 1
-   },
-   {
-    "domain": "liondesk.com",
-    "mentions": 2,
-    "n_op": 1
-   },
-   {
     "domain": "listenlabs.ai",
-    "mentions": 3,
+    "mentions": 6,
     "n_op": 0
    },
    {
     "domain": "literalai.com",
-    "mentions": 2,
+    "mentions": 4,
+    "n_op": 0
+   },
+   {
+    "domain": "livedocs.com",
+    "mentions": 1,
     "n_op": 0
    },
    {
@@ -20069,17 +19069,32 @@
    },
    {
     "domain": "lookfor.ai",
+    "mentions": 2,
+    "n_op": 0
+   },
+   {
+    "domain": "loopio.com",
+    "mentions": 4,
+    "n_op": 1
+   },
+   {
+    "domain": "lovo.ai",
     "mentions": 1,
     "n_op": 0
    },
    {
+    "domain": "loyaltylion.com",
+    "mentions": 2,
+    "n_op": 1
+   },
+   {
     "domain": "lyssna.com",
-    "mentions": 1,
+    "mentions": 4,
     "n_op": 0
    },
    {
     "domain": "mabl.com",
-    "mentions": 2,
+    "mentions": 4,
     "n_op": 0
    },
    {
@@ -20089,37 +19104,62 @@
    },
    {
     "domain": "marketchameleon.com",
-    "mentions": 1,
+    "mentions": 2,
     "n_op": 0
    },
    {
     "domain": "marmalead.com",
+    "mentions": 4,
+    "n_op": 0
+   },
+   {
+    "domain": "marsello.com",
+    "mentions": 1,
+    "n_op": 0
+   },
+   {
+    "domain": "material.security",
     "mentions": 2,
     "n_op": 0
    },
    {
     "domain": "maze.design",
-    "mentions": 16,
+    "mentions": 17,
     "n_op": 0
    },
    {
-    "domain": "medibang.com",
-    "mentions": 3,
-    "n_op": 1
-   },
-   {
-    "domain": "meeting.ai",
+    "domain": "mediavalet.com",
     "mentions": 1,
     "n_op": 0
    },
    {
+    "domain": "medibang.com",
+    "mentions": 4,
+    "n_op": 1
+   },
+   {
+    "domain": "medius.com",
+    "mentions": 2,
+    "n_op": 0
+   },
+   {
+    "domain": "medplum.com",
+    "mentions": 2,
+    "n_op": 0
+   },
+   {
+    "domain": "meeting.ai",
+    "mentions": 4,
+    "n_op": 0
+   },
+   {
     "domain": "mention-me.com",
-    "mentions": 18,
+    "mentions": 59,
     "n_op": 0
    },
    {
     "domain": "mentorcliq.com",
-    "mentions": 9,
+    "mentions": 11,
     "n_op": 0
    },
    {
@@ -20128,33 +19168,48 @@
     "n_op": 2
    },
    {
-    "domain": "metadata.io",
-    "mentions": 9,
+    "domain": "merklescience.com",
+    "mentions": 13,
     "n_op": 0
    },
    {
-    "domain": "mindee.com",
+    "domain": "metadata.io",
+    "mentions": 12,
+    "n_op": 0
+   },
+   {
+    "domain": "metaplane.dev",
     "mentions": 1,
     "n_op": 0
    },
    {
+    "domain": "mindee.com",
+    "mentions": 3,
+    "n_op": 0
+   },
+   {
     "domain": "mindstudio.ai",
-    "mentions": 2,
+    "mentions": 6,
     "n_op": 0
    },
    {
     "domain": "minimum.com",
+    "mentions": 2,
+    "n_op": 0
+   },
+   {
+    "domain": "mitchell1.com",
     "mentions": 1,
     "n_op": 0
    },
    {
     "domain": "mixmax.com",
-    "mentions": 1,
-    "n_op": 1
+    "mentions": 3,
+    "n_op": 2
    },
    {
     "domain": "modal.com",
-    "mentions": 5,
+    "mentions": 14,
     "n_op": 0
    },
    {
@@ -20163,33 +19218,28 @@
     "n_op": 1
    },
    {
+    "domain": "modmed.com",
+    "mentions": 158,
+    "n_op": 0
+   },
+   {
     "domain": "moesif.com",
+    "mentions": 2,
+    "n_op": 1
+   },
+   {
+    "domain": "moises.ai",
     "mentions": 1,
     "n_op": 1
    },
    {
-    "domain": "moneyguide.com",
-    "mentions": 1,
-    "n_op": 0
-   },
-   {
-    "domain": "moneyguidepro.com",
-    "mentions": 1,
-    "n_op": 0
-   },
-   {
-    "domain": "moralis.io",
-    "mentions": 1,
-    "n_op": 0
-   },
-   {
     "domain": "morgen.so",
-    "mentions": 1,
+    "mentions": 2,
     "n_op": 0
    },
    {
     "domain": "morningstar.com",
-    "mentions": 3,
+    "mentions": 5,
     "n_op": 0
    },
    {
@@ -20198,8 +19248,18 @@
     "n_op": 0
    },
    {
+    "domain": "muckrack.com",
+    "mentions": 28,
+    "n_op": 0
+   },
+   {
+    "domain": "mygrin.it",
+    "mentions": 1,
+    "n_op": 1
+   },
+   {
     "domain": "myinterview.com",
-    "mentions": 177,
+    "mentions": 248,
     "n_op": 0
    },
    {
@@ -20213,23 +19273,13 @@
     "n_op": 0
    },
    {
-    "domain": "navattic.com",
-    "mentions": 2,
-    "n_op": 1
-   },
-   {
     "domain": "networkforgood.com",
     "mentions": 1,
     "n_op": 1
    },
    {
-    "domain": "nhost.io",
+    "domain": "newconstructs.com",
     "mentions": 4,
-    "n_op": 1
-   },
-   {
-    "domain": "nice.com",
-    "mentions": 1,
     "n_op": 0
    },
    {
@@ -20238,8 +19288,23 @@
     "n_op": 0
    },
    {
-    "domain": "nowpayments.io",
+    "domain": "nops.io",
+    "mentions": 1,
+    "n_op": 0
+   },
+   {
+    "domain": "northbeam.io",
     "mentions": 2,
+    "n_op": 0
+   },
+   {
+    "domain": "northpass.com",
+    "mentions": 1,
+    "n_op": 0
+   },
+   {
+    "domain": "nowpayments.io",
+    "mentions": 7,
     "n_op": 0
    },
    {
@@ -20248,9 +19313,9 @@
     "n_op": 0
    },
    {
-    "domain": "nylas.com",
-    "mentions": 2,
-    "n_op": 1
+    "domain": "nx.dev",
+    "mentions": 1,
+    "n_op": 0
    },
    {
     "domain": "o9solutions.com",
@@ -20259,12 +19324,12 @@
    },
    {
     "domain": "oasis.security",
-    "mentions": 2,
+    "mentions": 3,
     "n_op": 0
    },
    {
     "domain": "observablehq.com",
-    "mentions": 2,
+    "mentions": 4,
     "n_op": 0
    },
    {
@@ -20273,23 +19338,43 @@
     "n_op": 0
    },
    {
-    "domain": "omq.ai",
-    "mentions": 3,
-    "n_op": 1
-   },
-   {
-    "domain": "onetrust.com",
+    "domain": "ocrolus.com",
     "mentions": 1,
     "n_op": 0
    },
    {
-    "domain": "onfleet.com",
+    "domain": "onetrust.com",
     "mentions": 2,
     "n_op": 0
    },
    {
+    "domain": "onfleet.com",
+    "mentions": 4,
+    "n_op": 1
+   },
+   {
+    "domain": "onramp.us",
+    "mentions": 3,
+    "n_op": 1
+   },
+   {
+    "domain": "openbb.co",
+    "mentions": 1,
+    "n_op": 0
+   },
+   {
+    "domain": "openstatus.dev",
+    "mentions": 1,
+    "n_op": 0
+   },
+   {
+    "domain": "optionsplay.com",
+    "mentions": 3,
+    "n_op": 0
+   },
+   {
     "domain": "orq.ai",
-    "mentions": 2,
+    "mentions": 4,
     "n_op": 1
    },
    {
@@ -20304,13 +19389,8 @@
    },
    {
     "domain": "output.com",
-    "mentions": 1,
-    "n_op": 0
-   },
-   {
-    "domain": "outreach.io",
     "mentions": 4,
-    "n_op": 2
+    "n_op": 1
    },
    {
     "domain": "pagefly.io",
@@ -20319,58 +19399,43 @@
    },
    {
     "domain": "parloa.com",
-    "mentions": 1,
-    "n_op": 0
-   },
-   {
-    "domain": "parseur.com",
-    "mentions": 2,
-    "n_op": 0
-   },
-   {
-    "domain": "partnerize.com",
-    "mentions": 1,
-    "n_op": 1
-   },
-   {
-    "domain": "partnerstack.com",
-    "mentions": 3,
-    "n_op": 1
-   },
-   {
-    "domain": "passiv.com",
-    "mentions": 6,
-    "n_op": 0
-   },
-   {
-    "domain": "patronus.ai",
-    "mentions": 2,
-    "n_op": 0
-   },
-   {
-    "domain": "payloadcms.com",
-    "mentions": 3,
+    "mentions": 4,
     "n_op": 2
    },
    {
+    "domain": "patronus.ai",
+    "mentions": 4,
+    "n_op": 0
+   },
+   {
+    "domain": "pbssystems.com",
+    "mentions": 3,
+    "n_op": 0
+   },
+   {
     "domain": "peopledatalabs.com",
-    "mentions": 2,
+    "mentions": 8,
     "n_op": 0
    },
    {
     "domain": "peoplepattern.com",
-    "mentions": 1,
+    "mentions": 3,
+    "n_op": 0
+   },
+   {
+    "domain": "perception-point.io",
+    "mentions": 3,
     "n_op": 0
    },
    {
     "domain": "perimeter81.com",
-    "mentions": 1,
+    "mentions": 2,
     "n_op": 0
    },
    {
     "domain": "persefoni.com",
-    "mentions": 1,
-    "n_op": 0
+    "mentions": 3,
+    "n_op": 1
    },
    {
     "domain": "pezzo.ai",
@@ -20379,33 +19444,38 @@
    },
    {
     "domain": "phidata.com",
-    "mentions": 1,
+    "mentions": 2,
     "n_op": 0
    },
    {
     "domain": "photoshelter.com",
-    "mentions": 1,
+    "mentions": 2,
     "n_op": 1
    },
    {
     "domain": "picnet.net",
-    "mentions": 1,
+    "mentions": 2,
     "n_op": 0
    },
    {
-    "domain": "piktochart.com",
-    "mentions": 3,
-    "n_op": 1
-   },
-   {
     "domain": "pillar.security",
-    "mentions": 1,
+    "mentions": 3,
     "n_op": 0
    },
    {
     "domain": "pipe17.com",
     "mentions": 1,
     "n_op": 1
+   },
+   {
+    "domain": "pitchbook.com",
+    "mentions": 2,
+    "n_op": 0
+   },
+   {
+    "domain": "pitchbox.com",
+    "mentions": 1,
+    "n_op": 0
    },
    {
     "domain": "plandex.ai",
@@ -20415,22 +19485,32 @@
    {
     "domain": "planetdds.com",
     "mentions": 3,
-    "n_op": 0
+    "n_op": 1
    },
    {
     "domain": "planhat.com",
-    "mentions": 1,
+    "mentions": 8,
     "n_op": 0
    },
    {
     "domain": "playground.com",
-    "mentions": 1,
+    "mentions": 3,
     "n_op": 1
    },
    {
-    "domain": "pokee.ai",
-    "mentions": 1,
+    "domain": "plum.io",
+    "mentions": 7,
     "n_op": 0
+   },
+   {
+    "domain": "pokee.ai",
+    "mentions": 3,
+    "n_op": 0
+   },
+   {
+    "domain": "poly.ai",
+    "mentions": 3,
+    "n_op": 2
    },
    {
     "domain": "pop.com",
@@ -20439,13 +19519,18 @@
    },
    {
     "domain": "portfoliobox.net",
-    "mentions": 9,
+    "mentions": 10,
     "n_op": 0
    },
    {
     "domain": "portkey.ai",
-    "mentions": 3,
+    "mentions": 4,
     "n_op": 1
+   },
+   {
+    "domain": "postal.io",
+    "mentions": 1,
+    "n_op": 0
    },
    {
     "domain": "poweredbyhue.com",
@@ -20459,12 +19544,12 @@
    },
    {
     "domain": "ppro.com",
-    "mentions": 1,
+    "mentions": 2,
     "n_op": 1
    },
    {
-    "domain": "prismic.io",
-    "mentions": 2,
+    "domain": "prezly.com",
+    "mentions": 1,
     "n_op": 0
    },
    {
@@ -20474,22 +19559,32 @@
    },
    {
     "domain": "pritunl.com",
-    "mentions": 1,
-    "n_op": 0
-   },
-   {
-    "domain": "profitwell.com",
     "mentions": 2,
     "n_op": 0
    },
    {
-    "domain": "projectdiscovery.io",
+    "domain": "procurify.com",
     "mentions": 1,
+    "n_op": 1
+   },
+   {
+    "domain": "profitwell.com",
+    "mentions": 8,
     "n_op": 0
    },
    {
-    "domain": "prompt.security",
-    "mentions": 6,
+    "domain": "projectdiscovery.io",
+    "mentions": 3,
+    "n_op": 1
+   },
+   {
+    "domain": "prosperops.com",
+    "mentions": 3,
+    "n_op": 3
+   },
+   {
+    "domain": "proxmox.com",
+    "mentions": 7,
     "n_op": 0
    },
    {
@@ -20499,27 +19594,22 @@
    },
    {
     "domain": "purechat.com",
-    "mentions": 8,
+    "mentions": 9,
     "n_op": 0
    },
    {
     "domain": "pymetrics.com",
-    "mentions": 1,
+    "mentions": 2,
     "n_op": 0
    },
    {
-    "domain": "qase.io",
-    "mentions": 1,
-    "n_op": 1
-   },
-   {
-    "domain": "quantconnect.com",
-    "mentions": 1,
-    "n_op": 0
+    "domain": "quiverquant.com",
+    "mentions": 4,
+    "n_op": 2
    },
    {
     "domain": "ranorex.com",
-    "mentions": 1,
+    "mentions": 3,
     "n_op": 0
    },
    {
@@ -20534,23 +19624,18 @@
    },
    {
     "domain": "rask.ai",
-    "mentions": 1,
+    "mentions": 2,
     "n_op": 0
    },
    {
     "domain": "reachdesk.com",
-    "mentions": 1,
+    "mentions": 2,
     "n_op": 0
    },
    {
     "domain": "realgeeks.com",
-    "mentions": 3,
+    "mentions": 4,
     "n_op": 1
-   },
-   {
-    "domain": "reasonstudios.com",
-    "mentions": 2,
-    "n_op": 0
    },
    {
     "domain": "recruitee.com",
@@ -20559,18 +19644,13 @@
    },
    {
     "domain": "redash.io",
-    "mentions": 2,
+    "mentions": 4,
     "n_op": 0
    },
    {
     "domain": "referral-factory.com",
-    "mentions": 2,
+    "mentions": 4,
     "n_op": 0
-   },
-   {
-    "domain": "refersion.com",
-    "mentions": 1,
-    "n_op": 1
    },
    {
     "domain": "relateddigital.com",
@@ -20579,6 +19659,11 @@
    },
    {
     "domain": "remofirst.com",
+    "mentions": 3,
+    "n_op": 1
+   },
+   {
+    "domain": "rently.com",
     "mentions": 1,
     "n_op": 0
    },
@@ -20589,48 +19674,63 @@
    },
    {
     "domain": "reply.io",
-    "mentions": 1,
+    "mentions": 2,
     "n_op": 1
    },
    {
     "domain": "reputation.com",
-    "mentions": 1,
-    "n_op": 0
-   },
-   {
-    "domain": "resemble.ai",
     "mentions": 2,
     "n_op": 0
    },
    {
-    "domain": "rev.ai",
+    "domain": "resistant.ai",
     "mentions": 1,
     "n_op": 0
    },
    {
-    "domain": "rightcapital.com",
-    "mentions": 2,
-    "n_op": 0
-   },
-   {
-    "domain": "risingwave-labs.com",
-    "mentions": 4,
+    "domain": "resnexus.com",
+    "mentions": 3,
     "n_op": 2
    },
    {
-    "domain": "rocketlane.com",
+    "domain": "respeecher.com",
     "mentions": 1,
+    "n_op": 1
+   },
+   {
+    "domain": "rev.ai",
+    "mentions": 2,
+    "n_op": 0
+   },
+   {
+    "domain": "revenue.io",
+    "mentions": 11,
+    "n_op": 0
+   },
+   {
+    "domain": "reyrey.com",
+    "mentions": 7,
+    "n_op": 0
+   },
+   {
+    "domain": "riskalyze.com",
+    "mentions": 1,
+    "n_op": 0
+   },
+   {
+    "domain": "rocketlane.com",
+    "mentions": 2,
+    "n_op": 0
+   },
+   {
+    "domain": "rotki.com",
+    "mentions": 2,
     "n_op": 0
    },
    {
     "domain": "runtheworld.today",
-    "mentions": 2,
+    "mentions": 6,
     "n_op": 0
-   },
-   {
-    "domain": "runware.ai",
-    "mentions": 4,
-    "n_op": 2
    },
    {
     "domain": "ryviu.com",
@@ -20638,23 +19738,23 @@
     "n_op": 1
    },
    {
-    "domain": "sanity.io",
-    "mentions": 3,
-    "n_op": 1
+    "domain": "saleo.io",
+    "mentions": 4,
+    "n_op": 0
    },
    {
     "domain": "saymine.com",
-    "mentions": 1,
+    "mentions": 2,
     "n_op": 0
    },
    {
     "domain": "scalar.com",
-    "mentions": 1,
+    "mentions": 3,
     "n_op": 0
    },
    {
     "domain": "scalekit.com",
-    "mentions": 1,
+    "mentions": 2,
     "n_op": 0
    },
    {
@@ -20664,17 +19764,17 @@
    },
    {
     "domain": "scheduled.fr",
-    "mentions": 10,
+    "mentions": 14,
     "n_op": 0
    },
    {
-    "domain": "scispace.com",
-    "mentions": 3,
-    "n_op": 2
+    "domain": "schedulicity.com",
+    "mentions": 1,
+    "n_op": 0
    },
    {
     "domain": "scrapingbee.com",
-    "mentions": 1,
+    "mentions": 3,
     "n_op": 0
    },
    {
@@ -20683,8 +19783,8 @@
     "n_op": 1
    },
    {
-    "domain": "secomapp.com",
-    "mentions": 1,
+    "domain": "secondnature.ai",
+    "mentions": 39,
     "n_op": 0
    },
    {
@@ -20694,32 +19794,32 @@
    },
    {
     "domain": "sekoia.io",
-    "mentions": 2,
+    "mentions": 4,
     "n_op": 0
    },
    {
-    "domain": "sendinblue.com",
-    "mentions": 3,
-    "n_op": 1
+    "domain": "seo.ai",
+    "mentions": 46,
+    "n_op": 0
    },
    {
     "domain": "sevenrooms.com",
-    "mentions": 3,
+    "mentions": 7,
     "n_op": 0
    },
    {
-    "domain": "sharesight.com",
-    "mentions": 4,
+    "domain": "shootproof.com",
+    "mentions": 2,
     "n_op": 1
    },
    {
     "domain": "shopmonkey.io",
-    "mentions": 2,
+    "mentions": 3,
     "n_op": 1
    },
    {
     "domain": "shuffler.io",
-    "mentions": 1,
+    "mentions": 2,
     "n_op": 0
    },
    {
@@ -20728,23 +19828,38 @@
     "n_op": 1
    },
    {
+    "domain": "sievo.com",
+    "mentions": 2,
+    "n_op": 1
+   },
+   {
     "domain": "signadot.com",
+    "mentions": 2,
+    "n_op": 1
+   },
+   {
+    "domain": "signal-ai.com",
     "mentions": 1,
     "n_op": 0
    },
    {
-    "domain": "signalhire.com",
-    "mentions": 8,
+    "domain": "signalwire.com",
+    "mentions": 5,
     "n_op": 0
    },
    {
-    "domain": "simplywallst.com",
-    "mentions": 1,
+    "domain": "silverfort.com",
+    "mentions": 2,
     "n_op": 0
+   },
+   {
+    "domain": "skeepers.com",
+    "mentions": 1,
+    "n_op": 1
    },
    {
     "domain": "slideator.com",
-    "mentions": 1,
+    "mentions": 2,
     "n_op": 0
    },
    {
@@ -20758,53 +19873,58 @@
     "n_op": 0
    },
    {
-    "domain": "smartreach.io",
-    "mentions": 2,
-    "n_op": 1
-   },
-   {
     "domain": "smodin.io",
-    "mentions": 1,
+    "mentions": 2,
     "n_op": 0
    },
    {
     "domain": "smythos.com",
-    "mentions": 1,
-    "n_op": 0
+    "mentions": 3,
+    "n_op": 1
    },
    {
     "domain": "snapsheet.me",
-    "mentions": 2,
+    "mentions": 4,
     "n_op": 0
    },
    {
     "domain": "soapboxengage.com",
-    "mentions": 1,
-    "n_op": 0
-   },
-   {
-    "domain": "socket.dev",
-    "mentions": 17,
+    "mentions": 2,
     "n_op": 0
    },
    {
     "domain": "softeon.com",
-    "mentions": 1,
+    "mentions": 3,
     "n_op": 0
    },
    {
-    "domain": "sonarworks.com",
+    "domain": "solo.io",
     "mentions": 1,
     "n_op": 0
    },
    {
     "domain": "sparkhire.com",
-    "mentions": 1,
+    "mentions": 2,
     "n_op": 1
+   },
+   {
+    "domain": "speak4.co",
+    "mentions": 4,
+    "n_op": 0
+   },
+   {
+    "domain": "speedcurve.com",
+    "mentions": 1,
+    "n_op": 0
    },
    {
     "domain": "sportsengine.com",
     "mentions": 1,
+    "n_op": 0
+   },
+   {
+    "domain": "spotio.com",
+    "mentions": 5,
     "n_op": 0
    },
    {
@@ -20814,28 +19934,28 @@
    },
    {
     "domain": "sprout.ai",
-    "mentions": 1,
-    "n_op": 0
-   },
-   {
-    "domain": "stack-ai.com",
-    "mentions": 44,
-    "n_op": 0
-   },
-   {
-    "domain": "stampli.com",
     "mentions": 2,
     "n_op": 0
    },
    {
-    "domain": "steinberg.de",
-    "mentions": 15,
+    "domain": "stack-ai.com",
+    "mentions": 52,
     "n_op": 0
    },
    {
-    "domain": "stellarcyber.ai",
+    "domain": "stampli.com",
+    "mentions": 5,
+    "n_op": 0
+   },
+   {
+    "domain": "starmind.com",
     "mentions": 1,
-    "n_op": 1
+    "n_op": 0
+   },
+   {
+    "domain": "stedi.com",
+    "mentions": 3,
+    "n_op": 0
    },
    {
     "domain": "stensul.com",
@@ -20844,52 +19964,62 @@
    },
    {
     "domain": "stigg.io",
-    "mentions": 3,
+    "mentions": 8,
     "n_op": 0
    },
    {
     "domain": "stockrover.com",
+    "mentions": 2,
+    "n_op": 0
+   },
+   {
+    "domain": "structuredweb.com",
+    "mentions": 24,
+    "n_op": 0
+   },
+   {
+    "domain": "studioninja.co",
+    "mentions": 1,
+    "n_op": 1
+   },
+   {
+    "domain": "subgraph.tech",
     "mentions": 1,
     "n_op": 0
    },
    {
-    "domain": "storylane.io",
-    "mentions": 3,
-    "n_op": 1
-   },
-   {
-    "domain": "structuredweb.com",
-    "mentions": 20,
+    "domain": "sublimesecurity.com",
+    "mentions": 2,
     "n_op": 0
    },
    {
     "domain": "subskribe.com",
-    "mentions": 1,
+    "mentions": 2,
     "n_op": 0
    },
    {
     "domain": "super.ai",
-    "mentions": 3,
+    "mentions": 5,
     "n_op": 0
    },
    {
     "domain": "superawesome.com",
-    "mentions": 9,
+    "mentions": 19,
     "n_op": 0
    },
    {
     "domain": "supermaven.com",
-    "mentions": 1,
+    "mentions": 2,
     "n_op": 0
    },
    {
     "domain": "svix.com",
-    "mentions": 1,
+    "mentions": 2,
     "n_op": 0
    },
    {
     "domain": "swimlane.com",
-    "mentions": 1,
+    "mentions": 2,
     "n_op": 0
    },
    {
@@ -20898,73 +20028,78 @@
     "n_op": 0
    },
    {
-    "domain": "synack.com",
-    "mentions": 2,
-    "n_op": 0
-   },
-   {
     "domain": "syntasso.io",
     "mentions": 4,
     "n_op": 3
    },
    {
-    "domain": "synthflow.ai",
-    "mentions": 4,
-    "n_op": 1
-   },
-   {
-    "domain": "sysdig.com",
-    "mentions": 9,
+    "domain": "tabs.com",
+    "mentions": 1,
     "n_op": 0
    },
    {
-    "domain": "tailwindui.com",
-    "mentions": 4,
-    "n_op": 1
-   },
-   {
-    "domain": "talkdesk.com",
-    "mentions": 3,
+    "domain": "tabs.inc",
+    "mentions": 1,
     "n_op": 0
    },
    {
     "domain": "talkpush.com",
+    "mentions": 3,
+    "n_op": 0
+   },
+   {
+    "domain": "talkwalker.com",
     "mentions": 1,
     "n_op": 0
    },
    {
     "domain": "talview.com",
-    "mentions": 1,
+    "mentions": 2,
     "n_op": 0
    },
    {
     "domain": "tara.ai",
+    "mentions": 2,
+    "n_op": 0
+   },
+   {
+    "domain": "taranis.net",
     "mentions": 1,
     "n_op": 0
    },
    {
-    "domain": "teable.io",
+    "domain": "tc2000.com",
     "mentions": 4,
     "n_op": 1
    },
    {
+    "domain": "tealbook.com",
+    "mentions": 1,
+    "n_op": 0
+   },
+   {
     "domain": "tealium.com",
-    "mentions": 1,
-    "n_op": 0
-   },
-   {
-    "domain": "tekion.com",
-    "mentions": 1,
-    "n_op": 0
-   },
-   {
-    "domain": "tekmetric.com",
     "mentions": 2,
-    "n_op": 1
+    "n_op": 0
+   },
+   {
+    "domain": "teambuildr.com",
+    "mentions": 2,
+    "n_op": 0
+   },
+   {
+    "domain": "tebra.com",
+    "mentions": 37,
+    "n_op": 0
+   },
+   {
+    "domain": "teller.io",
+    "mentions": 3,
+    "n_op": 0
    },
    {
     "domain": "tembo.io",
-    "mentions": 1,
+    "mentions": 52,
     "n_op": 0
    },
    {
@@ -20973,8 +20108,33 @@
     "n_op": 1
    },
    {
-    "domain": "thoughtly.com",
+    "domain": "tenderly.co",
     "mentions": 1,
+    "n_op": 0
+   },
+   {
+    "domain": "tessian.com",
+    "mentions": 1,
+    "n_op": 0
+   },
+   {
+    "domain": "testrigor.com",
+    "mentions": 3,
+    "n_op": 1
+   },
+   {
+    "domain": "texau.com",
+    "mentions": 1,
+    "n_op": 1
+   },
+   {
+    "domain": "thelevel.ai",
+    "mentions": 32,
+    "n_op": 0
+   },
+   {
+    "domain": "thoughtly.com",
+    "mentions": 3,
     "n_op": 0
    },
    {
@@ -20983,8 +20143,13 @@
     "n_op": 1
    },
    {
+    "domain": "tigera.io",
+    "mentions": 2,
+    "n_op": 0
+   },
+   {
     "domain": "tikr.com",
-    "mentions": 8,
+    "mentions": 9,
     "n_op": 0
    },
    {
@@ -20998,34 +20163,74 @@
     "n_op": 1
    },
    {
+    "domain": "tina.io",
+    "mentions": 4,
+    "n_op": 4
+   },
+   {
     "domain": "tinydot.ai",
+    "mentions": 5,
+    "n_op": 0
+   },
+   {
+    "domain": "tipranks.com",
     "mentions": 1,
     "n_op": 0
    },
    {
     "domain": "tolt.io",
-    "mentions": 1,
-    "n_op": 0
-   },
-   {
-    "domain": "torq.io",
-    "mentions": 1,
-    "n_op": 0
-   },
-   {
-    "domain": "toucantoco.com",
     "mentions": 2,
     "n_op": 0
    },
    {
-    "domain": "truebill.com",
+    "domain": "torq.io",
+    "mentions": 2,
+    "n_op": 0
+   },
+   {
+    "domain": "toucantoco.com",
+    "mentions": 4,
+    "n_op": 0
+   },
+   {
+    "domain": "traceable.ai",
+    "mentions": 4,
+    "n_op": 0
+   },
+   {
+    "domain": "traceloop.com",
     "mentions": 1,
     "n_op": 0
    },
    {
-    "domain": "truelayer.com",
-    "mentions": 3,
+    "domain": "tracxn.com",
+    "mentions": 4,
     "n_op": 1
+   },
+   {
+    "domain": "trainerize.com",
+    "mentions": 2,
+    "n_op": 0
+   },
+   {
+    "domain": "trainheroic.com",
+    "mentions": 1,
+    "n_op": 0
+   },
+   {
+    "domain": "trigify.io",
+    "mentions": 4,
+    "n_op": 1
+   },
+   {
+    "domain": "trmlabs.com",
+    "mentions": 8,
+    "n_op": 0
+   },
+   {
+    "domain": "truebill.com",
+    "mentions": 2,
+    "n_op": 0
    },
    {
     "domain": "trustfinta.com",
@@ -21034,7 +20239,7 @@
    },
    {
     "domain": "tryleap.ai",
-    "mentions": 2,
+    "mentions": 4,
     "n_op": 0
    },
    {
@@ -21044,32 +20249,27 @@
    },
    {
     "domain": "tubebuddy.com",
-    "mentions": 2,
+    "mentions": 3,
     "n_op": 1
    },
    {
     "domain": "tuple.app",
-    "mentions": 1,
+    "mentions": 2,
     "n_op": 0
    },
    {
     "domain": "turso.tech",
-    "mentions": 27,
+    "mentions": 48,
     "n_op": 0
    },
    {
-    "domain": "typebot.io",
-    "mentions": 4,
-    "n_op": 2
-   },
-   {
-    "domain": "udio.com",
-    "mentions": 33,
+    "domain": "tveyes.com",
+    "mentions": 1,
     "n_op": 0
    },
    {
     "domain": "ujet.cx",
-    "mentions": 3,
+    "mentions": 5,
     "n_op": 0
    },
    {
@@ -21079,22 +20279,17 @@
    },
    {
     "domain": "unstructured.io",
-    "mentions": 1,
-    "n_op": 1
+    "mentions": 2,
+    "n_op": 2
    },
    {
     "domain": "updown.io",
-    "mentions": 4,
+    "mentions": 8,
     "n_op": 0
    },
    {
     "domain": "upperhand.com",
-    "mentions": 15,
-    "n_op": 0
-   },
-   {
-    "domain": "uppromote.com",
-    "mentions": 1,
+    "mentions": 42,
     "n_op": 0
    },
    {
@@ -21103,14 +20298,34 @@
     "n_op": 1
    },
    {
+    "domain": "vadesecure.com",
+    "mentions": 1,
+    "n_op": 0
+   },
+   {
+    "domain": "valant.com",
+    "mentions": 1,
+    "n_op": 0
+   },
+   {
     "domain": "varos.com",
-    "mentions": 4,
+    "mentions": 5,
     "n_op": 0
    },
    {
     "domain": "vectorshift.ai",
+    "mentions": 2,
+    "n_op": 0
+   },
+   {
+    "domain": "velaris.io",
     "mentions": 1,
     "n_op": 0
+   },
+   {
+    "domain": "vellum.ai",
+    "mentions": 1,
+    "n_op": 1
    },
    {
     "domain": "velorahr.com",
@@ -21118,33 +20333,33 @@
     "n_op": 2
    },
    {
-    "domain": "vendavo.com",
+    "domain": "veloxy.io",
     "mentions": 1,
+    "n_op": 1
+   },
+   {
+    "domain": "vendavo.com",
+    "mentions": 2,
     "n_op": 0
    },
    {
     "domain": "vendr.com",
-    "mentions": 7,
+    "mentions": 9,
     "n_op": 0
    },
    {
-    "domain": "veracode.com",
-    "mentions": 4,
-    "n_op": 0
-   },
-   {
-    "domain": "veriff.com",
-    "mentions": 3,
-    "n_op": 0
-   },
-   {
-    "domain": "vimcal.com",
+    "domain": "veremark.com",
     "mentions": 1,
     "n_op": 0
    },
    {
+    "domain": "vimcal.com",
+    "mentions": 2,
+    "n_op": 0
+   },
+   {
     "domain": "viral-loops.com",
-    "mentions": 3,
+    "mentions": 4,
     "n_op": 0
    },
    {
@@ -21158,28 +20373,33 @@
     "n_op": 0
    },
    {
+    "domain": "visiblealpha.com",
+    "mentions": 1,
+    "n_op": 0
+   },
+   {
     "domain": "vision6.com.au",
     "mentions": 2,
     "n_op": 0
    },
    {
-    "domain": "wakatime.com",
-    "mentions": 2,
-    "n_op": 0
-   },
-   {
-    "domain": "walkme.com",
-    "mentions": 3,
+    "domain": "voicemod.net",
+    "mentions": 1,
     "n_op": 1
    },
    {
+    "domain": "wakatime.com",
+    "mentions": 4,
+    "n_op": 0
+   },
+   {
     "domain": "wallarm.com",
-    "mentions": 3,
+    "mentions": 6,
     "n_op": 0
    },
    {
     "domain": "warmly.ai",
-    "mentions": 1,
+    "mentions": 2,
     "n_op": 0
    },
    {
@@ -21188,9 +20408,19 @@
     "n_op": 0
    },
    {
-    "domain": "whylabs.ai",
+    "domain": "webiny.com",
     "mentions": 3,
-    "n_op": 1
+    "n_op": 3
+   },
+   {
+    "domain": "wellsaidlabs.com",
+    "mentions": 2,
+    "n_op": 0
+   },
+   {
+    "domain": "whise.eu",
+    "mentions": 1,
+    "n_op": 0
    },
    {
     "domain": "wigwag.me",
@@ -21199,7 +20429,7 @@
    },
    {
     "domain": "windsor.ai",
-    "mentions": 1,
+    "mentions": 5,
     "n_op": 0
    },
    {
@@ -21213,9 +20443,19 @@
     "n_op": 1
    },
    {
-    "domain": "wundergraph.com",
+    "domain": "wonderlic.com",
     "mentions": 1,
     "n_op": 0
+   },
+   {
+    "domain": "worktango.com",
+    "mentions": 1,
+    "n_op": 0
+   },
+   {
+    "domain": "wundergraph.com",
+    "mentions": 2,
+    "n_op": 1
    },
    {
     "domain": "yello.co",
@@ -21228,43 +20468,58 @@
     "n_op": 1
    },
    {
+    "domain": "youdontneedacrm.com",
+    "mentions": 1,
+    "n_op": 0
+   },
+   {
     "domain": "zeni.ai",
-    "mentions": 1,
-    "n_op": 0
-   },
-   {
-    "domain": "zenrows.com",
-    "mentions": 1,
-    "n_op": 0
-   },
-   {
-    "domain": "zenskar.com",
-    "mentions": 1,
-    "n_op": 0
-   },
-   {
-    "domain": "zerops.io",
-    "mentions": 1,
-    "n_op": 0
-   },
-   {
-    "domain": "zest.ai",
-    "mentions": 1,
-    "n_op": 0
-   },
-   {
-    "domain": "zilliz.com",
     "mentions": 2,
     "n_op": 1
    },
    {
+    "domain": "zenrows.com",
+    "mentions": 3,
+    "n_op": 0
+   },
+   {
+    "domain": "zenskar.com",
+    "mentions": 2,
+    "n_op": 0
+   },
+   {
+    "domain": "zerops.io",
+    "mentions": 2,
+    "n_op": 0
+   },
+   {
+    "domain": "zest.ai",
+    "mentions": 2,
+    "n_op": 0
+   },
+   {
+    "domain": "zilliz.com",
+    "mentions": 4,
+    "n_op": 1
+   },
+   {
+    "domain": "zint.io",
+    "mentions": 2,
+    "n_op": 0
+   },
+   {
     "domain": "zipline.io",
+    "mentions": 2,
+    "n_op": 0
+   },
+   {
+    "domain": "zipsec.com",
     "mentions": 1,
     "n_op": 0
    },
    {
     "domain": "zluri.com",
-    "mentions": 2,
+    "mentions": 5,
     "n_op": 0
    },
    {
@@ -21278,8 +20533,18 @@
     "n_op": 3
    },
    {
+    "domain": "zywave.com",
+    "mentions": 3,
+    "n_op": 0
+   },
+   {
+    "domain": "abridge.com",
+    "mentions": 2,
+    "n_op": 0
+   },
+   {
     "domain": "adverity.com",
-    "mentions": 1,
+    "mentions": 2,
     "n_op": 0
    },
    {
@@ -21298,13 +20563,43 @@
     "n_op": 0
    },
    {
+    "domain": "dubb.com",
+    "mentions": 1,
+    "n_op": 0
+   },
+   {
+    "domain": "ellipsis.dev",
+    "mentions": 1,
+    "n_op": 0
+   },
+   {
+    "domain": "flair.ai",
+    "mentions": 1,
+    "n_op": 0
+   },
+   {
     "domain": "gocanvas.com",
     "mentions": 1,
     "n_op": 0
    },
    {
-    "domain": "haiilo.com",
-    "mentions": 2,
+    "domain": "highlight.io",
+    "mentions": 1,
+    "n_op": 0
+   },
+   {
+    "domain": "huggingface.co",
+    "mentions": 1,
+    "n_op": 0
+   },
+   {
+    "domain": "instabug.com",
+    "mentions": 1,
+    "n_op": 0
+   },
+   {
+    "domain": "intakeq.com",
+    "mentions": 1,
     "n_op": 0
    },
    {
@@ -21314,6 +20609,16 @@
    },
    {
     "domain": "klipfolio.com",
+    "mentions": 1,
+    "n_op": 0
+   },
+   {
+    "domain": "ontraport.com",
+    "mentions": 2,
+    "n_op": 0
+   },
+   {
+    "domain": "openreplay.com",
     "mentions": 1,
     "n_op": 0
    },
@@ -21328,12 +20633,22 @@
     "n_op": 0
    },
    {
+    "domain": "polytomic.com",
+    "mentions": 1,
+    "n_op": 0
+   },
+   {
     "domain": "portable.io",
     "mentions": 1,
     "n_op": 0
    },
    {
     "domain": "rafay.co",
+    "mentions": 2,
+    "n_op": 0
+   },
+   {
+    "domain": "richpanel.com",
     "mentions": 1,
     "n_op": 0
    },
@@ -21353,6 +20668,11 @@
     "n_op": 0
    },
    {
+    "domain": "supertokens.com",
+    "mentions": 2,
+    "n_op": 0
+   },
+   {
     "domain": "tadabase.io",
     "mentions": 1,
     "n_op": 0
@@ -21363,6 +20683,11 @@
     "n_op": 0
    },
    {
+    "domain": "trugrid.com",
+    "mentions": 2,
+    "n_op": 0
+   },
+   {
     "domain": "userpilot.com",
     "mentions": 3,
     "n_op": 2
@@ -21370,119 +20695,194 @@
   ],
   "wave2_emailable": [
    {
-    "domain": "6sense.com",
-    "mentions": 22,
-    "n_op": 5
-   },
-   {
-    "domain": "ableton.com",
-    "mentions": 34,
-    "n_op": 3
-   },
-   {
-    "domain": "aisera.com",
-    "mentions": 5,
-    "n_op": 2
-   },
-   {
-    "domain": "aiven.io",
+    "domain": "17hats.com",
     "mentions": 6,
     "n_op": 1
    },
    {
-    "domain": "alpha-sense.com",
-    "mentions": 5,
-    "n_op": 1
-   },
-   {
-    "domain": "alphavantage.co",
-    "mentions": 13,
-    "n_op": 6
-   },
-   {
-    "domain": "apollo.io",
-    "mentions": 34,
-    "n_op": 11
-   },
-   {
-    "domain": "apptio.com",
-    "mentions": 5,
-    "n_op": 1
-   },
-   {
-    "domain": "appwrite.io",
-    "mentions": 9,
-    "n_op": 2
-   },
-   {
-    "domain": "aquasec.com",
-    "mentions": 64,
-    "n_op": 2
-   },
-   {
-    "domain": "avanan.com",
+    "domain": "3commas.io",
     "mentions": 5,
     "n_op": 3
    },
    {
+    "domain": "6sense.com",
+    "mentions": 58,
+    "n_op": 9
+   },
+   {
+    "domain": "ableton.com",
+    "mentions": 1137,
+    "n_op": 519
+   },
+   {
+    "domain": "aisdr.com",
+    "mentions": 6,
+    "n_op": 2
+   },
+   {
+    "domain": "aisera.com",
+    "mentions": 8,
+    "n_op": 2
+   },
+   {
+    "domain": "aiven.io",
+    "mentions": 14,
+    "n_op": 2
+   },
+   {
+    "domain": "akeyless.io",
+    "mentions": 20,
+    "n_op": 1
+   },
+   {
+    "domain": "alpha-sense.com",
+    "mentions": 11,
+    "n_op": 2
+   },
+   {
+    "domain": "alphavantage.co",
+    "mentions": 22,
+    "n_op": 8
+   },
+   {
+    "domain": "anysphere.inc",
+    "mentions": 8,
+    "n_op": 1
+   },
+   {
+    "domain": "apollo.io",
+    "mentions": 71,
+    "n_op": 17
+   },
+   {
+    "domain": "applitools.com",
+    "mentions": 5,
+    "n_op": 4
+   },
+   {
+    "domain": "apptio.com",
+    "mentions": 13,
+    "n_op": 2
+   },
+   {
+    "domain": "appwrite.io",
+    "mentions": 23,
+    "n_op": 3
+   },
+   {
+    "domain": "aquasec.com",
+    "mentions": 78,
+    "n_op": 3
+   },
+   {
+    "domain": "autoleap.com",
+    "mentions": 5,
+    "n_op": 2
+   },
+   {
+    "domain": "avanan.com",
+    "mentions": 51,
+    "n_op": 3
+   },
+   {
     "domain": "bandlab.com",
+    "mentions": 94,
+    "n_op": 41
+   },
+   {
+    "domain": "barchart.com",
     "mentions": 6,
     "n_op": 1
    },
    {
     "domain": "baseten.co",
-    "mentions": 12,
+    "mentions": 22,
     "n_op": 4
    },
    {
-    "domain": "bendingspoons.com",
-    "mentions": 12,
-    "n_op": 7
-   },
-   {
-    "domain": "betterproposals.io",
+    "domain": "bazaarvoice.com",
     "mentions": 5,
     "n_op": 1
    },
    {
+    "domain": "beam.ai",
+    "mentions": 5,
+    "n_op": 1
+   },
+   {
+    "domain": "beefree.io",
+    "mentions": 6,
+    "n_op": 1
+   },
+   {
+    "domain": "bendingspoons.com",
+    "mentions": 11,
+    "n_op": 6
+   },
+   {
+    "domain": "betterproposals.io",
+    "mentions": 6,
+    "n_op": 1
+   },
+   {
     "domain": "bevy.com",
-    "mentions": 12,
+    "mentions": 14,
     "n_op": 8
    },
    {
+    "domain": "bitquery.io",
+    "mentions": 10,
+    "n_op": 3
+   },
+   {
     "domain": "bitwig.com",
-    "mentions": 8,
-    "n_op": 2
+    "mentions": 300,
+    "n_op": 182
    },
    {
     "domain": "bland.ai",
-    "mentions": 8,
-    "n_op": 2
+    "mentions": 25,
+    "n_op": 9
    },
    {
     "domain": "bloomerang.com",
-    "mentions": 44,
+    "mentions": 46,
     "n_op": 26
    },
    {
     "domain": "bombora.com",
-    "mentions": 7,
+    "mentions": 16,
+    "n_op": 3
+   },
+   {
+    "domain": "breakcold.com",
+    "mentions": 21,
+    "n_op": 2
+   },
+   {
+    "domain": "broadridge.com",
+    "mentions": 6,
     "n_op": 2
    },
    {
     "domain": "browser-use.com",
-    "mentions": 41,
-    "n_op": 9
+    "mentions": 75,
+    "n_op": 13
    },
    {
     "domain": "bugcrowd.com",
+    "mentions": 133,
+    "n_op": 57
+   },
+   {
+    "domain": "buzzstream.com",
     "mentions": 5,
     "n_op": 2
    },
    {
     "domain": "bytedance.com",
-    "mentions": 1853,
-    "n_op": 591
+    "mentions": 2077,
+    "n_op": 586
    },
    {
     "domain": "capsule.video",
@@ -21496,8 +20896,8 @@
    },
    {
     "domain": "cartesia.ai",
-    "mentions": 13,
-    "n_op": 4
+    "mentions": 49,
+    "n_op": 18
    },
    {
     "domain": "castr.io",
@@ -21505,19 +20905,39 @@
     "n_op": 3
    },
    {
-    "domain": "chainguard.dev",
-    "mentions": 10,
+    "domain": "cbinsights.com",
+    "mentions": 5,
     "n_op": 1
    },
    {
+    "domain": "celonis.com",
+    "mentions": 9,
+    "n_op": 1
+   },
+   {
+    "domain": "chainalysis.com",
+    "mentions": 16,
+    "n_op": 2
+   },
+   {
+    "domain": "chainguard.dev",
+    "mentions": 32,
+    "n_op": 8
+   },
+   {
     "domain": "chartmogul.com",
-    "mentions": 10,
+    "mentions": 20,
     "n_op": 1
    },
    {
     "domain": "clearbit.com",
-    "mentions": 6,
-    "n_op": 2
+    "mentions": 14,
+    "n_op": 4
+   },
+   {
+    "domain": "clickfunnels.com",
+    "mentions": 11,
+    "n_op": 1
    },
    {
     "domain": "cmic.ca",
@@ -21525,88 +20945,148 @@
     "n_op": 6
    },
    {
+    "domain": "coachmeplus.com",
+    "mentions": 8,
+    "n_op": 1
+   },
+   {
+    "domain": "coconstruct.com",
+    "mentions": 6,
+    "n_op": 3
+   },
+   {
     "domain": "codadoc.io",
+    "mentions": 15,
+    "n_op": 3
+   },
+   {
+    "domain": "codeium.com",
+    "mentions": 7,
+    "n_op": 2
+   },
+   {
+    "domain": "coingecko.com",
+    "mentions": 48,
+    "n_op": 7
+   },
+   {
+    "domain": "comet.com",
     "mentions": 13,
     "n_op": 3
    },
    {
-    "domain": "coingecko.com",
-    "mentions": 16,
+    "domain": "commercelayer.io",
+    "mentions": 5,
     "n_op": 1
    },
    {
-    "domain": "comet.com",
-    "mentions": 8,
-    "n_op": 3
+    "domain": "commonroom.io",
+    "mentions": 21,
+    "n_op": 4
    },
    {
     "domain": "companycam.com",
-    "mentions": 9,
+    "mentions": 15,
     "n_op": 4
    },
    {
     "domain": "composio.dev",
-    "mentions": 21,
-    "n_op": 7
+    "mentions": 44,
+    "n_op": 9
+   },
+   {
+    "domain": "confident-ai.com",
+    "mentions": 11,
+    "n_op": 6
    },
    {
     "domain": "continue.co",
-    "mentions": 24,
+    "mentions": 30,
     "n_op": 11
    },
    {
     "domain": "coollabs.io",
-    "mentions": 207,
+    "mentions": 251,
     "n_op": 102
    },
    {
     "domain": "creatoriq.com",
-    "mentions": 8,
+    "mentions": 12,
     "n_op": 1
+   },
+   {
+    "domain": "cresta.ai",
+    "mentions": 12,
+    "n_op": 4
    },
    {
     "domain": "crewai.com",
-    "mentions": 205,
-    "n_op": 15
+    "mentions": 483,
+    "n_op": 50
    },
    {
     "domain": "cron.com",
-    "mentions": 14,
-    "n_op": 1
+    "mentions": 25,
+    "n_op": 2
    },
    {
     "domain": "crunchbase.com",
-    "mentions": 28,
-    "n_op": 6
+    "mentions": 65,
+    "n_op": 16
+   },
+   {
+    "domain": "culturedcode.com",
+    "mentions": 254,
+    "n_op": 1
    },
    {
     "domain": "cursor.sh",
-    "mentions": 24,
+    "mentions": 27,
     "n_op": 11
    },
    {
     "domain": "dagsterlabs.com",
-    "mentions": 292,
+    "mentions": 304,
     "n_op": 182
    },
    {
+    "domain": "datawrapper.de",
+    "mentions": 18,
+    "n_op": 1
+   },
+   {
+    "domain": "dealhub.io",
+    "mentions": 11,
+    "n_op": 5
+   },
+   {
+    "domain": "deepnote.com",
+    "mentions": 6,
+    "n_op": 1
+   },
+   {
     "domain": "demandbase.com",
-    "mentions": 10,
-    "n_op": 4
+    "mentions": 19,
+    "n_op": 5
    },
    {
     "domain": "deno.com",
-    "mentions": 36,
+    "mentions": 58,
     "n_op": 3
    },
    {
+    "domain": "dify.ai",
+    "mentions": 14,
+    "n_op": 8
+   },
+   {
     "domain": "discordapp.com",
-    "mentions": 3987,
-    "n_op": 422
+    "mentions": 4644,
+    "n_op": 419
    },
    {
     "domain": "dlvr.it",
-    "mentions": 292,
+    "mentions": 348,
     "n_op": 2
    },
    {
@@ -21616,18 +21096,18 @@
    },
    {
     "domain": "dubsado.com",
-    "mentions": 7,
-    "n_op": 1
+    "mentions": 21,
+    "n_op": 7
    },
    {
     "domain": "echo.tech",
-    "mentions": 29,
+    "mentions": 30,
     "n_op": 18
    },
    {
     "domain": "edgeandnode.com",
-    "mentions": 337,
-    "n_op": 1
+    "mentions": 594,
+    "n_op": 29
    },
    {
     "domain": "employinc.com",
@@ -21636,38 +21116,73 @@
    },
    {
     "domain": "envio.dev",
-    "mentions": 23,
-    "n_op": 1
+    "mentions": 29,
+    "n_op": 2
+   },
+   {
+    "domain": "eodhistoricaldata.com",
+    "mentions": 7,
+    "n_op": 4
    },
    {
     "domain": "everfit.io",
-    "mentions": 5,
+    "mentions": 10,
     "n_op": 1
    },
    {
+    "domain": "everflow.io",
+    "mentions": 7,
+    "n_op": 1
+   },
+   {
+    "domain": "exabeam.com",
+    "mentions": 6,
+    "n_op": 2
+   },
+   {
+    "domain": "expandi.io",
+    "mentions": 24,
+    "n_op": 6
+   },
+   {
+    "domain": "factset.com",
+    "mentions": 15,
+    "n_op": 2
+   },
+   {
     "domain": "fal.ai",
-    "mentions": 23,
+    "mentions": 45,
     "n_op": 4
    },
    {
     "domain": "favikon.com",
-    "mentions": 10,
+    "mentions": 15,
     "n_op": 2
    },
    {
     "domain": "findymail.com",
-    "mentions": 5,
-    "n_op": 2
+    "mentions": 18,
+    "n_op": 8
    },
    {
     "domain": "finixpayments.com",
-    "mentions": 11,
+    "mentions": 9,
     "n_op": 5
    },
    {
-    "domain": "fiserv.com",
-    "mentions": 5,
+    "domain": "finnhub.io",
+    "mentions": 21,
     "n_op": 1
+   },
+   {
+    "domain": "finviz.com",
+    "mentions": 52,
+    "n_op": 12
+   },
+   {
+    "domain": "flowiseai.com",
+    "mentions": 9,
+    "n_op": 4
    },
    {
     "domain": "flux.ai",
@@ -21676,22 +21191,27 @@
    },
    {
     "domain": "fontawesome.com",
-    "mentions": 5,
+    "mentions": 14,
     "n_op": 1
    },
    {
     "domain": "foxitsoftware.com",
-    "mentions": 19,
-    "n_op": 8
+    "mentions": 28,
+    "n_op": 9
    },
    {
     "domain": "getrella.com",
-    "mentions": 7,
+    "mentions": 10,
+    "n_op": 1
+   },
+   {
+    "domain": "getsubly.com",
+    "mentions": 5,
     "n_op": 1
    },
    {
     "domain": "goconsensus.com",
-    "mentions": 5,
+    "mentions": 14,
     "n_op": 2
    },
    {
@@ -21701,78 +21221,143 @@
    },
    {
     "domain": "gotab.io",
-    "mentions": 10,
+    "mentions": 11,
     "n_op": 6
    },
    {
+    "domain": "gradium.ai",
+    "mentions": 6,
+    "n_op": 3
+   },
+   {
+    "domain": "graviteesource.com",
+    "mentions": 9,
+    "n_op": 2
+   },
+   {
     "domain": "greenhouse.com",
-    "mentions": 76,
+    "mentions": 85,
     "n_op": 16
    },
    {
     "domain": "gruntwork.io",
-    "mentions": 63,
+    "mentions": 71,
     "n_op": 25
    },
    {
     "domain": "hackerrank.com",
-    "mentions": 59,
+    "mentions": 136,
     "n_op": 11
    },
    {
     "domain": "haikuforteams.com",
-    "mentions": 7,
-    "n_op": 5
+    "mentions": 10,
+    "n_op": 6
+   },
+   {
+    "domain": "hasura.io",
+    "mentions": 8,
+    "n_op": 2
    },
    {
     "domain": "helicone.ai",
-    "mentions": 22,
-    "n_op": 7
+    "mentions": 57,
+    "n_op": 14
+   },
+   {
+    "domain": "helius.xyz",
+    "mentions": 9,
+    "n_op": 1
+   },
+   {
+    "domain": "highspot.com",
+    "mentions": 11,
+    "n_op": 2
    },
    {
     "domain": "hirevue.com",
-    "mentions": 9,
+    "mentions": 32,
     "n_op": 2
    },
    {
     "domain": "hnry.co.nz",
-    "mentions": 12,
-    "n_op": 5
+    "mentions": 18,
+    "n_op": 7
+   },
+   {
+    "domain": "hume.ai",
+    "mentions": 5,
+    "n_op": 2
+   },
+   {
+    "domain": "hypeauditor.com",
+    "mentions": 8,
+    "n_op": 1
    },
    {
     "domain": "iheartjane.com",
-    "mentions": 9,
+    "mentions": 14,
     "n_op": 4
    },
    {
     "domain": "image-line.com",
-    "mentions": 51,
-    "n_op": 5
+    "mentions": 527,
+    "n_op": 179
    },
    {
     "domain": "impact.com",
-    "mentions": 6,
+    "mentions": 16,
     "n_op": 1
    },
    {
     "domain": "infisical.com",
-    "mentions": 11,
-    "n_op": 3
+    "mentions": 27,
+    "n_op": 4
    },
    {
-    "domain": "intercom.io",
-    "mentions": 27,
+    "domain": "infracost.io",
+    "mentions": 20,
     "n_op": 5
    },
    {
+    "domain": "intercom.io",
+    "mentions": 55,
+    "n_op": 5
+   },
+   {
+    "domain": "iubenda.com",
+    "mentions": 10,
+    "n_op": 1
+   },
+   {
+    "domain": "jfrog.com",
+    "mentions": 226,
+    "n_op": 3
+   },
+   {
     "domain": "jobvite-inc.com",
-    "mentions": 9,
+    "mentions": 10,
     "n_op": 2
    },
    {
     "domain": "judge.me",
+    "mentions": 14,
+    "n_op": 7
+   },
+   {
+    "domain": "kaspr.io",
     "mentions": 9,
-    "n_op": 5
+    "n_op": 2
+   },
+   {
+    "domain": "keywordsai.co",
+    "mentions": 6,
+    "n_op": 1
+   },
+   {
+    "domain": "kixie.com",
+    "mentions": 5,
+    "n_op": 1
    },
    {
     "domain": "kodo.com",
@@ -21780,34 +21365,89 @@
     "n_op": 1
    },
    {
-    "domain": "langfuse.com",
-    "mentions": 91,
-    "n_op": 25
+    "domain": "konghq.com",
+    "mentions": 5,
+    "n_op": 1
    },
    {
-    "domain": "lempire.co",
-    "mentions": 47,
+    "domain": "koyfin.com",
+    "mentions": 6,
+    "n_op": 3
+   },
+   {
+    "domain": "lakera.ai",
+    "mentions": 14,
+    "n_op": 5
+   },
+   {
+    "domain": "landr.com",
+    "mentions": 18,
     "n_op": 14
    },
    {
+    "domain": "langchain.dev",
+    "mentions": 279,
+    "n_op": 52
+   },
+   {
+    "domain": "langdock.com",
+    "mentions": 5,
+    "n_op": 1
+   },
+   {
+    "domain": "langfuse.com",
+    "mentions": 224,
+    "n_op": 60
+   },
+   {
+    "domain": "layerx.co.jp",
+    "mentions": 10,
+    "n_op": 1
+   },
+   {
+    "domain": "leadiq.com",
+    "mentions": 8,
+    "n_op": 2
+   },
+   {
+    "domain": "lempire.co",
+    "mentions": 139,
+    "n_op": 44
+   },
+   {
     "domain": "letta.ai",
-    "mentions": 11,
-    "n_op": 5
+    "mentions": 25,
+    "n_op": 11
    },
    {
     "domain": "letta.com",
-    "mentions": 11,
-    "n_op": 5
+    "mentions": 25,
+    "n_op": 11
+   },
+   {
+    "domain": "letterly.io",
+    "mentions": 5,
+    "n_op": 3
    },
    {
     "domain": "level.co",
-    "mentions": 23,
+    "mentions": 25,
     "n_op": 13
    },
    {
+    "domain": "lifetimely.io",
+    "mentions": 5,
+    "n_op": 1
+   },
+   {
     "domain": "lime-technology.com",
-    "mentions": 257,
-    "n_op": 46
+    "mentions": 549,
+    "n_op": 58
+   },
+   {
+    "domain": "liondesk.com",
+    "mentions": 5,
+    "n_op": 1
    },
    {
     "domain": "livechatinc.com",
@@ -21815,79 +21455,139 @@
     "n_op": 3
    },
    {
+    "domain": "llamaindex.ai",
+    "mentions": 44,
+    "n_op": 4
+   },
+   {
     "domain": "lusha.com",
-    "mentions": 19,
-    "n_op": 3
+    "mentions": 70,
+    "n_op": 12
    },
    {
     "domain": "lyzr.ai",
-    "mentions": 52,
-    "n_op": 17
+    "mentions": 102,
+    "n_op": 23
    },
    {
     "domain": "mailshake.com",
-    "mentions": 5,
-    "n_op": 1
+    "mentions": 10,
+    "n_op": 2
    },
    {
     "domain": "marblism.com",
-    "mentions": 20,
+    "mentions": 40,
     "n_op": 11
    },
    {
     "domain": "mastra.ai",
-    "mentions": 24,
-    "n_op": 2
+    "mentions": 120,
+    "n_op": 49
    },
    {
     "domain": "mega.co.nz",
-    "mentions": 75,
-    "n_op": 31
+    "mentions": 80,
+    "n_op": 29
    },
    {
     "domain": "melio.com",
-    "mentions": 10,
+    "mentions": 16,
     "n_op": 4
    },
    {
+    "domain": "modartt.com",
+    "mentions": 35,
+    "n_op": 21
+   },
+   {
     "domain": "modash.io",
-    "mentions": 6,
-    "n_op": 1
+    "mentions": 22,
+    "n_op": 7
    },
    {
     "domain": "monarchmoney.com",
-    "mentions": 36,
+    "mentions": 42,
     "n_op": 20
    },
    {
-    "domain": "montecarlodata.com",
-    "mentions": 50,
-    "n_op": 1
-   },
-   {
-    "domain": "nango.dev",
+    "domain": "moneyguide.com",
     "mentions": 5,
     "n_op": 1
    },
    {
+    "domain": "moneyguidepro.com",
+    "mentions": 5,
+    "n_op": 1
+   },
+   {
+    "domain": "montecarlodata.com",
+    "mentions": 216,
+    "n_op": 1
+   },
+   {
+    "domain": "moralis.io",
+    "mentions": 6,
+    "n_op": 4
+   },
+   {
+    "domain": "nango.dev",
+    "mentions": 19,
+    "n_op": 1
+   },
+   {
     "domain": "nanonets.com",
-    "mentions": 25,
+    "mentions": 40,
+    "n_op": 3
+   },
+   {
+    "domain": "navattic.com",
+    "mentions": 10,
     "n_op": 2
    },
    {
     "domain": "neon.tech",
-    "mentions": 56,
-    "n_op": 21
+    "mentions": 64,
+    "n_op": 20
+   },
+   {
+    "domain": "nethermind.io",
+    "mentions": 10,
+    "n_op": 3
+   },
+   {
+    "domain": "neuraldsp.com",
+    "mentions": 35,
+    "n_op": 18
    },
    {
     "domain": "nextdns.io",
-    "mentions": 35,
-    "n_op": 10
+    "mentions": 65,
+    "n_op": 11
+   },
+   {
+    "domain": "nhost.io",
+    "mentions": 20,
+    "n_op": 1
+   },
+   {
+    "domain": "nice.com",
+    "mentions": 5,
+    "n_op": 1
    },
    {
     "domain": "nordsec.com",
-    "mentions": 898,
+    "mentions": 982,
     "n_op": 475
+   },
+   {
+    "domain": "nylas.com",
+    "mentions": 6,
+    "n_op": 1
+   },
+   {
+    "domain": "omq.ai",
+    "mentions": 10,
+    "n_op": 1
    },
    {
     "domain": "ona.com",
@@ -21896,68 +21596,133 @@
    },
    {
     "domain": "openrouter.ai",
-    "mentions": 81,
-    "n_op": 23
+    "mentions": 155,
+    "n_op": 41
    },
    {
     "domain": "openvpn.com",
-    "mentions": 122,
-    "n_op": 29
+    "mentions": 219,
+    "n_op": 38
    },
    {
     "domain": "orum.com",
-    "mentions": 5,
+    "mentions": 7,
+    "n_op": 4
+   },
+   {
+    "domain": "outreach.io",
+    "mentions": 313,
+    "n_op": 6
+   },
+   {
+    "domain": "overloop.com",
+    "mentions": 8,
     "n_op": 3
    },
    {
     "domain": "ox.security",
-    "mentions": 9,
+    "mentions": 15,
+    "n_op": 3
+   },
+   {
+    "domain": "parseur.com",
+    "mentions": 5,
     "n_op": 1
    },
    {
-    "domain": "paycomonline.com",
-    "mentions": 201,
-    "n_op": 129
-   },
-   {
-    "domain": "paymongo.com",
-    "mentions": 5,
-    "n_op": 2
-   },
-   {
-    "domain": "peec.ai",
-    "mentions": 81,
-    "n_op": 33
-   },
-   {
-    "domain": "pgadmin.org",
-    "mentions": 19,
-    "n_op": 5
-   },
-   {
-    "domain": "polycam.ai",
-    "mentions": 10,
-    "n_op": 4
-   },
-   {
-    "domain": "projectionlab.com",
+    "domain": "partnerize.com",
     "mentions": 6,
     "n_op": 2
    },
    {
-    "domain": "promptlayer.com",
-    "mentions": 15,
+    "domain": "partnerstack.com",
+    "mentions": 14,
+    "n_op": 6
+   },
+   {
+    "domain": "passiv.com",
+    "mentions": 7,
+    "n_op": 1
+   },
+   {
+    "domain": "paycomonline.com",
+    "mentions": 211,
+    "n_op": 129
+   },
+   {
+    "domain": "payloadcms.com",
+    "mentions": 10,
+    "n_op": 6
+   },
+   {
+    "domain": "paymongo.com",
+    "mentions": 8,
+    "n_op": 2
+   },
+   {
+    "domain": "peec.ai",
+    "mentions": 133,
+    "n_op": 37
+   },
+   {
+    "domain": "pgadmin.org",
+    "mentions": 33,
+    "n_op": 6
+   },
+   {
+    "domain": "piktochart.com",
+    "mentions": 5,
+    "n_op": 1
+   },
+   {
+    "domain": "plugin-alliance.com",
+    "mentions": 19,
     "n_op": 7
    },
    {
+    "domain": "polycam.ai",
+    "mentions": 17,
+    "n_op": 4
+   },
+   {
+    "domain": "prismic.io",
+    "mentions": 14,
+    "n_op": 3
+   },
+   {
+    "domain": "projectionlab.com",
+    "mentions": 11,
+    "n_op": 2
+   },
+   {
+    "domain": "prompt.security",
+    "mentions": 9,
+    "n_op": 1
+   },
+   {
+    "domain": "promptlayer.com",
+    "mentions": 28,
+    "n_op": 11
+   },
+   {
     "domain": "proton.ch",
-    "mentions": 814,
-    "n_op": 390
+    "mentions": 869,
+    "n_op": 389
    },
    {
     "domain": "publer.io",
     "mentions": 16,
-    "n_op": 12
+    "n_op": 11
+   },
+   {
+    "domain": "qase.io",
+    "mentions": 7,
+    "n_op": 3
+   },
+   {
+    "domain": "quantconnect.com",
+    "mentions": 37,
+    "n_op": 19
    },
    {
     "domain": "questdb.io",
@@ -21965,9 +21730,19 @@
     "n_op": 5
    },
    {
+    "domain": "quicknode.com",
+    "mentions": 10,
+    "n_op": 2
+   },
+   {
+    "domain": "qwoted.com",
+    "mentions": 7,
+    "n_op": 1
+   },
+   {
     "domain": "r2c.dev",
-    "mentions": 23,
-    "n_op": 3
+    "mentions": 63,
+    "n_op": 10
    },
    {
     "domain": "readme.io",
@@ -21975,49 +21750,99 @@
     "n_op": 1
    },
    {
+    "domain": "reaper.fm",
+    "mentions": 10,
+    "n_op": 3
+   },
+   {
+    "domain": "reasonstudios.com",
+    "mentions": 5,
+    "n_op": 2
+   },
+   {
+    "domain": "refersion.com",
+    "mentions": 5,
+    "n_op": 2
+   },
+   {
     "domain": "relevanceai.com",
-    "mentions": 17,
+    "mentions": 30,
     "n_op": 6
    },
    {
     "domain": "replika.ai",
-    "mentions": 80,
+    "mentions": 84,
     "n_op": 27
    },
    {
+    "domain": "resemble.ai",
+    "mentions": 7,
+    "n_op": 4
+   },
+   {
     "domain": "retellai.com",
-    "mentions": 9,
-    "n_op": 5
+    "mentions": 38,
+    "n_op": 19
    },
    {
     "domain": "rewst.io",
+    "mentions": 13,
+    "n_op": 2
+   },
+   {
+    "domain": "rightcapital.com",
+    "mentions": 24,
+    "n_op": 7
+   },
+   {
+    "domain": "risingwave-labs.com",
     "mentions": 5,
-    "n_op": 1
+    "n_op": 2
    },
    {
     "domain": "rossum.ai",
+    "mentions": 14,
+    "n_op": 2
+   },
+   {
+    "domain": "runware.ai",
     "mentions": 6,
-    "n_op": 1
+    "n_op": 2
    },
    {
     "domain": "runway.com",
-    "mentions": 54,
+    "mentions": 56,
     "n_op": 37
    },
    {
     "domain": "saleshandy.com",
-    "mentions": 7,
+    "mentions": 12,
+    "n_op": 3
+   },
+   {
+    "domain": "sanity.io",
+    "mentions": 5,
+    "n_op": 1
+   },
+   {
+    "domain": "scispace.com",
+    "mentions": 5,
     "n_op": 2
    },
    {
     "domain": "scoir.com",
-    "mentions": 43,
+    "mentions": 47,
     "n_op": 10
    },
    {
     "domain": "seamlessleads.com",
-    "mentions": 9,
-    "n_op": 4
+    "mentions": 15,
+    "n_op": 6
+   },
+   {
+    "domain": "secomapp.com",
+    "mentions": 5,
+    "n_op": 1
    },
    {
     "domain": "sendfoxmail.com",
@@ -22025,13 +21850,38 @@
     "n_op": 6
    },
    {
+    "domain": "sendinblue.com",
+    "mentions": 7,
+    "n_op": 1
+   },
+   {
+    "domain": "sharesight.com",
+    "mentions": 8,
+    "n_op": 2
+   },
+   {
+    "domain": "signalhire.com",
+    "mentions": 13,
+    "n_op": 1
+   },
+   {
+    "domain": "simplywallst.com",
+    "mentions": 5,
+    "n_op": 1
+   },
+   {
     "domain": "smartlead.ai",
-    "mentions": 68,
-    "n_op": 18
+    "mentions": 189,
+    "n_op": 31
+   },
+   {
+    "domain": "smartreach.io",
+    "mentions": 12,
+    "n_op": 4
    },
    {
     "domain": "smartrecruiters.com",
-    "mentions": 16,
+    "mentions": 18,
     "n_op": 1
    },
    {
@@ -22040,9 +21890,34 @@
     "n_op": 4
    },
    {
-    "domain": "spglobal.com",
-    "mentions": 7,
+    "domain": "socket.dev",
+    "mentions": 32,
     "n_op": 1
+   },
+   {
+    "domain": "sonarsource.com",
+    "mentions": 10,
+    "n_op": 1
+   },
+   {
+    "domain": "sonarworks.com",
+    "mentions": 67,
+    "n_op": 48
+   },
+   {
+    "domain": "soundtrap.com",
+    "mentions": 12,
+    "n_op": 6
+   },
+   {
+    "domain": "spglobal.com",
+    "mentions": 23,
+    "n_op": 2
+   },
+   {
+    "domain": "splice.com",
+    "mentions": 7,
+    "n_op": 3
    },
    {
     "domain": "stax.com",
@@ -22050,109 +21925,234 @@
     "n_op": 3
    },
    {
-    "domain": "strapi.io",
-    "mentions": 13,
-    "n_op": 1
+    "domain": "steinberg.de",
+    "mentions": 192,
+    "n_op": 84
    },
    {
-    "domain": "suno.ai",
-    "mentions": 10,
-    "n_op": 3
-   },
-   {
-    "domain": "suno.com",
-    "mentions": 10,
-    "n_op": 3
-   },
-   {
-    "domain": "sunsama.com",
-    "mentions": 8,
-    "n_op": 6
-   },
-   {
-    "domain": "tavily.com",
-    "mentions": 39,
-    "n_op": 7
-   },
-   {
-    "domain": "testrail.com",
-    "mentions": 9,
-    "n_op": 3
-   },
-   {
-    "domain": "thefin.ai",
-    "mentions": 27,
-    "n_op": 5
-   },
-   {
-    "domain": "thegraph.com",
-    "mentions": 337,
-    "n_op": 1
-   },
-   {
-    "domain": "todoist.com",
-    "mentions": 111,
-    "n_op": 36
-   },
-   {
-    "domain": "traefik.io",
-    "mentions": 113,
-    "n_op": 9
-   },
-   {
-    "domain": "triplewhale.com",
-    "mentions": 9,
-    "n_op": 3
-   },
-   {
-    "domain": "truenas.com",
-    "mentions": 488,
-    "n_op": 63
-   },
-   {
-    "domain": "trustpilot.com",
-    "mentions": 121,
-    "n_op": 19
-   },
-   {
-    "domain": "upfluence.com",
-    "mentions": 6,
-    "n_op": 3
-   },
-   {
-    "domain": "upstash.com",
-    "mentions": 20,
-    "n_op": 2
-   },
-   {
-    "domain": "usemotion.com",
-    "mentions": 5,
-    "n_op": 3
-   },
-   {
-    "domain": "vapi.ai",
-    "mentions": 55,
-    "n_op": 16
-   },
-   {
-    "domain": "vidiq.com",
-    "mentions": 19,
-    "n_op": 10
-   },
-   {
-    "domain": "xano.com",
+    "domain": "stellarcyber.ai",
     "mentions": 6,
     "n_op": 4
    },
    {
-    "domain": "xata.io",
+    "domain": "stockanalysis.com",
+    "mentions": 61,
+    "n_op": 4
+   },
+   {
+    "domain": "storylane.io",
+    "mentions": 10,
+    "n_op": 2
+   },
+   {
+    "domain": "strapi.io",
+    "mentions": 46,
+    "n_op": 9
+   },
+   {
+    "domain": "suno.ai",
+    "mentions": 23,
+    "n_op": 8
+   },
+   {
+    "domain": "suno.com",
+    "mentions": 23,
+    "n_op": 8
+   },
+   {
+    "domain": "sunsama.com",
+    "mentions": 11,
+    "n_op": 6
+   },
+   {
+    "domain": "synack.com",
+    "mentions": 16,
+    "n_op": 4
+   },
+   {
+    "domain": "synthflow.ai",
+    "mentions": 7,
+    "n_op": 1
+   },
+   {
+    "domain": "sysdig.com",
+    "mentions": 20,
+    "n_op": 1
+   },
+   {
+    "domain": "tailwindui.com",
+    "mentions": 6,
+    "n_op": 1
+   },
+   {
+    "domain": "talkdesk.com",
+    "mentions": 8,
+    "n_op": 1
+   },
+   {
+    "domain": "tavily.com",
+    "mentions": 102,
+    "n_op": 9
+   },
+   {
+    "domain": "teable.io",
     "mentions": 5,
     "n_op": 1
    },
    {
-    "domain": "xwiki.com",
+    "domain": "tekion.com",
+    "mentions": 36,
+    "n_op": 2
+   },
+   {
+    "domain": "tekmetric.com",
+    "mentions": 22,
+    "n_op": 1
+   },
+   {
+    "domain": "testrail.com",
+    "mentions": 30,
+    "n_op": 12
+   },
+   {
+    "domain": "thefin.ai",
+    "mentions": 55,
+    "n_op": 5
+   },
+   {
+    "domain": "thegraph.com",
+    "mentions": 594,
+    "n_op": 29
+   },
+   {
+    "domain": "thirdweb.com",
+    "mentions": 5,
+    "n_op": 1
+   },
+   {
+    "domain": "tiingo.com",
+    "mentions": 5,
+    "n_op": 2
+   },
+   {
+    "domain": "todoist.com",
+    "mentions": 209,
+    "n_op": 43
+   },
+   {
+    "domain": "traefik.io",
+    "mentions": 277,
+    "n_op": 11
+   },
+   {
+    "domain": "triplewhale.com",
+    "mentions": 17,
+    "n_op": 3
+   },
+   {
+    "domain": "truelayer.com",
+    "mentions": 10,
+    "n_op": 1
+   },
+   {
+    "domain": "truenas.com",
+    "mentions": 1003,
+    "n_op": 79
+   },
+   {
+    "domain": "trustpilot.com",
+    "mentions": 249,
+    "n_op": 27
+   },
+   {
+    "domain": "typebot.io",
+    "mentions": 6,
+    "n_op": 2
+   },
+   {
+    "domain": "udio.com",
+    "mentions": 40,
+    "n_op": 1
+   },
+   {
+    "domain": "upfluence.com",
     "mentions": 18,
     "n_op": 8
+   },
+   {
+    "domain": "uppromote.com",
+    "mentions": 5,
+    "n_op": 1
+   },
+   {
+    "domain": "upstash.com",
+    "mentions": 47,
+    "n_op": 2
+   },
+   {
+    "domain": "usemotion.com",
+    "mentions": 6,
+    "n_op": 3
+   },
+   {
+    "domain": "vapi.ai",
+    "mentions": 193,
+    "n_op": 66
+   },
+   {
+    "domain": "veracode.com",
+    "mentions": 11,
+    "n_op": 2
+   },
+   {
+    "domain": "veriff.com",
+    "mentions": 11,
+    "n_op": 1
+   },
+   {
+    "domain": "vidiq.com",
+    "mentions": 27,
+    "n_op": 12
+   },
+   {
+    "domain": "waalaxy.com",
+    "mentions": 5,
+    "n_op": 3
+   },
+   {
+    "domain": "walkme.com",
+    "mentions": 5,
+    "n_op": 1
+   },
+   {
+    "domain": "wappalyzer.com",
+    "mentions": 10,
+    "n_op": 1
+   },
+   {
+    "domain": "whylabs.ai",
+    "mentions": 5,
+    "n_op": 2
+   },
+   {
+    "domain": "xano.com",
+    "mentions": 8,
+    "n_op": 5
+   },
+   {
+    "domain": "xata.io",
+    "mentions": 7,
+    "n_op": 4
+   },
+   {
+    "domain": "xwiki.com",
+    "mentions": 24,
+    "n_op": 8
+   },
+   {
+    "domain": "ycharts.com",
+    "mentions": 9,
+    "n_op": 5
    }
   ],
   "g4_dead": [
@@ -22193,7 +22193,7 @@
    },
    {
     "domain": "everyonesocial.systems",
-    "mentions": 2,
+    "mentions": 4,
     "n_op": 0
    },
    {
