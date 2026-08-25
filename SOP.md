@@ -222,6 +222,44 @@ The full sequence it drives, each a finite sequence that aborts rather than retr
 `data/run_collection_all.py` (90-day sweep, classify, score, delete-sync, publish) ->
 `data/run_finish_all.py` (outreach-pool expansion, wave-2 queues, gates).
 
+## Catching up classification after a run (added 2026-08-25)
+
+A ship batch classifies only its own five categories, and a lane that is down for one batch
+leaves that batch's mentions unlabelled — the categories still ship, with the labels that
+exist. Mentions are never lost; a label is a thing you can compute later.
+
+After collection finishes, drain the backlog in one pass:
+
+```bash
+python3 - <<'EOF' > /tmp/catchup_slugs.txt
+import csv, json
+new = {p['slug'] for p in json.load(open('data/.roster-import/map/clusters.json'))['proposed']}
+print('\n'.join(sorted({r['slug'] for r in csv.DictReader(open('data/brands.csv'))
+    if r['primary_category_slug'] in new
+    or new & set((r.get('also_in_category_slugs') or '').split(';'))})))
+EOF
+
+python3 worker/classify_brands.py --slugs-file /tmp/catchup_slugs.txt \
+    --haiku 8 --deepseek 0 --allow-metered     # then score + publish
+python3 worker/score_db.py && python3 worker/publish.py
+```
+
+**Run it when collection is DONE, not alongside it, and ramp the worker count.**
+`classify_api.py`'s header explains why and it is not optional advice: the Haiku lane is one
+local `claude` process per worker, so it costs kernel scheduling rather than RAM, and the
+number to ramp on is COMPLETED ITEMS PER MINUTE, never a resource gauge. On 2026-08-25
+`--haiku 20` beside a live sweep took the box to load 76 with 971 MB of swap free in five
+minutes (post-mortem I4). Start at 8, watch the items/min line, and go wider only if it is
+still climbing and swap is not falling.
+
+There is no hurry: the sweep is rate-limit bound, so it does not go faster for having the CPU,
+and classification is fully resumable off its on-disk skip-set — stopping it loses nothing.
+
+Pick the lane by what can actually bill. `--deepseek` needs credit (check
+`https://api.deepseek.com/user/balance`); `--haiku` needs Max-plan quota. If neither can, a
+lane that RAISES gives up after 12 consecutive failures, and a lane that HANGS is caught by
+the aggregate `stalled at 0/N — stopping` detector instead.
+
 ## When something fails
 
 **Re-run `worker/update.sh`.** Every stage is idempotent: collect resumes from watermarks, classify is an anti-join (already-labelled items are never re-paid; on-disk caches also skip entity-rejects), score is a full recompute, delete-sync walks a cursor, publish is a rebuild. There is no partial-state cleanup, ever.
