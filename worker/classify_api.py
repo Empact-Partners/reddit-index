@@ -187,14 +187,60 @@ def _claude_bin():
 CLAUDE_BIN = None
 
 
+class PromptTooLong(Exception):
+    """The CLI refused the prompt outright. Split the batch, do not retry it whole."""
+
+
 def call_haiku(prompt):
-    """Max-plan Haiku through the CLI. Free; costs a local process."""
+    """Max-plan Haiku through the CLI. Free; costs a local process.
+
+    A CLI REFUSAL IS NOT AN UNPARSEABLE ANSWER. `claude -p` exits 1 and prints
+    "Prompt is too long" in plain text, and subprocess.run does not raise without
+    check=True — so that sentence used to be fed straight to parse_obj, come back
+    None, and be counted as a garbled generation. On 2026-08-25 that mistranslation
+    cost the whole night's Haiku classification: BATCH=40 builds a ~10 KB prompt,
+    every single batch was refused in 3.6s, and 148 consecutive batches were
+    recorded as "unparseable" while the lane was perfectly healthy — a 1-item
+    prompt answered correctly, and 15 items returned 15/15 properly keyed.
+
+    BATCH=40 was tuned for DeepSeek, an HTTP provider with its own max_tokens
+    scaling. Nothing had ever sized a batch for this lane.
+    """
     global CLAUDE_BIN
     if CLAUDE_BIN is None:
         CLAUDE_BIN = _claude_bin()
     p = subprocess.run([CLAUDE_BIN, "-p", "--model", HAIKU_MODEL],
                        input=prompt, capture_output=True, text=True, timeout=900)
+    out = (p.stdout or "") + (p.stderr or "")
+    if p.returncode != 0 and "too long" in out.lower():
+        raise PromptTooLong(out.strip()[:120])
+    if p.returncode != 0:
+        raise RuntimeError(f"claude -p exited {p.returncode}: {out.strip()[:120]}")
     return parse_obj(p.stdout or "")
+
+
+def call_lane(kind, items, brand_names, key, depth=0):
+    """One provider call, splitting the batch if the CLI refuses its length.
+
+    Sizing by ITEM COUNT cannot work here: prompt length is driven by comment
+    length, so any fixed number is too big for some batches and wastefully small
+    for others. Halving on refusal self-tunes to the actual text, costs one
+    wasted call per split, and needs no constant anybody has to maintain.
+    """
+    prompt = build_prompt(items, brand_names, terse=(kind == "deepseek"))
+    try:
+        return call_haiku(prompt) if kind == "haiku" else \
+            call_deepseek(prompt, key, len(items))
+    except PromptTooLong:
+        if len(items) == 1 or depth > 6:
+            raise
+        mid = len(items) // 2
+        merged = {}
+        for half in (items[:mid], items[mid:]):
+            got = call_lane(kind, half, brand_names, key, depth + 1)
+            if isinstance(got, dict):
+                merged.update(got)
+        return merged or None
 
 
 def call_deepseek(prompt, key, n_items):
@@ -326,9 +372,7 @@ def worker(kind, q, state, dblock, brand_names, key, min_swap):
             if _stop.is_set():
                 return
         try:
-            prompt = build_prompt(items, brand_names, terse=(kind == "deepseek"))
-            obj = (call_haiku(prompt) if kind == "haiku"
-                   else call_deepseek(prompt, key, len(items)))
+            obj = call_lane(kind, items, brand_names, key)
             if not obj:
                 # A BATCH THAT DOES NOT PARSE IS LOST WORK, NOT A NO-OP. This was
                 # a bare `continue`: no error, no counter, no requeue — 40 items
@@ -348,8 +392,7 @@ def worker(kind, q, state, dblock, brand_names, key, min_swap):
                 # lock_PyThread_acquire_lock, zero `claude` children, zero
                 # progress, load 3, no output. A worker must never put back into
                 # the queue it drains.
-                obj = call_haiku(prompt) if kind == "haiku" else \
-                    call_deepseek(prompt, key, len(items))
+                obj = call_lane(kind, items, brand_names, key)
                 if not obj:
                     with _lock:
                         PARSE_FAIL[kind] = PARSE_FAIL.get(kind, 0) + len(items)
