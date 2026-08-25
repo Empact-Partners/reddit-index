@@ -85,7 +85,12 @@ def main():
     # to restore the ruled path. worker/update.sh passes its lanes explicitly
     # and is unaffected by these defaults.
     ap.add_argument("--deepseek", type=int, default=0)
-    ap.add_argument("--haiku", type=int, default=24)
+    # 8, not 24. The width IS the latency here: every worker is a local `claude`
+    # process, so going wide makes each call slower rather than the pass faster,
+    # and on 2026-08-25 --haiku 20 beside a live sweep took the box to load 76
+    # with 971 MB of swap free (post-mortem I4). SOP: start at 8 and ramp on the
+    # measured items/min line.
+    ap.add_argument("--haiku", type=int, default=8)
     ap.add_argument("--allow-metered", action="store_true")
     ap.add_argument("--dry-run", action="store_true", help="count and cost only")
     ap.add_argument("--rejudge", action="store_true",
@@ -151,6 +156,16 @@ def main():
     # calls we already paid for (measured: 312 of 1,452 items, 18 labels). Wait
     # on the PROCESSED counter instead, with a stall timeout as the backstop.
     fed = len(items)
+    # THE WINDOW MUST EXCEED ONE BATCH'S WORST CASE, and the two lanes differ by
+    # two orders of magnitude. DeepSeek is HTTP: a batch returns in seconds, so
+    # 5 minutes of silence really does mean broken. The Haiku lane is one local
+    # `claude` process per worker at ~100-300s a call, and call_haiku's own
+    # timeout is 900s — so a 5-minute window kills a HEALTHY lane before its
+    # first batch can land. That is not hypothetical: on 2026-08-25 batches 6 and
+    # 7 both printed "stalled at 0/N" and shipped 0 labels with the lane fine
+    # (probed rc=0 in 8.7s immediately after), because 24 CLI workers contending
+    # with a live sweep could not finish one batch inside 300s.
+    stall_ticks = 240 if args.haiku else 60      # 20 min for the CLI lane, 5 for HTTP
     last, stalled = -1, 0
     while True:
         done = sum(v[2] for v in CA.STATS.values())
@@ -158,8 +173,9 @@ def main():
             break
         stalled = 0 if done != last else stalled + 1
         last = done
-        if stalled > 60:                       # 5 min with no progress
-            print(f"stalled at {done}/{fed} — stopping", flush=True)
+        if stalled > stall_ticks:
+            print(f"stalled at {done}/{fed} — stopping "
+                  f"({stall_ticks * 5 // 60} min with no progress)", flush=True)
             break
         time.sleep(5)
     time.sleep(20)                             # let the final commits land
