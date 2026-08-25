@@ -258,20 +258,75 @@ property that cost 72 minutes is never exercised.
 
 ---
 
-## The coverage ledger, honestly
+## The coverage ledger, measured
 
-**Has a fixture (8 classes, 5 files, 62 checks):** A1, A2, A3, G2, C1, G-supervisor-cap,
-H1-ordering, roster-import gates.
+Counts below come from one command, run 2026-08-24:
 
-**Has none (13):** the preflight-refusal outcome · traceback-outranks-network · the
-`DISCOVERY COMPLETE` producer · the launchd interpreter · `qual_rec` single-attempt · the swap
-guard · the entire progress probe · `start_new_session` · `run_collection_fast`'s expansion gate
-· `counts()`/`split()` divergence · the split criterion · `reconcile(match=…)` scoping · lane
-detection not matching its own pgrep.
+    python3 data/run_all_fixtures.py --timeout 120 \
+        ~/Projects/empact-partners/partner-development/scripts
 
-**The pattern is worth stating plainly: every fixture that exists guards a data-file or
-client-library bug. Almost nothing guards the supervisor's decision logic, the resource guards,
-or the observability layer — which is precisely where the most wall-clock time was lost.**
+Exit 0. **13 files, 420 checks evaluated, 0 failed, 2 not evaluated, ~6 s**, fully offline. The
+runner self-tests first (18 checks) and refuses to run the suite if that fails; it distinguishes
+TIMEOUT from FAIL from CRASH, kills a hung fixture's process group so it cannot outlive the
+runner, and reports checks EVALUATED against declared so a partial run cannot read as a small
+clean run.
+
+**All 13 previously-unguarded classes now have a check that was broken on purpose and watched
+fail.** Each was reverted in a tempdir copy and the named fixture went red for the incident's own
+reason — not merely exited non-zero:
+
+| Class | Fixture |
+|---|---|
+| preflight-refusal outcome | `test_supervisor_decisions` + `test_resource_guards` |
+| traceback-outranks-network | `test_supervisor_decisions` (7 checks fail on revert) |
+| `DISCOVERY COMPLETE` producer | `test_progress_reporting` |
+| the launchd interpreter | `test_out_of_repo_contract` (actually imports psycopg under the plist's interpreter) |
+| `qual_rec` single-attempt | `test_refetch_cache` (the ~9.5x refetch, reproduced) |
+| the swap guard | `test_resource_guards`, both directions |
+| the progress probe | `test_progress_reporting` (lsof regression + a STALL that stops naming its position) |
+| `start_new_session` | `test_supervisor_decisions` (asserts the value, not the key) |
+| the expansion gate | `test_stage_order_and_cap` (observed argv, before the first Postgres call) |
+| `counts()`/`split()` divergence | `test_wave_split_invariants` |
+| the split criterion | `test_wave_split_invariants` |
+| `reconcile(match=…)` scoping | `test_wave_split_invariants` |
+| lane detection vs its own pgrep | `test_supervisor_decisions`, coverage and wiring halves independently |
+
+**It took four rounds, and the reason is the finding that matters most.** Each round's audit
+found checks that could not fail for the reason they advertised:
+
+- Round 2 found two provably vacuous checks that a verifier had already passed.
+- Round 3 found the **oldest fixture in the project confidently wrong**. `test_csv_preservation`
+  named class A1, its docstring claimed it proved the writer refuses to lose a column, and
+  reverting `discover_v2.py:1090` to the exact `is_core`-wipe code left it printing `6/6 passed`.
+  It re-implemented the column union in its own body and never called the writer under test.
+  **A1 had been counted as covered for three days on the strength of it.**
+- Round 4 found eight more. `test_import_roster` printed `26/26` against a `merge()` gutted of its
+  ambiguity rule, G5, the reserved-slug pre-check and the G1 dedupe. Two checks in
+  `test_seed_csv_preservation` asserted a bare digit that came from the **tempdir path**, not the
+  guard's message — one of them flaky-green about 1 run in 6. And a try-block check anchored by
+  `str.index` to the FIRST eight-space `try` — the cache read, 1,574 characters before the network
+  try it meant — so reverting G2, the token call that ended a 14-hour run, left it green.
+
+**One known open defect, declared rather than hidden.** `gate()` at
+`data/pipeline_supervisor.py:223-235` catches `except Exception` around the out-of-repo preflight
+import and **returns True**: a rename, a signature drift or a missing file starts a wave with no
+RAM or swap check at all, while `test_resource_guards` spends 44 checks certifying a guard that
+can vanish. Two `xfail` rows in `test_out_of_repo_contract` pin the current behaviour and print
+the consequence on every run; the runner counts them as "2 not evaluated", never as passes.
+Deferred only because the supervisor is mid-run — it is a one-line change once the sweep ends.
+
+**Still thin, honestly.** Coverage is measured, not complete: a majority of the 420 checks have
+been observed failing under mutation, but not all of them. `reserved_slugs()`'s call site, the
+`looked_like_*` tail windows and the runner's own "self-test failed, suite NOT run" branch are
+each guarded more weakly than the green line suggests.
+
+**The pattern the first draft of this ledger named is closed.** The supervisor's decision logic
+(69 checks), stage ordering (50), the resource guards (44) and the observability layer (26) — the
+four areas where the most wall-clock was lost, and which previously had nothing — are now the four
+largest fixtures in the suite.
+
+**And the rule that came out of all four rounds:** a check that cannot fail is worse than no
+check, because it advertises a guard that is not there. Break it on purpose, or do not believe it.
 
 ---
 
