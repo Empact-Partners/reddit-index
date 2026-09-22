@@ -18,7 +18,7 @@ const current = {
   removals_max: T1, removals_rows: 2_001,
 };
 const corpus = { mentions_max: T1, mentions_rows: 1_240_014, sentiment_max: T1, sentiment_rows: 481_373,
-                 removals_max: T1, removals_rows: 2_001 };
+                 removals_max: T1, removals_rows: 2_001, removals_pending: 0 };
 
 describe("staleReasons", () => {
   it("passes a rail built for exactly this corpus", () => {
@@ -49,7 +49,7 @@ describe("staleReasons", () => {
     // five purged, 910 collected: the net count rises, the ledger does not lie
     const v = railVerdict(current, { ...corpus, mentions_rows: 1_240_919, mentions_max: T2,
                                      removals_rows: 2_006, removals_max: T2 });
-    expect(v.legal.join(" ")).toMatch(/5 takedown\(s\) purged/);
+    expect(v.legal.join(" ")).toMatch(/5 takedown\(s\) recorded since/);
   });
 
   it("refuses a takedown whose count is unchanged but whose ledger mark moved", () => {
@@ -61,8 +61,10 @@ describe("staleReasons", () => {
     expect(v.block.join(" ")).toMatch(/labels moved/);
   });
 
-  it("catches a rail that has never been refreshed", () => {
-    expect(staleReasons(undefined, corpus)).toEqual(["the rail has never recorded a refresh"]);
+  it("treats a rail with no record as LEGAL — nothing proves it excludes a takedown (round 2)", () => {
+    const v = railVerdict(undefined, corpus);
+    expect(v.legal.join(" ")).toMatch(/never recorded a refresh/);
+    expect(v.block).toEqual([]);                       // never the overridable tier
   });
 
   it("a rail recorded before the ledger existed still judges takedowns, and refuses if any exist", () => {
@@ -71,8 +73,16 @@ describe("staleReasons", () => {
     expect(railVerdict(preLedger, corpus).legal.length).toBe(1);
   });
 
-  it("refuses to judge when the corpus revision could not be read", () => {
-    expect(staleReasons(current, undefined)).toEqual(["the corpus revision could not be read"]);
+  it("treats an unreadable corpus revision as LEGAL, never overridable (round 2)", () => {
+    const v = railVerdict(current, undefined);
+    expect(v.legal.join(" ")).toMatch(/could not be read/);
+    expect(v.block).toEqual([]);
+  });
+
+  it("refuses while a takedown is recorded but not yet purged — delete-sync mid-run or crashed (round 2)", () => {
+    // the crash between `delete from mentions` and stamping purged_at: nothing else moves
+    const v = railVerdict(current, { ...corpus, removals_pending: 1 });
+    expect(v.legal.join(" ")).toMatch(/recorded but not yet purged/);
   });
 
   it("blocks an EMPTY rail under a non-empty corpus — every page would have no cards (not a lag)", () => {

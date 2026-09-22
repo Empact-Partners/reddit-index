@@ -89,8 +89,25 @@ async function loadSnapshotOnce(): Promise<Snapshot> {
   const t0 = Date.now();
   const s = db();
 
-  const [catRows, brandRows, scoreRows, subCounts, mentionRows, mentionAgg,
-         threadRows, railMeta, corpusRevision] = await Promise.all([
+  // THE CARDS AND THE PROOF THAT THEY ARE CURRENT COME FROM ONE SNAPSHOT. Read on separate pooled connections,
+  // a refresh committing mid-load could pair the OLD rail's cards with the NEW rail's metadata, and the guard
+  // would certify cards it never saw (round 2 of PR #3's review). One repeatable-read transaction makes the
+  // three reads see the same database state; it runs beside the 11.9s aggregate, so it costs nothing.
+  const railRead = s.begin("isolation level repeatable read read only", async (tx) => {
+    const cards = await tx`select brand_slug, brand_name, subreddit, doc_id, doc_type, thread_id,
+             author, created_utc, permalink, body, matched_form, label
+      from published.mention_rail`;
+    const meta = await tx`select refreshed_at, rail_rows, mentions_max, mentions_rows, sentiment_max, sentiment_rows,
+             removals_max, removals_rows
+      from published.mention_rail_meta`;
+    const rev = await tx`select mentions_rows, mentions_max, sentiment_rows, sentiment_max,
+             removals_rows, removals_max, removals_pending
+      from published.corpus_revision`;
+    return [cards, meta, rev] as const;
+  });
+
+  const [catRows, brandRows, scoreRows, subCounts, [mentionRows, railMeta, corpusRevision], mentionAgg,
+         threadRows] = await Promise.all([
     s`select id, slug, name, threshold_tier, precision_target_pp, n_min, base_rate_c, status
       from published.categories`,
     s`select id, slug, name, primary_category_id from published.brands`,
@@ -115,9 +132,7 @@ async function loadSnapshotOnce(): Promise<Snapshot> {
     //
     // The rails are still 80 + 40 per document type, and everything the comment below argued about
     // why still holds; it moved into the view's definition, it did not go away.
-    s`select brand_slug, brand_name, subreddit, doc_id, doc_type, thread_id,
-             author, created_utc, permalink, body, matched_form, label
-      from published.mention_rail`,
+    railRead,
     // The dashboard aggregates: TRUE totals over the whole table, per
     // (brand x subreddit x doc_type x label) — the stat tiles, the type
     // filter counts and the subreddit ledger must describe everything
@@ -135,18 +150,6 @@ async function loadSnapshotOnce(): Promise<Snapshot> {
     // threads INSIDE the rail lateral measured 12-27s; as its own query it is
     // 0.24s and the map is built in JS.
     s`select id, link_title from published.threads`,
-    // What the rail knew when it was built, and what the corpus holds now. A publish that skipped
-    // the refresh would otherwise ship yesterday's cards under today's scores, silently.
-    s`select refreshed_at, rail_rows, mentions_max, mentions_rows, sentiment_max, sentiment_rows,
-             removals_max, removals_rows
-      from published.mention_rail_meta`,
-    // The corpus revision: FOUR numbers, because a maximum alone answers only "did new mentions arrive".
-    // The commonest publish here changes no mention at all — collect, classify, score, publish re-LABELS
-    // existing rows and the rail carries the label — and a deletion or an edited body moves a count
-    // without moving a maximum. Measured at 4.8s, run inside the same Promise.all as the 11.9s
-    // aggregate, so it costs nothing on the critical path.
-    s`select mentions_rows, mentions_max, sentiment_rows, sentiment_max, removals_rows, removals_max
-      from published.corpus_revision`,
   ]);
 
   // A PARTIAL READ MUST RETRY, NOT KILL THE BUILD. Under prerender load the
@@ -170,9 +173,12 @@ async function loadSnapshotOnce(): Promise<Snapshot> {
   const bad = ([["categories", catRows], ["brands", brandRows],
                 ["scores", scoreRows], ["subCounts", subCounts],
                 ["mentions", mentionRows], ["mentionAgg", mentionAgg],
-                ["threads", threadRows]] as [string, unknown[]][])
-    .filter(([, rows]) => !Array.isArray(rows)
-                          || Array.from(rows).some((r) => r == null));
+                ["threads", threadRows], ["railMeta", railMeta], ["corpusRevision", corpusRevision]] as [string, unknown[]][])
+    .filter(([name, rows]) => !Array.isArray(rows)
+                          || Array.from(rows).some((r) => r == null)
+                          // the guard's two single-row reads must each return their row: an empty answer is
+                          // an incomplete read to retry, never evidence that nothing needs guarding
+                          || ((name === "railMeta" || name === "corpusRevision") && rows.length !== 1));
   if (bad.length) {
     throw new Error(
       `PARTIAL_RESULT: ${bad.map(([n]) => n).join(", ")} came back with a null row — ` +

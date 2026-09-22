@@ -1,28 +1,30 @@
--- The rail learns about takedowns from the ledger, not from a net count.
+-- The rail learns about takedowns from the ledger, and a takedown in flight stops everything.
 --
--- WHY. 0005 judged a stale rail partly by the mention COUNT: fewer mentions than the rail recorded meant
--- deletions, and deletions block the build, because delete-sync propagates takedowns (decisions/0002, a legal
--- condition, never skipped) and a stale materialised rail keeps showing a deleted card. A review of PR #3 found
--- the hole: a count is a NET figure. Five takedowns inside a window that also collected 910 mentions read as
--- +905, "mentions were only added", a warning — and five deleted cards stay on the site.
+-- WHY. 0005 judged deletions partly by the net mention COUNT, and two review rounds of PR #3 (Codex, astra, on
+-- clean clones) took that apart:
+--   * a count is NET: five takedowns inside a window that collected 910 mentions read as +905, "only added";
+--   * delete-sync writes the ledger, deletes the mention, THEN stamps purged_at — a crash between the last two
+--     leaves the card gone from `mentions` but invisible to any watermark built on purged rows only;
+--   * a refresh taken while a removal is pending would record that removal as "known" while the rail still
+--     carries its card, because the mention had not been deleted yet when the rail was rebuilt;
+--   * inferring what an existing rail contains from its refreshed_at timestamp is a guess — the only proof is
+--     to rebuild it.
+-- delete-sync's order is "ledger first, then purge" (worker/delete_sync.py), so the ledger row is the earliest,
+-- most reliable fact there is. From here: the watermark is EVERY ledger row (count, newest detected_at); any
+-- row still pending purge is a takedown in flight — the build refuses and the refresh refuses; and this
+-- migration ends by rebuilding the rail rather than seeding a guess.
 --
--- Delete-sync already writes the fact that is needed. It records every removal in `removals` FIRST, then
--- purges, then stamps `purged_at` (worker/delete_sync.py, "ledger first, then purge"). A purge after the rail
--- was built is a takedown the rail may still carry, whatever else happened to the count. So the rail records
--- the ledger's high-water mark when it is built, and the build compares it.
---
--- Applied with IF NOT EXISTS / OR REPLACE throughout, so re-running is a no-op. RUN IT IN ORDER: step 3
--- recreates `published.mention_rail_meta`, which is a `select *` view — a view's column list is fixed when it is
--- created, and adding columns to the table without recreating it is what failed production build
--- dpl_GW38TwHWBx37m6x6HvKKre6bGVSf on 2026-09-22.
+-- RUN IT IN ORDER, AS ONE FILE. Step 3 recreates `published.mention_rail_meta`, a `select *` view whose column
+-- list is fixed when created (skipping it failed production build dpl_GW38TwHWBx37m6x6HvKKre6bGVSf). Step 5
+-- rebuilds the rail and takes minutes: it sets its own statement timeout first.
 
--- 1. the rail's record gains the ledger's high-water mark
+-- 1. the rail's record carries the ledger's mark
 alter table public.mention_rail_meta add column if not exists removals_max  timestamptz;
 alter table public.mention_rail_meta add column if not exists removals_rows bigint;
+comment on column public.mention_rail_meta.removals_rows is 'every removals row that existed when the rail was built (detected, not only purged)';
+comment on column public.mention_rail_meta.removals_max  is 'the newest removals.detected_at when the rail was built';
 
--- 2. the refresh captures it, BEFORE the rebuild like every other mark (a removal that lands mid-refresh makes
---    the mark conservative: the build sees the ledger ahead of the rail and refuses — one rebuild, never a
---    deleted card served)
+-- 2. the refresh refuses while a takedown is mid-purge, and captures the ledger BEFORE it rebuilds
 create or replace function public.refresh_mention_rail(do_concurrently boolean default true)
 returns public.mention_rail_meta
 language plpgsql
@@ -31,14 +33,20 @@ set search_path = public
 set statement_timeout = '30min'
 as $$
 declare
-  meta   public.mention_rail_meta;
-  m_rows bigint; m_max timestamptz;
-  s_rows bigint; s_max timestamptz;
-  r_rows bigint; r_max timestamptz;
+  meta    public.mention_rail_meta;
+  m_rows  bigint; m_max timestamptz;
+  s_rows  bigint; s_max timestamptz;
+  r_rows  bigint; r_max timestamptz;
+  pending bigint;
 begin
+  select count(*) into pending from public.removals where purged_at is null;
+  if pending > 0 then
+    raise exception 'refresh_mention_rail: % takedown(s) are recorded but not yet purged — finish delete-sync first; a rail rebuilt now would record them as known while still carrying their cards', pending;
+  end if;
+
   select count(*), max(created_utc) into m_rows, m_max from public.mentions;
   select count(*), max(scored_at)   into s_rows, s_max from public.mention_sentiment;
-  select count(*), max(purged_at)   into r_rows, r_max from public.removals where purged_at is not null;
+  select count(*), max(detected_at) into r_rows, r_max from public.removals;
 
   if do_concurrently then
     refresh materialized view concurrently public.mention_rail_mv;
@@ -65,26 +73,22 @@ begin
 end;
 $$;
 
--- 3. the doors: both are `select *` / an explicit list, and both MUST be recreated to show the new columns
+-- 3. the doors (both MUST be recreated to show new columns)
 create or replace view published.mention_rail_meta as select * from public.mention_rail_meta;
 create or replace view published.corpus_revision as
 select (select count(*)           from public.mentions)          as mentions_rows,
        (select max(created_utc)   from public.mentions)          as mentions_max,
        (select count(*)           from public.mention_sentiment) as sentiment_rows,
        (select max(scored_at)     from public.mention_sentiment) as sentiment_max,
-       (select count(*)           from public.removals where purged_at is not null) as removals_rows,
-       (select max(purged_at)     from public.removals where purged_at is not null) as removals_max;
+       (select count(*)           from public.removals)          as removals_rows,
+       (select max(detected_at)   from public.removals)          as removals_max,
+       (select count(*)           from public.removals where purged_at is null) as removals_pending;
 
+-- 4. grants
 grant select on published.mention_rail_meta to site_reader;
 grant select on published.corpus_revision   to site_reader;
 
--- 4. seed the ledger mark for the rail that exists now — with what the ledger held WHEN THAT RAIL WAS BUILT,
---    never with today's figure. Seeding "now" would silently accept every takedown purged between the last
---    refresh and this migration, which is precisely the case the migration exists to catch; seeded as of
---    refreshed_at, those purges read as ahead of the rail and the next build refuses until it is refreshed.
-update public.mention_rail_meta m
-   set removals_rows = (select count(*) from public.removals r
-                         where r.purged_at is not null and r.purged_at <= m.refreshed_at),
-       removals_max  = (select max(r.purged_at) from public.removals r
-                         where r.purged_at is not null and r.purged_at <= m.refreshed_at)
- where m.removals_rows is null;
+-- 5. rebuild the rail under the new function instead of inferring what the old one contains. Refuses (by
+--    design) if a takedown is mid-purge; finish delete-sync and re-run this statement.
+set statement_timeout = '30min';
+select public.refresh_mention_rail(false);

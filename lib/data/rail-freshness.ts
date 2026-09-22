@@ -34,6 +34,7 @@ export type CorpusRevision = {
   sentiment_rows?: unknown;
   removals_max?: unknown;
   removals_rows?: unknown;
+  removals_pending?: unknown;
 } | undefined;
 
 const ts = (v: unknown): number | null => {
@@ -48,8 +49,9 @@ const num = (v: unknown): number | null =>
  * What this build must do about the rail it is about to read. Three tiers, by consequence:
  *
  *   LEGAL  a takedown the rail may still show. delete-sync records every removal in the `removals` ledger
- *          before it purges (decisions/0002, a legal condition, never skipped); a purge after the rail was built
- *          means a deleted card may still be on a page. Judged from the LEDGER, never from the net mention count:
+ *          before it purges (decisions/0002, a legal condition, never skipped); a ledger row newer than the rail,
+ *          or one still pending purge, means a deleted card may be on a page. So does not being able to read the
+ *          guard's own inputs. Judged from the LEDGER, never from the net mention count:
  *          a review of PR #3 showed five takedowns inside a window that also collected 910 mentions read as +905,
  *          "only added". NOTHING overrides this tier — not RAIL_ALLOW_STALE, not anything.
  *   BLOCK  the rail cannot be trusted and a person may knowingly override it (RAIL_ALLOW_STALE=1): it was never
@@ -66,12 +68,23 @@ const num = (v: unknown): number | null =>
 export type RailVerdict = { legal: string[]; block: string[]; warn: string[] };
 
 export function railVerdict(meta: RailMeta, rev: CorpusRevision): RailVerdict {
-  if (!meta) return { legal: [], block: ["the rail has never recorded a refresh"], warn: [] };
-  if (!rev) return { legal: [], block: ["the corpus revision could not be read"], warn: [] };
+  // Without both records nothing proves the rail excludes every takedown, so their absence is LEGAL, not a
+  // knowingly-overridable block: RAIL_ALLOW_STALE must never be able to wave through what could not be checked
+  // (round 2 of PR #3's review).
+  if (!meta) return { legal: ["the rail has never recorded a refresh — nothing proves it excludes every takedown"], block: [], warn: [] };
+  if (!rev) return { legal: ["the corpus revision could not be read — nothing proves the rail excludes every takedown"], block: [], warn: [] };
 
   const legal: string[] = [];
   const block: string[] = [];
   const warn: string[] = [];
+
+  // --- LEGAL: a takedown in flight — recorded in the ledger, not yet stamped purged ---------------------
+  // delete-sync writes the ledger, deletes, THEN stamps purged_at; a crash between the last two leaves a card
+  // gone from the corpus but pending in the ledger. Until it is stamped nobody can say whether the rail kept it.
+  const pending = num(rev.removals_pending);
+  if (pending !== null && pending > 0) {
+    legal.push(`${pending} takedown(s) are recorded but not yet purged — delete-sync is mid-run or crashed`);
+  }
 
   // --- LEGAL: the takedown ledger moved past what the rail knew ---------------------------------------
   const rLive = num(rev.removals_rows), rBuilt = num(meta.removals_rows);
@@ -79,9 +92,9 @@ export function railVerdict(meta: RailMeta, rev: CorpusRevision): RailVerdict {
   if (rLive !== null && rBuilt === null && rLive > 0) {
     legal.push("takedowns exist and the rail recorded none of them — it may be showing deleted cards");
   } else if (rLive !== null && rBuilt !== null && rLive > rBuilt) {
-    legal.push(`${rLive - rBuilt} takedown(s) purged since the rail was built — it may be showing deleted cards`);
+    legal.push(`${rLive - rBuilt} takedown(s) recorded since the rail was built — it may be showing deleted cards`);
   } else if (rMarkLive !== null && (rMarkBuilt === null || rMarkLive > rMarkBuilt)) {
-    legal.push("a takedown newer than the rail was purged — it may be showing a deleted card");
+    legal.push("a takedown newer than the rail was recorded — it may be showing a deleted card");
   }
   // the net count still speaks when it FALLS: a deletion that bypassed the ledger is still a deletion
   const mLive = num(rev.mentions_rows), mBuilt = num(meta.mentions_rows);
