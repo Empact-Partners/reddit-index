@@ -23,6 +23,8 @@ export type RailMeta = {
   mentions_rows?: unknown;
   sentiment_max?: unknown;
   sentiment_rows?: unknown;
+  removals_max?: unknown;
+  removals_rows?: unknown;
 } | undefined;
 
 export type CorpusRevision = {
@@ -30,6 +32,8 @@ export type CorpusRevision = {
   mentions_rows?: unknown;
   sentiment_max?: unknown;
   sentiment_rows?: unknown;
+  removals_max?: unknown;
+  removals_rows?: unknown;
 } | undefined;
 
 const ts = (v: unknown): number | null => {
@@ -41,56 +45,81 @@ const num = (v: unknown): number | null =>
   v === null || v === undefined ? null : Number(v);
 
 /**
- * What this build must do about the rail it is about to read.
+ * What this build must do about the rail it is about to read. Three tiers, by consequence:
  *
- * Not all drift is the same, and treating it as the same blocked a comment-only push within hours of shipping:
- * a collection had added 910 mentions since the last publish, and every code push after that refused to build
- * until someone published. That is the "the site cannot be rebuilt at all" failure this repo has paid for
- * before. So each kind of drift gets the verdict its consequence deserves:
+ *   LEGAL  a takedown the rail may still show. delete-sync records every removal in the `removals` ledger
+ *          before it purges (decisions/0002, a legal condition, never skipped); a purge after the rail was built
+ *          means a deleted card may still be on a page. Judged from the LEDGER, never from the net mention count:
+ *          a review of PR #3 showed five takedowns inside a window that also collected 910 mentions read as +905,
+ *          "only added". NOTHING overrides this tier — not RAIL_ALLOW_STALE, not anything.
+ *   BLOCK  the rail cannot be trusted and a person may knowingly override it (RAIL_ALLOW_STALE=1): it was never
+ *          refreshed, the revision could not be read, a LABEL changed (cards would disagree with the scores beside
+ *          them), or the rail was built over an EMPTY corpus that now has mentions (every page would render with
+ *          no cards — not a lag, a broken site).
+ *   WARN   mentions were only added: the newest cards lag until the next publish. Cosmetic. A comment-only push
+ *          was refused over exactly this on 2026-09-22 (910 mentions added), which is why it is not a block.
  *
- *   BLOCK  the rail has never been refreshed, or the corpus revision could not be read;
- *   BLOCK  a LABEL changed (a rescore or new classifications) — every card would show a label that disagrees
- *          with the score beside it, which is the case the review of PR #2 found the first guard missing;
- *   BLOCK  mentions were DELETED — delete-sync propagates takedowns (decisions/0002, a legal condition, never
- *          skipped). The live rail this replaced dropped a deleted mention on the next build; a stale
- *          materialised rail would keep showing it, so a shrinking corpus is never "just a warning";
- *   WARN   mentions were only ADDED — some brands' newest cards lag until the next publish. Cosmetic, fixed by
- *          the next publish, and never worth refusing a code deploy over.
+ * Why labels need no content hash: every writer of mention_sentiment in this repo appends (INSERT ... ON CONFLICT
+ * DO NOTHING — classify_api, classify_daily, classify_daemon, load, backfill_labels) and nothing UPDATEs it, so a
+ * relabel is always a new row and always moves the count. An in-place relabel would take a hand-written UPDATE.
  */
-export type RailVerdict = { block: string[]; warn: string[] };
+export type RailVerdict = { legal: string[]; block: string[]; warn: string[] };
 
 export function railVerdict(meta: RailMeta, rev: CorpusRevision): RailVerdict {
-  if (!meta) return { block: ["the rail has never recorded a refresh"], warn: [] };
-  if (!rev) return { block: ["the corpus revision could not be read"], warn: [] };
+  if (!meta) return { legal: [], block: ["the rail has never recorded a refresh"], warn: [] };
+  if (!rev) return { legal: [], block: ["the corpus revision could not be read"], warn: [] };
 
+  const legal: string[] = [];
   const block: string[] = [];
   const warn: string[] = [];
 
-  // labels: any movement at all is a disagreement between cards and scores
+  // --- LEGAL: the takedown ledger moved past what the rail knew ---------------------------------------
+  const rLive = num(rev.removals_rows), rBuilt = num(meta.removals_rows);
+  const rMarkLive = ts(rev.removals_max), rMarkBuilt = ts(meta.removals_max);
+  if (rLive !== null && rBuilt === null && rLive > 0) {
+    legal.push("takedowns exist and the rail recorded none of them — it may be showing deleted cards");
+  } else if (rLive !== null && rBuilt !== null && rLive > rBuilt) {
+    legal.push(`${rLive - rBuilt} takedown(s) purged since the rail was built — it may be showing deleted cards`);
+  } else if (rMarkLive !== null && (rMarkBuilt === null || rMarkLive > rMarkBuilt)) {
+    legal.push("a takedown newer than the rail was purged — it may be showing a deleted card");
+  }
+  // the net count still speaks when it FALLS: a deletion that bypassed the ledger is still a deletion
+  const mLive = num(rev.mentions_rows), mBuilt = num(meta.mentions_rows);
+  if (mLive !== null && mBuilt !== null && mLive < mBuilt) {
+    legal.push(`mentions fell from ${mBuilt} to ${mLive} — deletions the rail would still show`);
+  }
+
+  // --- BLOCK: labels disagree with scores, or the rail is empty against a full corpus --------------------
   const labelLive = ts(rev.sentiment_max), labelBuilt = ts(meta.sentiment_max);
-  if (labelLive !== null && labelBuilt === null) block.push("labels exist and the rail recorded none");
-  else if (labelLive !== null && labelBuilt !== null && labelLive > labelBuilt) block.push("a label newer than the rail was built for");
+  if (labelLive !== null && labelBuilt === null && num(meta.sentiment_rows) !== 0) {
+    block.push("labels exist and the rail recorded none");
+  } else if (labelLive !== null && labelBuilt !== null && labelLive > labelBuilt) {
+    block.push("a label newer than the rail was built for");
+  }
   const labelRowsLive = num(rev.sentiment_rows), labelRowsBuilt = num(meta.sentiment_rows);
   if (labelRowsLive !== null && labelRowsBuilt !== null && labelRowsLive !== labelRowsBuilt) {
     block.push(`labels moved from ${labelRowsBuilt} to ${labelRowsLive} since the rail was built`);
   }
+  if (mBuilt === 0 && mLive !== null && mLive > 0) {
+    block.push(`the rail was built over an empty corpus and ${mLive} mention(s) now exist — every page would render with no cards`);
+  } else if (mBuilt === null && ts(rev.mentions_max) !== null) {
+    block.push("mentions exist and the rail recorded no count for them");
+  }
 
-  // mentions: fewer is a takedown the rail would keep showing; more is a rail that lags
-  const mLive = num(rev.mentions_rows), mBuilt = num(meta.mentions_rows);
-  if (mLive !== null && mBuilt !== null && mLive < mBuilt) {
-    block.push(`mentions fell from ${mBuilt} to ${mLive} — deletions the rail would still show`);
-  } else if (mLive !== null && mBuilt !== null && mLive > mBuilt) {
+  // --- WARN: only added -------------------------------------------------------------------------------
+  if (mLive !== null && mBuilt !== null && mBuilt > 0 && mLive > mBuilt) {
     warn.push(`${mLive - mBuilt} mention(s) arrived since the rail was built — some newest cards lag until the next publish`);
+  } else if (!legal.length && !block.length) {
+    const markLive = ts(rev.mentions_max), markBuilt = ts(meta.mentions_max);
+    if (markLive !== null && markBuilt !== null && markLive > markBuilt) {
+      warn.push("a mention newer than the rail was built for — some newest cards lag until the next publish");
+    }
   }
-  const markLive = ts(rev.mentions_max), markBuilt = ts(meta.mentions_max);
-  if (markLive !== null && markBuilt === null) block.push("mentions exist and the rail recorded none");
-  else if (markLive !== null && markBuilt !== null && markLive > markBuilt && !warn.length) {
-    warn.push("a mention newer than the rail was built for — some newest cards lag until the next publish");
-  }
-  return { block, warn };
+  return { legal, block, warn };
 }
 
-/** Every reason to refuse the build; kept for callers that only need the refusal. */
+/** Every reason to refuse the build, legal first; kept for callers that only need the refusal. */
 export function staleReasons(meta: RailMeta, rev: CorpusRevision): string[] {
-  return railVerdict(meta, rev).block;
+  const v = railVerdict(meta, rev);
+  return [...v.legal, ...v.block];
 }

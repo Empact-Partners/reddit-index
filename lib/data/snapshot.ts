@@ -137,14 +137,15 @@ async function loadSnapshotOnce(): Promise<Snapshot> {
     s`select id, link_title from published.threads`,
     // What the rail knew when it was built, and what the corpus holds now. A publish that skipped
     // the refresh would otherwise ship yesterday's cards under today's scores, silently.
-    s`select refreshed_at, rail_rows, mentions_max, mentions_rows, sentiment_max, sentiment_rows
+    s`select refreshed_at, rail_rows, mentions_max, mentions_rows, sentiment_max, sentiment_rows,
+             removals_max, removals_rows
       from published.mention_rail_meta`,
     // The corpus revision: FOUR numbers, because a maximum alone answers only "did new mentions arrive".
     // The commonest publish here changes no mention at all — collect, classify, score, publish re-LABELS
     // existing rows and the rail carries the label — and a deletion or an edited body moves a count
     // without moving a maximum. Measured at 4.8s, run inside the same Promise.all as the 11.9s
     // aggregate, so it costs nothing on the critical path.
-    s`select mentions_rows, mentions_max, sentiment_rows, sentiment_max
+    s`select mentions_rows, mentions_max, sentiment_rows, sentiment_max, removals_rows, removals_max
       from published.corpus_revision`,
   ]);
 
@@ -196,6 +197,13 @@ async function loadSnapshotOnce(): Promise<Snapshot> {
   const meta = railMeta[0];
   const rev = corpusRevision[0];
   const verdict = railVerdict(meta, rev);
+  // A takedown the rail may still show is refused unconditionally: RAIL_ALLOW_STALE is a knowing override of a
+  // consistency problem, and a legal condition is not a consistency problem (review of PR #3).
+  if (verdict.legal.length) {
+    throw new Error(
+      `RAIL_TAKEDOWN: ${verdict.legal.join("; ")}. A deleted card must not be served. Run ` +
+      "`select public.refresh_mention_rail();` (worker/publish.py does this) and build again. This is not overridable.");
+  }
   const stale = verdict.block;
   for (const w of verdict.warn) console.warn(`[snapshot] rail lags the corpus: ${w} (refreshed ${meta?.refreshed_at ?? "never"})`);
   if (stale.length) {
