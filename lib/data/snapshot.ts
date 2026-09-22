@@ -5,6 +5,7 @@ import { METHODOLOGY_VERSION } from "@/lib/format";
 import { fitPriorPooled, pageScore as computePageScore } from "@/lib/data/page-score";
 import type { BrandScore, CategoryView, CompanyView, FailedTest, Snapshot } from "./types";
 import type { Mention, Sentiment } from "@/components/data/mention-card";
+import { staleReasons } from "./rail-freshness";
 
 /**
  * ONE fetch per build worker, not one per page.
@@ -89,7 +90,7 @@ async function loadSnapshotOnce(): Promise<Snapshot> {
   const s = db();
 
   const [catRows, brandRows, scoreRows, subCounts, mentionRows, mentionAgg,
-         threadRows, railMeta, mentionsNewest] = await Promise.all([
+         threadRows, railMeta, corpusRevision] = await Promise.all([
     s`select id, slug, name, threshold_tier, precision_target_pp, n_min, base_rate_c, status
       from published.categories`,
     s`select id, slug, name, primary_category_id from published.brands`,
@@ -98,7 +99,8 @@ async function loadSnapshotOnce(): Promise<Snapshot> {
     s`select cs.category_id, count(*)::int as n
       from published.category_subreddits cs where cs.is_scoring group by 1`,
     // THE RAIL IS PRECOMPUTED (migration 0005). It used to be a LATERAL per brand over
-    // published.mentions: the newest 80 posts and 40 comments for each of 10,511 brands. That is
+    // published.mentions: the newest 80 comments and 40 posts for each of 10,511 brands (doc_type 1 is a comment, 2 is a post —
+    // the comment this replaced had that pair the wrong way round). That is
     // correct and it was unaffordable — `mentions` is partitioned by month, so finding one brand's
     // newest rows merges across all 49 partitions, about a million index probes. Measured on
     // production 2026-09-22 with 0004's indexes valid on every partition: 86,909 ms and 2,786,173
@@ -135,8 +137,15 @@ async function loadSnapshotOnce(): Promise<Snapshot> {
     s`select id, link_title from published.threads`,
     // What the rail knew when it was built, and what the corpus holds now. A publish that skipped
     // the refresh would otherwise ship yesterday's cards under today's scores, silently.
-    s`select refreshed_at, rail_rows, mentions_max, mentions_rows from published.mention_rail_meta`,
-    s`select max(created_utc) as newest from published.mentions`,
+    s`select refreshed_at, rail_rows, mentions_max, mentions_rows, sentiment_max, sentiment_rows
+      from published.mention_rail_meta`,
+    // The corpus revision: FOUR numbers, because a maximum alone answers only "did new mentions arrive".
+    // The commonest publish here changes no mention at all — collect, classify, score, publish re-LABELS
+    // existing rows and the rail carries the label — and a deletion or an edited body moves a count
+    // without moving a maximum. Measured at 4.8s, run inside the same Promise.all as the 11.9s
+    // aggregate, so it costs nothing on the critical path.
+    s`select mentions_rows, mentions_max, sentiment_rows, sentiment_max
+      from published.corpus_revision`,
   ]);
 
   // A PARTIAL READ MUST RETRY, NOT KILL THE BUILD. Under prerender load the
@@ -173,26 +182,23 @@ async function loadSnapshotOnce(): Promise<Snapshot> {
   // THE RAIL MUST BE THE RAIL THIS DATA DESERVES.
   //
   // The rail is materialised now (migration 0005), which buys 86,909 ms -> 562 ms and costs exactly
-  // one new way to be wrong: a publish that scores new mentions and never refreshes the view would
-  // build a site whose cards are older than its numbers, and nothing would say so. That is the
-  // silent-staleness failure this repo keeps paying for, so it is a hard stop rather than a warning.
+  // one new way to be wrong: a publish that changes the corpus and never refreshes the view would
+  // build a site whose cards are older than its numbers, and nothing would say so.
   //
-  // `worker/publish.py` refreshes before it asks Vercel to build, so the healthy path never sees
-  // this. RAIL_ALLOW_STALE=1 is the deliberate escape hatch for an emergency rebuild — it still
-  // shouts, because "the site could no longer be rebuilt at all" is the other failure we refuse.
+  // FOUR signals, not one. A high-water mark on created_utc answers only "did new mentions arrive",
+  // and the commonest publish in this repo changes no mention at all: collect -> classify -> score ->
+  // publish re-LABELS existing rows, and the rail carries the label. The counts close the other doors
+  // — a deletion, an edited body, or a backfill of an older document into a brand's underfilled rail
+  // each move a count without moving a maximum. Any signal AHEAD of what the rail recorded is stale.
+  //
+  // A null mark with a non-empty corpus is stale too: the rail was built over nothing and the corpus
+  // is not nothing. Both empty is the honest first run, and it passes.
   const meta = railMeta[0];
-  const newestMention = mentionsNewest[0]?.newest ? new Date(mentionsNewest[0].newest as string) : null;
-  const railBuiltFor = meta?.mentions_max ? new Date(meta.mentions_max as string) : null;
-  const staleBy = newestMention && railBuiltFor
-    ? (newestMention.getTime() - railBuiltFor.getTime()) / 1000
-    : null;
-  const stale = !meta || (staleBy !== null && staleBy > 0);
-  if (stale) {
-    const detail = !meta
-      ? "published.mention_rail_meta is empty — the rail has never been refreshed"
-      : `the rail was built for mentions up to ${railBuiltFor?.toISOString()} but the corpus now ` +
-        `holds one from ${newestMention?.toISOString()} (${Math.round((staleBy ?? 0) / 60)} minutes newer)`;
+  const rev = corpusRevision[0];
+  const stale = staleReasons(meta, rev);
+  if (stale.length) {
     const fix = "run `select public.refresh_mention_rail();` (worker/publish.py does this) and build again";
+    const detail = `${stale.join("; ")} (rail refreshed ${meta?.refreshed_at ?? "never"})`;
     if (process.env.RAIL_ALLOW_STALE === "1") {
       console.warn(`[snapshot] STALE RAIL, building anyway because RAIL_ALLOW_STALE=1: ${detail}. ${fix}`);
     } else {
@@ -203,7 +209,8 @@ async function loadSnapshotOnce(): Promise<Snapshot> {
   }
   console.log(
     `[snapshot] rail: ${mentionRows.length} rows, refreshed ${meta?.refreshed_at ?? "never"}` +
-    `; corpus ${meta?.mentions_rows ?? "?"} mentions; loaded in ${Date.now() - t0}ms`);
+    `; corpus ${rev?.mentions_rows ?? "?"} mentions, ${rev?.sentiment_rows ?? "?"} labels` +
+    `; loaded in ${Date.now() - t0}ms`);
 
   const catById = new Map(catRows.map((c) => [String(c.id), c]));
   const brandById = new Map(brandRows.map((b) => [String(b.id), b]));

@@ -38,18 +38,22 @@ const DYNAMIC_ALLOWED = new Set(['app/api/revalidate/route.ts']);
 
 const rel = (p) => path.relative(root, p).split(path.sep).join('/');
 
+// Comments are not code. `// Previously: export const revalidate = 86400` is a note about history, and a
+// gate that fails on it teaches people to delete the history rather than to keep the rule.
+const stripComments = (src) => src
+  .replace(/\/\*[\s\S]*?\*\//g, '')
+  .replace(/(^|[^:])\/\/.*$/gm, '$1');
+
 // ---- SOURCE ----------------------------------------------------------------------------------
-const routeFiles = [
-  ...walk(path.join(root, 'app'), /^page\.tsx?$/),
-  ...walk(path.join(root, 'app'), /^route\.ts$/),
-  ...walk(path.join(root, 'app'), /^sitemap\.ts$/),
-  ...walk(path.join(root, 'app'), /^robots\.ts$/),
-];
+// .js and .mjs too: a handler written in plain JavaScript is a handler, and a gate that only reads
+// TypeScript is a gate an `app/api/data/route.js` walks straight past.
+const ROUTE_FILE = /^(page|route|sitemap|robots|default|template)\.(tsx?|jsx?|mjs)$/;
+const routeFiles = walk(path.join(root, 'app'), ROUTE_FILE);
 if (routeFiles.length === 0) fail('static only', 'found no routes under app/ — the gate cannot prove anything');
 
 for (const file of routeFiles) {
   const name = rel(file);
-  const src = fs.readFileSync(file, 'utf8');
+  const src = stripComments(fs.readFileSync(file, 'utf8'));
 
   // A numeric revalidate is THE defect. `revalidate = 86400` reads as "refresh daily" and means
   // "re-read the corpus on a request".
@@ -72,10 +76,47 @@ for (const file of routeFiles) {
 }
 
 // Nothing that runs at request time may reach the corpus loader.
-for (const file of walk(path.join(root, 'app', 'api'), /\.tsx?$/)) {
-  const src = fs.readFileSync(file, 'utf8');
-  if (/getSnapshot|loadSnapshot|from ["']@\/lib\/data\/snapshot["']/.test(src)) {
-    problems.push(`${rel(file)}: a request-time route imports the corpus loader — that is the leak, by another door`);
+// --- 5a: follow the imports, do not just read the file ---------------------------------------
+// A dynamic route that calls `readCorpus()` from a helper that calls `getSnapshot()` passes a check that
+// only greps the route. The corpus is reachable transitively or it is not reachable at all.
+const LOADER = /getSnapshot|loadSnapshot|["']@\/lib\/data\/snapshot["']|["'].*\/data\/snapshot["']/;
+const srcCache = new Map();
+const read = (f) => {
+  if (!srcCache.has(f)) srcCache.set(f, fs.existsSync(f) ? stripComments(fs.readFileSync(f, 'utf8')) : '');
+  return srcCache.get(f);
+};
+const resolveImport = (fromFile, spec) => {
+  let base;
+  if (spec.startsWith('@/')) base = path.join(root, spec.slice(2));
+  else if (spec.startsWith('.')) base = path.resolve(path.dirname(fromFile), spec);
+  else return null;                                   // a package, not our code
+  for (const cand of ['.ts', '.tsx', '.js', '.jsx', '.mjs', '/index.ts', '/index.tsx', '/index.js']) {
+    if (fs.existsSync(base + cand)) return base + cand;
+  }
+  return fs.existsSync(base) && fs.statSync(base).isFile() ? base : null;
+};
+/** Does `file` reach the corpus loader, through any depth of our own imports? */
+function reachesCorpus(file, seen = new Set()) {
+  if (seen.has(file) || seen.size > 200) return false;
+  seen.add(file);
+  const src = read(file);
+  if (LOADER.test(src)) return true;
+  for (const m of src.matchAll(/(?:from|import)\s*\(?\s*["']([^"']+)["']/g)) {
+    const next = resolveImport(file, m[1]);
+    if (next && reachesCorpus(next, seen)) return true;
+  }
+  return false;
+}
+for (const file of walk(path.join(root, 'app', 'api'), /\.(tsx?|jsx?|mjs)$/)) {
+  if (reachesCorpus(file)) {
+    problems.push(`${rel(file)}: a request-time route reaches the corpus loader (directly or through an import) — that is the leak, by another door`);
+  }
+}
+// The allowed dynamic route earns its exemption only while it stays clear of the corpus.
+for (const allowed of DYNAMIC_ALLOWED) {
+  const f = path.join(root, allowed);
+  if (fs.existsSync(f) && reachesCorpus(f)) {
+    problems.push(`${allowed}: it is on the dynamic allow-list AND reaches the corpus loader — the exemption assumed it touches no data`);
   }
 }
 
@@ -96,10 +137,13 @@ if (checkBuilt) {
     }
   }
   // A dynamic route that reached the output is the same leak arriving as a lambda.
-  const dyn = Object.keys(manifest.dynamicRoutes ?? {});
-  const unexpected = dyn.filter((d) => !d.startsWith('/api/'));
-  if (unexpected.length) {
-    problems.push(`built as dynamic (regenerated per request): ${unexpected.join(', ')}`);
+  // `fallback: false` means "these paths and no others" — a fully prerendered set, not a runtime route.
+  // Judge the entry by its fallback and its revalidate, never by the fact that it is parameterised.
+  for (const [route, info] of Object.entries(manifest.dynamicRoutes ?? {})) {
+    if (route.startsWith('/api/')) continue;
+    const r = info.fallbackRevalidate ?? info.initialRevalidateSeconds;
+    if (info.fallback === false && (r === false || r === undefined || r === null)) continue;
+    problems.push(`${route}: built with fallback=${JSON.stringify(info.fallback)} revalidate=${JSON.stringify(r)} — it can be rendered at request time`);
   }
   if (!problems.length) pass('static only (output)', `${routes.length} routes, every one prerendered with no revalidate`);
 }

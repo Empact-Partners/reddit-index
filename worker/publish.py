@@ -79,6 +79,11 @@ def refresh_rail():
     conn = db.connect()
     try:
         with conn.cursor() as cur:
+            # The timeout is set HERE, on the session, before the statement starts. A `SET` clause on
+            # the function itself does not survive a caller whose session already caps statements:
+            # measured 2026-09-22, a refresh called through a 120 s-capped connection was cancelled at
+            # 120.5 s with 57014 even though the function declared 30 minutes.
+            cur.execute("set statement_timeout = '30min'")
             cur.execute(REFRESH_RAIL_SQL)
             row = cur.fetchone()
         conn.commit()
