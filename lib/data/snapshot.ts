@@ -5,7 +5,7 @@ import { METHODOLOGY_VERSION } from "@/lib/format";
 import { fitPriorPooled, pageScore as computePageScore } from "@/lib/data/page-score";
 import type { BrandScore, CategoryView, CompanyView, FailedTest, Snapshot } from "./types";
 import type { Mention, Sentiment } from "@/components/data/mention-card";
-import { staleReasons } from "./rail-freshness";
+import { railVerdict } from "./rail-freshness";
 
 /**
  * ONE fetch per build worker, not one per page.
@@ -195,7 +195,9 @@ async function loadSnapshotOnce(): Promise<Snapshot> {
   // is not nothing. Both empty is the honest first run, and it passes.
   const meta = railMeta[0];
   const rev = corpusRevision[0];
-  const stale = staleReasons(meta, rev);
+  const verdict = railVerdict(meta, rev);
+  const stale = verdict.block;
+  for (const w of verdict.warn) console.warn(`[snapshot] rail lags the corpus: ${w} (refreshed ${meta?.refreshed_at ?? "never"})`);
   if (stale.length) {
     const fix = "run `select public.refresh_mention_rail();` (worker/publish.py does this) and build again";
     const detail = `${stale.join("; ")} (rail refreshed ${meta?.refreshed_at ?? "never"})`;

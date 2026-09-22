@@ -6,7 +6,7 @@
  * most ordinary day there is.
  */
 import { describe, it, expect } from "vitest";
-import { staleReasons } from "@/lib/data/rail-freshness";
+import { staleReasons, railVerdict } from "@/lib/data/rail-freshness";
 
 const T1 = "2026-09-21T07:57:12Z";
 const T2 = "2026-09-22T09:00:00Z";
@@ -30,15 +30,22 @@ describe("staleReasons", () => {
     expect(r.join(" ")).toMatch(/label/);
   });
 
-  it("catches a new mention", () => {
-    expect(staleReasons(current, { ...corpus, mentions_max: T2, mentions_rows: 1_240_015 }).length)
-      .toBeGreaterThan(0);
+  it("WARNS, and does not block, when mentions were only added (production, 2026-09-22)", () => {
+    // the exact state that blocked a comment-only push: a collection added 910 mentions after the last publish
+    const v = railVerdict(current, { ...corpus, mentions_max: T2, mentions_rows: 1_240_924 });
+    expect(v.block).toEqual([]);
+    expect(v.warn.join(" ")).toMatch(/910 mention\(s\) arrived/);
   });
 
-  it("catches a DELETION, which moves a count without moving a maximum", () => {
+  it("BLOCKS a deletion — a takedown the materialised rail would keep showing", () => {
     expect(staleReasons(current, { ...corpus, mentions_rows: 1_239_000 })).toEqual([
-      "mentions moved from 1240014 to 1239000 since the rail was built",
+      "mentions fell from 1240014 to 1239000 — deletions the rail would still show",
     ]);
+  });
+
+  it("BLOCKS new labels even when no mention changed", () => {
+    const v = railVerdict(current, { ...corpus, sentiment_rows: 481_374 });
+    expect(v.block.join(" ")).toMatch(/labels moved/);
   });
 
   it("catches a rail that has never been refreshed", () => {

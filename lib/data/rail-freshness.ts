@@ -41,32 +41,56 @@ const num = (v: unknown): number | null =>
   v === null || v === undefined ? null : Number(v);
 
 /**
- * Every reason this rail is stale. Empty means it is current, and the build may proceed.
+ * What this build must do about the rail it is about to read.
+ *
+ * Not all drift is the same, and treating it as the same blocked a comment-only push within hours of shipping:
+ * a collection had added 910 mentions since the last publish, and every code push after that refused to build
+ * until someone published. That is the "the site cannot be rebuilt at all" failure this repo has paid for
+ * before. So each kind of drift gets the verdict its consequence deserves:
+ *
+ *   BLOCK  the rail has never been refreshed, or the corpus revision could not be read;
+ *   BLOCK  a LABEL changed (a rescore or new classifications) — every card would show a label that disagrees
+ *          with the score beside it, which is the case the review of PR #2 found the first guard missing;
+ *   BLOCK  mentions were DELETED — delete-sync propagates takedowns (decisions/0002, a legal condition, never
+ *          skipped). The live rail this replaced dropped a deleted mention on the next build; a stale
+ *          materialised rail would keep showing it, so a shrinking corpus is never "just a warning";
+ *   WARN   mentions were only ADDED — some brands' newest cards lag until the next publish. Cosmetic, fixed by
+ *          the next publish, and never worth refusing a code deploy over.
  */
+export type RailVerdict = { block: string[]; warn: string[] };
+
+export function railVerdict(meta: RailMeta, rev: CorpusRevision): RailVerdict {
+  if (!meta) return { block: ["the rail has never recorded a refresh"], warn: [] };
+  if (!rev) return { block: ["the corpus revision could not be read"], warn: [] };
+
+  const block: string[] = [];
+  const warn: string[] = [];
+
+  // labels: any movement at all is a disagreement between cards and scores
+  const labelLive = ts(rev.sentiment_max), labelBuilt = ts(meta.sentiment_max);
+  if (labelLive !== null && labelBuilt === null) block.push("labels exist and the rail recorded none");
+  else if (labelLive !== null && labelBuilt !== null && labelLive > labelBuilt) block.push("a label newer than the rail was built for");
+  const labelRowsLive = num(rev.sentiment_rows), labelRowsBuilt = num(meta.sentiment_rows);
+  if (labelRowsLive !== null && labelRowsBuilt !== null && labelRowsLive !== labelRowsBuilt) {
+    block.push(`labels moved from ${labelRowsBuilt} to ${labelRowsLive} since the rail was built`);
+  }
+
+  // mentions: fewer is a takedown the rail would keep showing; more is a rail that lags
+  const mLive = num(rev.mentions_rows), mBuilt = num(meta.mentions_rows);
+  if (mLive !== null && mBuilt !== null && mLive < mBuilt) {
+    block.push(`mentions fell from ${mBuilt} to ${mLive} — deletions the rail would still show`);
+  } else if (mLive !== null && mBuilt !== null && mLive > mBuilt) {
+    warn.push(`${mLive - mBuilt} mention(s) arrived since the rail was built — some newest cards lag until the next publish`);
+  }
+  const markLive = ts(rev.mentions_max), markBuilt = ts(meta.mentions_max);
+  if (markLive !== null && markBuilt === null) block.push("mentions exist and the rail recorded none");
+  else if (markLive !== null && markBuilt !== null && markLive > markBuilt && !warn.length) {
+    warn.push("a mention newer than the rail was built for — some newest cards lag until the next publish");
+  }
+  return { block, warn };
+}
+
+/** Every reason to refuse the build; kept for callers that only need the refusal. */
 export function staleReasons(meta: RailMeta, rev: CorpusRevision): string[] {
-  if (!meta) return ["the rail has never recorded a refresh"];
-  if (!rev) return ["the corpus revision could not be read"];
-
-  const out: string[] = [];
-
-  // A mark that exists in the corpus and not in the rail's record is stale: the rail was built over
-  // nothing of that kind while the corpus holds some. Both absent is an honest empty corpus, and passes.
-  for (const [what, live, built] of [
-    ["a mention newer", ts(rev.mentions_max), ts(meta.mentions_max)],
-    ["a label newer", ts(rev.sentiment_max), ts(meta.sentiment_max)],
-  ] as const) {
-    if (live === null) continue;
-    if (built === null) out.push(`${what.split(" ")[1] === "mention" ? "mentions exist" : "labels exist"} and the rail recorded none`);
-    else if (live > built) out.push(`${what} than the rail was built for`);
-  }
-
-  // A count that moved in EITHER direction is stale — a deletion is as much a change as an arrival.
-  for (const [what, live, built] of [
-    ["mentions", num(rev.mentions_rows), num(meta.mentions_rows)],
-    ["labels", num(rev.sentiment_rows), num(meta.sentiment_rows)],
-  ] as const) {
-    if (live === null || built === null) continue;
-    if (live !== built) out.push(`${what} moved from ${built} to ${live} since the rail was built`);
-  }
-  return out;
+  return railVerdict(meta, rev).block;
 }
