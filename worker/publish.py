@@ -30,6 +30,10 @@ import time
 import urllib.error
 import urllib.request
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+REFRESH_RAIL_SQL = "select refreshed_at, rail_rows, mentions_rows from public.refresh_mention_rail(true)"
+
 TEAM = "team_YDjSLKf93n88onmsyKisSKgC"          # Empact Partners
 PROJECT_ID = "prj_OhSRGKEKFeN2A9JU1BTeebdR6E29"  # reddit-index
 PROJECT = "reddit-index"
@@ -57,10 +61,47 @@ def latest_production():
     return d["deployments"][0]
 
 
+def refresh_rail():
+    """Rebuild the materialised mention rail BEFORE asking Vercel to build.
+
+    Migration 0005 moved the rail out of the build: the per-brand lateral over 49 monthly partitions
+    measured 86,909 ms and ran once per build worker, so the site paid it twice per publish. Reading
+    the materialised view instead is 562 ms. The cost did not vanish — it moved HERE, once, and it is
+    ours to pay rather than the build's.
+
+    This is not optional politeness. `loadSnapshotOnce()` compares the rail's recorded high-water mark
+    against the corpus and REFUSES to build a site whose cards are older than its scores, so a publish
+    that skips this step fails the build instead of shipping stale pages quietly. Refreshed
+    CONCURRENTLY, so a build already reading the view is never blocked.
+    """
+    import db  # noqa: WPS433 — worker/
+    t0 = time.time()
+    conn = db.connect()
+    try:
+        with conn.cursor() as cur:
+            # The timeout is set HERE, on the session, before the statement starts. A `SET` clause on
+            # the function itself does not survive a caller whose session already caps statements:
+            # measured 2026-09-22, a refresh called through a 120 s-capped connection was cancelled at
+            # 120.5 s with 57014 even though the function declared 30 minutes.
+            cur.execute("set statement_timeout = '30min'")
+            cur.execute(REFRESH_RAIL_SQL)
+            row = cur.fetchone()
+        conn.commit()
+    finally:
+        conn.close()
+    mins = (time.time() - t0) / 60
+    if row:
+        print(f"rail refreshed in {mins:.1f} min: {row[1]} rail rows over {row[2]} mentions "
+              f"(at {row[0]})", flush=True)
+    return 0
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--no-wait", action="store_true")
     ap.add_argument("--status", action="store_true")
+    ap.add_argument("--no-refresh", action="store_true",
+                    help="skip the rail refresh (the build will refuse unless RAIL_ALLOW_STALE=1)")
     ap.add_argument("--timeout", type=int, default=2400,
                     help="seconds to wait for READY (a 4,000-page build is slow)")
     args = ap.parse_args()
@@ -73,6 +114,16 @@ def main():
     print(f"current production: {prev['uid']} {prev.get('state')} commit {sha}", flush=True)
     if args.status:
         return 0
+
+    # The rail first, the build second. Reversing these ships a site built from the previous rail.
+    if not args.no_refresh:
+        try:
+            refresh_rail()
+        except Exception as e:                      # noqa: BLE001 — a refusal here must be legible
+            print(f"rail refresh FAILED: {type(e).__name__}: {str(e).splitlines()[0][:200]}", flush=True)
+            print("  not triggering a build: it would refuse on a stale rail (STALE_RAIL), and a "
+                  "build that refuses is 20 wasted minutes. Fix the refresh, then publish.", flush=True)
+            return 1
 
     st, dep = api(f"/v13/deployments?teamId={TEAM}&forceNew=1", "POST", {
         "name": PROJECT,

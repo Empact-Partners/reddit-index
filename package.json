@@ -8,8 +8,8 @@
   "scripts": {
     "dev": "next dev",
     "gen": "node scripts/gen-categories.mjs && node scripts/fetch-fonts.mjs --check",
-    "gates:pre": "node scripts/gates/category-constraints.mjs && node scripts/gates/icons.mjs && node scripts/gates/contrast.mjs && node scripts/gates/fonts.mjs",
-    "gates:post": "node scripts/gates/trade-dress.mjs && node scripts/gates/slugs.mjs && node scripts/gates/css-rules.mjs",
+    "gates:pre": "node scripts/gates/category-constraints.mjs && node scripts/gates/icons.mjs && node scripts/gates/contrast.mjs && node scripts/gates/fonts.mjs && node scripts/gates/static-only.mjs",
+    "gates:post": "node scripts/gates/trade-dress.mjs && node scripts/gates/slugs.mjs && node scripts/gates/css-rules.mjs && node scripts/gates/static-only.mjs --built",
     "gates:selftest": "node scripts/gates/__selftest__.mjs",
     "prebuild": "pnpm run gen && pnpm run gates:pre",
     "build": "next build",
@@ -17,7 +17,8 @@
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run && node --test tests/resolve.test.mjs tests/collect.test.mjs"
+    "test": "vitest run && node --test tests/resolve.test.mjs tests/collect.test.mjs",
+    "check:static": "node scripts/gates/static-only.mjs"
   },
   "dependencies": {
     "lucide-react": "1.28.0",
