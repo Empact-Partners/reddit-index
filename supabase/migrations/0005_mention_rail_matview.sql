@@ -97,6 +97,12 @@ create table if not exists public.mention_rail_meta (
   sentiment_max  timestamptz,            -- the newest label, so a rescore cannot hide
   sentiment_rows bigint
 );
+--    The two ALTERs are for a store that already holds the first version of this table. They MUST come
+--    before section 4, because `published.mention_rail_meta` is a view defined as `select *` and a view's
+--    column list is FIXED WHEN IT IS CREATED: adding a column to the table does not add it to the view.
+--    Applying these two lines by hand without re-running section 4 is what failed production build
+--    dpl_GW38TwHWBx37m6x6HvKKre6bGVSf on 2026-09-22 with `column "sentiment_max" does not exist` — the
+--    column existed, the view just could not see it. Run this file in order, or not at all.
 alter table public.mention_rail_meta add column if not exists sentiment_max  timestamptz;
 alter table public.mention_rail_meta add column if not exists sentiment_rows bigint;
 
