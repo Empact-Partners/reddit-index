@@ -6,7 +6,7 @@
  * most ordinary day there is.
  */
 import { describe, it, expect } from "vitest";
-import { staleReasons } from "@/lib/data/rail-freshness";
+import { staleReasons, railVerdict } from "@/lib/data/rail-freshness";
 
 const T1 = "2026-09-21T07:57:12Z";
 const T2 = "2026-09-22T09:00:00Z";
@@ -15,8 +15,10 @@ const current = {
   refreshed_at: T1,
   mentions_max: T1, mentions_rows: 1_240_014,
   sentiment_max: T1, sentiment_rows: 481_373,
+  removals_max: T1, removals_rows: 2_001,
 };
-const corpus = { mentions_max: T1, mentions_rows: 1_240_014, sentiment_max: T1, sentiment_rows: 481_373 };
+const corpus = { mentions_max: T1, mentions_rows: 1_240_014, sentiment_max: T1, sentiment_rows: 481_373,
+                 removals_max: T1, removals_rows: 2_001, removals_pending: 0 };
 
 describe("staleReasons", () => {
   it("passes a rail built for exactly this corpus", () => {
@@ -30,37 +32,73 @@ describe("staleReasons", () => {
     expect(r.join(" ")).toMatch(/label/);
   });
 
-  it("catches a new mention", () => {
-    expect(staleReasons(current, { ...corpus, mentions_max: T2, mentions_rows: 1_240_015 }).length)
-      .toBeGreaterThan(0);
+  it("WARNS, and does not block, when mentions were only added (production, 2026-09-22)", () => {
+    // the exact state that blocked a comment-only push: a collection added 910 mentions after the last publish
+    const v = railVerdict(current, { ...corpus, mentions_max: T2, mentions_rows: 1_240_924 });
+    expect(v.block).toEqual([]);
+    expect(v.warn.join(" ")).toMatch(/910 mention\(s\) arrived/);
   });
 
-  it("catches a DELETION, which moves a count without moving a maximum", () => {
-    expect(staleReasons(current, { ...corpus, mentions_rows: 1_239_000 })).toEqual([
-      "mentions moved from 1240014 to 1239000 since the rail was built",
+  it("refuses a net deletion as a takedown", () => {
+    expect(railVerdict(current, { ...corpus, mentions_rows: 1_239_000 }).legal).toEqual([
+      "mentions fell from 1240014 to 1239000 — deletions the rail would still show",
     ]);
   });
 
-  it("catches a rail that has never been refreshed", () => {
-    expect(staleReasons(undefined, corpus)).toEqual(["the rail has never recorded a refresh"]);
+  it("refuses a takedown HIDDEN inside a window that also added mentions (review of PR #3)", () => {
+    // five purged, 910 collected: the net count rises, the ledger does not lie
+    const v = railVerdict(current, { ...corpus, mentions_rows: 1_240_919, mentions_max: T2,
+                                     removals_rows: 2_006, removals_max: T2 });
+    expect(v.legal.join(" ")).toMatch(/5 takedown\(s\) recorded since/);
   });
 
-  it("refuses to judge when the corpus revision could not be read", () => {
-    expect(staleReasons(current, undefined)).toEqual(["the corpus revision could not be read"]);
+  it("refuses a takedown whose count is unchanged but whose ledger mark moved", () => {
+    expect(railVerdict(current, { ...corpus, removals_max: T2 }).legal.length).toBe(1);
   });
 
-  it("catches an empty rail under a non-empty corpus (the null bypass)", () => {
+  it("BLOCKS new labels even when no mention changed", () => {
+    const v = railVerdict(current, { ...corpus, sentiment_rows: 481_374 });
+    expect(v.block.join(" ")).toMatch(/labels moved/);
+  });
+
+  it("treats a rail with no record as LEGAL — nothing proves it excludes a takedown (round 2)", () => {
+    const v = railVerdict(undefined, corpus);
+    expect(v.legal.join(" ")).toMatch(/never recorded a refresh/);
+    expect(v.block).toEqual([]);                       // never the overridable tier
+  });
+
+  it("a rail recorded before the ledger existed still judges takedowns, and refuses if any exist", () => {
+    const { removals_max, removals_rows, ...preLedger } = current;
+    void removals_max; void removals_rows;
+    expect(railVerdict(preLedger, corpus).legal.length).toBe(1);
+  });
+
+  it("treats an unreadable corpus revision as LEGAL, never overridable (round 2)", () => {
+    const v = railVerdict(current, undefined);
+    expect(v.legal.join(" ")).toMatch(/could not be read/);
+    expect(v.block).toEqual([]);
+  });
+
+  it("refuses while a takedown is recorded but not yet purged — delete-sync mid-run or crashed (round 2)", () => {
+    // the crash between `delete from mentions` and stamping purged_at: nothing else moves
+    const v = railVerdict(current, { ...corpus, removals_pending: 1 });
+    expect(v.legal.join(" ")).toMatch(/recorded but not yet purged/);
+  });
+
+  it("blocks an EMPTY rail under a non-empty corpus — every page would have no cards (not a lag)", () => {
     const emptyRail = { refreshed_at: T1, mentions_max: null, mentions_rows: 0,
-                        sentiment_max: null, sentiment_rows: 0 };
-    const r = staleReasons(emptyRail, corpus);
-    expect(r.join(" ")).toMatch(/mentions exist and the rail recorded none/);
-    expect(r.join(" ")).toMatch(/labels exist and the rail recorded none/);
+                        sentiment_max: null, sentiment_rows: 0, removals_max: T1, removals_rows: 2_001 };
+    const v = railVerdict(emptyRail, corpus);
+    expect(v.block.join(" ")).toMatch(/built over an empty corpus/);
+    expect(v.warn).toEqual([]);
   });
 
   it("passes an honest first run: an empty rail over an empty corpus", () => {
     expect(staleReasons(
-      { refreshed_at: T1, mentions_max: null, mentions_rows: 0, sentiment_max: null, sentiment_rows: 0 },
-      { mentions_max: null, mentions_rows: 0, sentiment_max: null, sentiment_rows: 0 },
+      { refreshed_at: T1, mentions_max: null, mentions_rows: 0, sentiment_max: null, sentiment_rows: 0,
+        removals_max: null, removals_rows: 0 },
+      { mentions_max: null, mentions_rows: 0, sentiment_max: null, sentiment_rows: 0,
+        removals_max: null, removals_rows: 0 },
     )).toEqual([]);
   });
 
@@ -72,7 +110,7 @@ describe("staleReasons", () => {
 
   it("reads string counts from the driver as numbers, not as text", () => {
     // postgres returns bigint as a string; "1240014" !== 1240014 would fail every build
-    expect(staleReasons({ ...current, mentions_rows: "1240014", sentiment_rows: "481373" },
+    expect(staleReasons({ ...current, mentions_rows: "1240014", sentiment_rows: "481373", removals_rows: "2001" },
                         corpus)).toEqual([]);
   });
 });
