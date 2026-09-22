@@ -89,7 +89,7 @@ async function loadSnapshotOnce(): Promise<Snapshot> {
   const s = db();
 
   const [catRows, brandRows, scoreRows, subCounts, mentionRows, mentionAgg,
-         threadRows] = await Promise.all([
+         threadRows, railMeta, mentionsNewest] = await Promise.all([
     s`select id, slug, name, threshold_tier, precision_target_pp, n_min, base_rate_c, status
       from published.categories`,
     s`select id, slug, name, primary_category_id from published.brands`,
@@ -97,40 +97,25 @@ async function loadSnapshotOnce(): Promise<Snapshot> {
       where week_start = (select max(week_start) from published.brand_category_scores)`,
     s`select cs.category_id, count(*)::int as n
       from published.category_subreddits cs where cs.is_scoring group by 1`,
-    // A LATERAL per brand, not a global window: `row_number()` over the whole
-    // table sorted every mention in the corpus to keep the newest N of each,
-    // which stopped fitting inside the statement timeout once the sweep pushed
-    // the table past ~200k rows (the build failed on /jamf-pro with 57014).
-    // The lateral walks the (brand_id, created_utc desc) index and touches at
-    // most `limit` rows per brand. The rail has been cut twice for the same
-    // reason — 2000 -> 500 -> 250 — each time because a bigger corpus made the
-    // same query a build-memory and transport problem, never a display one.
+    // THE RAIL IS PRECOMPUTED (migration 0005). It used to be a LATERAL per brand over
+    // published.mentions: the newest 80 posts and 40 comments for each of 10,511 brands. That is
+    // correct and it was unaffordable — `mentions` is partitioned by month, so finding one brand's
+    // newest rows merges across all 49 partitions, about a million index probes. Measured on
+    // production 2026-09-22 with 0004's indexes valid on every partition: 86,909 ms and 2,786,173
+    // shared buffers, TWICE per build (next.config.ts caps the build at 2 workers and each worker
+    // runs this whole function), against a 300s per-page timeout — and growing on both axes, one
+    // more partition every month and more brands every sweep.
     //
-    // TWO rails, one per document type, not one rail by recency. Posts are a
-    // quarter of the corpus and clustered differently in time, so a single
-    // newest-N window left brands with thousands of posts showing seventeen —
-    // and a "Posts" filter over that is a filter over noise. A quota per type
-    // is what makes the filter mean something.
+    // The same 161,660 rows now come from a materialised view refreshed once at publish time:
+    // 562 ms and 16,704 buffers, proven row-for-row identical to the query above (0 rows in either
+    // EXCEPT direction). The view carries only the eleven columns this function reads — score,
+    // intensity, stage, subreddit_id and brand_id were being read from disk and shipped for nothing.
     //
-    // 80 + 40, not 200 + 100. EVERY mention in this rail is serialised into
-    // the page: the dashboard is a client island that paginates and filters
-    // without a fetch, so the full body of all of them ships to the browser.
-    // At 200 + 100 /hubspot was 155 KB gzipped and 529 KB on the wire. 120
-    // cards is twelve pages of ten, past anything a reader scrolls, and the
-    // stat tiles, the filter counts and the subreddit ledger are computed from
-    // the full-table aggregate below — they do not narrow when the rail does.
-    s`select t.*, b.slug as brand_slug, b.name as brand_name, sr.name as subreddit
-      from published.brands b
-      cross join lateral (
-        (select m.* from published.mentions m
-          where m.brand_id = b.id and m.doc_type = 1
-          order by m.created_utc desc limit 80)
-        union all
-        (select m.* from published.mentions m
-          where m.brand_id = b.id and m.doc_type = 2
-          order by m.created_utc desc limit 40)
-      ) t
-      join published.subreddits sr on sr.id = t.subreddit_id`,
+    // The rails are still 80 + 40 per document type, and everything the comment below argued about
+    // why still holds; it moved into the view's definition, it did not go away.
+    s`select brand_slug, brand_name, subreddit, doc_id, doc_type, thread_id,
+             author, created_utc, permalink, body, matched_form, label
+      from published.mention_rail`,
     // The dashboard aggregates: TRUE totals over the whole table, per
     // (brand x subreddit x doc_type x label) — the stat tiles, the type
     // filter counts and the subreddit ledger must describe everything
@@ -148,6 +133,10 @@ async function loadSnapshotOnce(): Promise<Snapshot> {
     // threads INSIDE the rail lateral measured 12-27s; as its own query it is
     // 0.24s and the map is built in JS.
     s`select id, link_title from published.threads`,
+    // What the rail knew when it was built, and what the corpus holds now. A publish that skipped
+    // the refresh would otherwise ship yesterday's cards under today's scores, silently.
+    s`select refreshed_at, rail_rows, mentions_max, mentions_rows from published.mention_rail_meta`,
+    s`select max(created_utc) as newest from published.mentions`,
   ]);
 
   // A PARTIAL READ MUST RETRY, NOT KILL THE BUILD. Under prerender load the
@@ -180,6 +169,41 @@ async function loadSnapshotOnce(): Promise<Snapshot> {
       `the pooler returned an incomplete set. Retrying rather than building a ` +
       `site that is missing rows.`);
   }
+
+  // THE RAIL MUST BE THE RAIL THIS DATA DESERVES.
+  //
+  // The rail is materialised now (migration 0005), which buys 86,909 ms -> 562 ms and costs exactly
+  // one new way to be wrong: a publish that scores new mentions and never refreshes the view would
+  // build a site whose cards are older than its numbers, and nothing would say so. That is the
+  // silent-staleness failure this repo keeps paying for, so it is a hard stop rather than a warning.
+  //
+  // `worker/publish.py` refreshes before it asks Vercel to build, so the healthy path never sees
+  // this. RAIL_ALLOW_STALE=1 is the deliberate escape hatch for an emergency rebuild — it still
+  // shouts, because "the site could no longer be rebuilt at all" is the other failure we refuse.
+  const meta = railMeta[0];
+  const newestMention = mentionsNewest[0]?.newest ? new Date(mentionsNewest[0].newest as string) : null;
+  const railBuiltFor = meta?.mentions_max ? new Date(meta.mentions_max as string) : null;
+  const staleBy = newestMention && railBuiltFor
+    ? (newestMention.getTime() - railBuiltFor.getTime()) / 1000
+    : null;
+  const stale = !meta || (staleBy !== null && staleBy > 0);
+  if (stale) {
+    const detail = !meta
+      ? "published.mention_rail_meta is empty — the rail has never been refreshed"
+      : `the rail was built for mentions up to ${railBuiltFor?.toISOString()} but the corpus now ` +
+        `holds one from ${newestMention?.toISOString()} (${Math.round((staleBy ?? 0) / 60)} minutes newer)`;
+    const fix = "run `select public.refresh_mention_rail();` (worker/publish.py does this) and build again";
+    if (process.env.RAIL_ALLOW_STALE === "1") {
+      console.warn(`[snapshot] STALE RAIL, building anyway because RAIL_ALLOW_STALE=1: ${detail}. ${fix}`);
+    } else {
+      throw new Error(
+        `STALE_RAIL: ${detail}. The cards on every page would be older than the scores beside them. ` +
+        `${fix}. To ship anyway, set RAIL_ALLOW_STALE=1.`);
+    }
+  }
+  console.log(
+    `[snapshot] rail: ${mentionRows.length} rows, refreshed ${meta?.refreshed_at ?? "never"}` +
+    `; corpus ${meta?.mentions_rows ?? "?"} mentions; loaded in ${Date.now() - t0}ms`);
 
   const catById = new Map(catRows.map((c) => [String(c.id), c]));
   const brandById = new Map(brandRows.map((b) => [String(b.id), b]));
