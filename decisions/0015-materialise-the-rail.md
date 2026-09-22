@@ -73,3 +73,31 @@ organisation's egress, which finished the month at **328% of a 250 GB allowance*
 being restricted. It was found by the bill. The organisation now has a daily watchdog
 ([command-center](https://github.com/Empact-Partners/command-center/blob/main/docs/SUPABASE-WATCHDOG.md)) that
 reads this project's egress as its canary, and this repo carries the gate that fails before the meter runs.
+
+## Amended 2026-09-22: what "stale" means, after it blocked a push and two reviews
+
+The first guard refused on **any** drift, and within hours it refused a comment-only push because a collection
+had added 910 mentions since the last publish. A guard that makes the site unrebuildable is the failure 0004 was
+written against, so drift now gets the verdict its consequence deserves (PR #3):
+
+| Tier | When | Override |
+|---|---|---|
+| **Legal** | a takedown the rail may still show: a `removals` ledger row newer than the rail, one still pending purge, a falling mention count — or the guard's own inputs missing, which proves nothing | **none** — thrown before `RAIL_ALLOW_STALE` is read |
+| **Block** | a label changed (cards would disagree with scores), or an empty rail against a full corpus | `RAIL_ALLOW_STALE=1` |
+| **Warn** | mentions only added — newest cards lag until the next publish | — |
+
+**Takedowns are judged from the ledger, never the net count.** delete-sync writes `removals` before it purges
+(decisions/0002). Two Codex rounds found the count-based version blind to a takedown hidden among additions, to a
+crash between purge and stamp, and to a refresh taken while a removal was pending. The watermark is now every
+ledger row; a pending one refuses the build, and `refresh_mention_rail()` refuses to run (migration 0006).
+
+**The cards and the proof they are current are read in one repeatable-read transaction.** One recorded caveat: a
+*non-concurrent* refresh swaps the matview's storage, so a reader waiting on its lock sees new cards with an older
+metadata snapshot. That errs toward a needless warning, never toward certifying stale cards; `publish.py`
+refreshes concurrently, which is MVCC-safe.
+
+**Declined, with evidence:** an in-place relabel. Every writer of `mention_sentiment` appends
+(`ON CONFLICT … DO NOTHING`) and nothing updates it, so a relabel always moves the count.
+
+Measured on the round-2 build (`dpl_6cuHHv3fENqe1BSfXCDGgcFYSwd9`, 6,103 pages): the whole snapshot loads in
+**17–21 s**, where the rail alone took 86.9 s before this decision.
