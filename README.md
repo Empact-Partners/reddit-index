@@ -2,6 +2,12 @@
 
 **Live: [redditindex.com](https://redditindex.com)** (noindex while provisional).
 
+> **FROZEN since 2026-10-01 ([decisions/0016](decisions/0016-frozen.md)).** Nothing collects, nothing
+> rebuilds the site: the Railway collector's deployment is removed and Vercel skips every build. Do not
+> run `worker/update.sh`, redeploy the collector, or clear Vercel's Ignored Build Step without a new
+> ruling. The "no Railway cron" claim below was false until that day: the collector ran nightly at
+> 02:00 UTC from 2026-08-19 to 2026-10-01.
+
 A public index of what Reddit actually says about software brands: one
 **Reddit ❤️ Score** (0-100) per brand per category, computed from verbatim
 Reddit comments and posts — a post counts as its title plus its body — every
