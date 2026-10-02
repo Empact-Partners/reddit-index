@@ -60,6 +60,8 @@ def load_aliases():
     """Returns list of (alias_lower, brand_slug, surface_class, min_corroborating, bare_disabled)"""
     rows = []
     for r in csv.DictReader(open(os.path.join(REPO, "data", "brand-aliases.csv"))):
+        if r.get("alias_type") == "domain" and not address_names_product(r["alias"], r["brand_slug"]):
+            continue   # a parent company's address (github.com for GitHub Actions): see address_names_product
         rows.append((
             r["alias"].lower(),
             r["brand_slug"],
@@ -182,6 +184,44 @@ def _is_plain_english(alias):
     return all(known(t) for t in toks)
 
 
+# ── a web address names a product only when it names the WHOLE product ──────────
+# Measured 2 Oct 2026 (docs/investigation-2026-10.md): 184,775 stored mentions were a link to a parent
+# company's address filed under one of its products — every github.com link as GitHub Actions (54,220),
+# every google.com link as Google Sheets (38,952), every apple.com link as Keynote (14,024). The address came
+# in as a SAFE alias from the gazetteer, so nothing downstream looked at it again.
+#
+# The rule: every word of the brand's slug must appear in the address (github.com does not say "actions";
+# sheets.google.com says both words), or the address must contain the brand's whole name run together
+# (getoutline.com, squareup.com, datadoghq.com). A product's own short address that says neither is listed
+# by hand below. Losing an address costs little: the brand's own name still matches through the gated path.
+OWN_ADDRESSES = {
+    ("youtu.be", "youtube"), ("c.ai", "character-ai"), ("draw.io", "diagrams-net"), ("kit.com", "convertkit"),
+    ("comfy.org", "comfyui"), ("sr.ht", "sourcehut"), ("system.io", "systeme-io"), ("dr.web", "dr-web-security-space"),
+    ("stalw.art", "stalwart-mail-server"), ("ti.to", "tito"), ("anchor.fm", "spotify-for-creators"),
+    ("live.com", "outlook"), ("linuxcontainers.org", "incus"), ("monarch.com", "monarch-money"),
+    ("me.com", "icloud-mail"), ("mac.com", "icloud-mail"),
+}
+
+
+def address_names_product(domain, slug):
+    d = (domain or "").strip().lower().strip(".")
+    if (d, slug) in OWN_ADDRESSES:
+        return True
+    parts = [p for p in d.split(".") if p]
+    if len(parts) < 2:
+        return False
+    words = set(parts)
+    for p in parts:
+        words.update(p.split("-"))
+    toks = [t for t in re.split(r"[^a-z0-9]+", slug.lower()) if t]
+    if not toks:
+        return False
+    if all(t in words for t in toks):
+        return True
+    flat = "".join(toks)
+    return any(flat in p.replace("-", "") for p in parts) or all(any(t in p for p in parts) for t in toks)
+
+
 _dom_claims = None
 
 
@@ -214,6 +254,8 @@ def _domain_identifies(domain, slug, all_domains):
                     _dom_claims.setdefault(dd.strip().lower(), set()).add(s)
     d = domain.strip().lower()
     if len(_dom_claims.get(d, ())) > 1:
+        return False
+    if not address_names_product(d, slug):
         return False
     parts = [p for p in d.split(".") if p]
     if len(parts) < 2:

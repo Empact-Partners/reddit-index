@@ -1,0 +1,70 @@
+{
+ "model": "jev-1.13.0",
+ "measured": "2026-10-02T23:15:06+00:00",
+ "reject_below": 0.2,
+ "product_at": 0.9,
+ "label_at": {
+  "pos": 0.76,
+  "neg": 0.81,
+  "neu": 0.77
+ },
+ "report": {
+  "n": {
+   "ordinary": 5000,
+   "hard": 1000,
+   "entity": 190
+  },
+  "label_pos": {
+   "at": 0.76,
+   "agreement": 0.963,
+   "decided": 135
+  },
+  "label_neg": {
+   "at": 0.81,
+   "agreement": 0.9655,
+   "decided": 87
+  },
+  "label_neu": {
+   "at": 0.77,
+   "agreement": 0.961,
+   "decided": 487
+  },
+  "ordinary": {
+   "n": 1991,
+   "decided": 709,
+   "agree_reference": 682,
+   "agree_old": 646,
+   "rejected": 8,
+   "rejected_reference_says_product": 2,
+   "settled_share": 0.36,
+   "agreement_reference": 0.9619,
+   "agreement_old": 0.9111
+  },
+  "hard": {
+   "n": 199,
+   "decided": 97,
+   "agree_reference": 93,
+   "agree_old": 94,
+   "rejected": 2,
+   "rejected_reference_says_product": 2,
+   "settled_share": 0.497,
+   "agreement_reference": 0.9588,
+   "agreement_old": 0.9691
+  },
+  "entity": {
+   "not_product_n": 43,
+   "product_n": 147,
+   "not_product_rejected": 3,
+   "not_product_sent_to_glm": 39,
+   "not_product_passed_as_product": 1,
+   "product_wrongly_rejected": 0,
+   "auc": 0.9093
+  },
+  "ordinary_wrongly_rejected": 8,
+  "reference": {
+   "model": "glm-5.3",
+   "target": 0.96,
+   "glm_agrees_with_old": 0.8182
+  }
+ }
+}

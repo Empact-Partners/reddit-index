@@ -9,7 +9,7 @@ from a pointer this script keeps:
   1. takedowns   every document on a page is checked against Reddit; deleted, removed and edited ones are
                  purged (worker/takedown.py). First, so collection can never spend the calls it needs.
   2. collect     new posts and recent comment trees (worker/collect.py), inside the call, row and time caps
-  3. classify    new mentions labelled: Jev in front, GLM-Flash on the uncertain band
+  3. classify    new mentions labelled: Jev in front, GLM-5.3 on the uncertain band
                  (worker/classify_sweep.py; skipped, and said so, while it is not enabled)
   4. refresh     every brand whose data changed recomputed in the database (site.refresh_brand)
   5. score       score and rank every page (worker/site_score.py)
@@ -97,9 +97,11 @@ class Run:
     def egress_estimate(self) -> int:
         """Write-ahead log produced since the run started. Every byte of it is shipped to backup storage,
         and the node counter the egress watchdog reads counts it. Query results the sweep reads are small
-        by construction and are added by the stages that read anything sizeable."""
+        by construction, except the text the classifier reads, which it counts itself."""
         w = wal_bytes(self.conn)
-        return (w - self.wal0) if (w is not None and self.wal0 is not None) else 0
+        wal = (w - self.wal0) if (w is not None and self.wal0 is not None) else 0
+        cs = sys.modules.get("classify_sweep")
+        return wal + (cs.READ_BYTES if cs else 0)
 
     def record(self, status: str) -> None:
         self.receipt["status"] = status
