@@ -7,22 +7,25 @@ the teller, and the only one:
   1. which pages changed          site.brand_stats.page_hash is distinct from served_hash
                                   site.meta.boards_hash / slugs_hash against their served_ twins
                                   site.retired_page (a page that must now be a 404)
-  2. expire those paths           POST /api/revalidate {"paths": [...]}
-  3. fetch each one and read      <meta name="ri-hash"> in the served HTML must equal the hash the database
-     its fingerprint back         holds. Only then is served_hash written.
+  2. expire those paths           POST /api/revalidate/ {"paths": [...]}; expired_hash records it
+  3. fetch and read the           <meta name="ri-hash"> in the served HTML must equal the hash the database
+     fingerprint back             holds. Only then is served_hash written.
 
-Step 3 is the receipt. A page is "published" when the live site returned it, never when the endpoint
-answered 200: until October 2026 the endpoint answered 200 and changed nothing, and takedown receipts were
-stamped on that answer.
+Step 3 is the receipt, and it is not done for every page. Re-rendering one company page makes the site read
+about 0.2 MB from the database, so fetching all of a night's changed pages would cost more egress than the
+collection itself. What is ALWAYS fetched: every page that lost a card to a takedown, every page that must
+now be a 404, and every index page. Beyond those, a sample (--verify, default 100). An expired page that
+was not fetched re-renders from current data the first time someone opens it.
 
-Order matters for the law: pages that lost a card to a takedown go first, and a page that must disappear is
-checked for a 404. Anything not verified inside the budget stays unverified in the database and is retried
-by the next run; it is counted, never assumed.
+A page counts as "served" only when the live site returned it with the right fingerprint, never because
+the endpoint answered 200: until October 2026 the endpoint answered 200 and changed nothing, and takedown
+receipts were stamped on that answer.
 
   worker/site_publish.py                      # production (NEXT_PUBLIC_SITE_URL / redditindex.com)
   worker/site_publish.py --base https://...   # a preview deployment
   worker/site_publish.py --dry-run            # list what would be published
-  worker/site_publish.py --max-pages 200      # verify at most this many company pages this run
+  worker/site_publish.py --verify 300         # fetch and prove up to this many company pages (takedowns always)
+  worker/site_publish.py --max-expire 3000    # expire at most this many company pages this run
   worker/site_publish.py --no-stamp           # verify only: never record a preview's pages as served
 
 Env or ~/.claude/.reddit-index.json: REVALIDATE_SECRET / revalidate_secret.
@@ -142,9 +145,10 @@ def fetch(base: str, path: str, want_hash: str | None, want_status: int = 200, t
     return out
 
 
-def run(conn, base: str, dry_run: bool = False, max_pages: int = 7000, stamp: bool = True, log=print) -> dict:
+def run(conn, base: str, dry_run: bool = False, verify_n: int = 100, max_expire: int = 7000,
+        stamp: bool = True, log=print) -> dict:
     base = base.rstrip("/")
-    receipt = {"base": base, "pages_changed": 0, "pages_verified": 0, "pages_unverified": 0,
+    receipt = {"base": base, "pages_changed": 0, "pages_expired": 0, "pages_verified": 0, "takedown_pages": 0,
                "index_pages_verified": 0, "retired_verified": 0, "site_bytes_fetched": 0, "failed": []}
 
     clash = collisions(conn)
@@ -155,23 +159,32 @@ def run(conn, base: str, dry_run: bool = False, max_pages: int = 7000, stamp: bo
         log(f"  note: {leaks} stored permalinks are not Reddit comment links; their cards are left out")
     receipt["bad_permalinks"] = leaks
 
-    # 1. what changed. Takedown pages first: a brand named in a removal that has not been proven gone.
+    # 1. what changed since the path was last expired. Takedown pages first: a brand named in a removal
+    #    whose page has not been SEEN without the card. Those are fetched whatever the sample size.
     rows = conn.execute("""
         select s.brand_id, s.slug, s.page_hash,
                exists (select 1 from public.removals r
-                        where r.revalidated_at is null and s.brand_id = any (r.brand_ids)) as takedown
+                        where r.revalidated_at is null and s.brand_id = any (r.brand_ids)) as takedown,
+               s.expired_hash is distinct from s.page_hash as needs_expiry
           from site.brand_stats s
-         where s.served_hash is distinct from s.page_hash
-         order by 4 desc, s.total_mentions desc""").fetchall()
+         where s.expired_hash is distinct from s.page_hash
+            or (s.served_hash is distinct from s.page_hash
+                and exists (select 1 from public.removals r
+                             where r.revalidated_at is null and s.brand_id = any (r.brand_ids)))
+         order by 4 desc, md5(s.slug || current_date::text)""").fetchall()
     receipt["pages_changed"] = len(rows)
     retired = [r[0] for r in conn.execute("select slug from site.retired_page where gone_at is null")]
     meta = conn.execute("select boards_hash, served_boards_hash, slugs_hash, served_slugs_hash from site.meta").fetchone()
     boards_changed = meta[0] != meta[1]
     slugs_changed = meta[2] != meta[3]
 
-    todo = rows[:max_pages]
-    receipt["pages_unverified"] = len(rows) - len(todo)
-    log(f"  {len(rows)} company pages changed ({sum(1 for r in rows if r[3])} with a takedown), "
+    takedown = [r for r in rows if r[3]]
+    others = [r for r in rows if not r[3]]
+    todo = takedown + others[:max(0, max_expire - len(takedown))]
+    to_verify = takedown + others[:verify_n]
+    receipt["takedown_pages"] = len(takedown)
+    receipt["pages_deferred"] = len(rows) - len(todo)
+    log(f"  {len(rows)} company pages changed ({len(takedown)} with a takedown), "
         f"{len(retired)} retired, boards {'changed' if boards_changed else 'unchanged'}, "
         f"page set {'changed' if slugs_changed else 'unchanged'}")
     if dry_run:
@@ -181,9 +194,19 @@ def run(conn, base: str, dry_run: bool = False, max_pages: int = 7000, stamp: bo
     file_paths = ["/freshness.json"] + (["/llms.txt"] if boards_changed or slugs_changed else []) \
         + (["/sitemap.xml"] if slugs_changed else [])
 
-    # 2. expire
-    paths = [f"/{r[1]}/" for r in todo] + [f"/{s}/" for s in retired] + index_paths + file_paths
-    expire(base, paths)
+    # 2. expire, and remember which hash each path was expired at
+    for i in range(0, len(todo), BATCH):
+        chunk = todo[i:i + BATCH]
+        expire(base, [f"/{r[1]}/" for r in chunk])
+        if stamp:
+            conn.execute("""update site.brand_stats s set expired_hash = v.h, expired_at = now()
+                              from unnest(%s::bigint[], %s::text[]) as v(id, h)
+                             where s.brand_id = v.id and s.page_hash = v.h""",
+                         ([r[0] for r in chunk], [r[2] for r in chunk]))
+    extra = [f"/{s}/" for s in retired] + index_paths + file_paths
+    if extra:
+        expire(base, extra)
+    receipt["pages_expired"] = len(todo)
 
     # 3. fetch and read back
     def verify(jobs: list[tuple[str, str | None, int]]) -> list[dict]:
@@ -191,12 +214,13 @@ def run(conn, base: str, dry_run: bool = False, max_pages: int = 7000, stamp: bo
             return list(ex.map(lambda j: fetch(base, j[0], j[1], j[2]), jobs))
 
     ok_ids = []
-    for i in range(0, len(todo), 200):
-        chunk = todo[i:i + 200]
+    for i in range(0, len(to_verify), 200):
+        chunk = to_verify[i:i + 200]
         res = verify([(f"/{r[1]}/", r[2], 200) for r in chunk])
         good = [(r[0], r[2]) for r, v in zip(chunk, res) if v["ok"]]
         receipt["site_bytes_fetched"] += sum(v["bytes"] for v in res)
-        receipt["failed"] += [{"path": v["path"], "status": v["status"], "hash": v["hash"]} for v in res if not v["ok"]][:50]
+        receipt["failed"] += [{"path": v["path"], "status": v["status"], "hash": v["hash"], "takedown": bool(r[3])}
+                              for r, v in zip(chunk, res) if not v["ok"]]
         if good and stamp:
             # only where the row still holds the hash we verified: a refresh that landed meanwhile stays unserved
             conn.execute("""update site.brand_stats s set served_hash = v.h, served_at = now()
@@ -204,9 +228,9 @@ def run(conn, base: str, dry_run: bool = False, max_pages: int = 7000, stamp: bo
                              where s.brand_id = v.id and s.page_hash = v.h""",
                          ([g[0] for g in good], [g[1] for g in good]))
         ok_ids += [g[0] for g in good]
-        log(f"    verified {len(ok_ids)}/{len(todo)} company pages", flush=True)
+        log(f"    verified {len(ok_ids)}/{len(to_verify)} company pages", flush=True)
     receipt["pages_verified"] = len(ok_ids)
-    receipt["pages_unverified"] += len(todo) - len(ok_ids)
+    receipt["verified_brand_ids"] = ok_ids
 
     if retired:
         res = verify([(f"/{s}/", None, 404) for s in retired])
@@ -231,8 +255,9 @@ def run(conn, base: str, dry_run: bool = False, max_pages: int = 7000, stamp: bo
             conn.execute("update site.meta set served_slugs_hash = %s where slugs_hash = %s", (meta[2], meta[2]))
 
     receipt["failed"] = receipt["failed"][:100]
-    log(f"  published: {receipt['pages_verified']} company pages, {receipt['index_pages_verified']} index pages, "
-        f"{receipt['retired_verified']} retired; {receipt['pages_unverified']} not verified")
+    log(f"  published: {receipt['pages_expired']} company pages expired, {receipt['pages_verified']} fetched and "
+        f"proven ({len(takedown)} takedown), {receipt['index_pages_verified']} index pages, "
+        f"{receipt['retired_verified']} retired; {len(receipt['failed'])} failed")
     return receipt
 
 
@@ -240,16 +265,18 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--base", default=os.environ.get("NEXT_PUBLIC_SITE_URL", "https://redditindex.com"))
     ap.add_argument("--dry-run", action="store_true")
-    ap.add_argument("--max-pages", type=int, default=7000)
+    ap.add_argument("--verify", type=int, default=100, help="company pages to fetch and prove, beyond takedowns")
+    ap.add_argument("--max-expire", type=int, default=7000)
     ap.add_argument("--no-stamp", action="store_true",
-                    help="verify but do not record the pages as served (a preview or a local server)")
+                    help="expire and verify but record nothing (a preview or a local server)")
     a = ap.parse_args()
     import db
     with db.connect() as conn:
         conn.autocommit = True
-        r = run(conn, a.base, a.dry_run, a.max_pages, stamp=not a.no_stamp)
-    print(json.dumps({k: v for k, v in r.items() if k != "failed"}), "| failed:", len(r["failed"]))
-    return 0 if not r["failed"] and not r["pages_unverified"] else 2
+        r = run(conn, a.base, a.dry_run, a.verify, a.max_expire, stamp=not a.no_stamp)
+    print(json.dumps({k: v for k, v in r.items() if k not in ("failed", "verified_brand_ids")}),
+          "| failed:", len(r["failed"]))
+    return 2 if r["failed"] else 0
 
 
 if __name__ == "__main__":
