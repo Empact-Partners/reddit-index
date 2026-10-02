@@ -1,0 +1,2 @@
+read_at_utc,window_seconds,bytes_sent_in_window,gb_per_day_at_this_rate,counter_total_gb_since_boot,data_disk_gb,data_disk_free_gb,memory_gb
+2026-10-02T21:00:25+00:00,303,331127,0.094,1444.6,8.42,4.66,0.98

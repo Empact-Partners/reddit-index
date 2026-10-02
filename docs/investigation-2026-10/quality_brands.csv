@@ -1,0 +1,7 @@
+surface_class,added_in_expansion,brands,brands_with_no_mentions,brands_with_1_to_9,brands_with_10_plus,mentions,mentions_loaded_since_1_sep
+AMBIGUOUS,False,1275,307,495,473,97685,34684
+AMBIGUOUS,True,783,525,211,47,2674,0
+HOSTILE,False,1202,349,474,379,112261,53873
+HOSTILE,True,1086,800,228,58,4363,0
+SAFE,False,3563,766,1191,1606,1201598,479377
+SAFE,True,2602,1750,646,206,19298,0

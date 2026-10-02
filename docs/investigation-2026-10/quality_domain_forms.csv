@@ -1,0 +1,121 @@
+matched_web_address,brand,brand_name,mentions,mentions_loaded_since_1_sep,parent_address_stored_as_one_product
+github.com,github-actions,GitHub Actions,54220,22745,yes
+google.com,google-sheets,Google Sheets,38952,22209,yes
+apple.com,keynote,Keynote,14024,7688,yes
+store.steampowered.com,steam-game-recording,Steam Game Recording,12332,7119,yes
+apps.apple.com,snapseed,Snapseed,11550,6522,yes
+youtu.be,youtube,YouTube,11545,5398,
+instagram.com,edits,Edits,11414,7135,yes
+twitch.tv,twitch,Twitch,6318,4769,
+wp.com,wordpress-com,WordPress.com,6121,4663,
+kick.com,kick,Kick,6090,4654,
+drive.google.com,google-drive,Google Drive,5897,2455,
+github.io,github-pages,GitHub Pages,5889,2669,
+chromewebstore.google.com,boomerang-soap-and-rest-client,Boomerang - SOAP & REST Client,2624,1375,yes
+microsoft.com,dynamics-365-field-service,Dynamics 365 Field Service,2009,928,yes
+deviantart.com,dreamup,DreamUp,877,554,yes
+wordpress.org,arforms,ARForms,867,309,yes
+learn.microsoft.com,azure-resource-manager,Azure Resource Manager,824,366,yes
+mozilla.org,mozilla-vpn,Mozilla VPN,789,379,yes
+proton.me,proton-drive,Proton Drive,612,321,yes
+claude.ai,claude,Claude,603,245,
+tally.so,tally,Tally,602,328,
+openai.com,chatgpt,ChatGPT,499,311,
+wordpress.com,wordpress-com,WordPress.com,464,204,
+yahoo.com,yahoo-mail,Yahoo Mail,452,163,
+tiktok.com,tiktok-one,TikTok One,431,0,yes
+addons.mozilla.org,wizdler,Wizdler,426,219,yes
+aws.amazon.com,amazon-aurora,Amazon Aurora,346,82,yes
+anthropic.com,claude,Claude,342,197,
+gitlab.com,gitlab-ci-cd,GitLab CI/CD,319,129,yes
+mailbox.org,mailbox,mailbox,312,83,
+outlook.com,outlook,Outlook,311,141,
+nvidia.com,nvidia-app,NVIDIA App,279,130,yes
+make.com,make,Make,254,69,
+vast.ai,vast-ai,Vast.ai,232,82,
+me.com,icloud-mail,iCloud Mail,216,107,
+adobe.com,adobe-acrobat,Adobe Acrobat,212,103,yes
+luma.com,luma,Luma,205,88,
+linkedin.com,linkedin-sales-navigator,LinkedIn Sales Navigator,201,0,yes
+godotengine.org,godot-engine,Godot Engine,200,119,
+paint.net,paint-net,paint.net,199,103,
+domain.com,domain-com,Domain.com,186,59,
+claude.com,claude-code,Claude Code,180,62,
+c.ai,character-ai,Character.AI,179,60,
+python.org,idle,IDLE,169,79,yes
+rss.com,rss-com,RSS.com,168,49,
+apps.shopify.com,ph-multi-carrier-shipping-label,PH Multi Carrier Shipping Label,163,27,yes
+app.link,appointlet,Appointlet,152,77,yes
+snoop.app,snoop,Snoop,152,58,
+draw.io,diagrams-net,diagrams.net,149,52,
+character.ai,character-ai,Character.AI,149,55,
+unity.com,unity,Unity,146,68,
+docker.com,docker-desktop,Docker Desktop,138,52,yes
+ui.com,unifi-network,UniFi Network,129,64,yes
+amd.com,amd-software-adrenalin-edition,AMD Software: Adrenalin Edition,121,57,yes
+cal.com,cal-com,Cal.com,121,52,
+fly.io,fly-io,Fly.io,120,39,
+icloud.com,icloud-mail,iCloud Mail,118,47,
+gnu.org,gnu-emacs,GNU Emacs,114,43,yes
+duckduckgo.com,duck-ai,Duck.ai,113,45,yes
+roblox.com,roblox-studio,Roblox Studio,112,87,yes
+nintendo.com,game-builder-garage,Game Builder Garage,109,84,yes
+jotform.com,jotform-sign,Jotform Sign,103,74,yes
+cloud.google.com,bigquery,BigQuery,98,39,yes
+zillow.com,zillow-rental-manager,Zillow Rental Manager,94,49,yes
+oracle.com,oracle-aconex,Oracle Aconex,94,36,yes
+developer.apple.com,xcode,Xcode,93,38,yes
+dell.com,dell-wyse-management-suite,Dell Wyse Management Suite,88,46,yes
+elevenlabs.io,elevenlabs-scribe,ElevenLabs Scribe,88,47,yes
+babylon.js,babylon-js,Babylon.js,86,29,
+apartments.com,apartments-com-rental-manager,Apartments.com Rental Manager,85,35,yes
+eset.com,eset-home-security-premium,ESET HOME Security Premium,83,21,
+huntress.com,huntress-managed-edr,Huntress Managed EDR,81,40,
+jetbrains.com,clion,CLion,80,28,
+perplexity.ai,perplexity,Perplexity,78,23,
+redhat.com,red-hat-ansible-automation-platform,Red Hat Ansible Automation Platform,77,22,
+voip.ms,voip-ms,VoIP.ms,75,33,
+forms.office.com,microsoft-forms,Microsoft Forms,75,8,
+gitlab.io,gitlab-pages,GitLab Pages,73,28,
+lever.co,lever,Lever,72,4,
+cisco.com,cisco-secure-firewall,Cisco Secure Firewall,71,24,
+ti.com,code-composer-studio,Code Composer Studio,67,50,
+duck.ai,duck-ai,Duck.ai,66,29,
+blender.org,blender,Blender,65,34,
+qualys.com,qualys-endpoint-detection-and-response,Qualys Endpoint Detection and Response,64,11,
+samsung.com,samsung-notes,Samsung Notes,62,31,
+bunny.net,bunny-stream,Bunny Stream,60,15,
+bolt.new,bolt-new,Bolt.new,59,16,
+one.com,one-com,one.com,59,21,
+whop.com,whop,Whop,58,25,
+perchance.org,perchance,Perchance,58,28,
+bitdefender.com,bitdefender-gravityzone-business-security,Bitdefender GravityZone Business Security,57,13,
+drive.proton.me,proton-drive,Proton Drive,56,21,
+venice.ai,venice,Venice,54,20,
+coda.io,coda,Coda,54,33,
+wiki.js,wiki-js,Wiki.js,53,15,
+customer.io,customer-io,Customer.io,53,12,
+godaddy.com,godaddy-point-of-sale,GoDaddy Point of Sale,52,18,
+brave.com,brave-leo-ai,Brave Leo AI,50,18,
+apollo.io,apollo-io,Apollo.io,50,0,
+hosting.com,hosting-com,hosting.com,49,9,
+otter.ai,otter-ai,Otter.ai,49,14,
+authorize.net,authorize-net,Authorize.net,48,16,
+x.ai,grok,Grok,47,18,
+gemini.google.com,gemini,Gemini,47,15,
+mail.com,mail-com,mail.com,46,23,
+mention-me.com,mention-me,Mention Me,46,0,
+ibm.com,ibm-cloud-kubernetes-service,IBM Cloud Kubernetes Service,45,18,
+name.com,name-com,Name.com,45,13,
+hey.com,hey,HEY,45,31,
+live.com,outlook,Outlook,45,16,
+databricks.com,databricks-sql,Databricks SQL,44,12,
+kit.com,convertkit,ConvertKit,43,16,
+paloaltonetworks.com,palo-alto-networks-next-generation-firewall,Palo Alto Networks Next-Generation Firewall,43,25,
+comfy.org,comfyui,ComfyUI,43,21,
+emergent.sh,emergent,Emergent,42,11,
+continue.dev,continue,Continue,41,15,
+remove.bg,remove-bg,remove.bg,39,25,
+workspace.google.com,google-workspace,Google Workspace,39,11,
+spaceship.com,spaceship,Spaceship,39,12,
+lovable.dev,lovable,Lovable,39,11,

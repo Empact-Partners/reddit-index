@@ -1,0 +1,5 @@
+scope,ym,stage,code_version,watermark,rows,status,finished_at
+_run,daily,new_listing,daily-v1,2026-10-02T07:43:26.468690+00:00,18155,ok,2026-10-02 07:43:26.342706+00:00
+_run_coverage,daily,new_listing,daily-v1,2029/2029 subs · 11278 threads · 0 errors · 17 capped,2029,ok,2026-10-02 07:43:26.342706+00:00
+_health,daily,healthcheck,health-v1,"labels_fresh, backlog",2,error,2026-08-30 15:08:56.246213+00:00
+_backfill_posts,backfill,posts,backfill-posts-v1,t3_zwn9vf,455447,ok,2026-08-21 07:03:40.383783+00:00

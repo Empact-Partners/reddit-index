@@ -1,0 +1,5 @@
+model_version,labels,first_day,last_day,neutral,positive,negative,abstain
+claude-cli-absa-1,218117,2026-08-05,2026-08-18,113391,62065,42282,379
+deepseek-v4-flash-absa-1,178890,2026-08-16,2026-08-25,119642,33418,24879,951
+haiku-4.5-absa-1,81529,2026-08-16,2026-08-25,56700,12564,12066,199
+deepseek-v4-flash-absa-1-r2,2837,2026-08-19,2026-08-23,2708,72,52,5

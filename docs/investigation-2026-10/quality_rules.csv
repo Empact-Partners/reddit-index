@@ -1,0 +1,10 @@
+rule_fired,mentions,brands,labelled,neutral,positive,negative
+safe_word_boundary,1166499,4853,401099,232496,94618,72555
+domain_autoaccept,173900,2184,45678,38547,5604,1494
+ambiguous_corroborated_1,60947,807,18426,10956,4374,3053
+hostile_corroborated_2,20318,380,6270,3661,1525,1073
+ambiguous_corroborated_2,10607,432,4839,2701,1369,760
+hostile_corroborated_3,2875,123,923,567,217,137
+ambiguous_corroborated_3,2498,167,1306,739,378,188
+ambiguous_corroborated_4,141,32,60,25,22,13
+hostile_corroborated_4,94,23,33,15,12,6
