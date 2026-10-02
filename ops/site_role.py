@@ -6,9 +6,14 @@ sets (or rotates) its password, keeps the connection string in ~/.claude/.reddit
 `site_url` for local builds, and, with --vercel, writes it to the Vercel project as DATABASE_URL_SITE for
 production and preview. The password is generated here and never printed.
 
-  ops/site_role.py              # create or rotate the login; store locally
-  ops/site_role.py --vercel     # also set DATABASE_URL_SITE on Vercel (production + preview)
+  ops/site_role.py              # create the login if none is stored; store locally
+  ops/site_role.py --rotate     # new password (then wait a minute: the pooler caches the old one)
+  ops/site_role.py --vercel     # set DATABASE_URL_SITE on Vercel (production + preview) from the stored one
   ops/site_role.py --check      # connect as ri_site and prove what it can and cannot read
+
+Rotation and a build must not be seconds apart. On 2026-10-02 a preview build started right after a rotation
+and failed with "password authentication failed" while the same connection string worked a few minutes
+later: the pooler was still checking against the previous password.
 """
 from __future__ import annotations
 
@@ -115,10 +120,13 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--vercel", action="store_true")
     ap.add_argument("--check", action="store_true")
+    ap.add_argument("--rotate", action="store_true")
     a = ap.parse_args()
     if a.check:
         return check()
-    url = rotate()
+    url = _creds().get("site_url")
+    if a.rotate or not url:
+        url = rotate()
     if a.vercel:
         to_vercel(url)
     return 0
