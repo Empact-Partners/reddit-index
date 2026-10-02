@@ -1,0 +1,24 @@
+{
+  "_what": "The ONE declaration of when the sweep runs and what it may spend. worker/run_daily.py reads it at start and refuses to run outside window_utc; scripts/schedule_check.py compares it with what Railway actually runs and with the receipts in public.pipeline_runs. Change it here, then redeploy.",
+  "railway": {
+    "project_id": "90cd4c29-797c-4552-90d9-81c3b9914ffa",
+    "environment_id": "f3a7784c-7cd9-4cb8-a9ea-05efe657a7ff",
+    "service_name": "reddit-index-sweep",
+    "cron": "0 0 * * *"
+  },
+  "window_utc": ["00:00", "05:30"],
+  "site_url": "https://redditindex.com",
+  "caps": {
+    "reddit_calls": 15000,
+    "takedown_calls": 2000,
+    "mentions": 40000,
+    "minutes": 330,
+    "egress_gb": 0.8
+  },
+  "takedown_brake_share": 0.15,
+  "verify_pages": 100,
+  "max_expire_pages": 7000,
+  "classify": {
+    "enabled": false
+  }
+}
