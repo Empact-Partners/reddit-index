@@ -1,0 +1,151 @@
+matched_form,brand,surface_class,mentions,labelled,opinionated
+reddit,reddit,SAFE,146580,44255,11739
+youtube,youtube,SAFE,110395,32935,10729
+github,github,SAFE,92165,35624,5162
+chatgpt,chatgpt,SAFE,63059,22122,11183
+github.com,github-actions,SAFE,54220,3102,103
+google.com,google-sheets,SAFE,38952,439,13
+claude code,claude-code,SAFE,19999,8644,4840
+gpt,chatgpt,SAFE,18804,6251,3414
+gmail,gmail,SAFE,16284,4822,1402
+deepseek,deepseek,SAFE,16183,7279,4143
+whatsapp,whatsapp,SAFE,16144,4810,1196
+apple.com,keynote,HOSTILE,14024,65,1
+discord,discord,HOSTILE,12424,2491,419
+paypal,paypal,SAFE,12382,3172,870
+store.steampowered.com,steam-game-recording,SAFE,12332,187,14
+cloudflare,cloudflare,SAFE,11567,6865,3471
+apps.apple.com,snapseed,SAFE,11550,70,1
+youtu.be,youtube,SAFE,11545,2863,98
+instagram.com,edits,HOSTILE,11414,50,1
+godot,godot-engine,SAFE,10845,4314,2200
+shopify,shopify,SAFE,10640,5696,1624
+vercel,vercel,SAFE,9507,4658,1203
+canva,canva,SAFE,9164,2698,1111
+substack,substack,SAFE,7114,3983,1635
+photoshop,adobe-photoshop,SAFE,6662,2684,885
+kubernetes,kubernetes,SAFE,6603,3202,714
+tailscale,tailscale,SAFE,6529,2860,1465
+opencode,opencode,AMBIGUOUS,6455,3342,1583
+twitch.tv,twitch,HOSTILE,6318,86,6
+salesforce,salesforce,SAFE,6223,4218,1988
+wp.com,wordpress-com,SAFE,6121,20,1
+kick.com,kick,HOSTILE,6090,24,0
+hubspot,hubspot,SAFE,5956,4391,2545
+drive.google.com,google-drive,AMBIGUOUS,5897,2096,12
+github.io,github-pages,SAFE,5889,1920,53
+n8n,n8n,SAFE,5496,3641,1586
+postgresql,postgresql,SAFE,5409,2091,280
+postgres,postgresql,SAFE,5371,2591,931
+comfyui,comfyui,SAFE,5284,1891,780
+google drive,google-drive,AMBIGUOUS,4821,2202,806
+jira,jira,SAFE,4640,2267,855
+sqlite,sqlite,SAFE,4530,2139,743
+supabase,supabase,SAFE,4447,2383,861
+premiere,premiere-pro,AMBIGUOUS,4385,1770,447
+capcut,capcut,SAFE,4329,1546,586
+emacs,gnu-emacs,SAFE,4052,2808,1354
+icloud,icloud-drive,SAFE,3774,1448,581
+chat gpt,chatgpt,SAFE,3735,1481,927
+opnsense,opnsense,SAFE,3694,1897,827
+carrd,carrd,SAFE,3602,739,63
+vs code,visual-studio-code,SAFE,3599,1535,602
+mysql,mysql,SAFE,3486,1467,259
+entra,microsoft-entra-id,SAFE,3473,1244,392
+power bi,power-bi,SAFE,3399,1377,305
+bitwarden,bitwarden,SAFE,3382,1615,1023
+seedance,seedance,SAFE,3375,1506,819
+google sheets,google-sheets,SAFE,3221,1251,521
+chatbot,chatbot,HOSTILE,3158,945,442
+quickbooks,quickbooks,SAFE,3122,1515,628
+figma,figma,AMBIGUOUS,3111,1602,648
+edits,edits,HOSTILE,3106,188,78
+terraform,terraform,AMBIGUOUS,3066,1485,421
+pieces,pieces-for-developers,SAFE,3047,86,37
+vscode,visual-studio-code,SAFE,3042,1367,683
+airflow,apache-airflow,SAFE,2922,734,281
+google workspace,google-workspace,AMBIGUOUS,2855,1225,432
+wix,wix,SAFE,2805,1079,545
+gitlab,gitlab,SAFE,2789,1713,588
+tabs,tabs3,SAFE,2769,20,11
+k8s,kubernetes,SAFE,2697,1369,415
+onedrive,microsoft-onedrive,SAFE,2672,1347,668
+revit,revit,SAFE,2665,1528,633
+redis,redis,AMBIGUOUS,2630,1063,138
+chromewebstore.google.com,boomerang-soap-and-rest-client,HOSTILE,2624,4,0
+sharepoint,sharepoint,SAFE,2609,1727,746
+unreal engine,unreal-engine,SAFE,2562,796,259
+obs,obs-studio,SAFE,2556,968,400
+the brain,thebrain,HOSTILE,2521,147,83
+powerpoint,microsoft-powerpoint,SAFE,2499,1061,371
+lm studio,lm-studio,SAFE,2481,950,407
+synology,synology,SAFE,2463,1281,655
+autocad,autocad,SAFE,2456,1009,356
+elementor,elementor,SAFE,2432,881,465
+udemy,udemy,SAFE,2427,1076,433
+intune,microsoft-intune,SAFE,2392,1225,567
+rpm,rpg-paper-maker,SAFE,2388,15,6
+you sign,yousign,AMBIGUOUS,2383,75,29
+zoho,zoho-crm,AMBIGUOUS,2357,1202,768
+hola,hola-vpn,SAFE,2352,92,16
+nextcloud,nextcloud-files,SAFE,2325,1072,442
+github actions,github-actions,SAFE,2279,1025,342
+woocommerce,woocommerce,AMBIGUOUS,2268,737,223
+ga4,google-analytics,SAFE,2229,1171,392
+godaddy,godaddy,SAFE,2216,1303,749
+dropbox,dropbox,SAFE,2214,1114,370
+hetzner,hetzner,SAFE,2188,1101,642
+mongodb,mongodb,SAFE,2180,806,143
+grafana,grafana,SAFE,2156,1417,408
+patreon,patreon,SAFE,2127,753,214
+zapier,zapier,SAFE,2112,1478,689
+ansible,red-hat-ansible-automation-platform,SAFE,2090,937,314
+malwarebytes,malwarebytes-premium,SAFE,2084,1026,475
+davinci,davinci-resolve,HOSTILE,2081,744,193
+sheets,google-sheets,SAFE,2034,322,105
+microsoft.com,dynamics-365-field-service,SAFE,2009,24,2
+lms,surepoint-legal-management-system,SAFE,1967,80,34
+one page,onepage,HOSTILE,1941,117,71
+ltx,ltx-studio,SAFE,1938,1311,882
+sta,thales-safenet-trusted-access,SAFE,1900,1,0
+als,across-language-server,SAFE,1867,2,2
+sep,symantec-endpoint-security-complete,SAFE,1835,9,1
+darktable,darktable,SAFE,1741,982,560
+antigravity,google-antigravity,SAFE,1739,698,352
+mullvad,mullvad-vpn,SAFE,1737,844,581
+openwrt,openwrt,SAFE,1705,416,198
+1password,1password,SAFE,1665,786,540
+ahrefs,ahrefs,SAFE,1619,835,403
+semrush,semrush,SAFE,1615,864,432
+just call,justcall,HOSTILE,1613,51,29
+best case,best-case,HOSTILE,1604,50,29
+google search console,google-search-console,SAFE,1603,759,257
+solidworks,solidworks,SAFE,1570,652,262
+qualtrics,qualtrics,SAFE,1568,532,40
+ecs,amazon-elastic-container-service,SAFE,1562,392,139
+sillytavern,sillytavern,SAFE,1541,686,342
+notion,notion,HOSTILE,1499,455,141
+ynab,ynab,SAFE,1485,969,603
+sap,sap,AMBIGUOUS,1453,879,308
+squarespace,squarespace,SAFE,1434,741,412
+dynamics,microsoft-dynamics-365,AMBIGUOUS,1416,121,54
+ship it,shippit,AMBIGUOUS,1406,12,9
+unifi,unifi-network,AMBIGUOUS,1387,666,371
+gtm,goto-meeting,AMBIGUOUS,1385,18,3
+pipedrive,pipedrive,SAFE,1364,972,661
+backpack,backpack-for-laravel,SAFE,1358,28,17
+midjourney,midjourney,SAFE,1353,520,271
+paperless,paperless-ngx,SAFE,1346,753,279
+pve,papervision-enterprise,SAFE,1329,12,3
+coursera,coursera,SAFE,1286,505,189
+airtable,airtable,SAFE,1268,735,378
+neovim,neovim,SAFE,1239,673,358
+github copilot,github-copilot,SAFE,1238,762,371
+surreal,surrealdb,SAFE,1231,34,25
+xero,xero,AMBIGUOUS,1217,597,245
+ue5,unreal-engine,SAFE,1215,504,299
+001,001-game-creator,SAFE,1209,10,4
+webflow,webflow,SAFE,1194,524,231
+calc,libreoffice-calc,SAFE,1193,117,34
+google translate,google-translate,SAFE,1190,338,159
+odoo,odoo,SAFE,1177,814,479
