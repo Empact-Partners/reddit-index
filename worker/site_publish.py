@@ -1,0 +1,231 @@
+#!/usr/bin/env python3
+"""Tell the site which pages changed, then PROVE each one is served.
+
+The site keeps every rendered page until it is told the page changed (app/api/revalidate/route.ts). This is
+the teller, and the only one:
+
+  1. which pages changed          site.brand_stats.page_hash is distinct from served_hash
+                                  site.meta.boards_hash / slugs_hash against their served_ twins
+                                  site.retired_page (a page that must now be a 404)
+  2. expire those paths           POST /api/revalidate {"paths": [...]}
+  3. fetch each one and read      <meta name="ri-hash"> in the served HTML must equal the hash the database
+     its fingerprint back         holds. Only then is served_hash written.
+
+Step 3 is the receipt. A page is "published" when the live site returned it, never when the endpoint
+answered 200: until October 2026 the endpoint answered 200 and changed nothing, and takedown receipts were
+stamped on that answer.
+
+Order matters for the law: pages that lost a card to a takedown go first, and a page that must disappear is
+checked for a 404. Anything not verified inside the budget stays unverified in the database and is retried
+by the next run; it is counted, never assumed.
+
+  worker/site_publish.py                      # production (NEXT_PUBLIC_SITE_URL / redditindex.com)
+  worker/site_publish.py --base https://...   # a preview deployment
+  worker/site_publish.py --dry-run            # list what would be published
+  worker/site_publish.py --max-pages 200      # verify at most this many company pages this run
+
+Env or ~/.claude/.reddit-index.json: REVALIDATE_SECRET / revalidate_secret.
+"""
+from __future__ import annotations
+
+import argparse
+import csv
+import json
+import os
+import re
+import sys
+import time
+import urllib.error
+import urllib.request
+from concurrent.futures import ThreadPoolExecutor
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+ROOT = os.path.dirname(HERE)
+sys.path.insert(0, HERE)
+
+UA = "reddit-index-publisher/1.0 (+https://redditindex.com/methodology/)"
+HASH_RE = re.compile(r'<meta\s+name="ri-hash"\s+content="([0-9a-f]{0,64})"', re.I)
+BATCH = 400          # the endpoint takes at most 500 paths a call
+FETCHERS = 4         # concurrent page fetches; each one makes the site read one company's rows
+
+# The flat namespace (decisions/0007). A company slug that equals one of these would be shadowed.
+FRAMEWORK_PATHS = {"_next", "api", "sitemap", "sitemap.xml", "robots.txt", "favicon.ico", "llms.txt", "icon",
+                   "apple-icon", "opengraph-image", "twitter-image", "manifest.webmanifest",
+                   "methodology", "search", "freshness.json"}
+
+
+def _secret() -> str:
+    s = os.environ.get("REVALIDATE_SECRET")
+    if s:
+        return s
+    try:
+        return json.load(open(os.path.expanduser("~/.claude/.reddit-index.json")))["revalidate_secret"]
+    except Exception:  # noqa: BLE001
+        raise SystemExit("REVALIDATE_SECRET is not set and ~/.claude/.reddit-index.json has no revalidate_secret")
+
+
+def category_slugs() -> set[str]:
+    with open(os.path.join(ROOT, "data", "categories.csv"), encoding="utf-8") as f:
+        return {r["slug"] for r in csv.DictReader(f)}
+
+
+def collisions(conn) -> list[str]:
+    """Company slugs that would be shadowed by a category or a framework path. Must be empty."""
+    taken = category_slugs() | FRAMEWORK_PATHS
+    return sorted(r[0] for r in conn.execute("select slug from site.brand_stats") if r[0] in taken)
+
+
+def expire(base: str, paths: list[str]) -> None:
+    for i in range(0, len(paths), BATCH):
+        chunk = paths[i:i + BATCH]
+        req = urllib.request.Request(
+            base + "/api/revalidate", method="POST", data=json.dumps({"paths": chunk}).encode(),
+            headers={"Authorization": "Bearer " + _secret(), "Content-Type": "application/json", "User-Agent": UA})
+        with urllib.request.urlopen(req, timeout=60) as r:
+            got = json.loads(r.read())
+        if got.get("revalidated") != len(chunk):
+            raise RuntimeError(f"revalidate answered {got} for {len(chunk)} paths")
+
+
+def fetch(base: str, path: str, want_hash: str | None, want_status: int = 200, tries: int = 3) -> dict:
+    """GET a page. ok means: the status we expect AND (when a hash is expected) the page carries it."""
+    out = {"path": path, "ok": False, "status": None, "hash": None, "bytes": 0}
+    for attempt in range(tries):
+        try:
+            req = urllib.request.Request(base + path, headers={"User-Agent": UA, "Cache-Control": "no-cache"})
+            with urllib.request.urlopen(req, timeout=60) as r:
+                body = r.read()
+                out["status"] = r.status
+        except urllib.error.HTTPError as e:
+            body = e.read()
+            out["status"] = e.code
+        except Exception as e:  # noqa: BLE001 - a failed fetch is "not verified", never "fine"
+            out["error"] = str(e)[:120]
+            time.sleep(1.5 * (attempt + 1))
+            continue
+        out["bytes"] = len(body)
+        if out["status"] != want_status:
+            time.sleep(1.5 * (attempt + 1))
+            continue
+        if want_hash is None:
+            out["ok"] = True
+            return out
+        m = HASH_RE.search(body.decode("utf-8", "replace"))
+        out["hash"] = m.group(1) if m else None
+        if out["hash"] == want_hash:
+            out["ok"] = True
+            return out
+        time.sleep(1.5 * (attempt + 1))   # the first request after an expiry can still be the old page
+    return out
+
+
+def run(conn, base: str, dry_run: bool = False, max_pages: int = 7000, log=print) -> dict:
+    base = base.rstrip("/")
+    receipt = {"base": base, "pages_changed": 0, "pages_verified": 0, "pages_unverified": 0,
+               "index_pages_verified": 0, "retired_verified": 0, "site_bytes_fetched": 0, "failed": []}
+
+    clash = collisions(conn)
+    if clash:
+        raise RuntimeError(f"company slugs collide with a category or a reserved path: {clash[:10]}")
+    leaks = conn.execute("select count(*) from site.bad_permalinks").fetchone()[0]
+    if leaks:
+        log(f"  note: {leaks} stored permalinks are not Reddit comment links; their cards are left out")
+    receipt["bad_permalinks"] = leaks
+
+    # 1. what changed. Takedown pages first: a brand named in a removal that has not been proven gone.
+    rows = conn.execute("""
+        select s.brand_id, s.slug, s.page_hash,
+               exists (select 1 from public.removals r
+                        where r.revalidated_at is null and s.brand_id = any (r.brand_ids)) as takedown
+          from site.brand_stats s
+         where s.served_hash is distinct from s.page_hash
+         order by 4 desc, s.total_mentions desc""").fetchall()
+    receipt["pages_changed"] = len(rows)
+    retired = [r[0] for r in conn.execute("select slug from site.retired_page where gone_at is null")]
+    meta = conn.execute("select boards_hash, served_boards_hash, slugs_hash, served_slugs_hash from site.meta").fetchone()
+    boards_changed = meta[0] != meta[1]
+    slugs_changed = meta[2] != meta[3]
+
+    todo = rows[:max_pages]
+    receipt["pages_unverified"] = len(rows) - len(todo)
+    log(f"  {len(rows)} company pages changed ({sum(1 for r in rows if r[3])} with a takedown), "
+        f"{len(retired)} retired, boards {'changed' if boards_changed else 'unchanged'}, "
+        f"page set {'changed' if slugs_changed else 'unchanged'}")
+    if dry_run:
+        return receipt
+
+    index_paths = ["/"] + [f"/{s}/" for s in sorted(category_slugs())] if boards_changed else []
+    file_paths = ["/freshness.json"] + (["/llms.txt"] if boards_changed or slugs_changed else []) \
+        + (["/sitemap.xml"] if slugs_changed else [])
+
+    # 2. expire
+    paths = [f"/{r[1]}/" for r in todo] + [f"/{s}/" for s in retired] + index_paths + file_paths
+    expire(base, paths)
+
+    # 3. fetch and read back
+    def verify(jobs: list[tuple[str, str | None, int]]) -> list[dict]:
+        with ThreadPoolExecutor(FETCHERS) as ex:
+            return list(ex.map(lambda j: fetch(base, j[0], j[1], j[2]), jobs))
+
+    ok_ids = []
+    for i in range(0, len(todo), 200):
+        chunk = todo[i:i + 200]
+        res = verify([(f"/{r[1]}/", r[2], 200) for r in chunk])
+        good = [(r[0], r[2]) for r, v in zip(chunk, res) if v["ok"]]
+        receipt["site_bytes_fetched"] += sum(v["bytes"] for v in res)
+        receipt["failed"] += [{"path": v["path"], "status": v["status"], "hash": v["hash"]} for v in res if not v["ok"]][:50]
+        if good:
+            # only where the row still holds the hash we verified: a refresh that landed meanwhile stays unserved
+            conn.execute("""update site.brand_stats s set served_hash = v.h, served_at = now()
+                              from unnest(%s::bigint[], %s::text[]) as v(id, h)
+                             where s.brand_id = v.id and s.page_hash = v.h""",
+                         ([g[0] for g in good], [g[1] for g in good]))
+            ok_ids += [g[0] for g in good]
+        log(f"    verified {len(ok_ids)}/{len(todo)} company pages", flush=True)
+    receipt["pages_verified"] = len(ok_ids)
+    receipt["pages_unverified"] += len(todo) - len(ok_ids)
+
+    if retired:
+        res = verify([(f"/{s}/", None, 404) for s in retired])
+        gone = [s for s, v in zip(retired, res) if v["ok"]]
+        if gone:
+            conn.execute("update site.retired_page set gone_at = now() where slug = any (%s)", (gone,))
+        receipt["retired_verified"] = len(gone)
+        receipt["failed"] += [{"path": v["path"], "status": v["status"], "want": 404} for v in res if not v["ok"]]
+
+    if index_paths:
+        res = verify([(p, meta[0], 200) for p in index_paths])
+        receipt["index_pages_verified"] = sum(v["ok"] for v in res)
+        receipt["site_bytes_fetched"] += sum(v["bytes"] for v in res)
+        receipt["failed"] += [{"path": v["path"], "status": v["status"], "hash": v["hash"]} for v in res if not v["ok"]]
+        if all(v["ok"] for v in res):
+            conn.execute("update site.meta set served_boards_hash = %s where boards_hash = %s", (meta[0], meta[0]))
+    if slugs_changed:
+        v = fetch(base, "/sitemap.xml", None, 200)
+        if v["ok"]:
+            conn.execute("update site.meta set served_slugs_hash = %s where slugs_hash = %s", (meta[2], meta[2]))
+        else:
+            receipt["failed"].append({"path": "/sitemap.xml", "status": v["status"]})
+
+    receipt["failed"] = receipt["failed"][:100]
+    log(f"  published: {receipt['pages_verified']} company pages, {receipt['index_pages_verified']} index pages, "
+        f"{receipt['retired_verified']} retired; {receipt['pages_unverified']} not verified")
+    return receipt
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--base", default=os.environ.get("NEXT_PUBLIC_SITE_URL", "https://redditindex.com"))
+    ap.add_argument("--dry-run", action="store_true")
+    ap.add_argument("--max-pages", type=int, default=7000)
+    a = ap.parse_args()
+    import db
+    with db.connect() as conn:
+        conn.autocommit = True
+        r = run(conn, a.base, a.dry_run, a.max_pages)
+    print(json.dumps({k: v for k, v in r.items() if k != "failed"}), "| failed:", len(r["failed"]))
+    return 0 if not r["failed"] and not r["pages_unverified"] else 2
+
+
+if __name__ == "__main__":
+    sys.exit(main())
