@@ -1,0 +1,9 @@
+# The collector is PARKED (decision 0016, enforced 2026-10-02).
+#
+# Why this file exists: `railway down` does not stop a Railway cron. The schedule
+# rides in each deployment's own manifest, and at the next tick Railway redeploys
+# the newest one. That is how the collector ran on 2026-10-02, a day after it was
+# "removed". The only stop that holds is a newer deployment whose manifest has no
+# cron and whose image does nothing. This is that image.
+FROM alpine:3.20
+CMD ["sh", "-c", "echo 'reddit-index collector is parked (decision 0016): nothing collects from this service.'"]

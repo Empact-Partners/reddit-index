@@ -2,11 +2,24 @@
 
 **Live: [redditindex.com](https://redditindex.com)** (noindex while provisional).
 
-> **FROZEN since 2026-10-01 ([decisions/0016](decisions/0016-frozen.md)).** Nothing collects, nothing
-> rebuilds the site: the Railway collector's deployment is removed and Vercel skips every build. Do not
-> run `worker/update.sh`, redeploy the collector, or clear Vercel's Ignored Build Step without a new
-> ruling. The "no Railway cron" claim below was false until that day: the collector ran nightly at
-> 02:00 UTC from 2026-08-19 to 2026-10-01.
+## STATUS (kept current; last edit 2026-10-02 21:00 UTC)
+
+| | |
+|---|---|
+| **Live?** | The site is up and serves its **2026-09-22** build. It is **not refreshing**. |
+| **Collecting?** | No, as of 2026-10-02 20:47 UTC. Proof is pending: the freeze counts as real after two nights with zero new rows (3 and 4 Oct). |
+| **Last data in the database** | 2026-10-02 07:43 UTC (the old collector's last run). |
+| **Last sentiment labels and scores** | 2026-08-25. 959,245 of 1,437,879 mentions have no label. |
+| **What is happening** | Relaunch in progress under Vlad's ruling of 2026-10-02: investigate, fix cost and storage, daily sweep, go live behind measured gates. Plan and gates: decision 0017 (to be written at go-live). |
+| **How to stop everything** | It is stopped. The old collector cannot reach the database (password rotated) and its Railway service runs a do-nothing image. |
+
+> **Still frozen until decision 0017 is recorded** ([decisions/0016](decisions/0016-frozen.md)). Do not run
+> `worker/update.sh`, deploy the old `Dockerfile` to Railway, or clear Vercel's Ignored Build Step.
+>
+> **The freeze of 2026-10-01 did not hold.** `railway down` removed the deployment and Railway redeployed
+> it by itself at 02:01 UTC on 2026-10-02: 18,155 mentions and 8,258 threads were written until 07:43 UTC.
+> The collector ran nightly at 02:00 UTC from 2026-08-19 to 2026-10-02 inclusive. What stopped it is in
+> the addendum to decision 0016.
 
 A public index of what Reddit actually says about software brands: one
 **Reddit ❤️ Score** (0-100) per brand per category, computed from verbatim
