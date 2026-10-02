@@ -31,13 +31,18 @@ function db() {
   if (!DATABASE_URL_SITE) {
     throw new Error(
       "DATABASE_URL_SITE is not set. The site reads through the `ri_site` Postgres role on the Supabase " +
-      "transaction pooler (port 6543). ops/site_role.py creates the login and sets this variable on Vercel.",
+      "session pooler (port 5432). ops/site_role.py creates the login and sets this variable on Vercel.",
     );
   }
   sql ??= postgres(DATABASE_URL_SITE, {
-    prepare: false,          // mandatory on the transaction pooler
-    max: 4,
-    idle_timeout: 20,
+    // The SESSION pooler (port 5432). The transaction pooler (6543) hangs under this site's load: measured
+    // 2026-10-02, 40 concurrent index reads completed 7 and then nothing reached the database again, in a
+    // build and in a bare script alike; the same reads through 5432 took 3.5 s. In session mode every open
+    // connection holds a database connection (60 in total on this instance), so a process keeps ONE and
+    // lets it go quickly. Renders are short and the sweep fetches four pages at a time.
+    prepare: false,
+    max: 1,
+    idle_timeout: 10,
     connect_timeout: 15,
     ssl: "require",
     onnotice: () => {},
@@ -160,21 +165,27 @@ export const getMeta = cache(async (): Promise<SiteMeta> => {
  * process under the hash the database publishes for them: a build worker, or a lambda regenerating
  * several index pages, reads them once. The key is the content hash, so a remembered copy cannot be stale.
  */
-let indexMemo: { hash: string; rows: IndexRow[] } | null = null;
+let indexMemo: { hash: string; rows: Promise<IndexRow[]> } | null = null;
 
 export async function getIndexRows(): Promise<IndexRow[]> {
   const meta = await getMeta();
+  // The PROMISE is remembered, not the result: eighty pages rendering at once in a build worker share one
+  // read instead of each starting their own.
   if (indexMemo && meta.boardsHash && indexMemo.hash === meta.boardsHash) return indexMemo.rows;
-  const res = await withRetry(() => db()`
-    select coalesce(json_agg(json_build_array(
-             slug, name, primary_category_slug, page_score, page_n_op, total_mentions)), '[]'::json) as rows
-    from site.brand_stats`);
-  const raw = (res[0]?.rows ?? []) as Array<[string, string, string | null, number | null, number, number]>;
-  const rows: IndexRow[] = raw.map(([slug, name, cat, score, nOp, mentions]) => ({
-    slug, name, categorySlug: (cat ?? null) as CategorySlug | null, score, nOp, mentions,
-  }));
-  indexMemo = { hash: meta.boardsHash, rows };
-  return rows;
+  const load = (async () => {
+    const res = await withRetry(() => db()`
+      select coalesce(json_agg(json_build_array(
+               slug, name, primary_category_slug, page_score, page_n_op, total_mentions)), '[]'::json) as rows
+      from site.brand_stats`);
+    const raw = (res[0]?.rows ?? []) as Array<[string, string, string | null, number | null, number, number]>;
+    return raw.map(([slug, name, cat, score, nOp, mentions]): IndexRow => ({
+      slug, name, categorySlug: (cat ?? null) as CategorySlug | null, score, nOp, mentions,
+    }));
+  })();
+  indexMemo = { hash: meta.boardsHash, rows: load };
+  // a failed read must not be remembered
+  load.catch(() => { if (indexMemo?.rows === load) indexMemo = null; });
+  return load;
 }
 
 export type MethodologyParamRow = {

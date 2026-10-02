@@ -23,6 +23,7 @@ by the next run; it is counted, never assumed.
   worker/site_publish.py --base https://...   # a preview deployment
   worker/site_publish.py --dry-run            # list what would be published
   worker/site_publish.py --max-pages 200      # verify at most this many company pages this run
+  worker/site_publish.py --no-stamp           # verify only: never record a preview's pages as served
 
 Env or ~/.claude/.reddit-index.json: REVALIDATE_SECRET / revalidate_secret.
 """
@@ -30,6 +31,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import gzip
 import json
 import os
 import re
@@ -79,7 +81,7 @@ def expire(base: str, paths: list[str]) -> None:
     for i in range(0, len(paths), BATCH):
         chunk = paths[i:i + BATCH]
         req = urllib.request.Request(
-            base + "/api/revalidate", method="POST", data=json.dumps({"paths": chunk}).encode(),
+            base + "/api/revalidate/", method="POST", data=json.dumps({"paths": chunk}).encode(),
             headers={"Authorization": "Bearer " + _secret(), "Content-Type": "application/json", "User-Agent": UA})
         with urllib.request.urlopen(req, timeout=60) as r:
             got = json.loads(r.read())
@@ -92,18 +94,23 @@ def fetch(base: str, path: str, want_hash: str | None, want_status: int = 200, t
     out = {"path": path, "ok": False, "status": None, "hash": None, "bytes": 0}
     for attempt in range(tries):
         try:
-            req = urllib.request.Request(base + path, headers={"User-Agent": UA, "Cache-Control": "no-cache"})
+            # gzip: an index page is 1.4 MB of HTML and 152 of them are fetched whenever the boards change
+            req = urllib.request.Request(base + path, headers={"User-Agent": UA, "Cache-Control": "no-cache",
+                                                               "Accept-Encoding": "gzip"})
             with urllib.request.urlopen(req, timeout=60) as r:
-                body = r.read()
+                raw = r.read()
                 out["status"] = r.status
+                gz = r.headers.get("Content-Encoding") == "gzip"
         except urllib.error.HTTPError as e:
-            body = e.read()
+            raw = e.read()
             out["status"] = e.code
+            gz = e.headers.get("Content-Encoding") == "gzip"
         except Exception as e:  # noqa: BLE001 - a failed fetch is "not verified", never "fine"
             out["error"] = str(e)[:120]
             time.sleep(1.5 * (attempt + 1))
             continue
-        out["bytes"] = len(body)
+        out["bytes"] = len(raw)          # what crossed the wire
+        body = gzip.decompress(raw) if gz else raw
         if out["status"] != want_status:
             time.sleep(1.5 * (attempt + 1))
             continue
@@ -119,7 +126,7 @@ def fetch(base: str, path: str, want_hash: str | None, want_status: int = 200, t
     return out
 
 
-def run(conn, base: str, dry_run: bool = False, max_pages: int = 7000, log=print) -> dict:
+def run(conn, base: str, dry_run: bool = False, max_pages: int = 7000, stamp: bool = True, log=print) -> dict:
     base = base.rstrip("/")
     receipt = {"base": base, "pages_changed": 0, "pages_verified": 0, "pages_unverified": 0,
                "index_pages_verified": 0, "retired_verified": 0, "site_bytes_fetched": 0, "failed": []}
@@ -174,13 +181,13 @@ def run(conn, base: str, dry_run: bool = False, max_pages: int = 7000, log=print
         good = [(r[0], r[2]) for r, v in zip(chunk, res) if v["ok"]]
         receipt["site_bytes_fetched"] += sum(v["bytes"] for v in res)
         receipt["failed"] += [{"path": v["path"], "status": v["status"], "hash": v["hash"]} for v in res if not v["ok"]][:50]
-        if good:
+        if good and stamp:
             # only where the row still holds the hash we verified: a refresh that landed meanwhile stays unserved
             conn.execute("""update site.brand_stats s set served_hash = v.h, served_at = now()
                               from unnest(%s::bigint[], %s::text[]) as v(id, h)
                              where s.brand_id = v.id and s.page_hash = v.h""",
                          ([g[0] for g in good], [g[1] for g in good]))
-            ok_ids += [g[0] for g in good]
+        ok_ids += [g[0] for g in good]
         log(f"    verified {len(ok_ids)}/{len(todo)} company pages", flush=True)
     receipt["pages_verified"] = len(ok_ids)
     receipt["pages_unverified"] += len(todo) - len(ok_ids)
@@ -188,7 +195,7 @@ def run(conn, base: str, dry_run: bool = False, max_pages: int = 7000, log=print
     if retired:
         res = verify([(f"/{s}/", None, 404) for s in retired])
         gone = [s for s, v in zip(retired, res) if v["ok"]]
-        if gone:
+        if gone and stamp:
             conn.execute("update site.retired_page set gone_at = now() where slug = any (%s)", (gone,))
         receipt["retired_verified"] = len(gone)
         receipt["failed"] += [{"path": v["path"], "status": v["status"], "want": 404} for v in res if not v["ok"]]
@@ -198,14 +205,14 @@ def run(conn, base: str, dry_run: bool = False, max_pages: int = 7000, log=print
         receipt["index_pages_verified"] = sum(v["ok"] for v in res)
         receipt["site_bytes_fetched"] += sum(v["bytes"] for v in res)
         receipt["failed"] += [{"path": v["path"], "status": v["status"], "hash": v["hash"]} for v in res if not v["ok"]]
-        if all(v["ok"] for v in res):
+        if all(v["ok"] for v in res) and stamp:
             conn.execute("update site.meta set served_boards_hash = %s where boards_hash = %s", (meta[0], meta[0]))
     if slugs_changed:
         v = fetch(base, "/sitemap.xml", None, 200)
-        if v["ok"]:
-            conn.execute("update site.meta set served_slugs_hash = %s where slugs_hash = %s", (meta[2], meta[2]))
-        else:
+        if not v["ok"]:
             receipt["failed"].append({"path": "/sitemap.xml", "status": v["status"]})
+        elif stamp:
+            conn.execute("update site.meta set served_slugs_hash = %s where slugs_hash = %s", (meta[2], meta[2]))
 
     receipt["failed"] = receipt["failed"][:100]
     log(f"  published: {receipt['pages_verified']} company pages, {receipt['index_pages_verified']} index pages, "
@@ -218,11 +225,13 @@ def main() -> int:
     ap.add_argument("--base", default=os.environ.get("NEXT_PUBLIC_SITE_URL", "https://redditindex.com"))
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--max-pages", type=int, default=7000)
+    ap.add_argument("--no-stamp", action="store_true",
+                    help="verify but do not record the pages as served (a preview or a local server)")
     a = ap.parse_args()
     import db
     with db.connect() as conn:
         conn.autocommit = True
-        r = run(conn, a.base, a.dry_run, a.max_pages)
+        r = run(conn, a.base, a.dry_run, a.max_pages, stamp=not a.no_stamp)
     print(json.dumps({k: v for k, v in r.items() if k != "failed"}), "| failed:", len(r["failed"]))
     return 0 if not r["failed"] and not r["pages_unverified"] else 2
 

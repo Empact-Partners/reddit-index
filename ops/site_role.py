@@ -47,8 +47,12 @@ def rotate() -> str:
         conn.autocommit = True
         # the password is alphanumeric, so quoting it is safe; ALTER ROLE cannot take a bind parameter
         conn.execute(f"alter role ri_site with login password '{pw}'")
+    # The SESSION pooler (5432), not the transaction pooler (6543). Measured 2026-10-02: 40 concurrent reads
+    # of the index rows through 6543 completed 7 and then hung with nothing reaching the database, and the
+    # pool stayed wedged afterwards; the same 40 through 5432 took 3.5 s. The old site lived on 6543 and its
+    # code is full of retries for dropped connections and half-returned row sets.
     url = (f"postgresql://ri_site.{c['project_ref']}:{pw}@aws-0-{c.get('region', 'us-east-1')}"
-           f".pooler.supabase.com:6543/postgres")
+           f".pooler.supabase.com:5432/postgres")
     c["site_url"] = url
     _save(c)
     print("ri_site can log in; connection string stored locally as site_url")
