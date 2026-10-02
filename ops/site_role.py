@@ -106,6 +106,7 @@ def check() -> int:
                            ("public.mention_rail_mv", "select count(*) from public.mention_rail_mv"),
                            ("site.rail_key (the table behind the view)", "select count(*) from site.rail_key"),
                            ("site.refresh_brand()", "select site.refresh_brand(1)"),
+                           ("public.refresh_mention_rail() (rebuilds a 230 MB view)", "select public.refresh_mention_rail(false)"),
                            ("a write", "update site.meta set updated_at = now()")]:
             try:
                 conn.execute(sql).fetchone() if sql.startswith("select") else conn.execute(sql)
