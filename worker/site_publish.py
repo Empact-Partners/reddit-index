@@ -66,6 +66,22 @@ def _secret() -> str:
         raise SystemExit("REVALIDATE_SECRET is not set and ~/.claude/.reddit-index.json has no revalidate_secret")
 
 
+def _headers(base: str) -> dict:
+    """A preview on *.vercel.app sits behind Vercel's login; the project's bypass secret lets a script in.
+    Production is on its own domain and needs nothing."""
+    h = {"User-Agent": UA}
+    if ".vercel.app" in base:
+        tok = os.environ.get("VERCEL_BYPASS")
+        if not tok:
+            try:
+                tok = json.load(open(os.path.expanduser("~/.claude/.reddit-index.json"))).get("vercel_bypass")
+            except Exception:  # noqa: BLE001
+                tok = None
+        if tok:
+            h["x-vercel-protection-bypass"] = tok
+    return h
+
+
 def category_slugs() -> set[str]:
     with open(os.path.join(ROOT, "data", "categories.csv"), encoding="utf-8") as f:
         return {r["slug"] for r in csv.DictReader(f)}
@@ -82,7 +98,7 @@ def expire(base: str, paths: list[str]) -> None:
         chunk = paths[i:i + BATCH]
         req = urllib.request.Request(
             base + "/api/revalidate/", method="POST", data=json.dumps({"paths": chunk}).encode(),
-            headers={"Authorization": "Bearer " + _secret(), "Content-Type": "application/json", "User-Agent": UA})
+            headers={**_headers(base), "Authorization": "Bearer " + _secret(), "Content-Type": "application/json"})
         with urllib.request.urlopen(req, timeout=60) as r:
             got = json.loads(r.read())
         if got.get("revalidated") != len(chunk):
@@ -95,7 +111,7 @@ def fetch(base: str, path: str, want_hash: str | None, want_status: int = 200, t
     for attempt in range(tries):
         try:
             # gzip: an index page is 1.4 MB of HTML and 152 of them are fetched whenever the boards change
-            req = urllib.request.Request(base + path, headers={"User-Agent": UA, "Cache-Control": "no-cache",
+            req = urllib.request.Request(base + path, headers={**_headers(base), "Cache-Control": "no-cache",
                                                                "Accept-Encoding": "gzip"})
             with urllib.request.urlopen(req, timeout=60) as r:
                 raw = r.read()
