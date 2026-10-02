@@ -16,8 +16,11 @@ import time
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "worker"))
 
 
-def drain(conn, chunk: int = 100, log=print) -> int:
+def drain(conn, chunk: int = 25, log=print) -> int:
     done, t0 = 0, time.time()
+    # The pooler's session default is 2 minutes, and a SET on the function does not rescue a statement whose
+    # timer is already running: the first fill died on a chunk of very large brands exactly that way.
+    conn.execute("set statement_timeout = '30min'")
     while True:
         n = conn.execute("select site.refresh_dirty(%s)", (chunk,)).fetchone()[0]
         done += n
@@ -30,7 +33,7 @@ def drain(conn, chunk: int = 100, log=print) -> int:
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--all", action="store_true")
-    ap.add_argument("--chunk", type=int, default=100)
+    ap.add_argument("--chunk", type=int, default=25)
     a = ap.parse_args()
     import db
     with db.connect() as conn:
