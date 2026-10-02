@@ -1,11 +1,15 @@
+import { Freshness } from "./freshness";
+
 /**
  * The thin venture bar — mirrored from MarketSplash's footer bottom bar,
  * verbatim copy and the same traced Empact logomark (six offset bars,
- * currentColor, decorative). One line, one link, nothing else.
+ * currentColor, decorative). One line and one link, plus the date the data
+ * was last refreshed (the sweep's freshness line, ruling of 2026-10-02).
  */
 export function VentureFooter() {
   return (
     <footer className="venture-foot">
+      <Freshness />
       <p>
         A venture by{" "}
         <a href="https://empact.partners" rel="noopener">

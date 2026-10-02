@@ -1,6 +1,7 @@
 import { getRegistry } from "@/lib/routing";
-import { getSnapshot } from "@/lib/data/snapshot";
+import { getIndexRows } from "@/lib/data/site-db";
 import { buildBoards } from "@/lib/data/boards";
+import { METHODOLOGY_VERSION } from "@/lib/format";
 import { SITE_URL } from "@/lib/env";
 import { CATEGORY_BY_SLUG, type CategorySlug } from "@/lib/generated/categories";
 
@@ -11,15 +12,14 @@ export const dynamic = "force-static";
  * AI agent what this site is, how the numbers are made, and where the data
  * lives, without making it infer any of that from rendered HTML.
  *
- * It is generated from the SAME registry and snapshot the pages are built
- * from, so it cannot drift from what is actually published: the category
- * list, the counts and the method version are all read at build time.
+ * It is generated from the SAME registry and index rows the pages are built
+ * from, so it cannot drift from what is actually published. The daily sweep
+ * expires it when the set of pages or the boards change.
  */
 export async function GET() {
-  const [reg, snap] = await Promise.all([getRegistry(), getSnapshot()]);
-  const boards = buildBoards(snap);
-  const totalMentions = [...snap.companies.values()]
-    .reduce((a, c) => a + c.totalMentions, 0);
+  const [reg, rows] = await Promise.all([getRegistry(), getIndexRows()]);
+  const boards = buildBoards(rows);
+  const totalMentions = rows.reduce((a, r) => a + r.mentions, 0);
   // Ranked = what is actually ON a board. Reading brand_category_scores undercounts by
   // every brand in a category with no mapped scoring subreddits, and post-0011 the boards
   // are built from pageScore rather than those rows.
@@ -54,7 +54,7 @@ shrunk toward the category's pooled positive rate computed leave-one-out over
 every other company. It is a LOWER BOUND, not a best guess: a company with
 little evidence scores low until it earns more, so thin data cannot outrank a
 well-measured competitor. Neutral mentions are counted and published but are
-not in the denominator. Methodology version ${snap.methodologyVersion}.
+not in the denominator. Methodology version ${METHODOLOGY_VERSION}.
 
 A company is ranked in a category once it carries at least ONE opinionated
 mention. There is no separate visibility threshold: thin evidence is handled
