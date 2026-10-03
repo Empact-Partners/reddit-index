@@ -126,7 +126,7 @@ def check(since: str, remove: bool) -> dict:
         # The new daily sweep writes these tables too, but only inside its own receipt (a public.pipeline_runs
         # row, stage 'sweep', from its start to its finish). A write outside every receipt is the old collector
         # or something nobody declared; a write inside one is the sweep (scripts/schedule_check.py, same rule).
-        outside = ("not exists (select 1 from public.pipeline_runs r where r.stage = 'sweep' and %s between "
+        outside = ("not exists (select 1 from public.pipeline_runs r where r.stage in ('sweep', 'repair') and %s between "
                    "r.started_at - interval '2 minutes' and coalesce(r.finished_at, now()) + interval '2 minutes')")
         rows = _sql(
             ("select (select count(*) from public.mentions m where loaded_at > '%(s)s' and " + outside % "m.loaded_at" + ") as mentions,"
