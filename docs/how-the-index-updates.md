@@ -80,13 +80,9 @@ change still rebuilds the site; data never does.
    API calls. Comments (`doc_type 1`) come from the comment trees of threads
    first seen in the last 72 hours, unread threads first. Either way the body is
    stored verbatim with its author, permalink, score and timestamp.
-2. **Classified**, usually within a day, but the classifier trails collection.
-   It is an anti-join against `mention_sentiment` that drains the backlog and
-   exits, and it runs once, at 08:30 UTC. So the 02:00 batch is labelled the same
-   morning, the 14:00 batch waits for the next one, and a deep backlog takes
-   longer still. This matters because scoring reads only labelled rows: a
-   collected but unclassified mention exists in the database, is visible on the
-   company page, and is not yet in any score.
+2. **Classified** in the same run that collected it (the classify stage takes the newest mentions first, up to
+   its daily caps). An unclassified mention exists in the database and on the company page, and is in no score
+   until it has a label.
 3. **Counted** into its brand's score at the next run once it carries a positive or negative label.
 4. **Set aside** if it turns out not to be about the brand: recorded in `mention_rejections`, no longer counted.
 5. **Purged** if it is deleted, removed or edited on Reddit. Only the ledger row remains.
