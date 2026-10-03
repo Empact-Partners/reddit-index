@@ -36,7 +36,7 @@ BUDGET = {"glm_credits_total": 60000, "glm_credits_run": 20000, "jev_usd_total":
 LOCK_KEY = 0x52494458   # worker/run_daily.py's: one writer at a time
 
 
-def log(*a):
+def log(*a, **_):
     print(f"[{dt.datetime.now(dt.timezone.utc).strftime('%H:%M:%S')}]", *a, flush=True)
 
 

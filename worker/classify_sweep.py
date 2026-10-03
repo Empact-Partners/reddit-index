@@ -43,7 +43,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 sys.path.insert(0, HERE)
 
-from classify import SYSTEM as RUBRIC, mark_target  # noqa: E402  the calibrated rubric, verbatim
+from rubric import SYSTEM as RUBRIC, mark_target  # noqa: E402  the calibrated rubric, verbatim
 
 JEV_MODEL = "jev-1.13.0"
 MV_JEV = "jev-1.13.0-absa-1"
@@ -97,8 +97,17 @@ GUIDE = ("You read Reddit text that mentions a software product. The span <<TARG
          "the ones the index was labelled with until 2026:\n\n" + RUBRIC.split("Also return:")[0].strip())
 
 
+def _typesafe():
+    """The estate's metered Jev client: ~/.claude/api_helpers on the laptop, a copy in the image (RI_API_HELPERS)."""
+    path = os.environ.get("RI_API_HELPERS") or os.path.expanduser("~/.claude/api_helpers")
+    if path not in sys.path:
+        sys.path.insert(0, path)
+    import typesafe
+    return typesafe
+
+
 def jev_questions(j: int) -> dict:
-    import typesafe as ts
+    ts = _typesafe()
     return {
         f"e{j}": ts.noul(
             f"In items[{j}], does the marked span refer to the software product named in items[{j}].product, "
@@ -117,8 +126,7 @@ def jev_questions(j: int) -> dict:
 
 def jev_judge(items: list[dict], workers: int = 8, log=print) -> list[dict | None]:
     """-> per item {"e": P(this product), "probs": {pos,neg,neu,unsure}} or None (not checked)."""
-    sys.path.insert(0, os.path.expanduser("~/.claude/api_helpers"))
-    import typesafe as ts
+    ts = _typesafe()
     client = ts.TypeSafeAPI(model=JEV_MODEL, caller="reddit-index-classify")
     reqs, spans = [], []
     for start in range(0, len(items), JEV_BATCH):
@@ -306,6 +314,15 @@ def write(conn, items: list[dict], verdicts: list[tuple | None], mv: list[str]) 
             conn.execute("delete from public.classify_queue q using unnest(%s::bigint[], %s::text[], %s::timestamptz[]) "
                          "as k(b, d, c) where q.brand_id = k.b and q.doc_id = k.d and q.created_utc = k.c",
                          ([x[0] for x in done], [x[1] for x in done], [x[2] for x in done]))
+        # Only what no judge answered is marked as tried (five tries, then it waits for a person). Marking every
+        # row before judging it rewrote 2,000 queue rows a batch only to delete them a second later: write-ahead
+        # log the egress counter bills (measured 2026-10-02).
+        left = [(it["brand_id"], it["doc_id"], it["created_utc"]) for it, v in zip(items, verdicts) if v is None]
+        if left:
+            conn.execute("update public.classify_queue q set attempts = attempts + 1 "
+                         "from unnest(%s::bigint[], %s::text[], %s::timestamptz[]) as k(b, d, c) "
+                         "where q.brand_id = k.b and q.doc_id = k.d and q.created_utc = k.c",
+                         ([x[0] for x in left], [x[1] for x in left], [x[2] for x in left]))
     return {"labelled": len(lab_rows), "rejected": len(rej_rows)}
 
 
@@ -340,10 +357,6 @@ def run(conn, cfg: dict, deadline: float, should_stop=lambda: None, log=print) -
         if not keys:
             break
         taken += len(keys)
-        conn.execute("update public.classify_queue q set attempts = attempts + 1 "
-                     "from unnest(%s::bigint[], %s::text[], %s::timestamptz[]) as k(b, d, c) "
-                     "where q.brand_id = k.b and q.doc_id = k.d and q.created_utc = k.c",
-                     ([k[0] for k in keys], [k[1] for k in keys], [k[2] for k in keys]))
         items = fetch_items(conn, keys)
         j = jev_judge(items, log=log)
         rec["jev_usd"] += jev_judge.last_usd

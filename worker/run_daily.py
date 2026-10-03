@@ -203,13 +203,19 @@ def main() -> int:
 
     conn = db.connect()
     conn.autocommit = True
-    if not conn.execute("select pg_try_advisory_lock(%s)", (LOCK_KEY,)).fetchone()[0]:
-        log("another sweep holds the lock: not running")
-        return 0
     run = Run(conn, sched, args)
+    # A run that does not work still leaves a row, so "the schedule fired and chose not to run" can be told
+    # apart from "nothing started" (scripts/schedule_check.py reads both).
+    if not conn.execute("select pg_try_advisory_lock(%s)", (LOCK_KEY,)).fetchone()[0]:
+        log("another sweep or the backlog classifier holds the lock: not running")
+        run.receipt["skipped"] = "another job held the sweep lock"
+        run.record("skipped")
+        return 0
     reason = run.stop_reason()
     if reason and not reason.startswith("estimated"):
         log(reason)
+        run.receipt["skipped"] = reason
+        run.record("skipped")
         return 0
     run.record("running")
     log(f"run {run.run_id[:8]} caps {run.caps}")
