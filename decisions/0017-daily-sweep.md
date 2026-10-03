@@ -55,6 +55,25 @@ issues and optimize the whole mechanics and the whole mechanism behind it."
 One-time, already declared: the classification backlog (60,000 GLM credits, $60 of Jev, 1.5 GB egress, 0.5 GB a
 day) and retention step 3 (1.0 GB egress, 0.4 GB a day).
 
+## Measured before the scheduled runs (3 October)
+
+| Run | What it did | Egress (node counter) |
+|---|---|---|
+| Pilot `69be2c4b`, small caps, as `ri_sweep` | 20,000 on-page comments checked (564 deleted, 2 edited on Reddit; 1,058 rows purged); 400 Reddit calls of collection (18 subreddits); 2,000 mentions classified (146 GLM credits, $0.02); 5,907 pages refreshed and scored; on the preview, 5,907 pages expired, 697 fetched and proven (597 that had held a takedown), 152 boards, 110 retired pages answering 404; 0 failures; 39.7 minutes | 185 MB, including a 20-minute tail |
+| Takedown catch-up `8f2c3213` | 70,000 on-page comments checked, 3,227 deleted and 230 edited on Reddit since 25 August, 6,173 rows purged; stopped by the switch to yield the shared Reddit app to another session (the stop worked as designed: it purged what it had found and published nothing) | 70 MB during the run |
+
+What the pilot taught, and what changed because of it:
+
+- A company page re-render reads about 0.2 MB (its numbers and 120 cards of full text). The publisher now
+  expires at most 2,000 pages a day, longest-waiting first, takedown pages always on top of the cap: page
+  regeneration stays under about 0.4 GB a day even if every expired page is visited.
+- Collection spends about 22 Reddit calls a subreddit, most of them re-reading recent comment trees. 13,000
+  calls cover the core subreddits daily and the rest in rotation.
+- Refresh costs about 0.25-0.5 seconds a brand on the 1 GB instance (Notion: 1.9 s for 1,484 mentions). During
+  the backlog most brands change daily; afterwards about 2,000 a day.
+- The one-copy text trigger met a NOT NULL constraint within a minute of collection; fixed (migration 0021),
+  22 dropped rows restored.
+
 ## Go-live gates
 
 | Gate | Measured | Met |
