@@ -5,7 +5,9 @@ This is worker/daily.py's collection, reused function by function (listing, qual
 insertion and the watermark rules are its, and each carries the incident it was written for), inside a loop
 that can be stopped and bounded:
 
-  * caps checked before every subreddit and every comment tree: Reddit calls, new mentions, wall time;
+  * caps checked before every subreddit and every comment tree: Reddit calls, new mentions, wall time. A cap can
+    therefore be passed by at most one subreddit's listing (up to 8 calls) or one subreddit's new mentions; the
+    caps are safety bounds set well above a normal day, not exact quotas (review, 2026-10-03);
   * a stop check every 25 subreddits (public.sweep_control, and anything else the caller passes in);
   * a comment tree Reddit failed to return is NOT marked read (daily.py marked it read and lost it);
   * a quiet subreddit (no qualifying post on its last pass) is visited every third day, not every day;
