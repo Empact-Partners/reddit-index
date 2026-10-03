@@ -19,6 +19,7 @@ import argparse
 import json
 import os
 import re
+import uuid
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -65,12 +66,13 @@ def main() -> int:
             "select m.doc_id, b.slug from public.mentions m join public.brands b on b.id = m.brand_id "
             "where m.doc_id = any (%s)", (ids,)).fetchall()}
         rows, report = [], []
+        run_id = str(uuid.uuid5(uuid.NAMESPACE_URL, "reddit-index/repair-dropped-rows/" + a.run))   # mentions.run_id is a uuid
         for doc_id, doc_type, thread_id, sid, author, created, permalink, score, body, sub, title in docs:
             for h in resolver.resolve(body or "", sub, title):
                 if (doc_id, h["brand_slug"]) in have:
                     continue
                 rows.append((doc_id, doc_type, thread_id, sid, author or "", float(created or 0), permalink or "",
-                             score or 0, body, h["conf"], h["alias"], h["rule_fired"], "repair-2026-10-03",
+                             score or 0, body, h["conf"], h["alias"], h["rule_fired"], run_id,
                              h["brand_slug"]))
                 report.append((doc_id, h["brand_slug"]))
         missing = sorted(set(ids) - {r[0] for r in docs})
@@ -79,7 +81,7 @@ def main() -> int:
         if rows and not a.dry_run:
             with conn.transaction():
                 ins, rej = d.insert_mentions(conn.cursor(), rows)
-            print(f"restored {ins} rows ({rej} refused)")
+            print(f"restored {ins} rows ({rej} refused), run_id {run_id}")
     return 0
 
 

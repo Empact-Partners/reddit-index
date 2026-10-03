@@ -20,7 +20,7 @@
  },
  "takedown_brake_share": 0.15,
  "verify_pages": 100,
- "max_expire_pages": 7000,
+ "max_expire_pages": 2000,
  "classify": {
   "enabled": true,
   "glm_model": "glm-5.3",
@@ -31,5 +31,6 @@
  },
  "site_url_note": "The trial runs before go-live publish to the read-path preview (protected; the sweep sends the bypass header). At go-live, decision 0017, this becomes https://redditindex.com.",
  "reserve_minutes_after_collect": 60,
- "reddit_pace_seconds": 1.2
+ "reddit_pace_seconds": 1.2,
+ "max_expire_note": "A company page re-render reads about 0.2 MB (its stats and 120 cards of full text). 2,000 pages a day bounds regeneration at about 0.4 GB even if every expired page is visited; takedown pages are always expired, over the cap. Measured on the pilot, 2026-10-03."
 }
