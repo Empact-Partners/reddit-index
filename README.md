@@ -2,17 +2,17 @@
 
 **Live: [redditindex.com](https://redditindex.com)** (noindex while provisional).
 
-## STATUS (kept current; last edit 2026-10-03 00:45 UTC)
+## STATUS (kept current; last edit 2026-10-03 02:50 UTC)
 
 | | |
 |---|---|
-| **Live?** | The site is up and serves its **2026-09-22** build. It is **not refreshing** yet. |
-| **Collecting?** | No, since 2026-10-02 20:47 UTC. Proof: zero rows written outside a receipt since then (`scripts/schedule_check.py`, 3 Oct 00:40). The freeze counts as real after two clean nights (3 and 4 Oct). |
-| **Last data in the database** | 2026-10-02 07:43 UTC (the old collector's last run). |
-| **Labels** | Classification restarted 3 Oct 00:23 UTC (Jev, then GLM-5.3; budgets in `docs/classify-backlog.md`). 171,263 mentions that were only a link to a parent company's web address were recorded as "not this product". About 769,000 mentions still wait for a label. |
-| **The new daily sweep** | Deployed to its own Railway service (`reddit-index-sweep`, 00:00 UTC daily, Virginia) and **switched off**. Its first scheduled firing (3 Oct 00:01) proved the schedule and found a permissions gap, fixed the same night. |
-| **What is happening** | Relaunch under Vlad's ruling of 2026-10-02: investigate (done, `docs/investigation-2026-10.md`), fix cost and storage, daily sweep, go live behind measured gates. Decision 0017 is written at go-live. |
-| **How to stop everything** | `python3 ops/ri.py stop "reason"` turns the sweep off and its database login off. The old collector cannot reach the database and runs a do-nothing image. |
+| **Live?** | The site is up and serves its **2026-09-22** build. It is **not refreshing** yet: the new read path runs on a protected preview until the go-live gates pass. |
+| **Old collector** | Parked since 2026-10-02 20:47 UTC. 02:20 UTC check on 3 Oct: clean (it did not come back at its old 02:00 slot). Counts as stopped after the 4 Oct check too. |
+| **The new daily sweep** | Deployed (`reddit-index-sweep`, 00:00 UTC, Virginia). A pilot run on 3 Oct worked end to end (pages refreshed, scored, proven on the preview; 0 failures) and found one bug, fixed within minutes (22 rows restored). **Switched off** for now: another session is using the shared Reddit app. Planned on: before 00:00 UTC 4 Oct, for two scheduled nights measured against the gates. |
+| **Deleted comments** | About 70,000 of the 140,000 comments shown on pages re-checked against Reddit on 3 Oct: 3,791 deleted and 232 edited there since 25 August, 7,231 rows purged. The rest at the next run. The live site still shows its 22 Sep pages until go-live. |
+| **Labels** | Classification restarted 3 Oct (Jev, then GLM-5.3). 171,263 links to a parent company's web address set aside as "not this product". About 705,000 mentions still wait for a label; the backlog runs inside its declared budget. |
+| **What is happening** | Relaunch under Vlad's ruling of 2026-10-02. Draft decision: [decisions/0017](decisions/0017-daily-sweep.md) (on the sweep branch, PR #8). |
+| **How to stop everything** | `python3 ops/ri.py stop "reason"` turns the sweep off and its database login off. |
 
 > **Still frozen until decision 0017 is recorded** ([decisions/0016](decisions/0016-frozen.md)). Do not run
 > `worker/update.sh`, deploy the old `Dockerfile` to Railway, or clear Vercel's Ignored Build Step.
