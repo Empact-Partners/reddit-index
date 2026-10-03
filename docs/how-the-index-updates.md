@@ -41,11 +41,11 @@ including that posts are still being read as posts and that the
 Slack only on a change of state — into failure, and again on recovery — and only
 if `slack_channel` is set in `~/.claude/.reddit-index.json`.
 
-**What the numbers describe.** The *scores* describe the trailing 365 days as of
-the last rebuild. The *mention counts* — the Mentions column on the boards, the
-totals on a company page — describe everything ever collected, all the way back.
-Those are two different windows on purpose, and the pages that show them say
-which one they are showing.
+**What the numbers describe.** The score on a page and its board rank use every opinionated mention collected
+(decision 0011; methodology 2.3.0 says so since 2026-10-03, after 2.2.0 still described a 365-day window). The
+mention counts use every mention collected. One window, everywhere on the site. The weekly table
+`brand_category_scores` (trailing 365 days, scoring subreddits only) is still computed for the tools that read
+it and is not what the site shows.
 
 **There is no history and no deltas — by design.** The scores table holds
 exactly one truthful set: each run upserts the fresh scores, deletes every older
@@ -87,9 +87,7 @@ change still rebuilds the site; data never does.
    longer still. This matters because scoring reads only labelled rows: a
    collected but unclassified mention exists in the database, is visible on the
    company page, and is not yet in any score.
-3. **Counted** into its category's next scoring pass if its brand is actually
-   tracked in that category (primary or `also_in`) and its timestamp is inside
-   the 365-day window.
+3. **Counted** into its brand's score at the next run once it carries a positive or negative label.
 4. **Set aside** if it turns out not to be about the brand: recorded in `mention_rejections`, no longer counted.
 5. **Purged** if it is deleted, removed or edited on Reddit. Only the ledger row remains.
 
