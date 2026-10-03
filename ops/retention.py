@@ -179,7 +179,10 @@ def main() -> int:
             spent = conn.execute("select coalesce(sum((notes->>'egress_gb')::numeric), 0), coalesce(sum((notes->>'egress_gb')::numeric) "
                                  "filter (where started_at::date = now()::date), 0) from public.pipeline_runs "
                                  "where stage = 'retention' and notes->>'step' = 'one-copy'").fetchone()
-            room = min(BUDGET["one_copy_gb_day"] - float(spent[1]), BUDGET["one_copy_gb_total"] - float(spent[0])) * 1e9
+            sys.path.insert(0, os.path.join(ROOT, "ops"))
+            import day_egress   # one day total for every index job together
+            room = min(BUDGET["one_copy_gb_day"] - float(spent[1]), BUDGET["one_copy_gb_total"] - float(spent[0]),
+                       day_egress.used_today(conn)["room_gb"]) * 1e9
             parts = [r[0] for r in conn.execute(
                 "select c.relname from pg_inherits i join pg_class c on c.oid = i.inhrelid "
                 "where i.inhparent = 'public.mentions'::regclass order by pg_total_relation_size(c.oid) desc")]

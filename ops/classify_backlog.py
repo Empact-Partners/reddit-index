@@ -78,9 +78,15 @@ def main() -> int:
         log("the daily sweep or another backlog run holds the lock: not running")
         return 0
 
+    # one day total for every index job together (ops/day_egress.py): the backlog takes what the night's sweep
+    # and the other jobs left of it, never more than its own daily and total ceilings
+    sys.path.insert(0, os.path.join(ROOT, "ops"))
+    import day_egress
+    day = day_egress.used_today(conn)
     room = {"glm": min(BUDGET["glm_credits_run"], BUDGET["glm_credits_total"] - s["glm_credits"]),
             "jev": BUDGET["jev_usd_total"] - s["jev_usd"],
-            "egress": min(BUDGET["egress_gb_day"] - s["egress_gb_today"], BUDGET["egress_gb_total"] - s["egress_gb"])}
+            "egress": min(BUDGET["egress_gb_day"] - s["egress_gb_today"], BUDGET["egress_gb_total"] - s["egress_gb"],
+                          day["room_gb"])}
     if min(room.values()) <= 0:
         log(f"a backlog budget is used up: {room}; spent so far {s}")
         return 0
