@@ -61,6 +61,11 @@ day) and retention step 3 (1.0 GB egress, 0.4 GB a day).
 |---|---|---|
 | Pilot `69be2c4b`, small caps, as `ri_sweep` | 20,000 on-page comments checked (564 deleted, 2 edited on Reddit; 1,058 rows purged); 400 Reddit calls of collection (18 subreddits); 2,000 mentions classified (146 GLM credits, $0.02); 5,907 pages refreshed and scored; on the preview, 5,907 pages expired, 697 fetched and proven (597 that had held a takedown), 152 boards, 110 retired pages answering 404; 0 failures; 39.7 minutes | 185 MB, including a 20-minute tail |
 | Takedown catch-up `8f2c3213` | 70,000 on-page comments checked, 3,227 deleted and 230 edited on Reddit since 25 August, 6,173 rows purged; stopped by the switch to yield the shared Reddit app to another session (the stop worked as designed: it purged what it had found and published nothing) | 70 MB during the run |
+| Takedown catch-up `df78760d`, after the other session's Reddit job ended | 196,548 comments checked (every one on a page, then the longest-unchecked), 7,274 deleted and 978 edited on Reddit, 20,097 rows purged; 5,801 pages refreshed and scored; 2,618 pages that had held a takedown expired, fetched and proven; 152 boards; 106 retired pages answering 404. Marked "failed" by a publisher bug (its 100-page sample came from pages left for later, over the cap), fixed the same hour | 559 MB, including a 20-minute tail: almost all of it the 2,618 page fetches, a one-time catch-up |
+
+By the end of 3 October, 12,275 comments found deleted (11,065) or edited (1,210) on Reddit since 25 August were
+purged, and every page that had shown one was fetched afterwards and seen without it (on the preview; production
+serves its 22 September build until go-live, when it renders from the purged data).
 
 What the pilot taught, and what changed because of it:
 
