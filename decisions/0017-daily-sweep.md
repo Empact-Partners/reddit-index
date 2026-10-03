@@ -10,7 +10,8 @@
 redditindex.com is refreshed by one job a day, `worker/run_daily.py`, at 00:00 UTC, on its own Railway service.
 The site reads small precomputed rows and changes a page only when that page's data changed; data never
 rebuilds the site. Every stage is bounded by a cap declared in `ops/schedule.json`, and Vlad is messaged only when
-a run fails or stops at a cap. Stopping it is one command: `python3 ops/ri.py stop "reason"`.
+a run fails or stops at a real limit (the egress cap, an abnormal flood of mentions, the purge brake, an unproven
+takedown). A stage that uses up its planned nightly allowance ends normally and records it. Stopping it is one command: `python3 ops/ri.py stop "reason"`.
 
 Vlad, 2026-10-02: "Reddit index must go live and start refreshing itself, but you're supposed to fix all the
 issues and optimize the whole mechanics and the whole mechanism behind it."

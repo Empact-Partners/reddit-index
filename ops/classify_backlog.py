@@ -149,7 +149,8 @@ def main() -> int:
            "glm_in_flight": BUDGET["glm_in_flight"], "glm_model": cs.GLM_DEFAULT}
     try:
         rec = cs.run(conn, cfg, deadline, should_stop, log)
-        status = "capped" if rec.get("stopped") and "time" not in rec["stopped"] else "ok"
+        why = rec.get("stopped") or rec.get("allowance_used") or ""
+        status = "capped" if why and "time" not in why else "ok"
     except Exception as e:  # noqa: BLE001
         rec = {"error": f"{type(e).__name__}: {str(e)[:300]}"}
         status = "failed"

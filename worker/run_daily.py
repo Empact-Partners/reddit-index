@@ -21,8 +21,10 @@ from a pointer this script keeps:
 Caps (ops/schedule.json): Reddit calls, new mentions, wall time, estimated database egress. At a cap a stage
 stops clean, the run finishes the cheap stages that follow (refresh, score, receipt), and says so.
 
-Vlad gets ONE Slack DM, and only when a run failed, hit a cap, braked a purge, or found a takedown it could
-not prove. Never a daily report.
+Vlad gets ONE Slack DM, and only when a run failed, hit a real limit (the egress cap, an abnormal flood of new
+mentions), braked a purge, or found a takedown it could not prove. Never a daily report: a stage that simply used
+its planned nightly allowance (collection's Reddit calls, classification's credits) ends normally and says so on
+the receipt.
 
   worker/run_daily.py                 # what the schedule runs
   worker/run_daily.py --manual        # outside the window (a pilot, a catch-up)
@@ -156,6 +158,8 @@ def stage(run: Run, name: str, fn) -> None:
     run.receipt["stages"][name] = out
     if out.get("stopped"):
         run.receipt["caps_hit"].append(f"{name}: {out['stopped']}")
+    if out.get("allowance_used"):   # a planned nightly allowance ran out: recorded, not an alert (Vlad gets no
+        run.receipt.setdefault("allowances_used", []).append(f"{name}: {out['allowance_used']}")   # daily message)
     log(f"{name}: done in {out['minutes']} min")
 
 

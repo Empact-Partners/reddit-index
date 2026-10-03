@@ -42,6 +42,13 @@ class Stop(Exception):
     """A cap or a stop switch: end the stage cleanly, keep everything committed so far."""
 
 
+class Allowance(Stop):
+    """The night's planned allowance is used (Reddit calls, or the time set aside for collection). This is how a
+    normal night ends: collection rotates through the subreddits, core first, and the rest wait their turn. It is
+    recorded on the receipt and it is NOT an alert. A real limit (the egress cap, an abnormal flood of new
+    mentions, the stop switch) raises Stop and is."""
+
+
 def plan(conn, today: dt.datetime) -> tuple[list[str], dict, set, int]:
     mapping = d.load_scoring_map()
     core = set(d.load_scoring_map(core_only=True))
@@ -71,7 +78,7 @@ def run(conn, caps: dict, deadline: float, should_stop=lambda: None, log=print, 
     subs, mapping, core, quiet = plan(conn, now)
     rec = {"subs_planned": len(subs) + quiet, "subs_skipped_quiet": quiet, "subs_visited": 0, "threads_new": 0,
            "mentions_new": 0, "mentions_rejected": 0, "trees_fetched": 0, "trees_failed": 0,
-           "capped_listings": 0, "errors": 0, "reddit_calls": 0, "stopped": None}
+           "capped_listings": 0, "errors": 0, "reddit_calls": 0, "stopped": None, "allowance_used": None}
 
     brands = d.load_brands()
     alias_re = d.build_alias_re([b for bs in brands.values() for b in bs])
@@ -82,11 +89,11 @@ def run(conn, caps: dict, deadline: float, should_stop=lambda: None, log=print, 
     def check(where: str) -> None:
         used = rc.stats()["calls"] - calls0
         if used >= caps["reddit_calls"]:
-            raise Stop(f"Reddit call cap ({caps['reddit_calls']}) reached {where}")
+            raise Allowance(f"the night's {caps['reddit_calls']} Reddit calls were used {where}")
         if rec["mentions_new"] >= caps["mentions"]:
             raise Stop(f"new-mention cap ({caps['mentions']}) reached {where}")
         if time.time() > deadline:
-            raise Stop(f"time window ended {where}")
+            raise Allowance(f"the time set aside for collection ended {where}")
 
     log(f"  collect: {len(subs)} subreddits to visit ({quiet} quiet ones skipped today), "
         f"{len(core & set(subs))} core")
@@ -172,6 +179,9 @@ def run(conn, caps: dict, deadline: float, should_stop=lambda: None, log=print, 
             if si % 100 == 0:
                 log(f"    {si}/{len(subs)} subreddits, {rec['mentions_new']} new mentions, "
                     f"{rc.stats()['calls'] - calls0} calls, {(time.time() - t0) / 60:.0f} min", flush=True)
+    except Allowance as s:
+        rec["allowance_used"] = str(s)
+        log(f"  collect ended for tonight: {s}")
     except Stop as s:
         rec["stopped"] = str(s)
         log(f"  collect stopped: {s}")

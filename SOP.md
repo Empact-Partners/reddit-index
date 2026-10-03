@@ -21,7 +21,10 @@ declared once, in `ops/schedule.json`. Stages, each resumable from what the data
 | 7 | receipt | one row in `public.pipeline_runs` (stage `sweep`) with every count; the site's "Data refreshed" date | |
 
 Whole run: 50 Reddit calls a minute, 5.5 hours, stops at 0.8 GB of estimated database egress. Vlad gets **one Slack
-DM only when a run fails, hits a cap, brakes a purge, or cannot prove a takedown**. Never a daily report.
+DM only when a run fails, hits a real limit (the egress cap, an abnormal flood of new mentions), brakes a purge, or
+cannot prove a takedown**. Never a daily report. Using up a planned nightly allowance is how a normal night ends
+(collection rotates through the subreddits inside its Reddit calls; classification works through the backlog
+inside its credits): it is written on the receipt as `allowances_used` and alerts nobody.
 
 ## Look
 

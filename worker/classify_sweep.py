@@ -339,7 +339,10 @@ def run(conn, cfg: dict, deadline: float, should_stop=lambda: None, log=print) -
         raise RuntimeError(f"thresholds were measured on {t.get('model')}, not {JEV_MODEL}: recalibrate")
     model = cfg.get("glm_model", GLM_DEFAULT)
     rec = {"queued": 0, "jev_decided": 0, "glm_decided": 0, "labelled": 0, "rejected": 0, "not_checked": 0,
-           "jev_usd": 0.0, "glm_credits": 0.0, "glm_model": model, "read_bytes": 0, "stopped": None}
+           "jev_usd": 0.0, "glm_credits": 0.0, "glm_model": model, "read_bytes": 0, "stopped": None,
+           # allowance_used: the planned nightly allowance (credits, dollars, time) ran out with mentions still
+           # queued. A normal end while there is a backlog; on the receipt, never an alert. stopped: a real limit.
+           "allowance_used": None}
     read0 = READ_BYTES
     last_batch = {"glm": 0.0, "jev": 0.0}
     rec["queued"] = conn.execute("select count(*) from public.classify_queue").fetchone()[0]
@@ -347,21 +350,21 @@ def run(conn, cfg: dict, deadline: float, should_stop=lambda: None, log=print) -
     taken = 0
     while taken < limit:
         if time.time() > deadline:
-            rec["stopped"] = "time window ended"
+            rec["allowance_used"] = "the time set aside for classification ended"
             break
         reason = should_stop()
         if reason:
             rec["stopped"] = reason
             break
         if cfg.get("glm", True) and glm_peak_now():
-            rec["stopped"] = "Z.ai peak hours (06:00-10:00 UTC): stopped rather than leave GLM's share unjudged"
+            rec["allowance_used"] = "Z.ai peak hours (06:00-10:00 UTC): ended rather than leave GLM's share unjudged"
             break
         # the caps are checked BEFORE a batch is spent, on what the last batch cost
         if rec["glm_credits"] + last_batch["glm"] > float(cfg.get("glm_credits_max", 3000)):
-            rec["stopped"] = f"GLM credit cap ({cfg.get('glm_credits_max')}) would be passed by the next batch"
+            rec["allowance_used"] = f"tonight's GLM allowance ({cfg.get('glm_credits_max')} credits) is used"
             break
         if rec["jev_usd"] + last_batch["jev"] > float(cfg.get("jev_usd_max", 1.0)):
-            rec["stopped"] = f"Jev spend cap (${cfg.get('jev_usd_max')}) would be passed by the next batch"
+            rec["allowance_used"] = f"tonight's Jev allowance (${cfg.get('jev_usd_max')}) is used"
             break
         # newest first: what arrived since the last run, then the backlog from its newest mention down
         keys = conn.execute("select brand_id, doc_id, created_utc from public.classify_queue "
@@ -406,10 +409,10 @@ def run(conn, cfg: dict, deadline: float, should_stop=lambda: None, log=print) -
         log(f"    classify: {taken} taken, {rec['labelled']} labelled, {rec['rejected']} not this product, "
             f"{rec['not_checked']} not checked; Jev ${rec['jev_usd']:.3f}, GLM {rec['glm_credits']:.0f} credits", flush=True)
         if rec["jev_usd"] > float(cfg.get("jev_usd_max", 1.0)):
-            rec["stopped"] = f"Jev spend cap (${cfg.get('jev_usd_max')}) reached"
+            rec["allowance_used"] = f"tonight's Jev allowance (${cfg.get('jev_usd_max')}) is used"
             break
         if rec["glm_credits"] > float(cfg.get("glm_credits_max", 3000)):
-            rec["stopped"] = f"GLM credit cap ({cfg.get('glm_credits_max')}) reached"
+            rec["allowance_used"] = f"tonight's GLM allowance ({cfg.get('glm_credits_max')} credits) is used"
             break
     rec["jev_usd"] = round(rec["jev_usd"], 4)
     rec["glm_credits"] = round(rec["glm_credits"], 1)
