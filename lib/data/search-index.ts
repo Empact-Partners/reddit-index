@@ -1,16 +1,16 @@
-import type { Snapshot } from "@/lib/data/types";
+import type { IndexRow } from "@/lib/data/types";
 import { CATEGORY_BY_SLUG, type CategorySlug } from "@/lib/generated/categories";
 
 /**
  * The searchable list of every company that HAS a page.
  *
- * Built from the same predicate as the route registry (a company with at
- * least one mention or score), so search can never offer a result that 404s.
+ * Built from the same rows as the route registry (site.brand_stats: a company with at
+ * least one mention), so search can never offer a result that 404s.
  *
  * This is deliberately NOT the board data. The boards cap each scope at
  * LIST_CAP=200 rows, which is why only a few hundred of the ~3,000 ranked
  * companies were reachable by browsing at all — search is the only surface
- * that sees the whole index, so it is built from the snapshot directly.
+ * that sees the whole index, so it is built from every index row.
  *
  * Kept to three short fields because it ships to the client on every page:
  * ~3,000 entries at roughly 45 bytes each, which gzips to a few tens of KB.
@@ -28,19 +28,17 @@ export type SearchEntry = {
   v: number | null;
 };
 
-export function buildSearchIndex(snap: Snapshot): SearchEntry[] {
+export function buildSearchIndex(rows: IndexRow[]): SearchEntry[] {
   const out: SearchEntry[] = [];
-  for (const co of snap.companies.values()) {
-    if (co.totalMentions <= 0 && co.scores.length === 0) continue;
-    const cat = co.primaryCategorySlug
-      ? CATEGORY_BY_SLUG[co.primaryCategorySlug as CategorySlug]?.name ?? ""
-      : "";
-    // One number everywhere (decisions/0011): search shows exactly what the
-    // company page and the category board show.
-    out.push({ s: co.slug, n: co.name, c: cat, v: co.pageScore });
+  // Every row IS a page: site.brand_stats holds a company only while it has at least one mention.
+  for (const r of rows) {
+    const cat = r.categorySlug ? CATEGORY_BY_SLUG[r.categorySlug as CategorySlug]?.name ?? "" : "";
+    // One number everywhere (decisions/0011): search shows exactly what the company page and the
+    // category board show.
+    out.push({ s: r.slug, n: r.name, c: cat, v: r.score });
   }
-  // Stable, alphabetical: the order is the tie-break when scores are equal,
-  // and a deterministic index keeps the built HTML byte-identical run to run.
+  // Stable, alphabetical: the order is the tie-break when scores are equal, and a deterministic index
+  // keeps the built HTML byte-identical run to run.
   out.sort((a, b) => a.n.localeCompare(b.n) || a.s.localeCompare(b.s));
   return out;
 }
