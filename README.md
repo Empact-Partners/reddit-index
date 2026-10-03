@@ -2,16 +2,17 @@
 
 **Live: [redditindex.com](https://redditindex.com)** (noindex while provisional).
 
-## STATUS (kept current; last edit 2026-10-02 21:00 UTC)
+## STATUS (kept current; last edit 2026-10-03 00:45 UTC)
 
 | | |
 |---|---|
-| **Live?** | The site is up and serves its **2026-09-22** build. It is **not refreshing**. |
-| **Collecting?** | No, as of 2026-10-02 20:47 UTC. Proof is pending: the freeze counts as real after two nights with zero new rows (3 and 4 Oct). |
+| **Live?** | The site is up and serves its **2026-09-22** build. It is **not refreshing** yet. |
+| **Collecting?** | No, since 2026-10-02 20:47 UTC. Proof: zero rows written outside a receipt since then (`scripts/schedule_check.py`, 3 Oct 00:40). The freeze counts as real after two clean nights (3 and 4 Oct). |
 | **Last data in the database** | 2026-10-02 07:43 UTC (the old collector's last run). |
-| **Last sentiment labels and scores** | 2026-08-25. 959,245 of 1,437,879 mentions have no label. |
-| **What is happening** | Relaunch in progress under Vlad's ruling of 2026-10-02: investigate, fix cost and storage, daily sweep, go live behind measured gates. Plan and gates: decision 0017 (to be written at go-live). |
-| **How to stop everything** | It is stopped. The old collector cannot reach the database (password rotated) and its Railway service runs a do-nothing image. |
+| **Labels** | Classification restarted 3 Oct 00:23 UTC (Jev, then GLM-5.3; budgets in `docs/classify-backlog.md`). 171,263 mentions that were only a link to a parent company's web address were recorded as "not this product". About 769,000 mentions still wait for a label. |
+| **The new daily sweep** | Deployed to its own Railway service (`reddit-index-sweep`, 00:00 UTC daily, Virginia) and **switched off**. Its first scheduled firing (3 Oct 00:01) proved the schedule and found a permissions gap, fixed the same night. |
+| **What is happening** | Relaunch under Vlad's ruling of 2026-10-02: investigate (done, `docs/investigation-2026-10.md`), fix cost and storage, daily sweep, go live behind measured gates. Decision 0017 is written at go-live. |
+| **How to stop everything** | `python3 ops/ri.py stop "reason"` turns the sweep off and its database login off. The old collector cannot reach the database and runs a do-nothing image. |
 
 > **Still frozen until decision 0017 is recorded** ([decisions/0016](decisions/0016-frozen.md)). Do not run
 > `worker/update.sh`, deploy the old `Dockerfile` to Railway, or clear Vercel's Ignored Build Step.
