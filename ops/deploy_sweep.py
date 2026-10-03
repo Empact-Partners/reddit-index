@@ -101,6 +101,8 @@ def variables() -> dict:
         "SLACK_BOT_TOKEN": tokens.slack_bot_token("empact"),
         "REVALIDATE_SECRET": c["revalidate_secret"],
         "VERCEL_BYPASS": c["vercel_bypass"],      # only used against *.vercel.app (the trial runs' preview)
+        # 1.2 s between Reddit calls = 50 a minute, the declared pace (the shared app drew 429s above ~54)
+        "RI_SLEEP": str(json.load(open(os.path.join(ROOT, "ops", "schedule.json")))["reddit_pace_seconds"]),
     }
     missing = [k for k, x in v.items() if not x]
     if missing:

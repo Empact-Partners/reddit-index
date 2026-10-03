@@ -29,5 +29,7 @@
   "glm_credits_max": 3000,
   "glm_in_flight": 8
  },
- "site_url_note": "The trial runs before go-live publish to the read-path preview (protected; the sweep sends the bypass header). At go-live, decision 0017, this becomes https://redditindex.com."
+ "site_url_note": "The trial runs before go-live publish to the read-path preview (protected; the sweep sends the bypass header). At go-live, decision 0017, this becomes https://redditindex.com.",
+ "reserve_minutes_after_collect": 60,
+ "reddit_pace_seconds": 1.2
 }

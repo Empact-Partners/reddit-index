@@ -26,7 +26,7 @@ not prove. Never a daily report.
 
   worker/run_daily.py                 # what the schedule runs
   worker/run_daily.py --manual        # outside the window (a pilot, a catch-up)
-  worker/run_daily.py --stages takedowns,collect --max-calls 300 --manual   # a small pilot
+  worker/run_daily.py --manual --max-calls 300 --takedown-calls 200 --classify-items 2000   # a small pilot
   worker/run_daily.py --no-dm         # never message anyone (tests)
 """
 from __future__ import annotations
@@ -76,6 +76,10 @@ class Run:
         caps = dict(sched["caps"])
         if args.max_calls is not None:
             caps["reddit_calls"] = args.max_calls
+        if args.takedown_calls is not None:
+            caps["takedown_calls"] = args.takedown_calls
+        if args.max_mentions is not None:
+            caps["mentions"] = args.max_mentions
         self.caps = caps
         self.deadline = self.started + caps["minutes"] * 60
         self.receipt: dict = {"run_id": self.run_id, "code_version": CODE_VERSION, "manual": bool(args.manual),
@@ -193,6 +197,9 @@ def main() -> int:
     ap.add_argument("--stages", default=",".join(STAGES))
     ap.add_argument("--max-calls", type=int, default=None)
     ap.add_argument("--no-dm", action="store_true")
+    ap.add_argument("--takedown-calls", type=int, default=None, help="pilot: cap the takedown stage's Reddit calls")
+    ap.add_argument("--max-mentions", type=int, default=None, help="pilot: cap new mentions")
+    ap.add_argument("--classify-items", type=int, default=None, help="pilot: cap mentions classified")
     args = ap.parse_args()
     args.stages = [s.strip() for s in args.stages.split(",") if s.strip()]
     sched = load_schedule()
@@ -235,15 +242,21 @@ def main() -> int:
         import collect
         import reddit_client as rc
         left = run.caps["reddit_calls"] - rc.stats()["calls"]
+        # Collection ends an hour before the run's deadline: classification, refresh, score and publish need
+        # that hour, and a collection that used the whole window would leave the day's mentions unlabelled.
         return collect.run(conn, {"reddit_calls": max(0, left), "mentions": run.caps["mentions"]},
-                           run.deadline, run.stop_reason, log)
+                           run.deadline - sched.get("reserve_minutes_after_collect", 60) * 60, run.stop_reason, log)
     stage(run, "collect", collect_stage)
 
     def classify_stage():
         if not sched.get("classify", {}).get("enabled"):
             return {"skipped": "the classifier is not enabled yet; new mentions stay unlabelled and are counted"}
         import classify_sweep
-        return classify_sweep.run(conn, sched["classify"], run.deadline, run.stop_reason, log)
+        cfg = dict(sched["classify"])
+        if args.classify_items is not None:
+            cfg["max_items"] = args.classify_items
+        # and classification leaves 20 minutes for refresh, score and publish
+        return classify_sweep.run(conn, cfg, run.deadline - 20 * 60, run.stop_reason, log)
     stage(run, "classify", classify_stage)
 
     def refresh_stage():
