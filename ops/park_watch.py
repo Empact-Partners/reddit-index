@@ -147,7 +147,8 @@ def check(since: str, remove: bool) -> dict:
              " (select max(loaded_at) from public.mentions) as last_mention_write") % {"s": since})
         res["writes"] = rows[0]
         if any(int(rows[0][k] or 0) > 0 for k in ("mentions", "threads", "receipts")):
-            res["status"] = "writes" if res["status"] == "ok" else res["status"]
+            # writes outrank an unread Railway; only a resurrection outranks writes
+            res["status"] = "resurrected" if res["status"] == "resurrected" else "writes"
             res["notes"].append("rows were written after the park time")
     except Exception as exc:  # noqa: BLE001
         res["status"] = "not_checked" if res["status"] == "ok" else res["status"]
@@ -224,12 +225,18 @@ def main() -> int:
     ap.add_argument("--remove", action="store_true", help="remove a resurrected collector deployment")
     ap.add_argument("--dm", action="store_true", help="DM Vlad when a check is not clean")
     a = ap.parse_args()
+    # a real timestamp, normalised, before it goes anywhere near SQL or a comparison
+    a.since = dt.datetime.fromisoformat(a.since.replace("Z", "+00:00")).astimezone(dt.timezone.utc) \
+        .strftime("%Y-%m-%dT%H:%M:%SZ")
 
     if not a.at:
         res = check(a.since, a.remove)
         print(json.dumps(res, indent=1, default=str))
         if res["status"] != "ok" and a.dm:
-            dm(res)
+            try:
+                dm(res)
+            except Exception as exc:  # noqa: BLE001 - a failed DM is reported, the exit code still says not clean
+                print(f"could not send the DM: {exc}", file=sys.stderr)
         return 0 if res["status"] == "ok" else 2
 
     os.makedirs(os.path.dirname(LOG), exist_ok=True)
