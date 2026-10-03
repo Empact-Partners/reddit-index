@@ -676,5 +676,8 @@ def main():
     return 0
 
 
+RETIRED = 'classify_api.py is retired (2026-10-03): DeepSeek is retired. The classifier is worker/classify_sweep.py (the sweep runs it daily; ops/classify_backlog.py for the backlog).'
+
 if __name__ == "__main__":
+    sys.exit(RETIRED)
     sys.exit(main())
