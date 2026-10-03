@@ -268,7 +268,8 @@ def main() -> int:
         # Collection ends an hour before the run's deadline: classification, refresh, score and publish need
         # that hour, and a collection that used the whole window would leave the day's mentions unlabelled.
         return collect.run(conn, {"reddit_calls": max(0, left), "mentions": run.caps["mentions"]},
-                           run.deadline - sched.get("reserve_minutes_after_collect", 60) * 60, run.stop_reason, log)
+                           run.deadline - sched.get("reserve_minutes_after_collect", 60) * 60, run.stop_reason, log,
+                           run_id=run.run_id)
     stage(run, "collect", collect_stage)
 
     def classify_stage():

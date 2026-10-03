@@ -76,20 +76,24 @@ def database(sched: dict, since: str) -> tuple[list[str], dict]:
     with db.connect() as conn:
         conn.autocommit = True
         conn.execute("set statement_timeout = '10min'")
-        # a receipt still 'running' is open-ended: its job is writing now
+        # A receipt still 'running' covers its job's writes for at most 8 hours (a crashed run must not hide later
+        # writes forever). Mentions are matched to their run by run_id from 3 Oct 09:00 UTC on (the sweep stamps its
+        # receipt id on every mention it writes): a write inside a sweep's time window by anything else is caught.
+        until = ("coalesce(case when r.status = 'running' then least(now(), r.started_at + interval '8 hours') "
+                 "else r.finished_at end, now())")
         cover = ("not exists (select 1 from public.pipeline_runs r where r.stage in ('sweep', 'repair') and {col} between "
-                 "r.started_at - interval '2 minutes' and coalesce(case when r.status = 'running' then null "
-                 "else r.finished_at end, now()) + interval '2 minutes')")
-        # labels are also written by the backlog classifier and retention, each under its own receipt stage
+                 "r.started_at - interval '2 minutes' and " + until + " + interval '2 minutes')")
+        cover_mentions = ("not exists (select 1 from public.pipeline_runs r where r.run_id = t.run_id) and "
+                          "(t.loaded_at >= '2026-10-03T09:00:00Z' or " + cover.format(col="t.loaded_at") + ")")
         cover_any = ("not exists (select 1 from public.pipeline_runs r where r.stage in ('sweep', "
                      "'classify-backlog', 'retention', 'repair') and {col} between r.started_at - interval '2 minutes' "
-                     "and coalesce(case when r.status = 'running' then null else r.finished_at end, now()) "
-                     "+ interval '2 minutes')")
-        for table, col, rule in (("public.mentions", "loaded_at", cover), ("public.threads", "first_seen_at", cover),
+                     "and " + until + " + interval '2 minutes')")
+        for table, col, rule in (("public.mentions", "loaded_at", cover_mentions), ("public.threads", "first_seen_at", cover),
                                  ("public.mention_sentiment", "scored_at", cover_any),
                                  ("public.mention_rejections", "rejected_at", cover_any)):
             n = conn.execute(f"select count(*), min({col}), max({col}) from {table} t "
-                             f"where {col} > %s and " + rule.format(col=f"t.{col}"), (since,)).fetchone()
+                             f"where {col} > %s and " + (rule if "{col}" not in rule else rule.format(col=f"t.{col}")),
+                             (since,)).fetchone()
             facts[f"{table} written outside any sweep"] = n[0]
             if n[0]:
                 out.append(f"{n[0]:,} rows of {table} were written between {n[1]:%d %b %H:%M} and {n[2]:%d %b %H:%M} "

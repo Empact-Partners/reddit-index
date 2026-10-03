@@ -61,8 +61,10 @@ def plan(conn, today: dt.datetime) -> tuple[list[str], dict, set, int]:
     return subs, mapping, core, quiet
 
 
-def run(conn, caps: dict, deadline: float, should_stop=lambda: None, log=print) -> dict:
-    """caps: reddit_calls, mentions. should_stop(): returns a reason string to stop, or None."""
+def run(conn, caps: dict, deadline: float, should_stop=lambda: None, log=print, run_id: str | None = None) -> dict:
+    """caps: reddit_calls, mentions. should_stop(): returns a reason string to stop, or None. run_id: the sweep's
+    receipt id, stamped on every mention this stage writes, so a mention can be traced to the run that wrote it
+    (scripts/schedule_check.py matches them to receipts by it)."""
     t0 = time.time()
     calls0 = rc.stats()["calls"]
     now = dt.datetime.now(dt.timezone.utc)
@@ -75,7 +77,7 @@ def run(conn, caps: dict, deadline: float, should_stop=lambda: None, log=print) 
     alias_re = d.build_alias_re([b for bs in brands.values() for b in bs])
     resolver = d.Resolver()
     sub_ids = {name.lower(): sid for name, sid in conn.execute("SELECT name, id FROM subreddits").fetchall()}
-    run_id = d.RUN_ID
+    run_id = run_id or d.RUN_ID
 
     def check(where: str) -> None:
         used = rc.stats()["calls"] - calls0
