@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { NON_AFFILIATION } from "@/lib/legal";
 import { getMethodologyParams } from "@/lib/data/methodology";
 import { METHODOLOGY_VERSION } from "@/lib/format";
 
@@ -60,9 +59,10 @@ export default async function Methodology() {
         <code>{commit.slice(0, 12)}</code>. Version 1 was frozen before the
         first collection run. Version 2 corrected a mis-specified prior;
         version 2.2 changed the published number from the posterior mean to a
-        posterior lower bound. Each change, the reason for it, and the numbers
-        that forced it are documented below, because a method quietly edited
-        after the fact is not a method.
+        posterior lower bound; version 2.3 stopped counting mentions that turn
+        out not to be about the company at all. Each change, the reason for it,
+        and the numbers that forced it are documented below, because a method
+        quietly edited after the fact is not a method.
       </p>
 
       <Section title="What is measured">
@@ -73,6 +73,22 @@ export default async function Methodology() {
           positive, negative, neutral or unclassifiable about <em>that</em>{" "}
           company, and counted once. A comment naming three products produces
           three observations with three separate verdicts.
+        </p>
+        <p>
+          A mention judged not to be about the company at all is not counted:
+          &ldquo;snow&rdquo; in a ski thread is not ServiceNow, and a link to
+          github.com is not a mention of GitHub Actions. Until version 2.3 such
+          mentions were counted as neutral. A link counts as a mention of a
+          product only when its address names the whole product
+          (sheets.google.com does, google.com does not); that rule alone set
+          aside 171,263 stored mentions in October 2026.
+        </p>
+        <p>
+          The verdicts come from two judges reading the same rules. A fast
+          scoring model settles the mentions it is sure of; a language model
+          reads the rest. The first model&apos;s thresholds were set so that its
+          verdicts match the language model&apos;s about 96 times in 100, checked
+          on mentions it had not seen.
         </p>
         <p>
           A brand named in a post body and a brand named in a comment count
@@ -245,8 +261,10 @@ Reddit Love Score = round(100 · Q₀.₁₀(posterior))`}</Pre>
 
       <Section title="Corrections">
         <p>
-          A comment deleted on Reddit disappears from here on the next nightly
-          sync. Corrections and removals are free and unconditional.
+          Every comment shown on this site is checked against Reddit every day.
+          One that was deleted, removed or edited there is taken off the next
+          time the index updates, and its page is checked afterwards to prove it
+          is gone. Corrections and removals are free and unconditional.
         </p>
       </Section>
 
@@ -283,10 +301,7 @@ Reddit Love Score = round(100 · Q₀.₁₀(posterior))`}</Pre>
         </div>
       </Section>
 
-      <p className="mt-[var(--section)]" style={{ fontSize: "var(--fs-small)" }}>
-        {NON_AFFILIATION}
-      </p>
-      <p className="mt-6 pb-12" style={{ fontSize: "var(--fs-small)" }}>
+      <p className="mt-[var(--section)] pb-12" style={{ fontSize: "var(--fs-small)" }}>
         <Link href="/" className="underline underline-offset-4">Back to the index</Link>
         {" · "}Created by{" "}
         <a href="https://empact.partners" rel="noopener" className="underline underline-offset-4">
