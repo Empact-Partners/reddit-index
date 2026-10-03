@@ -182,8 +182,11 @@ def run(conn, base: str, dry_run: bool = False, verify_n: int = 100, max_expire:
 
     takedown = [r for r in rows if r[3]]
     others = [r for r in rows if not r[3]]
-    todo = takedown + others[:max(0, max_expire - len(takedown))]
-    to_verify = takedown + others[:verify_n]
+    expired_others = others[:max(0, max_expire - len(takedown))]
+    todo = takedown + expired_others
+    # the sample is drawn from the pages expired THIS run: a changed page left for a later run (over the cap) still
+    # serves its old fingerprint, and fetching it proves nothing (3 Oct: 100 such pages read as "failed")
+    to_verify = takedown + expired_others[:verify_n]
     receipt["takedown_pages"] = len(takedown)
     receipt["pages_deferred"] = len(rows) - len(todo)
     log(f"  {len(rows)} company pages changed ({len(takedown)} with a takedown), "
