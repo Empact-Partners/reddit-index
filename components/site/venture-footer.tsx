@@ -1,10 +1,12 @@
+import { NON_AFFILIATION } from "@/lib/legal";
 import { Freshness } from "./freshness";
 
 /**
  * The thin venture bar — mirrored from MarketSplash's footer bottom bar,
  * verbatim copy and the same traced Empact logomark (six offset bars,
  * currentColor, decorative). One line and one link, plus the date the data
- * was last refreshed (the sweep's freshness line, ruling of 2026-10-02).
+ * was last refreshed (the sweep's freshness line, ruling of 2026-10-02), and the
+ * non-affiliation notice 01-legal.md and decision 0001 require on EVERY page.
  */
 export function VentureFooter() {
   return (
@@ -32,6 +34,7 @@ export function VentureFooter() {
           </svg>
         </a>
       </p>
+      <p className="venture-legal">{NON_AFFILIATION}</p>
     </footer>
   );
 }
