@@ -44,9 +44,9 @@ def log(*a):
 def record(conn, run_id: str, t0: float, status: str, notes: dict) -> None:
     conn.execute(
         "insert into public.pipeline_runs (run_id, stage, code_version, started_at, finished_at, status, notes) "
-        "values (%s, 'retention', 'retention-v1', to_timestamp(%s), now(), %s, %s) "
-        "on conflict (run_id) do update set finished_at = now(), status = excluded.status, notes = excluded.notes",
-        (run_id, t0, status, json.dumps(notes, default=str)))
+        "values (%s, 'retention', 'retention-v1', to_timestamp(%s), case when %s = 'running' then null else now() end, %s, %s) "
+        "on conflict (run_id) do update set finished_at = excluded.finished_at, status = excluded.status, notes = excluded.notes",
+        (run_id, t0, status, status, json.dumps(notes, default=str)))
 
 
 def threads(conn) -> dict:

@@ -76,12 +76,15 @@ def database(sched: dict, since: str) -> tuple[list[str], dict]:
     with db.connect() as conn:
         conn.autocommit = True
         conn.execute("set statement_timeout = '10min'")
+        # a receipt still 'running' is open-ended: its job is writing now
         cover = ("not exists (select 1 from public.pipeline_runs r where r.stage in ('sweep', 'repair') and {col} between "
-                 "r.started_at - interval '2 minutes' and coalesce(r.finished_at, now()) + interval '2 minutes')")
+                 "r.started_at - interval '2 minutes' and coalesce(case when r.status = 'running' then null "
+                 "else r.finished_at end, now()) + interval '2 minutes')")
         # labels are also written by the backlog classifier and retention, each under its own receipt stage
         cover_any = ("not exists (select 1 from public.pipeline_runs r where r.stage in ('sweep', "
-                     "'classify-backlog', 'retention') and {col} between r.started_at - interval '2 minutes' "
-                     "and coalesce(r.finished_at, now()) + interval '2 minutes')")
+                     "'classify-backlog', 'retention', 'repair') and {col} between r.started_at - interval '2 minutes' "
+                     "and coalesce(case when r.status = 'running' then null else r.finished_at end, now()) "
+                     "+ interval '2 minutes')")
         for table, col, rule in (("public.mentions", "loaded_at", cover), ("public.threads", "first_seen_at", cover),
                                  ("public.mention_sentiment", "scored_at", cover_any),
                                  ("public.mention_rejections", "rejected_at", cover_any)):

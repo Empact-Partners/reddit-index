@@ -113,9 +113,9 @@ class Run:
         self.receipt["egress_estimate_gb"] = round(self.egress_estimate() / 1e9, 3)
         self.conn.execute(
             "insert into public.pipeline_runs (run_id, stage, code_version, started_at, finished_at, status, notes) "
-            "values (%s, 'sweep', %s, to_timestamp(%s), now(), %s, %s) "
-            "on conflict (run_id) do update set finished_at = now(), status = excluded.status, notes = excluded.notes",
-            (self.run_id, CODE_VERSION, self.started, status, json.dumps(self.receipt, default=str)))
+            "values (%s, 'sweep', %s, to_timestamp(%s), case when %s = 'running' then null else now() end, %s, %s) "
+            "on conflict (run_id) do update set finished_at = excluded.finished_at, status = excluded.status, notes = excluded.notes",
+            (self.run_id, CODE_VERSION, self.started, status, status, json.dumps(self.receipt, default=str)))
 
 
 def in_window(sched: dict) -> bool:

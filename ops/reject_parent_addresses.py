@@ -79,6 +79,12 @@ def main() -> int:
                 print(f"  {i}/{len(pairs)}  {form} as {slug}: {k} rejected, {d} left the queue", flush=True)
     receipt["seconds"] = round(time.time() - t0)
     receipt["dry_run"] = a.dry_run
+    if not a.dry_run:   # a write with a receipt, so scripts/schedule_check.py can tell it from an unknown writer
+        with db.connect() as conn:
+            conn.autocommit = True
+            conn.execute("insert into public.pipeline_runs (run_id, stage, code_version, started_at, finished_at, "
+                         "status, notes) values (gen_random_uuid(), 'repair', 'reject-parent-addresses-v1', "
+                         "to_timestamp(%s), now(), 'ok', %s)", (t0, json.dumps(receipt)))
     print(json.dumps(receipt))
     return 0
 
