@@ -108,8 +108,9 @@ def check(since: str, remove: bool) -> dict:
         newer = [x["id"][:8] for x in deps if x["created"] > since]
         if newer:
             res["notes"].append("deployments created after the park: " + ", ".join(newer))
+        # every live deployment, whenever it was made: only the parked image without a cron may be running
         bad = [x for x in deps
-               if x["created"] > since and x["status"] != "REMOVED"
+               if x["status"] not in ("REMOVED", "FAILED", "CRASHED")
                and (x["cron"] or x["dockerfile"] != "Dockerfile.parked")]
         if bad:
             res["status"] = "resurrected"
@@ -174,13 +175,21 @@ def dm(res: dict) -> None:
     w = res.get("writes") or {}
     link = "<https://github.com/Empact-Partners/reddit-index/pull/5|what was done tonight and why>"
     if res["status"] == "resurrected":
-        head = "*Reddit Index: Railway brought the old collector back again overnight*"
-        body = ("The index is meant to stay frozen until the relaunch is ready. At its usual 02:00 UTC "
-                "slot Railway started the old collector by itself, the same thing that happened last "
-                "night. It could not reach the database, because its password was changed yesterday, "
-                "and the overnight check has already removed it.")
-        you = "Nothing was collected and nothing was spent. The relaunch work continues."
-        todo = "Nothing for you to do."
+        # every sentence below is what this check saw, never what it hoped (review, 2026-10-03)
+        removed = any(n.startswith("removed deployment") for n in res["notes"])
+        failed = any(n.startswith("could NOT remove") for n in res["notes"])
+        wrote = any(int(w.get(k) or 0) > 0 for k in ("mentions", "threads", "receipts"))
+        head = "*Reddit Index: Railway brought the old collector back overnight*"
+        body = ("The index's old collector is meant to stay parked. Railway started it again by itself. "
+                + ("The overnight check removed it again. " if removed else
+                   "The overnight check could not remove it. " if failed else "It is still deployed. ")
+                + (f"It wrote {w.get('mentions')} mentions and {w.get('threads')} threads before it was seen."
+                   if wrote else "No rows from it reached the database, as far as the check could read."
+                   if "writes" in res else "The database could not be read, so whether it wrote anything is unknown."))
+        you = ("Nothing was collected and nothing was spent." if (removed and not wrote and "writes" in res)
+               else "It needs a person to make sure it is off and to look at what it wrote.")
+        todo = ("Nothing for you to do." if (removed and not wrote and "writes" in res)
+                else "Nothing for you to do: the session that runs the index is told the same thing.")
     elif res["status"] == "writes":
         head = "*Reddit Index: something added data overnight while the index should be frozen*"
         body = (f"Since the collector was parked, {w.get('mentions')} new mentions and "
@@ -219,6 +228,8 @@ def main() -> int:
     if not a.at:
         res = check(a.since, a.remove)
         print(json.dumps(res, indent=1, default=str))
+        if res["status"] != "ok" and a.dm:
+            dm(res)
         return 0 if res["status"] == "ok" else 2
 
     os.makedirs(os.path.dirname(LOG), exist_ok=True)

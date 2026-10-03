@@ -7,7 +7,7 @@
 | | |
 |---|---|
 | **Live?** | The site is up and serves its **2026-09-22** build. It is **not refreshing** yet: the new read path runs on a protected preview until the go-live gates pass. |
-| **Old collector** | Parked since 2026-10-02 20:47 UTC. 02:20 UTC check on 3 Oct: clean (it did not come back at its old 02:00 slot). Counts as stopped after the 4 Oct check too. |
+| **Old collector** | Parked since 2026-10-02 20:47 UTC. 02:20 UTC check on 3 Oct: clean (it did not come back at its old 02:00 slot). It counts as proven stopped once the 4 Oct check is clean as well. |
 | **The new daily sweep** | Deployed (`reddit-index-sweep`, 00:00 UTC, Virginia). A pilot run on 3 Oct worked end to end (pages refreshed, scored, proven on the preview; 0 failures) and found one bug, fixed within minutes (22 rows restored). **Switched off** for now: another session is using the shared Reddit app. Planned on: before 00:00 UTC 4 Oct, for two scheduled nights measured against the gates. |
 | **Deleted comments** | About 70,000 of the 140,000 comments shown on pages re-checked against Reddit on 3 Oct: 3,791 deleted and 232 edited there since 25 August, 7,231 rows purged. The rest at the next run. The live site still shows its 22 Sep pages until go-live. |
 | **Labels** | Classification restarted 3 Oct (Jev, then GLM-5.3). 171,263 links to a parent company's web address set aside as "not this product". About 705,000 mentions still wait for a label; the backlog runs inside its declared budget. |
