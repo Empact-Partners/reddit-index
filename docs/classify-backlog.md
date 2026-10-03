@@ -50,8 +50,9 @@ GLM-5.3 judges. On 2,390 mentions it agreed with the old labels 81.5% of the tim
 
 **Jev is calibrated against GLM-5.3's answers**, so a mention Jev settles gets the label GLM-5.3 would have
 given it. Thresholds chosen for 96% agreement on the full set, then checked held out (chosen on one half, scored
-on the other, twenty random splits): Jev settles 36% of mentions on average (never less than 31.5%) at 95.9%
-agreement with GLM-5.3 (88.9% with the old labels, higher than GLM-5.3's own 81.5%). Pinned in
+on the other, twenty random splits, `report.held_out` in the thresholds file): Jev settles 36.5% of mentions on
+average (never less than 32.7%) at 95.6% agreement with GLM-5.3 (never less than 93.6%); on the full set it agrees
+with the old labels 88.9% of the time, more than GLM-5.3's own 81.5%. Pinned in
 `ops/classify_thresholds.json`: product at 0.90 (lets 1 of the 43 hand-checked non-product mentions through),
 positive 0.76, negative 0.81, no opinion 0.77, reject below 0.20 (0.4% of ordinary mentions).
 

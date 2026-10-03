@@ -15,7 +15,7 @@ estate's doctrine (jev-assistant, G19 to G29):
     Codex CLI on its own CODEX_HOME (G13), never at Z.ai's peak hours. GLM-5.3, not Flash: on the same 350
     mentions Flash called half the real opinions "no opinion" (read by hand, 2026-10-02); GLM-5.3 kept them.
   * Jev's thresholds were measured against GLM-5.3's own answers on 2,380 mentions, so a mention Jev settles
-    gets the label GLM-5.3 would have given it about 96% of the time (held out over twenty splits).
+    gets the label GLM-5.3 would have given it 95.6% of the time (held out over twenty splits).
   * What neither judged is `not_checked`: it stays in the queue, is counted on the receipt, and is never
     scored, never written, never cached (G29).
 
