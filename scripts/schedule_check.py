@@ -76,7 +76,7 @@ def database(sched: dict, since: str) -> tuple[list[str], dict]:
     with db.connect() as conn:
         conn.autocommit = True
         conn.execute("set statement_timeout = '10min'")
-        cover = ("not exists (select 1 from public.pipeline_runs r where r.stage = 'sweep' and {col} between "
+        cover = ("not exists (select 1 from public.pipeline_runs r where r.stage in ('sweep', 'repair') and {col} between "
                  "r.started_at - interval '2 minutes' and coalesce(r.finished_at, now()) + interval '2 minutes')")
         # labels are also written by the backlog classifier and retention, each under its own receipt stage
         cover_any = ("not exists (select 1 from public.pipeline_runs r where r.stage in ('sweep', "
