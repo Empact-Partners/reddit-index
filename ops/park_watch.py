@@ -127,7 +127,8 @@ def check(since: str, remove: bool) -> dict:
         # row, stage 'sweep', from its start to its finish). A write outside every receipt is the old collector
         # or something nobody declared; a write inside one is the sweep (scripts/schedule_check.py, same rule).
         outside = ("not exists (select 1 from public.pipeline_runs r where r.stage in ('sweep', 'repair') and %s between "
-                   "r.started_at - interval '2 minutes' and coalesce(r.finished_at, now()) + interval '2 minutes')")
+                   "r.started_at - interval '2 minutes' and coalesce(case when r.status = 'running' then null "
+                   "else r.finished_at end, now()) + interval '2 minutes')")
         rows = _sql(
             ("select (select count(*) from public.mentions m where loaded_at > '%(s)s' and " + outside % "m.loaded_at" + ") as mentions,"
              " (select count(*) from public.threads t where first_seen_at > '%(s)s' and " + outside % "t.first_seen_at" + ") as threads,"
