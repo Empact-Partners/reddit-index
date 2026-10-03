@@ -130,9 +130,17 @@ def stage(run: Run, name: str, fn) -> None:
     if name not in run.args.stages:
         return
     reason = run.stop_reason()
-    if reason and name in ("takedowns", "collect", "classify"):
+    # Stopped by the switch: nothing more runs, refresh and publish included (review, 2026-10-03: a stop used to
+    # be followed by a publish and an "ok" receipt). At the egress cap: the in-database refresh and scoring still
+    # run (they write little and keep the tables consistent); everything that reads or calls out does not.
+    if reason and (not reason.startswith("estimated database egress cap")
+                   or name in ("takedowns", "collect", "classify", "publish")):
         run.receipt["stages"][name] = {"skipped": reason}
-        run.receipt["caps_hit"].append(reason) if "cap" in reason else run.receipt["problems"].append(reason)
+        if reason.startswith("estimated database egress cap"):
+            if reason not in run.receipt["caps_hit"]:
+                run.receipt["caps_hit"].append(reason)
+        else:
+            run.receipt["stopped"] = reason
         log(f"{name}: skipped, {reason}")
         return
     t = time.time()
@@ -217,6 +225,21 @@ def main() -> int:
         log("another sweep or the backlog classifier holds the lock: not running")
         run.receipt["skipped"] = "another job held the sweep lock"
         run.record("skipped")
+        try:
+            on = conn.execute("select enabled from public.sweep_control").fetchone()[0]
+        except Exception:  # noqa: BLE001
+            on = True
+        if on and not args.manual and not args.no_dm:
+            # a night lost: the backlog classifier or a hand run must never overlap the window (SOP)
+            try:
+                dm("*Reddit Index: tonight's update did not run*\n\nAt midnight UTC another job was still holding "
+                   "the index's lock, so the daily update stood aside rather than run beside it. Nothing was "
+                   "collected tonight; tomorrow's run catches up.\n\n*What this means for you*\nOne day of data "
+                   "arrives a day late.\n\n*To do*\nNothing for anyone to do.\n\n*Details for the curious (and "
+                   "for your Claude)*\n<https://github.com/Empact-Partners/reddit-index/blob/main/SOP.md|how the "
+                   "daily update works>")
+            except Exception as e:  # noqa: BLE001
+                log(f"could not send the DM: {e}")
         return 0
     reason = run.stop_reason()
     if reason and not reason.startswith("estimated"):
@@ -233,7 +256,7 @@ def main() -> int:
 
     stage(run, "takedowns", lambda: takedown.run(
         conn, max_calls=run.caps["takedown_calls"], max_gone_share=sched["takedown_brake_share"],
-        deadline=run.deadline, log=log))
+        deadline=run.deadline, log=log, should_stop=run.stop_reason))
     td = run.receipt["stages"].get("takedowns", {})
     if td.get("brake"):
         run.receipt["problems"].append(f"takedown brake: {td.get('gone_share')} of checked documents looked gone")
@@ -297,12 +320,14 @@ def main() -> int:
     stage(run, "publish", publish_stage)
 
     hard = [p for p in run.receipt["problems"] if "failed" in p or "brake" in p]
-    status = "failed" if hard else ("capped" if run.receipt["caps_hit"] else "ok")
-    if status != "failed" and all(s in run.receipt["stages"] for s in ("refresh", "score")):
+    status = ("stopped" if run.receipt.get("stopped") else
+              "failed" if hard else ("capped" if run.receipt["caps_hit"] else "ok"))
+    ran = all("skipped" not in run.receipt["stages"].get(s, {"skipped": 1}) for s in ("refresh", "score"))
+    if status in ("ok", "capped") and ran:
         conn.execute("update site.meta set last_success_at = now(), last_run_id = %s", (run.run_id,))
     run.record(status)
     log(f"run {run.run_id[:8]} {status}: {json.dumps({k: v for k, v in run.receipt.items() if k != 'stages'}, default=str)[:600]}")
-    if not args.no_dm:
+    if not args.no_dm and status != "stopped":   # a stop is someone's decision; they know
         tell_vlad(run)
     return 0 if status != "failed" else 1
 

@@ -10,7 +10,8 @@ alone:
                image with no cron; any other service is a finding.
   2. receipts  one row in public.pipeline_runs (stage 'sweep') for every night since the sweep was switched on,
                started inside the declared window.
-  3. writes    every mention and thread written since --since must fall inside a sweep's own receipt window.
+  3. writes    every mention and thread written since --since must fall inside a sweep's own receipt window,
+               and every label or rejection inside a sweep's, the backlog classifier's or retention's.
                A write outside every receipt is something running that nobody declared.
 
   scripts/schedule_check.py              # print the verdict; exit 1 on any finding
@@ -77,9 +78,15 @@ def database(sched: dict, since: str) -> tuple[list[str], dict]:
         conn.execute("set statement_timeout = '10min'")
         cover = ("not exists (select 1 from public.pipeline_runs r where r.stage = 'sweep' and {col} between "
                  "r.started_at - interval '2 minutes' and coalesce(r.finished_at, now()) + interval '2 minutes')")
-        for table, col in (("public.mentions", "loaded_at"), ("public.threads", "first_seen_at")):
+        # labels are also written by the backlog classifier and retention, each under its own receipt stage
+        cover_any = ("not exists (select 1 from public.pipeline_runs r where r.stage in ('sweep', "
+                     "'classify-backlog', 'retention') and {col} between r.started_at - interval '2 minutes' "
+                     "and coalesce(r.finished_at, now()) + interval '2 minutes')")
+        for table, col, rule in (("public.mentions", "loaded_at", cover), ("public.threads", "first_seen_at", cover),
+                                 ("public.mention_sentiment", "scored_at", cover_any),
+                                 ("public.mention_rejections", "rejected_at", cover_any)):
             n = conn.execute(f"select count(*), min({col}), max({col}) from {table} t "
-                             f"where {col} > %s and " + cover.format(col=f"t.{col}"), (since,)).fetchone()
+                             f"where {col} > %s and " + rule.format(col=f"t.{col}"), (since,)).fetchone()
             facts[f"{table} written outside any sweep"] = n[0]
             if n[0]:
                 out.append(f"{n[0]:,} rows of {table} were written between {n[1]:%d %b %H:%M} and {n[2]:%d %b %H:%M} "
@@ -91,7 +98,8 @@ def database(sched: dict, since: str) -> tuple[list[str], dict]:
                             "order by started_at").fetchall()
         facts["sweep receipts, last 8 days"] = [f"{r[0]:%d %b %H:%M} {r[1]}" for r in rows]
         if on:
-            nights = {r[0].date() for r in rows}
+            # a night counts only if a run did work: a "skipped" receipt (switch off, lock held) is a lost night
+            nights = {r[0].date() for r in rows if r[1] in ("ok", "capped", "failed")}
             day = max(since_on.date(), (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=7)).date())
             today = dt.datetime.now(dt.timezone.utc)
             while day <= today.date():

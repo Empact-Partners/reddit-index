@@ -84,7 +84,16 @@ def rejected(conn) -> dict:
                where m.brand_id = d.brand_id and m.doc_id = d.doc_id and m.created_utc = d.created_utc
               returning m.*)
             insert into archive.mentions select moved.*, now() from moved""").rowcount
-    return {"rejected_rows_archived_and_removed": n, "their_labels_archived": sent, "text_given_back": rehomed}
+        # bookkeeping that pointed at the removed rows (review, 2026-10-03): a probe row for a document with no
+        # mention left would wedge the takedown slow lap; a queue row would be re-selected forever
+        conn.execute("delete from public.classify_queue q where not exists (select 1 from public.mentions m "
+                     "where m.brand_id = q.brand_id and m.doc_id = q.doc_id and m.created_utc = q.created_utc) "
+                     "and q.doc_id in (select doc_id from archive.mentions where archived_at > now() - interval '1 hour')")
+        probes = conn.execute("delete from public.doc_probe p where not exists (select 1 from public.mentions m "
+                              "where m.doc_id = p.doc_id) and p.doc_id in (select doc_id from archive.mentions "
+                              "where archived_at > now() - interval '1 hour')").rowcount
+    return {"rejected_rows_archived_and_removed": n, "their_labels_archived": sent, "text_given_back": rehomed,
+            "probe_rows_removed": probes}
 
 
 def checksum(conn, part: str) -> tuple[int, str]:

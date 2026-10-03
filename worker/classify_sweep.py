@@ -219,8 +219,10 @@ def _glm_answer(r) -> tuple | None:
         conf = 0.0
     if r.get("entity_ok") is False or str(r.get("entity_ok")).lower() == "false":
         return ("reject", conf)
-    lab = str(r.get("label", "abstain")).lower()
-    return (lab if lab in LABEL_CODE else "abstain", conf)
+    lab = str(r.get("label") or "").lower()
+    if lab not in LABEL_CODE:      # no label, or one the rubric does not have: not answered, stays queued
+        return None
+    return (lab, conf)
 
 
 def _glm_env() -> dict:
@@ -339,6 +341,7 @@ def run(conn, cfg: dict, deadline: float, should_stop=lambda: None, log=print) -
     rec = {"queued": 0, "jev_decided": 0, "glm_decided": 0, "labelled": 0, "rejected": 0, "not_checked": 0,
            "jev_usd": 0.0, "glm_credits": 0.0, "glm_model": model, "read_bytes": 0, "stopped": None}
     read0 = READ_BYTES
+    last_batch = {"glm": 0.0, "jev": 0.0}
     rec["queued"] = conn.execute("select count(*) from public.classify_queue").fetchone()[0]
     limit = int(cfg.get("max_items", 60000))
     taken = 0
@@ -353,6 +356,13 @@ def run(conn, cfg: dict, deadline: float, should_stop=lambda: None, log=print) -
         if cfg.get("glm", True) and glm_peak_now():
             rec["stopped"] = "Z.ai peak hours (06:00-10:00 UTC): stopped rather than leave GLM's share unjudged"
             break
+        # the caps are checked BEFORE a batch is spent, on what the last batch cost
+        if rec["glm_credits"] + last_batch["glm"] > float(cfg.get("glm_credits_max", 3000)):
+            rec["stopped"] = f"GLM credit cap ({cfg.get('glm_credits_max')}) would be passed by the next batch"
+            break
+        if rec["jev_usd"] + last_batch["jev"] > float(cfg.get("jev_usd_max", 1.0)):
+            rec["stopped"] = f"Jev spend cap (${cfg.get('jev_usd_max')}) would be passed by the next batch"
+            break
         # newest first: what arrived since the last run, then the backlog from its newest mention down
         keys = conn.execute("select brand_id, doc_id, created_utc from public.classify_queue "
                             "where attempts < 5 order by enqueued_at desc, created_utc desc limit %s",
@@ -361,8 +371,20 @@ def run(conn, cfg: dict, deadline: float, should_stop=lambda: None, log=print) -
             break
         taken += len(keys)
         items = fetch_items(conn, keys)
+        # A queued key whose mention row is gone (purged, or retention removed it) can never be judged; left in
+        # the queue it was selected again every batch, forever (review, 2026-10-03).
+        found = {(it["brand_id"], it["doc_id"], it["created_utc"]) for it in items}
+        gone = [k for k in keys if (k[0], k[1], k[2]) not in found]
+        if gone:
+            rec["gone_from_queue"] = rec.get("gone_from_queue", 0) + conn.execute(
+                "delete from public.classify_queue q using unnest(%s::bigint[], %s::text[], %s::timestamptz[]) "
+                "as k(b, d, c) where q.brand_id = k.b and q.doc_id = k.d and q.created_utc = k.c",
+                ([k[0] for k in gone], [k[1] for k in gone], [k[2] for k in gone])).rowcount
+        if not items:
+            continue
         j = jev_judge(items, log=log)
         rec["jev_usd"] += jev_judge.last_usd
+        last_batch["jev"] = jev_judge.last_usd
         verdicts = [decide(x, t) for x in j]
         models = [MV_JEV if v else None for v in verdicts]
         rec["jev_decided"] += sum(v is not None for v in verdicts)
@@ -371,6 +393,7 @@ def run(conn, cfg: dict, deadline: float, should_stop=lambda: None, log=print) -
             g, spend = glm_judge([items[i] for i in residue], in_flight=int(cfg.get("glm_in_flight", 6)),
                                  model=model, log=log)
             rec["glm_credits"] += spend["credits"]
+            last_batch["glm"] = spend["credits"]
             rec["glm_failed_jobs"] = rec.get("glm_failed_jobs", 0) + spend["failed_jobs"]
             for i, v in zip(residue, g):
                 if v is not None:

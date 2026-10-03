@@ -1,6 +1,6 @@
 {
  "model": "jev-1.13.0",
- "measured": "2026-10-02T23:15:06+00:00",
+ "measured": "2026-10-03T01:21:46+00:00",
  "reject_below": 0.2,
  "product_at": 0.9,
  "label_at": {
@@ -65,6 +65,14 @@
    "model": "glm-5.3",
    "target": 0.96,
    "glm_agrees_with_old": 0.8182
+  },
+  "note": "label_* agreement and 'ordinary' above are IN-SAMPLE (thresholds chosen on the same rows); 'held_out' is the number to quote",
+  "held_out": {
+   "splits": 20,
+   "settled_mean": 0.3645,
+   "settled_min": 0.3273,
+   "agreement_mean": 0.9556,
+   "agreement_min": 0.9356
   }
  }
 }

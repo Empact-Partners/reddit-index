@@ -87,6 +87,11 @@ def purge(conn, verdicts: dict[str, str]) -> int:
         conn.execute("delete from public.mention_sentiment where doc_id = any (%s)", (ids,))
         conn.execute("delete from public.mention_rejections where doc_id = any (%s)", (ids,))
         n = conn.execute("delete from public.mentions where doc_id = any (%s)", (ids,)).rowcount
+        # What pointed at the purged rows goes with them: a queue row for a mention that no longer exists was
+        # re-selected by the classifier every batch, forever (review, 2026-10-03), and a probe row for a
+        # document with no mention could never be stamped, so the slow lap would wedge on it.
+        conn.execute("delete from public.classify_queue where doc_id = any (%s)", (ids,))
+        conn.execute("delete from public.doc_probe where doc_id = any (%s)", (ids,))
         conn.execute("update public.removals set purged_at = now() where doc_id = any (%s) and purged_at is null", (ids,))
     return n
 
@@ -98,18 +103,18 @@ def repurge_ledgered(conn, dry_run: bool) -> int:
                      "(select 1 from public.removals r where r.doc_id = m.doc_id)").fetchone()[0]
     if n and not dry_run:
         with conn.transaction():
-            conn.execute("delete from public.mention_sentiment s where exists "
-                         "(select 1 from public.removals r where r.doc_id = s.doc_id)")
-            conn.execute("delete from public.mentions m where exists "
-                         "(select 1 from public.removals r where r.doc_id = m.doc_id)")
+            for t in ("mention_sentiment", "mention_rejections", "mentions", "classify_queue", "doc_probe"):
+                conn.execute(f"delete from public.{t} x where exists "
+                             "(select 1 from public.removals r where r.doc_id = x.doc_id)")
     return n
 
 
 def run(conn, max_calls: int = 2000, dry_run: bool = False, max_gone_share: float = 0.15,
-        ledgered_only: bool = False, deadline: float | None = None, log=print) -> dict:
+        ledgered_only: bool = False, deadline: float | None = None, log=print, should_stop=lambda: None) -> dict:
     import reddit_client as rc
     receipt = {"docs_checked": 0, "docs_not_checked": 0, "docs_gone": 0, "docs_edited": 0, "mentions_purged": 0,
-               "ledgered_repurged": 0, "reddit_calls": 0, "on_pages_checked": 0, "brake": False}
+               "ledgered_repurged": 0, "reddit_calls": 0, "on_pages_checked": 0, "probe_rows_without_a_document": 0,
+               "brake": False, "stopped": None}
     conn.execute("set statement_timeout = '15min'")
 
     receipt["ledgered_repurged"] = repurge_ledgered(conn, dry_run)
@@ -126,6 +131,7 @@ def run(conn, max_calls: int = 2000, dry_run: bool = False, max_gone_share: floa
         "(select 1 from site.rail_key k where k.doc_id = p.doc_id) "
         "order by p.checked_at nulls first, p.doc_id limit %s", (room,))] if room else []
     queue = (on_pages + rest)[: max_calls * BATCH]
+    on_set = set(on_pages)
     log(f"  {len(on_pages)} documents on pages, {len(rest)} more from the slow lap, {max_calls} calls allowed")
 
     verdicts: dict[str, str] = {}
@@ -134,6 +140,12 @@ def run(conn, max_calls: int = 2000, dry_run: bool = False, max_gone_share: floa
         if deadline and time.time() > deadline:
             log("  out of time: the rest is not checked this run")
             break
+        if (i // BATCH) % 50 == 0:
+            reason = should_stop()
+            if reason:
+                receipt["stopped"] = reason
+                log(f"  stopped: {reason}")
+                break
         chunk = queue[i:i + BATCH]
         resp = rc.info(chunk)
         children = (resp.get("data") or {}).get("children") if isinstance(resp, dict) else None
@@ -147,8 +159,12 @@ def run(conn, max_calls: int = 2000, dry_run: bool = False, max_gone_share: floa
         stored = {k: float(v) for k, v in stored.items()}
         got = judge(children, [c for c in chunk if c in stored], stored)
         verdicts.update(got)
-        if i < len(on_pages):
-            receipt["on_pages_checked"] += len(got)
+        receipt["on_pages_checked"] += sum(1 for d in got if d in on_set)
+        ghosts = [c for c in chunk if c not in stored]
+        if ghosts and not dry_run:   # a probe row whose document has no mention left: nothing to check, ever
+            receipt["probe_rows_without_a_document"] += conn.execute(
+                "delete from public.doc_probe where doc_id = any (%s) and not exists "
+                "(select 1 from public.mentions m where m.doc_id = doc_probe.doc_id)", (ghosts,)).rowcount
         if i and (i // BATCH) % 200 == 0:
             log(f"    checked {len(verdicts)} documents, {sum(v != 'alive' for v in verdicts.values())} gone or edited", flush=True)
     receipt["reddit_calls"] = rc.stats()["calls"] - calls0
@@ -174,12 +190,10 @@ def run(conn, max_calls: int = 2000, dry_run: bool = False, max_gone_share: floa
     for i in range(0, len(ids), 5000):
         part = ids[i:i + 5000]
         receipt["mentions_purged"] += purge(conn, {d: verdicts[d] for d in part})
-        # the stamp that moves the slow lap forward; survivors and purged alike were checked
+        # the stamp that moves the slow lap forward, for the survivors (a purge removed the others' rows)
+        alive = [d for d in part if verdicts[d] == "alive"]
         conn.execute("insert into public.doc_probe (doc_id, checked_at) select d, now() from unnest(%s::text[]) d "
-                     "on conflict (doc_id) do update set checked_at = excluded.checked_at", (part,))
-    conn.execute("delete from public.doc_probe p where not exists "
-                 "(select 1 from public.mentions m where m.doc_id = p.doc_id) "
-                 "and p.doc_id = any (%s)", ([d for d, v in verdicts.items() if v != "alive"],))
+                     "on conflict (doc_id) do update set checked_at = excluded.checked_at", (alive,))
     log(f"  purged {receipt['mentions_purged']} mention rows")
     return receipt
 

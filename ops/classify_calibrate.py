@@ -163,7 +163,35 @@ def choose(rows: list[dict], target: float = 0.96) -> dict:
     report["ordinary_wrongly_rejected"] = sum(r["jev"]["e"] <= t["reject_below"] for r in ordinary)
     report["reference"] = {"model": "glm-5.3", "target": target,
                            "glm_agrees_with_old": round(sum(r["ref"] == r["old"] for r in ordinary) / max(1, len(ordinary)), 4)}
+    report["note"] = ("label_* agreement and 'ordinary' above are IN-SAMPLE (thresholds chosen on the same rows); "
+                      "'held_out' is the number to quote")
     return {"model": "jev-1.13.0", "measured": None, "thresholds": t, "report": report}
+
+
+def held_out(rows: list[dict], target: float = 0.96, splits: int = 20) -> dict:
+    """Choose thresholds on half of the reference rows, score them on the other half, twenty random splits."""
+    ordinary = [r for r in rows if r["set"] == "ordinary" and r.get("jev") and r.get("ref")]
+    others = [r for r in rows if r["set"] != "ordinary"]
+    settled, agree = [], []
+    for seed in range(splits):
+        pool = ordinary[:]
+        random.Random(seed).shuffle(pool)
+        a, b = pool[: len(pool) // 2], pool[len(pool) // 2:]
+        t = choose(a + others, target)["thresholds"]
+        dec = ok = 0
+        for r in b:
+            j = r["jev"]
+            if j["e"] < t["product_at"] or r["ref"] == "reject":
+                continue
+            lab = max(j["probs"], key=j["probs"].get)
+            if lab != "unsure" and j["probs"][lab] >= t["label_at"].get(lab, 1.01):
+                dec += 1
+                ok += r["ref"] == lab
+        settled.append(dec / max(1, len(b)))
+        agree.append(ok / max(1, dec))
+    return {"splits": splits, "settled_mean": round(sum(settled) / splits, 4), "settled_min": round(min(settled), 4),
+            "agreement_mean": round(sum(agree) / splits, 4), "agreement_min": round(min(agree), 4)}
+
 
 
 def auc(pos: list[float], neg: list[float]) -> float | None:
@@ -201,6 +229,7 @@ def main() -> int:
     n_ref = attach_reference(rows, os.path.join(CACHE, "glm_answers.glm-5.3.json"))
     print(f"reference: GLM-5.3 answered {n_ref} of the calibration mentions")
     result = choose(rows)
+    result["report"]["held_out"] = held_out(rows)
     result["measured"] = dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds")
     result["answered"] = sum(r.get("jev") is not None for r in rows)
     with open(OUT, "w") as f:

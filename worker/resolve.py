@@ -191,16 +191,28 @@ def _is_plain_english(alias):
 # in as a SAFE alias from the gazetteer, so nothing downstream looked at it again.
 #
 # The rule: every word of the brand's slug must appear in the address (github.com does not say "actions";
-# sheets.google.com says both words), or the address must contain the brand's whole name run together
-# (getoutline.com, squareup.com, datadoghq.com). A product's own short address that says neither is listed
-# by hand below. Losing an address costs little: the brand's own name still matches through the gated path.
+# sheets.google.com says both words), or one part of the address must be the brand's whole name run together,
+# alone or with a known prefix or suffix (getoutline.com, squareup.com, datadoghq.com). A product's own short
+# address that says neither is listed by hand below. Losing an address costs little: the brand's own name still matches through the gated path.
 OWN_ADDRESSES = {
     ("youtu.be", "youtube"), ("c.ai", "character-ai"), ("draw.io", "diagrams-net"), ("kit.com", "convertkit"),
     ("comfy.org", "comfyui"), ("sr.ht", "sourcehut"), ("system.io", "systeme-io"), ("dr.web", "dr-web-security-space"),
     ("stalw.art", "stalwart-mail-server"), ("ti.to", "tito"), ("anchor.fm", "spotify-for-creators"),
     ("live.com", "outlook"), ("linuxcontainers.org", "incus"), ("monarch.com", "monarch-money"),
-    ("me.com", "icloud-mail"), ("mac.com", "icloud-mail"),
+    ("me.com", "icloud-mail"), ("mac.com", "icloud-mail"), ("twinery.org", "twine"),
+    # own addresses whose suffix is a generic word, which the affix rule deliberately does not accept
+    ("code.visualstudio.com", "visual-studio-code"), ("keepersecurity.com", "keeper"),
+    ("audacityteam.org", "audacity"), ("payloadcms.com", "payload"), ("ampcode.com", "amp"),
+    ("oxygenbuilder.com", "oxygen"), ("bricksbuilder.io", "bricks"), ("baculasystems.com", "bacula"),
+    ("olivevideoeditor.org", "olive"), ("passwordstore.org", "pass"), ("mmonit.com", "monit"),
+    ("rosegardenmusic.com", "rosegarden"), ("sumatrapdfreader.org", "sumatrapdf"),
+    ("budgetwithbuckets.com", "buckets"), ("appinventor.mit.edu", "mit-app-inventor"),
+    ("savannah.nongnu.org", "gnu-savannah"),
 }
+
+
+_AFFIXES = {"get", "try", "use", "join", "go", "my", "the", "with", "hey", "hello", "meet",
+            "hq", "app", "apps", "inc", "io", "ai", "up", "ly", "suite", "online", "software", "now", "dev"}
 
 
 def address_names_product(domain, slug):
@@ -212,14 +224,28 @@ def address_names_product(domain, slug):
         return False
     words = set(parts)
     for p in parts:
-        words.update(p.split("-"))
+        words.update(re.split(r"[-_/]+", p))      # a path names a product too: zoho.com/crm, proton.me/pass
     toks = [t for t in re.split(r"[^a-z0-9]+", slug.lower()) if t]
     if not toks:
         return False
     if all(t in words for t in toks):
         return True
+    # A product's own vanity address: its whole name inside one part of the address when the name is long enough
+    # to be distinctive (five letters or more: surferseo.com), or with a known prefix or suffix when it is short
+    # (getoutline.com, squareup.com). Never a short name inside another word: github.com contains "git" and is
+    # not Git's address (review, 2026-10-03).
     flat = "".join(toks)
-    return any(flat in p.replace("-", "") for p in parts) or all(any(t in p for p in parts) for t in toks)
+
+    def vanity(name: str, part: str) -> bool:
+        part = part.replace("-", "")
+        if part == name:
+            return True
+        if len(name) >= 5 and name in part:          # surferseo.com, semaphoreci.com, writewithharper.com
+            return True
+        if part.startswith(name) and part[len(name):] in _AFFIXES:   # a short name needs a known affix
+            return True
+        return part.endswith(name) and part[: len(part) - len(name)] in _AFFIXES
+    return any(vanity(flat, w) for w in words)
 
 
 _dom_claims = None

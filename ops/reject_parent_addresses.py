@@ -35,10 +35,12 @@ select lower(m.matched_form) as form, b.id, b.slug, b.name, count(*)
  where m.matched_form ~ '^[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$'
  group by 1, 2, 3, 4"""
 
+# the comment's text through migration 0019's pointer: a row whose text is held by another row has body NULL
 MATCH = """
   from public.mentions m
  where m.brand_id = %(brand)s and lower(m.matched_form) = %(form)s
-   and position(lower(%(name)s) in lower(m.body)) = 0"""
+   and position(lower(%(name)s) in lower(coalesce(m.body, (select k.body from public.mentions k
+        where k.doc_id = m.doc_id and k.created_utc = m.created_utc and k.brand_id = m.body_from)))) = 0"""
 
 
 def main() -> int:
