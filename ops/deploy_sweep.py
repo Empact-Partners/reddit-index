@@ -13,6 +13,7 @@ What it sets on the service (read from the local credential files, never printed
   ZAI_API_KEY           GLM, through the Codex CLI
   SLACK_BOT_TOKEN       the Empact bot, for the one DM a failed or capped run sends
   REVALIDATE_SECRET     the site's page-expiry endpoint
+  VERCEL_BYPASS         the preview's protection bypass (trial runs only)
 
 The schedule (cron, region, restart policy) is declared once, in ops/schedule.json, and set on the service before
 every deploy. Railway copies it into each DEPLOYMENT's manifest and runs the newest manifest's cron, so
@@ -99,6 +100,7 @@ def variables() -> dict:
         "TYPESAFE_API_KEY": tokens.typesafe_key(), "ZAI_API_KEY": zai,
         "SLACK_BOT_TOKEN": tokens.slack_bot_token("empact"),
         "REVALIDATE_SECRET": c["revalidate_secret"],
+        "VERCEL_BYPASS": c["vercel_bypass"],      # only used against *.vercel.app (the trial runs' preview)
     }
     missing = [k for k, x in v.items() if not x]
     if missing:

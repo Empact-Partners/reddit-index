@@ -10,7 +10,7 @@
   "00:00",
   "05:30"
  ],
- "site_url": "https://redditindex.com",
+ "site_url": "https://reddit-index-git-feat-site-read-path-empact-partners.vercel.app",
  "caps": {
   "reddit_calls": 15000,
   "takedown_calls": 2000,
@@ -28,5 +28,6 @@
   "jev_usd_max": 1.0,
   "glm_credits_max": 3000,
   "glm_in_flight": 8
- }
+ },
+ "site_url_note": "The trial runs before go-live publish to the read-path preview (protected; the sweep sends the bypass header). At go-live, decision 0017, this becomes https://redditindex.com."
 }
