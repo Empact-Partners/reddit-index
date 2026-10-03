@@ -116,8 +116,11 @@ def check(since: str, remove: bool) -> dict:
             res["resurrected"] = bad
             if remove:
                 for x in bad:
-                    out = _gql_mut("mutation($id:String!){ deploymentRemove(id:$id) }", {"id": x["id"]})
-                    res["notes"].append(f"removed deployment {x['id'][:8]}: {out}")
+                    try:   # a failed removal keeps the finding; it never turns it into "not checked"
+                        _gql_mut("mutation($id:String!){ deploymentRemove(id:$id) }", {"id": x["id"]})
+                        res["notes"].append(f"removed deployment {x['id'][:8]}")
+                    except Exception as exc:  # noqa: BLE001
+                        res["notes"].append(f"could NOT remove deployment {x['id'][:8]}: {str(exc)[:160]}")
     except Exception as exc:  # noqa: BLE001 - a read failure must not look like a pass
         res["status"] = "not_checked"
         res["notes"].append("railway read failed: " + str(exc)[:200])
@@ -126,11 +129,18 @@ def check(since: str, remove: bool) -> dict:
         # The new daily sweep writes these tables too, but only inside its own receipt (a public.pipeline_runs
         # row, stage 'sweep', from its start to its finish). A write outside every receipt is the old collector
         # or something nobody declared; a write inside one is the sweep (scripts/schedule_check.py, same rule).
+        # Writes the new sweep or a declared repair made are not the old collector's: a mention whose run_id
+        # matches a receipt (the sweep stamps its receipt id on every mention from 3 Oct 09:00 UTC), or, for
+        # threads and ingest state, a write inside a receipt's time window (a 'running' receipt counts for at
+        # most 8 hours, so a crashed run cannot hide later writes).
+        until = ("coalesce(case when r.status = 'running' then least(now(), r.started_at + interval '8 hours') "
+                 "else r.finished_at end, now())")
         outside = ("not exists (select 1 from public.pipeline_runs r where r.stage in ('sweep', 'repair') and %s between "
-                   "r.started_at - interval '2 minutes' and coalesce(case when r.status = 'running' then null "
-                   "else r.finished_at end, now()) + interval '2 minutes')")
+                   "r.started_at - interval '2 minutes' and " + until + " + interval '2 minutes')")
+        outside_m = ("not exists (select 1 from public.pipeline_runs r where r.run_id = m.run_id) and "
+                     "(m.loaded_at >= '2026-10-03T09:00:00Z' or " + outside % "m.loaded_at" + ")")
         rows = _sql(
-            ("select (select count(*) from public.mentions m where loaded_at > '%(s)s' and " + outside % "m.loaded_at" + ") as mentions,"
+            ("select (select count(*) from public.mentions m where loaded_at > '%(s)s' and " + outside_m + ") as mentions,"
              " (select count(*) from public.threads t where first_seen_at > '%(s)s' and " + outside % "t.first_seen_at" + ") as threads,"
              " (select count(*) from public.ingest_state i where finished_at > '%(s)s' and " + outside % "i.finished_at" + ") as receipts,"
              " (select max(loaded_at) from public.mentions) as last_mention_write") % {"s": since})
@@ -145,12 +155,17 @@ def check(since: str, remove: bool) -> dict:
 
 
 def _gql_mut(query: str, variables: dict) -> dict:
+    """A mutation whose answer is checked: an error or a false result raises, so a removal is reported only when
+    Railway confirmed it (review, 2026-10-03)."""
     req = urllib.request.Request(
         "https://backboard.railway.com/graphql/v2",
         data=json.dumps({"query": query, "variables": variables}).encode(),
         headers={"Authorization": "Bearer " + _railway_token(),
                  "Content-Type": "application/json", "User-Agent": UA})
-    return json.loads(urllib.request.urlopen(req, timeout=60).read())
+    out = json.loads(urllib.request.urlopen(req, timeout=60).read())
+    if out.get("errors") or not all((out.get("data") or {}).values()):
+        raise RuntimeError("railway mutation not confirmed: " + json.dumps(out)[:200])
+    return out
 
 
 def dm(res: dict) -> None:

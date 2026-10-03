@@ -12,7 +12,7 @@
 | **Deleted comments** | About 70,000 of the 140,000 comments shown on pages re-checked against Reddit on 3 Oct: 3,791 deleted and 232 edited there since 25 August, 7,231 rows purged. The rest at the next run. The live site still shows its 22 Sep pages until go-live. |
 | **Labels** | Classification restarted 3 Oct (Jev, then GLM-5.3). 171,263 links to a parent company's web address set aside as "not this product". About 705,000 mentions still wait for a label; the backlog runs inside its declared budget. |
 | **What is happening** | Relaunch under Vlad's ruling of 2026-10-02. Draft decision: [decisions/0017](decisions/0017-daily-sweep.md) (on the sweep branch, PR #8). |
-| **How to stop everything** | `python3 ops/ri.py stop "reason"` turns the sweep off and its database login off. |
+| **How to stop everything** | `python3 ops/ri.py stop "reason"` turns the daily sweep off and its database login off. The classification backlog runs separately from the laptop (`ops/classify_backlog.py`) and is stopped by stopping that process. The old collector cannot reach the database and runs a do-nothing image. |
 
 > **Still frozen until decision 0017 is recorded** ([decisions/0016](decisions/0016-frozen.md)). Do not run
 > `worker/update.sh`, deploy the old `Dockerfile` to Railway, or clear Vercel's Ignored Build Step.
