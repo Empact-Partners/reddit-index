@@ -123,11 +123,16 @@ def check(since: str, remove: bool) -> dict:
         res["notes"].append("railway read failed: " + str(exc)[:200])
 
     try:
+        # The new daily sweep writes these tables too, but only inside its own receipt (a public.pipeline_runs
+        # row, stage 'sweep', from its start to its finish). A write outside every receipt is the old collector
+        # or something nobody declared; a write inside one is the sweep (scripts/schedule_check.py, same rule).
+        outside = ("not exists (select 1 from public.pipeline_runs r where r.stage = 'sweep' and %s between "
+                   "r.started_at - interval '2 minutes' and coalesce(r.finished_at, now()) + interval '2 minutes')")
         rows = _sql(
-            "select (select count(*) from public.mentions where loaded_at > '%(s)s') as mentions,"
-            " (select count(*) from public.threads where first_seen_at > '%(s)s') as threads,"
-            " (select count(*) from public.ingest_state where finished_at > '%(s)s') as receipts,"
-            " (select max(loaded_at) from public.mentions) as last_mention_write" % {"s": since})
+            ("select (select count(*) from public.mentions m where loaded_at > '%(s)s' and " + outside % "m.loaded_at" + ") as mentions,"
+             " (select count(*) from public.threads t where first_seen_at > '%(s)s' and " + outside % "t.first_seen_at" + ") as threads,"
+             " (select count(*) from public.ingest_state i where finished_at > '%(s)s' and " + outside % "i.finished_at" + ") as receipts,"
+             " (select max(loaded_at) from public.mentions) as last_mention_write") % {"s": since})
         res["writes"] = rows[0]
         if any(int(rows[0][k] or 0) > 0 for k in ("mentions", "threads", "receipts")):
             res["status"] = "writes" if res["status"] == "ok" else res["status"]
