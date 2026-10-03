@@ -1,5 +1,10 @@
 # Handoff — open items
 
+> **Superseded for operations on 2026-10-03.** The index now refreshes itself daily (decisions/0017); how to run
+> it is [SOP.md](SOP.md), what happened between 18 August and 2 October is `docs/investigation-2026-10.md`.
+> The entries below are the August record, kept as written; several of them (the Railway cron "removed", the
+> DeepSeek lane, `update.sh`) stopped being true.
+
 ## 2026-08-18 — MANUAL MODE. No scheduled jobs; DeepSeek classification; auto-resume dead
 
 **The index now updates only when a human runs `worker/update.sh`.** Ruled by

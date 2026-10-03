@@ -17,7 +17,7 @@
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run && node --test tests/resolve.test.mjs tests/collect.test.mjs",
+    "test": "vitest run && node --test tests/resolve.test.mjs tests/collect.test.mjs && python3 tests/test_sweep_units.py",
     "check:reads": "node scripts/gates/bounded-reads.mjs && node scripts/gates/bounded-reads.selftest.mjs"
   },
   "dependencies": {

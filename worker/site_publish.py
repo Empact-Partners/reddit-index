@@ -171,7 +171,9 @@ def run(conn, base: str, dry_run: bool = False, verify_n: int = 100, max_expire:
             or (s.served_hash is distinct from s.page_hash
                 and exists (select 1 from public.removals r
                              where r.revalidated_at is null and s.brand_id = any (r.brand_ids)))
-         order by 4 desc, md5(s.slug || current_date::text)""").fetchall()
+         order by 4 desc, s.expired_at nulls first, md5(s.slug || current_date::text)""").fetchall()
+    # After takedowns, the pages that have waited longest: with max_expire below the number changed (the cap
+    # that bounds regeneration egress, ops/schedule.json), every page still comes round within a few days.
     receipt["pages_changed"] = len(rows)
     retired = [r[0] for r in conn.execute("select slug from site.retired_page where gone_at is null")]
     meta = conn.execute("select boards_hash, served_boards_hash, slugs_hash, served_slugs_hash from site.meta").fetchone()
@@ -180,8 +182,11 @@ def run(conn, base: str, dry_run: bool = False, verify_n: int = 100, max_expire:
 
     takedown = [r for r in rows if r[3]]
     others = [r for r in rows if not r[3]]
-    todo = takedown + others[:max(0, max_expire - len(takedown))]
-    to_verify = takedown + others[:verify_n]
+    expired_others = others[:max(0, max_expire - len(takedown))]
+    todo = takedown + expired_others
+    # the sample is drawn from the pages expired THIS run: a changed page left for a later run (over the cap) still
+    # serves its old fingerprint, and fetching it proves nothing (3 Oct: 100 such pages read as "failed")
+    to_verify = takedown + expired_others[:verify_n]
     receipt["takedown_pages"] = len(takedown)
     receipt["pages_deferred"] = len(rows) - len(todo)
     log(f"  {len(rows)} company pages changed ({len(takedown)} with a takedown), "

@@ -1,4 +1,6 @@
 #!/bin/zsh
+echo 'update.sh is retired (2026-10-03): the index refreshes itself daily (decisions/0017). See SOP.md.' >&2
+exit 2
 # THE manual update for the Reddit Index (decisions/0010, ruled 2026-08-18).
 #
 # There are NO scheduled jobs any more — no launchd lanes, no Railway cron

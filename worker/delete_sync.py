@@ -22,6 +22,7 @@ The UI contract this serves: a card whose source was deleted simply is not in
 the list on the next pass. No tombstone, no cached copy, no "[deleted]"
 placeholder holding the slot.
 """
+import sys
 import argparse, json, os, sys, urllib.request
 from collections import defaultdict
 
@@ -191,5 +192,8 @@ def main():
     return 0
 
 
+RETIRED = "delete_sync.py is retired (2026-10-03): a batch Reddit did not answer was read as 'deleted'. Use worker/takedown.py (the sweep runs it daily)."
+
 if __name__ == "__main__":
+    sys.exit(RETIRED)
     sys.exit(main())

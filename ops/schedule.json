@@ -1,0 +1,36 @@
+{
+ "_what": "The ONE declaration of when the sweep runs and what it may spend. worker/run_daily.py reads it at start and refuses to run outside window_utc; scripts/schedule_check.py compares it with what Railway actually runs and with the receipts in public.pipeline_runs. Change it here, then redeploy.",
+ "railway": {
+  "project_id": "90cd4c29-797c-4552-90d9-81c3b9914ffa",
+  "environment_id": "f3a7784c-7cd9-4cb8-a9ea-05efe657a7ff",
+  "service_name": "reddit-index-sweep",
+  "cron": "0 0 * * *"
+ },
+ "window_utc": [
+  "00:00",
+  "05:30"
+ ],
+ "site_url": "https://reddit-index-git-feat-site-read-path-empact-partners.vercel.app",
+ "caps": {
+  "reddit_calls": 15000,
+  "takedown_calls": 2000,
+  "mentions": 40000,
+  "minutes": 330,
+  "egress_gb": 0.8
+ },
+ "takedown_brake_share": 0.15,
+ "verify_pages": 100,
+ "max_expire_pages": 2000,
+ "classify": {
+  "enabled": true,
+  "glm_model": "glm-5.3",
+  "max_items": 60000,
+  "jev_usd_max": 1.0,
+  "glm_credits_max": 3000,
+  "glm_in_flight": 8
+ },
+ "site_url_note": "The trial runs before go-live publish to the read-path preview (protected; the sweep sends the bypass header). At go-live, decision 0017, this becomes https://redditindex.com.",
+ "reserve_minutes_after_collect": 60,
+ "reddit_pace_seconds": 1.2,
+ "max_expire_note": "A company page re-render reads about 0.2 MB (its stats and 120 cards of full text). 2,000 pages a day bounds regeneration at about 0.4 GB even if every expired page is visited; takedown pages are always expired, over the cap. Measured on the pilot, 2026-10-03."
+}

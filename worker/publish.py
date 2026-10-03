@@ -174,5 +174,8 @@ def main():
     return 0
 
 
+RETIRED = "publish.py is retired (2026-10-03): data no longer rebuilds the site. The sweep's publish stage (worker/site_publish.py) expires only the pages that changed."
+
 if __name__ == "__main__":
+    sys.exit(RETIRED)
     sys.exit(main())

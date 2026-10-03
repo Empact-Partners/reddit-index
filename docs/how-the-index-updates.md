@@ -1,39 +1,31 @@
 # How the index updates
 
-**Cadence: manual, on demand.** The index has no scheduled jobs — no launchd
-lanes, no Railway cron. A human runs **`worker/update.sh`** (collect → classify
-→ score → delete-sync → publish → verify) and that IS the update. That is a
-ruling ([decisions/0010](../decisions/0010-manual-on-demand.md), 2026-08-18,
-superseding the daily-cadence ruling of 2026-08-17), made after the project's
-automation burned an entire 5-hour Claude quota in a day. The old ruling's data
-still governs the *guidance*: run at least weekly, because waiting costs
-collection data that cannot be recovered — Reddit's `/new` only reaches about
-1,000 posts back, and a thread leaves the 72-hour revisit window with whatever
-comments it had when it was found. Everything downstream of collection loses
-nothing to waiting. The full operating procedure is [SOP.md](../SOP.md).
+**Cadence: once a day, by itself** ([decisions/0017](../decisions/0017-daily-sweep.md), 2026-10). One job,
+`worker/run_daily.py`, runs at 00:00 UTC on its own Railway service and does everything in order: takedowns,
+collection, classification, refresh, scoring, publishing, receipt. It is bounded (Reddit calls, rows, time,
+egress), resumes from what the database says, and messages Vlad only when something went wrong. How to look at
+it, stop it or change it: [SOP.md](../SOP.md).
 
-Collection (`worker/daily.py`, stage 1 of the chain) walks the scoring
-subreddits core-first, reads `/r/{sub}/new`, resolves brands out of the posts
-and out of the comment trees of recently-seen threads, and writes mentions to
-Supabase. It can carry a time budget (`--max-minutes`) and stops cleanly
-when it expires, which is exactly why the walk is core-first: a truncated pass
-loses the tail, not the 527 subreddits that carry the categories. (It ran on a
-Railway cron until 2026-08-18; the service is Offline and the pass now runs
-Mac-side inside `update.sh`, on the same credential fallbacks.)
+Before that: from 2026-08-18 the index was meant to update only when a person ran `worker/update.sh`
+(decision 0010), while a forgotten Railway cron ran the old collector every night until 2026-10-02 (decision
+0016 and its addendum; `docs/investigation-2026-10.md`).
+
+Collection (`worker/collect.py`, using `worker/daily.py`'s helpers) walks the scoring subreddits core-first,
+reads `/r/{sub}/new`, resolves brands out of the posts and out of the comment trees of recently-seen threads,
+and writes mentions to Supabase. It stops cleanly at its caps, which is exactly why the walk is core-first: a
+truncated pass loses the tail, not the core subreddits that carry the categories. A subreddit that produced
+nothing on its last pass is visited every third day.
 
 One pass has to cover a full day of every subreddit, so the listing budget is
 eight pages — 800 posts, past anything in this set (the busiest, r/pcmasterrace,
 runs about 512 a day). Pages are only fetched while the listing is still ahead
 of the watermark, so a quiet subreddit still costs one call.
 
-The rest of the chain follows in the same `update.sh` run: classify → score →
-delete-sync → publish → verify. Classification runs on the **DeepSeek API**
-(`deepseek-v4-flash`, ~1,100 items/min, ~$0.18 per 1,000 items — decisions/0010;
-the old "free" Haiku lane drew the shared Claude Max-plan quota and remains only
-as an explicit fallback). The chain is deliberately **not** `set -e`. It used to
-be, and a stalled classifier therefore aborted the script before scoring and
-publishing — one slow lane, and the site stopped updating with data it already
-had.
+Classification follows in the same run: a rule first (a link to a parent company's web address is not a
+mention of one of its products), then Jev for the mentions it is sure of, then GLM-5.3 for the rest, with
+"not this product" recorded where it survives any machine (`docs/classify-backlog.md`). Each stage records
+what it did and the next one runs whatever the last one managed, so one slow lane never stops the site
+from updating with data it already has.
 
 The chain ends with `worker/healthcheck.py` — the same fourteen-assertion
 battery that used to run as a standalone 3-hourly job (retired 2026-08-18 with
@@ -49,11 +41,11 @@ including that posts are still being read as posts and that the
 Slack only on a change of state — into failure, and again on recovery — and only
 if `slack_channel` is set in `~/.claude/.reddit-index.json`.
 
-**What the numbers describe.** The *scores* describe the trailing 365 days as of
-the last rebuild. The *mention counts* — the Mentions column on the boards, the
-totals on a company page — describe everything ever collected, all the way back.
-Those are two different windows on purpose, and the pages that show them say
-which one they are showing.
+**What the numbers describe.** The score on a page and its board rank use every opinionated mention collected
+(decision 0011; methodology 2.3.0 says so since 2026-10-03, after 2.2.0 still described a 365-day window). The
+mention counts use every mention collected. One window, everywhere on the site. The weekly table
+`brand_category_scores` (trailing 365 days, scoring subreddits only) is still computed for the tools that read
+it and is not what the site shows.
 
 **There is no history and no deltas — by design.** The scores table holds
 exactly one truthful set: each run upserts the fresh scores, deletes every older
@@ -70,17 +62,12 @@ a trend costume. Supabase keeps every MENTION ever collected (verbatim,
 permanently, minus the ones deleted on Reddit) — history of the evidence, not of
 the rankings.
 
-**Publish = rebuild.** The site is fully static: every route is prerendered from
-one database read at build time, and there is deliberately no runtime data path
-— no anon key ships, no client fetches, and the snapshot module is `server-only`.
-`worker/publish.py` asks Vercel to rebuild the current production commit with
-the fresh data; if that call fails the chain falls back to pushing an empty
-commit, because Vercel builds every push. A git push does the
-same for code changes. Company routes set `dynamicParams = false`, so a brand
-that was not in the build has no page until the next one.
-
-There is one narrow runtime endpoint, `POST /api/revalidate`, and it carries no
-data: it is bearer-gated and only invalidates cache tags. Delete-sync uses it.
+**Publish = expire the pages that changed.** The site reads small precomputed rows (schema `site`, one row per
+page plus its cards) through a role that can read nothing else. A page is rendered on its first visit and
+cached until the sweep names it: after refreshing and scoring, `worker/site_publish.py` posts the paths whose
+fingerprint changed to `POST /api/revalidate/` (bearer-gated, paths only, no data), then fetches every page
+that held a takedown, a sample of the rest, and the boards, and records which fingerprint it saw. A code
+change still rebuilds the site; data never does.
 
 **A mention's lifecycle:**
 
@@ -93,40 +80,22 @@ data: it is bearer-gated and only invalidates cache tags. Delete-sync uses it.
    API calls. Comments (`doc_type 1`) come from the comment trees of threads
    first seen in the last 72 hours, unread threads first. Either way the body is
    stored verbatim with its author, permalink, score and timestamp.
-2. **Classified**, usually within a day, but the classifier trails collection.
-   It is an anti-join against `mention_sentiment` that drains the backlog and
-   exits, and it runs once, at 08:30 UTC. So the 02:00 batch is labelled the same
-   morning, the 14:00 batch waits for the next one, and a deep backlog takes
-   longer still. This matters because scoring reads only labelled rows: a
-   collected but unclassified mention exists in the database, is visible on the
-   company page, and is not yet in any score.
-3. **Counted** into its category's next scoring pass if its brand is actually
-   tracked in that category (primary or `also_in`) and its timestamp is inside
-   the 365-day window.
-4. **Ages out** of the score window after a year. It stays in the database and it
-   stays on the company page.
-5. **Purged** if its author deletes it on Reddit. No tombstone.
+2. **Classified** in the same run that collected it (the classify stage takes the newest mentions first, up to
+   its daily caps). An unclassified mention exists in the database and on the company page, and is in no score
+   until it has a label.
+3. **Counted** into its brand's score at the next run once it carries a positive or negative label.
+4. **Set aside** if it turns out not to be about the brand: recorded in `mention_rejections`, no longer counted.
+5. **Purged** if it is deleted, removed or edited on Reddit. Only the ledger row remains.
 
-**Delete-sync runs before the publish, in the same chain.**
-`worker/delete_sync.py` takes a batch of stored documents, probes them through
-Reddit's `/api/info` a hundred at a time, and treats anything Reddit no longer
-returns — or returns with the body blanked to `[deleted]`/`[removed]`, or the
-author blanked — as gone. Gone documents are written to a `removals` ledger
-first, then their `mentions` and `mention_sentiment` rows are deleted, then the
-affected pages are invalidated, then `revalidated_at` is stamped as the receipt.
-That order is the whole design: a crash anywhere leaves a row that
-`gate_checks.sql` flags, rather than a live page still serving a comment its
-author deleted with nothing recording it.
-
-Purging Postgres is only half the job — a cached page keeps serving a removed
-comment until its tag is invalidated, which is why delete-sync owns the
-revalidate call instead of leaving it to the publish. Running it inside the
-chain, immediately before the rebuild, is what makes the purge and the pages
-that reflect it land together: the `--publish-follows` flag stamps the receipt
-on the rebuild, which invalidates more thoroughly than any tag set. This is not
-a nice-to-have. Reddit's Developer Terms require deletions to propagate as soon
-as possible, and `decisions/0002` makes it a *condition* of displaying full
-comment text at all.
+**Takedowns run first, every day.** `worker/takedown.py` re-checks every comment shown on any page through
+Reddit's `/api/info` (about 140,000 documents, 1,400 calls), then the documents checked longest ago. Reddit no
+longer returning one, a body of `[deleted]`/`[removed]`, a deleted author, `removed_by_category`, or an edit
+after we stored it: all purge. The ledger row, the purge and the stamp happen in one transaction; a batch
+Reddit did not answer is "not checked", never "deleted" (the old delete-sync read it as deleted). If more than
+15% of what was checked looks gone at once, nothing is purged and Vlad is told. The receipt
+(`removals.revalidated_at`) is stamped only after the publish stage FETCHED every page that held the document and
+saw it without the card. Reddit's Developer Terms require deletions to propagate as soon as possible, and
+`decisions/0002` makes it a *condition* of displaying full comment text at all.
 
 **A company page shows a window, and says so.** Each page renders the 80 newest
 comments and the 40 newest posts for that brand — two separate rails, not one
