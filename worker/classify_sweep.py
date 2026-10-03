@@ -65,10 +65,13 @@ ITEM_SQL = """
 select m.brand_id, m.doc_id, m.created_utc, b.slug as brand_slug, b.name as brand_name,
        coalesce(c.name, '') as category, sr.name as subreddit, left(coalesce(t.link_title, ''), 160) as thread,
        m.matched_form,
-       substr(m.body, greatest(1, strpos(lower(m.body), lower(m.matched_form)) - 600), 1200) as window,
-       greatest(0, least(strpos(lower(m.body), lower(m.matched_form)) - 1, 600)) as offset
+       substr(txt.body, greatest(1, strpos(lower(txt.body), lower(m.matched_form)) - 600), 1200) as window,
+       greatest(0, least(strpos(lower(txt.body), lower(m.matched_form)) - 1, 600)) as offset
   from unnest(%s::bigint[], %s::text[], %s::timestamptz[]) as k(brand_id, doc_id, created_utc)
   join public.mentions m on m.brand_id = k.brand_id and m.doc_id = k.doc_id and m.created_utc = k.created_utc
+  -- one copy of a comment's text is kept, on one of its rows (migration 0019)
+  cross join lateral (select coalesce(m.body, (select x.body from public.mentions x where x.doc_id = m.doc_id
+                        and x.created_utc = m.created_utc and x.brand_id = m.body_from)) as body) txt
   join public.brands b on b.id = m.brand_id
   left join public.categories c on c.id = b.primary_category_id
   join public.subreddits sr on sr.id = m.subreddit_id
