@@ -90,6 +90,24 @@ def check() -> int:
         except Exception as e:  # noqa: BLE001
             bad += 1
             print(f"  BAD  cannot read pg_stat_wal: {str(e).splitlines()[0][:80]}")
+        # Grants are not enough: every public table has row-level security, which shows a role zero rows
+        # unless a policy lets it see them (migration 0018; the first scheduled run found this).
+        for label, sql, want in (("the stop switch row", "select count(*) from public.sweep_control", 1),
+                                 ("brands", "select count(*) > 0 from public.brands", True),
+                                 ("one mention", "select count(*) from (select 1 from public.mentions limit 1) x", 1)):
+            got = conn.execute(sql).fetchone()[0]
+            bad += got != want
+            print(f"  {'ok ' if got == want else 'BAD'}  sees {label}: {got}")
+        try:
+            with conn.transaction():
+                conn.execute("insert into public.pipeline_runs (run_id, stage, code_version, started_at, status, notes) "
+                             "values (gen_random_uuid(), 'sweep-check', 'check', now(), 'check', '{}')")
+                raise RuntimeError("rollback")
+        except RuntimeError:
+            print("  ok   can write a receipt (rolled back)")
+        except Exception as e:  # noqa: BLE001
+            bad += 1
+            print(f"  BAD  cannot write a receipt: {str(e).splitlines()[0][:100]}")
         got = conn.execute("select pg_try_advisory_lock(%s)", (0x52494458,)).fetchone()[0]
         print(f"  {'ok ' if got else 'note'} the sweep lock {'taken and released' if got else 'is held by a running job'}")
         if got:

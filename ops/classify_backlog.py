@@ -92,8 +92,28 @@ def main() -> int:
     deadline = time.time() + (end - now).total_seconds()
 
     run_id, t0, wal0, read0 = str(uuid.uuid4()), time.time(), wal_bytes(conn), cs.READ_BYTES
+    # The real meter when it can be read (the laptop): the node's transmit counter, the number the egress
+    # watchdog and the bill follow. It counts everything that leaves the database, including the write-ahead log
+    # shipped to backup storage after the writes, which the estimate below overstates (it is compressed on the
+    # way out) and the text read understates. Measured 2026-10-02 on 20,000 mentions: 1.4 to 2.6 KB each.
+    meter = {"start": None, "last": None, "at": 0.0}
+    try:
+        sys.path.insert(0, os.path.join(ROOT, "scripts"))
+        import investigation_2026_10 as inv
+        meter["read"] = lambda: inv._metrics()["transmit_bytes"]
+        meter["start"] = meter["last"] = meter["read"]()
+        meter["at"] = time.time()
+    except Exception as e:  # noqa: BLE001
+        log(f"no node counter ({str(e)[:80]}): stopping on the write-ahead-log estimate")
 
     def egress() -> int:
+        if meter["start"] is not None:
+            if time.time() - meter["at"] > 600:
+                try:
+                    meter["last"], meter["at"] = meter["read"](), time.time()
+                except Exception:  # noqa: BLE001 - a missed reading keeps the last one
+                    pass
+            return int(meter["last"] - meter["start"])
         w = wal_bytes(conn)
         return ((w - wal0) if (w is not None and wal0 is not None) else 0) + (cs.READ_BYTES - read0)
 
@@ -103,7 +123,13 @@ def main() -> int:
         return None
 
     def record(status: str, rec: dict) -> None:
+        if meter["start"] is not None:
+            try:
+                meter["last"], meter["at"] = meter["read"](), time.time()
+            except Exception:  # noqa: BLE001
+                pass
         notes = {**rec, "egress_estimate_gb": round(egress() / 1e9, 4), "minutes": round((time.time() - t0) / 60, 1),
+                 "egress_source": "node counter" if meter["start"] is not None else "write-ahead log + text read",
                  "budget_room": room}
         conn.execute(
             "insert into public.pipeline_runs (run_id, stage, code_version, started_at, finished_at, status, notes) "
