@@ -78,4 +78,9 @@ database role, and proves its schedule by receipts.
 | Check (UTC) | Collector deployment | Rows written since the park | Result |
 |---|---|---|---|
 | 2026-10-02 20:49 | none (newest is the parked image, no cron) | 0 mentions, 0 threads, 0 receipts | clean |
+| 2026-10-03 02:20 | none (newest is still the parked image, no cron) — the old 02:00 slot passed | 0 outside a receipt (the new sweep's pilot wrote inside its own) | clean |
+| 2026-10-03 03:00 | none | 0 outside a receipt | clean |
+
+From 3 October the new sweep (decision 0017) writes too, always inside a receipt (`public.pipeline_runs`). The
+check counts only writes outside every receipt; `scripts/schedule_check.py` applies the same rule daily.
 
