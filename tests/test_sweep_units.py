@@ -51,6 +51,13 @@ check("glm: garbage is not an answer", cs._glm_answer("pos") is None and cs._glm
 check("glm: prompt numbers items i1..iN", "### i1\n" in cs.glm_prompt([
     {"subreddit": "x", "thread": "t", "brand_name": "B", "text": "hello"}]))
 
+import time as _time  # noqa: E402
+
+_items = [{"subreddit": "x", "thread": "t", "brand_name": "B", "text": "hello"}] * 150
+_out, _spend = cs.glm_judge(_items, in_flight=2, model="glm-5.3", deadline=_time.time() - 1)
+check("glm: past the deadline no job starts and no item counts as asked",
+      _spend["skipped_jobs"] == 2 and _spend["failed_jobs"] == 0 and not any(_spend["asked"]) and _out == [None] * 150)
+
 # ---- Jev's precedence as arithmetic ----------------------------------------------------------------------
 T = {"reject_below": 0.2, "product_at": 0.9, "label_at": {"pos": 0.76, "neg": 0.81, "neu": 0.77}}
 check("jev: unanswered goes to GLM", cs.decide(None, T) is None)
@@ -76,6 +83,14 @@ check("collect: a non-core subreddit six days old outranks a core one a day old"
       collect.overdue(_now - _dt.timedelta(days=6), False, _now) > collect.overdue(_now - _dt.timedelta(days=1), True, _now))
 check("collect: a non-core subreddit a day old waits behind a core one a day old",
       collect.overdue(_now - _dt.timedelta(days=1), False, _now) < collect.overdue(_now - _dt.timedelta(days=1), True, _now))
+
+# ---- the publisher's deadline (worker/site_publish.py) ----------------------------------------------------
+import site_publish  # noqa: E402
+
+site_publish.DEADLINE[0] = _time.time() - 1
+_r = site_publish.fetch("https://example.invalid", "/x/", "h")
+check("publish: no request starts after the run's end", _r["ok"] is False and _r["status"] is None and "error" in _r)
+site_publish.DEADLINE[0] = None
 
 # ---- the takedown judge (worker/takedown.py) -------------------------------------------------------------
 import takedown as td  # noqa: E402

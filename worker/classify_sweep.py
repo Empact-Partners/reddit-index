@@ -234,7 +234,7 @@ def _glm_env() -> dict:
             "ZAI_API_KEY": key}
 
 
-def glm_job(items: list[dict], model: str = "glm-5.3-flash", timeout: int = 900) -> tuple[dict | None, dict]:
+def glm_job(items: list[dict], model: str = "glm-5.3-flash", timeout: float = 900) -> tuple[dict | None, dict]:
     """One Codex CLI job on GLM. -> (answers keyed by item id, usage)."""
     with tempfile.TemporaryDirectory() as tmp:
         # The prompt goes in on stdin ("-"), never as an argument: Linux caps one argument at 128 KB, and a batch of
@@ -266,23 +266,41 @@ def glm_job(items: list[dict], model: str = "glm-5.3-flash", timeout: int = 900)
         return None, usage
 
 
-def glm_judge(items: list[dict], in_flight: int = 6, model: str = "glm-5.3-flash", log=print) -> tuple[list[tuple | None], dict]:
-    """-> per item ("reject", conf) | (label, conf) | None, and the summed usage."""
+def glm_judge(items: list[dict], in_flight: int = 6, model: str = "glm-5.3-flash", log=print,
+              deadline: float | None = None) -> tuple[list[tuple | None], dict]:
+    """-> per item ("reject", conf) | (label, conf) | None, and the summed usage. spend["asked"] marks the items
+    whose job came back (GLM saw them and answered or skipped them); an item whose job failed or never started was
+    not asked, and must not lose one of its tries for it (review, 2026-10-04)."""
     out: list[tuple | None] = [None] * len(items)
-    spend = {"input_tokens": 0, "cached_input_tokens": 0, "output_tokens": 0, "jobs": 0, "failed_jobs": 0}
+    asked = [False] * len(items)
+    spend = {"input_tokens": 0, "cached_input_tokens": 0, "output_tokens": 0, "jobs": 0, "failed_jobs": 0,
+             "skipped_jobs": 0}
     chunks = [(s, items[s:s + GLM_BATCH]) for s in range(0, len(items), GLM_BATCH)]
+
+    def one(c):
+        # a job never runs past the stage's deadline: its timeout is what is left (at most 15 minutes)
+        left = 900.0 if deadline is None else min(900.0, deadline - time.time())
+        if left < 60:
+            return "skipped", {}
+        return glm_job(c[1], model, timeout=left)
+
     with ThreadPoolExecutor(in_flight) as ex:
-        for (start, chunk), (ans, usage) in zip(chunks, ex.map(lambda c: glm_job(c[1], model), chunks)):
+        for (start, chunk), (ans, usage) in zip(chunks, ex.map(one, chunks)):
             spend["jobs"] += 1
             for k in ("input_tokens", "cached_input_tokens", "output_tokens"):
                 spend[k] += int(usage.get(k) or 0)
+            if ans == "skipped":
+                spend["skipped_jobs"] += 1
+                continue
             if not isinstance(ans, dict):
                 spend["failed_jobs"] += 1
                 continue
             for j in range(len(chunk)):
+                asked[start + j] = True
                 v = _glm_answer(ans.get(f"i{j + 1}"))
                 if v is not None:
                     out[start + j] = v
+    spend["asked"] = asked
     a, c, o = GLM_RATES[model]
     unc = spend["input_tokens"] - spend["cached_input_tokens"]
     peak = 1.0 if glm_peak_now() else 0.5
@@ -297,7 +315,8 @@ def glm_peak_now() -> bool:
 
 
 # ---------------------------------------------------------------------------------------------- write
-def write(conn, items: list[dict], verdicts: list[tuple | None], mv: list[str]) -> dict:
+def write(conn, items: list[dict], verdicts: list[tuple | None], mv: list[str],
+          tried: list[bool] | None = None) -> dict:
     lab_rows, rej_rows = [], []
     for it, v, model in zip(items, verdicts, mv):
         if v is None:
@@ -307,16 +326,26 @@ def write(conn, items: list[dict], verdicts: list[tuple | None], mv: list[str]) 
             rej_rows.append((it["doc_id"], it["brand_id"], model, conf, "not this product"))
         else:
             lab_rows.append((it["doc_id"], it["brand_id"], model, LABEL_CODE[kind], conf))
+    labelled = rejected = 0
     with conn.transaction():
+        # one statement each, so rowcount is the rows actually written: a row that already existed (ON CONFLICT)
+        # is not counted, and the receipt equals the table (review, 2026-10-04)
         if lab_rows:
-            conn.cursor().executemany(
+            labelled = conn.execute(
                 "insert into public.mention_sentiment (doc_id, brand_id, model_version, label, intensity, conf, stage, "
                 "is_comparative, is_recommendation, is_category_gripe, evidence_span, scored_at) "
-                "values (%s, %s, %s, %s, 0, %s, 3, false, false, false, null, now()) on conflict do nothing", lab_rows)
+                "select d, b, m, l, 0, c, 3, false, false, false, null, now() "
+                "from unnest(%s::text[], %s::bigint[], %s::text[], %s::smallint[], %s::real[]) as v(d, b, m, l, c) "
+                "on conflict do nothing",
+                ([r[0] for r in lab_rows], [r[1] for r in lab_rows], [r[2] for r in lab_rows],
+                 [r[3] for r in lab_rows], [r[4] for r in lab_rows])).rowcount
         if rej_rows:
-            conn.cursor().executemany(
+            rejected = conn.execute(
                 "insert into public.mention_rejections (doc_id, brand_id, model_version, conf, reason) "
-                "values (%s, %s, %s, %s, %s) on conflict do nothing", rej_rows)
+                "select d, b, m, c, r from unnest(%s::text[], %s::bigint[], %s::text[], %s::real[], %s::text[]) "
+                "as v(d, b, m, c, r) on conflict do nothing",
+                ([r[0] for r in rej_rows], [r[1] for r in rej_rows], [r[2] for r in rej_rows],
+                 [r[3] for r in rej_rows], [r[4] for r in rej_rows])).rowcount
         done = [(it["brand_id"], it["doc_id"], it["created_utc"]) for it, v in zip(items, verdicts) if v is not None]
         if done:
             conn.execute("delete from public.classify_queue q using unnest(%s::bigint[], %s::text[], %s::timestamptz[]) "
@@ -325,13 +354,15 @@ def write(conn, items: list[dict], verdicts: list[tuple | None], mv: list[str]) 
         # Only what no judge answered is marked as tried (five tries, then it waits for a person). Marking every
         # row before judging it rewrote 2,000 queue rows a batch only to delete them a second later: write-ahead
         # log the egress counter bills (measured 2026-10-02).
-        left = [(it["brand_id"], it["doc_id"], it["created_utc"]) for it, v in zip(items, verdicts) if v is None]
+        tried = tried if tried is not None else [True] * len(items)
+        left = [(it["brand_id"], it["doc_id"], it["created_utc"])
+                for it, v, t in zip(items, verdicts, tried) if v is None and t]
         if left:
             conn.execute("update public.classify_queue q set attempts = attempts + 1 "
                          "from unnest(%s::bigint[], %s::text[], %s::timestamptz[]) as k(b, d, c) "
                          "where q.brand_id = k.b and q.doc_id = k.d and q.created_utc = k.c",
                          ([x[0] for x in left], [x[1] for x in left], [x[2] for x in left]))
-    return {"labelled": len(lab_rows), "rejected": len(rej_rows)}
+    return {"labelled": labelled, "rejected": rejected}
 
 
 # ---------------------------------------------------------------------------------------------- the stage
@@ -408,22 +439,32 @@ def _loop(conn, cfg, t, model, rec, last_batch, limit, deadline, should_stop, lo
         models = [MV_JEV if v else None for v in verdicts]
         rec["jev_decided"] += sum(v is not None for v in verdicts)
         residue = [i for i, v in enumerate(verdicts) if v is None]
+        tried = [True] * len(items)
+        glm_down = False
         if residue and cfg.get("glm", True):
             g, spend = glm_judge([items[i] for i in residue], in_flight=int(cfg.get("glm_in_flight", 6)),
-                                 model=model, log=log)
+                                 model=model, log=log, deadline=deadline)
             rec["glm_credits"] += spend["credits"]
             last_batch["glm"] = spend["credits"]
             rec["glm_failed_jobs"] = rec.get("glm_failed_jobs", 0) + spend["failed_jobs"]
-            for i, v in zip(residue, g):
+            for i, v, a in zip(residue, g, spend["asked"]):
+                tried[i] = a          # an item whose GLM job failed or never ran keeps its tries
                 if v is not None:
                     verdicts[i], models[i] = v, GLM_MODELS[model]
                     rec["glm_decided"] += 1
-        w = write(conn, items, verdicts, [m or MV_JEV for m in models])
+            # every job of the batch failed: GLM (or the codex CLI) is down, not the items. Stop asking tonight.
+            started = spend["jobs"] - spend["skipped_jobs"]   # jobs the deadline left unstarted are not failures
+            glm_down = started > 0 and spend["failed_jobs"] == started
+        w = write(conn, items, verdicts, [m or MV_JEV for m in models], tried)
         rec["labelled"] += w["labelled"]
         rec["rejected"] += w["rejected"]
         rec["not_checked"] += sum(v is None for v in verdicts)
         log(f"    classify: {taken} taken, {rec['labelled']} labelled, {rec['rejected']} not this product, "
             f"{rec['not_checked']} not checked; Jev ${rec['jev_usd']:.3f}, GLM {rec['glm_credits']:.0f} credits", flush=True)
+        if glm_down:
+            rec["error"] = (f"every GLM job of a batch failed ({spend['failed_jobs']} of {spend['jobs']}): "
+                            f"GLM or the codex CLI is unavailable; what Jev settled was written, the rest keeps its tries")
+            break
         if rec["jev_usd"] > float(cfg.get("jev_usd_max", 1.0)):
             rec["allowance_used"] = f"tonight's Jev allowance (${cfg.get('jev_usd_max')}) is used"
             break

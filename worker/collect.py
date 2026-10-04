@@ -59,10 +59,15 @@ def plan(conn, today: dt.datetime) -> tuple[list[str], dict, set, int]:
         "SELECT scope, finished_at, rows FROM ingest_state WHERE ym='daily' AND stage='new_listing' "
         "AND code_version=%s AND scope NOT LIKE '\\_%%'", (d.CODE_VERSION,)).fetchall()
     seen = {r[0].lower(): (r[1], r[2]) for r in rows}
+    # a subreddit with a thread still inside the comment-revisit window is never quiet: skipping it would leave
+    # those threads' later comments unread until they aged out of the window (review, 2026-10-04)
+    active = {r[0].lower() for r in conn.execute(
+        "SELECT DISTINCT s.name FROM threads t JOIN subreddits s ON s.id = t.subreddit_id "
+        "WHERE t.first_seen_at > now() - make_interval(hours => %s)", (d.REVISIT_HOURS,)).fetchall()}
     subs, quiet = [], 0
     for s in mapping:
         fin, n = seen.get(s.lower(), (None, None))
-        if fin is not None and n == 0 and fin > today - dt.timedelta(days=QUIET_DAYS):
+        if fin is not None and n == 0 and fin > today - dt.timedelta(days=QUIET_DAYS) and s.lower() not in active:
             quiet += 1
             continue
         subs.append(s)
@@ -88,7 +93,8 @@ def run(conn, caps: dict, deadline: float, should_stop=lambda: None, log=print, 
     subs, mapping, core, quiet = plan(conn, now)
     rec = {"subs_planned": len(subs) + quiet, "subs_skipped_quiet": quiet, "subs_visited": 0, "posts_qualified": 0,
            "mentions_new": 0, "mentions_rejected": 0, "trees_fetched": 0, "trees_failed": 0,
-           "capped_listings": 0, "errors": 0, "reddit_calls": 0, "stopped": None, "allowance_used": None}
+           "capped_listings": 0, "listings_failed": 0, "errors": 0, "reddit_calls": 0, "stopped": None,
+           "allowance_used": None}
 
     brands = d.load_brands()
     alias_re = d.build_alias_re([b for bs in brands.values() for b in bs])
@@ -105,6 +111,7 @@ def run(conn, caps: dict, deadline: float, should_stop=lambda: None, log=print, 
         if time.time() > deadline:
             raise Allowance(f"the time set aside for collection ended {where}")
 
+    failed_subs: set[str] = set()   # one entry per subreddit, however many ways it failed
     log(f"  collect: {len(subs)} subreddits to visit ({quiet} quiet ones skipped today), "
         f"{len(core & set(subs))} core")
     try:
@@ -124,6 +131,9 @@ def run(conn, caps: dict, deadline: float, should_stop=lambda: None, log=print, 
                     cur = conn.cursor()
                     wm = d.get_watermark(cur, sub)
                     posts, listing_ok, capped = d.fetch_new(sub, wm)
+                    if not listing_ok:
+                        rec["listings_failed"] += 1
+                        failed_subs.add(sub)
                     qual = [p for p in posts if d.content_qualify(p, mapping.get(sub, []), alias_re)]
                     newest = max([p.get("created_utc") or 0 for p in posts], default=wm or 0)
                     if qual:
@@ -183,6 +193,7 @@ def run(conn, caps: dict, deadline: float, should_stop=lambda: None, log=print, 
                 raise
             except Exception as e:  # noqa: BLE001 - one subreddit's failure must not end the run
                 rec["errors"] += 1
+                failed_subs.add(sub)
                 log(f"  !! r/{sub}: {type(e).__name__}: {str(e)[:160]}")
                 if db.is_transient(e):
                     raise
@@ -196,6 +207,13 @@ def run(conn, caps: dict, deadline: float, should_stop=lambda: None, log=print, 
         rec["stopped"] = str(s)
         log(f"  collect stopped: {s}")
     rec["reddit_calls"] = rc.stats()["calls"] - calls0
+    # Reddit failing most requests is not a quiet night: it is a failure the owner must hear of (review 4 Oct)
+    tried = rec["subs_visited"] + rec["errors"]
+    if tried >= 20 and len(failed_subs) * 2 > tried:
+        rec["error"] = (f"{rec['listings_failed']} subreddit listings failed and {rec['errors']} subreddits raised, "
+                        f"of {tried} tried")
+    elif rec["trees_fetched"] + rec["trees_failed"] >= 50 and rec["trees_failed"] * 2 > rec["trees_fetched"] + rec["trees_failed"]:
+        rec["error"] = f"{rec['trees_failed']} of {rec['trees_fetched'] + rec['trees_failed']} comment trees failed"
     # threads stored for the first time by this stage, read back (the receipt used to count every qualifying post
     # in the listings, including threads already stored: 13,586 against 11,476 new on 2026-10-04)
     rec["threads_new"] = conn.execute("select count(*) from public.threads where first_seen_at >= to_timestamp(%s)",

@@ -87,6 +87,10 @@ class Run:
             caps["mentions"] = args.max_mentions
         self.caps = caps
         self.deadline = self.started + caps["minutes"] * 60
+        if not args.manual:   # a scheduled run also ends with its window, however late it started (review 4 Oct)
+            end = dt.datetime.combine(dt.datetime.now(dt.timezone.utc).date(),
+                                      dt.datetime.strptime(sched["window_utc"][1], "%H:%M").time(), dt.timezone.utc)
+            self.deadline = min(self.deadline, end.timestamp())   # a start after the end leaves no time at all
         self.receipt: dict = {"run_id": self.run_id, "code_version": CODE_VERSION, "manual": bool(args.manual),
                               "caps": caps, "stages": {}, "problems": [], "caps_hit": []}
         self.wal0 = wal_bytes(conn)
@@ -257,6 +261,11 @@ def main() -> int:
         run.receipt["skipped"] = reason
         run.record("skipped")
         return 0
+    if time.time() >= run.deadline:   # the window check passed, but the connection came after the window's end
+        run.receipt["skipped"] = "started after its window ended"
+        run.record("skipped")
+        log("started after the window ended: not running")
+        return 0
     run.record("running")
     log(f"run {run.run_id[:8]} caps {run.caps}")
 
@@ -278,7 +287,7 @@ def main() -> int:
         # Collection ends an hour before the run's deadline: classification, refresh, score and publish need
         # that hour, and a collection that used the whole window would leave the day's mentions unlabelled.
         return collect.run(conn, {"reddit_calls": max(0, left), "mentions": run.caps["mentions"]},
-                           run.deadline - sched.get("reserve_minutes_after_collect", 60) * 60, run.stop_reason, log,
+                           run.deadline - sched.get("reserve_minutes_after_collect", 95) * 60, run.stop_reason, log,
                            run_id=run.run_id)
     stage(run, "collect", collect_stage)
 
@@ -289,15 +298,22 @@ def main() -> int:
         cfg = dict(sched["classify"])
         if args.classify_items is not None:
             cfg["max_items"] = args.classify_items
-        # and classification leaves 20 minutes for refresh, score and publish
-        return classify_sweep.run(conn, cfg, run.deadline - 20 * 60, run.stop_reason, log)
+        # and classification leaves time for refresh, score and publish (measured 4 Oct: refresh 15 minutes for
+        # 3,262 brands, publish about 3 minutes per 1,000 pages)
+        return classify_sweep.run(conn, cfg, run.deadline - sched.get("reserve_minutes_after_classify", 35) * 60,
+                                  run.stop_reason, log)
     stage(run, "classify", classify_stage)
 
     def refresh_stage():
         import site_fill_lib
-        n = site_fill_lib.drain(conn, 25, log=lambda *a, **k: None)
+        # refresh stops 8 minutes before the run's end so publish can still prove the takedown pages
+        # (measured 4 Oct: 0.28 s a brand on the night, 1.3 s a brand in the afternoon)
+        n = site_fill_lib.drain(conn, 25, log=lambda *a, **k: None, deadline=run.deadline - 8 * 60)
         left = conn.execute("select count(*) from site.dirty_brand").fetchone()[0]
-        return {"brands_refreshed": n, "still_dirty": left}
+        out = {"brands_refreshed": n, "still_dirty": left}
+        if left:
+            out["allowance_used"] = f"the time for refresh ended with {left} brands left for the next run"
+        return out
     stage(run, "refresh", refresh_stage)
     stage(run, "score", lambda: site_score.run(conn, log=log))
 
@@ -306,7 +322,7 @@ def main() -> int:
         if not on:
             return {"skipped": "publishing is off until decision 0017: the site is not told about changes"}
         rec = site_publish.run(conn, sched["site_url"], verify_n=sched["verify_pages"],
-                               max_expire=sched["max_expire_pages"], log=log)
+                               max_expire=sched["max_expire_pages"], log=log, deadline=run.deadline)
         # A takedown's receipt: every page that held the document has been SEEN at its new fingerprint
         # (or answered 404). Never stamped on a 200 from the endpoint.
         stamped = conn.execute("""
@@ -318,24 +334,34 @@ def main() -> int:
                and not exists (select 1 from unnest(r.brand_ids) b
                                  join public.brands br on br.id = b
                                  join site.retired_page rp on rp.slug = br.slug
-                                where rp.gone_at is null)""").rowcount
+                                where rp.gone_at is null)
+               -- a brand still waiting for its refresh has an old page_hash that may equal the old served_hash:
+               -- the purge is not on its page yet, so nothing is proven (review, 2026-10-04)
+               and not exists (select 1 from unnest(r.brand_ids) b join site.dirty_brand d on d.brand_id = b)""").rowcount
         rec["takedown_receipts_stamped"] = stamped
         # Every page the publisher fetched was re-rendered by the site from the database: about 0.2 MB a company
         # page (measured on the pilot), counted here so the receipt's estimate covers the whole night (2026-10-04:
         # the first scheduled run's estimate left them out and read 0.555 GB where the meter's day read 0.89).
-        pages = sum(int(rec.get(k) or 0) for k in ("pages_verified", "index_pages_verified", "retired_verified"))
+        pages = int(rec.get("pages_fetched") or 0)   # every fetch the site answered rendered, proven or not
         run.render_bytes = pages * RENDER_BYTES_PER_PAGE
         rec["render_estimate_gb"] = round(run.render_bytes / 1e9, 3)
-        open_td = conn.execute("select count(*) from public.removals where revalidated_at is null "
-                               "and detected_at < now() - interval '36 hours'").fetchone()[0]
-        if open_td:
-            run.receipt["problems"].append(f"{open_td} takedowns older than 36 hours are not yet proven on the site")
         if rec.get("failed"):
             run.receipt["problems"].append(f"{len(rec['failed'])} pages failed verification")
         rec.pop("verified_brand_ids", None)
         return rec
     stage(run, "publish", publish_stage)
 
+    # whatever ran tonight: a takedown older than 36 hours that is not proven on the site is a legal condition
+    # (decision 0002) and fails the run, so Vlad hears of it (review 4 Oct: it was checked only inside publish)
+    try:
+        open_td = conn.execute("select count(*) from public.removals where revalidated_at is null "
+                               "and detected_at < now() - interval '36 hours'").fetchone()[0]
+    except Exception as e:  # noqa: BLE001
+        open_td, run.receipt["takedown_check_error"] = None, str(e)[:200]
+        run.receipt["problems"].append("takedown proof check failed: could not read the removals ledger")
+    if open_td:
+        run.receipt["problems"].append(f"takedown proof failed: {open_td} takedowns older than 36 hours are "
+                                       f"not yet proven on the site")
     hard = [p for p in run.receipt["problems"] if "failed" in p or "brake" in p]
     status = ("stopped" if run.receipt.get("stopped") else
               "failed" if hard else ("capped" if run.receipt["caps_hit"] else "ok"))

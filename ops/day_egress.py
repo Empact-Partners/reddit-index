@@ -34,8 +34,8 @@ def used_today(conn) -> dict:
     measured = None
     if os.path.exists(gate):
         g = json.load(open(gate))
-        if g.get("found_run"):
-            measured = float(g["egress_gb"])
+        if g.get("run_id") and g.get("gate_egress_gb") is not None:   # ops/gate_meter.py's tick format (4 Oct on)
+            measured = float(g["gate_egress_gb"])
     rows = conn.execute("select stage, notes from public.pipeline_runs where started_at::date = %s", (today,)).fetchall()
     est = 0.0
     for stage, notes in rows:
@@ -46,7 +46,7 @@ def used_today(conn) -> dict:
         else:
             out["other_gb"] += v
     if measured is not None:
-        out["sweep_gb"], out["sweep_source"] = measured, "node counter (gate meter)"
+        out["sweep_gb"], out["sweep_source"] = measured, "node counter (gate meter: " + str(g.get("gate_source")) + ")"
     else:
         out["sweep_gb"], out["sweep_source"] = est * SWEEP_ESTIMATE_TO_MEASURED, "receipt estimate x 1.6"
     out["used_gb"] = round(out["sweep_gb"] + out["other_gb"], 3)

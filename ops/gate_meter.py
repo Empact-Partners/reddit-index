@@ -3,7 +3,7 @@
 
 Two meters, both on the database node's transmit counter (the number the egress watchdog and the bill follow):
 
-  laptop     the counter read in the two hours before the run starts, and again 20 minutes after its receipt is
+  laptop     the counter's last reading before the run starts (every tick from 16:00 UTC), and again 20 minutes after its receipt is
              written (the write-ahead log keeps shipping after heavy writes; measured 2026-10-03, the tail belongs
              to the work). Exact for the run, when the laptop was awake at both moments.
   watchdog   the command-center supabase watchdog's own reading at 07:01 UTC the morning of the run: reddit-index's
@@ -128,7 +128,9 @@ def tick(night: str) -> dict:
     rec = load(night)
     day = dt.datetime.fromisoformat(night).replace(tzinfo=dt.timezone.utc)
     t = now()
-    if "counter_before" not in rec and day - dt.timedelta(hours=2) <= t < day:
+    # the baseline is the LAST reading before 00:00: every tick from 16:00 UTC overwrites it, so daytime jobs that
+    # finished before the Mac's last evening tick fall outside the night's window
+    if day - dt.timedelta(hours=8) <= t < day:
         c = counter()
         if c:
             rec["counter_before"] = {"bytes": c[0], "at": c[1]}

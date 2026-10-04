@@ -30,8 +30,10 @@
   "glm_in_flight": 8
  },
  "site_url_note": "The trial runs before go-live publish to the read-path preview (protected; the sweep sends the bypass header). At go-live, decision 0017, this becomes https://redditindex.com.",
- "reserve_minutes_after_collect": 60,
+ "reserve_minutes_after_collect": 95,
  "reddit_pace_seconds": 1.2,
  "egress_note": "The run stops at 0.7 GB estimated (write-ahead log + text the classifier reads) before the publisher, which adds at most 1,000 page renders of about 0.2 MB each: at most about 0.9 GB a night. The estimate now counts the renders. Measured 2026-10-04: the first scheduled run's whole day read 0.89 GB on the node counter (the supabase watchdog's daily reading).",
- "max_expire_note": "The publisher expires at most 1,000 changed pages a night (takedown pages always first) and fetches every one it expires, so the site re-renders them inside the measured run and a visitor afterwards costs the database nothing until the page next changes. Pages beyond the cap wait, longest-waiting first, and each shows its own data date. Was 2,000 expired with 100 fetched (2026-10-03): the other 1,900 would have re-rendered on the first visit, outside any measurement."
+ "max_expire_note": "The publisher expires at most 1,000 changed pages a night (takedown pages always first) and fetches every one it expires, so the site re-renders them inside the measured run and a visitor afterwards costs the database nothing until the page next changes. Pages beyond the cap wait, longest-waiting first, and each shows its own data date. Was 2,000 expired with 100 fetched (2026-10-03): the other 1,900 would have re-rendered on the first visit, outside any measurement.",
+ "reserve_minutes_after_classify": 35,
+ "reserve_note": "Collection ends 95 minutes before the run's end, classification 35 minutes before it, so refresh (15 minutes for 3,262 brands on 4 Oct), score and publish (about 3 minutes per 1,000 pages) finish inside the window. Classification gets about an hour: the nightly GLM allowance of 3,000 credits is about 50,000 mentions."
 }

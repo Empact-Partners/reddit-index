@@ -108,15 +108,22 @@ def expire(base: str, paths: list[str]) -> None:
             raise RuntimeError(f"revalidate answered {got} for {len(chunk)} paths")
 
 
+DEADLINE: list[float | None] = [None]   # set by run(): no request starts after the run's end (review 4 Oct)
+
+
 def fetch(base: str, path: str, want_hash: str | None, want_status: int = 200, tries: int = 3) -> dict:
     """GET a page. ok means: the status we expect AND (when a hash is expected) the page carries it."""
     out = {"path": path, "ok": False, "status": None, "hash": None, "bytes": 0}
     for attempt in range(tries):
+        if DEADLINE[0] is not None and time.time() > DEADLINE[0]:
+            out["error"] = "the run's time ended before this page was fetched"
+            return out
         try:
             # gzip: an index page is 1.4 MB of HTML and 152 of them are fetched whenever the boards change
             req = urllib.request.Request(base + path, headers={**_headers(base), "Cache-Control": "no-cache",
                                                                "Accept-Encoding": "gzip"})
-            with urllib.request.urlopen(req, timeout=60) as r:
+            left = 60.0 if DEADLINE[0] is None else max(5.0, min(60.0, DEADLINE[0] - time.time()))
+            with urllib.request.urlopen(req, timeout=left) as r:
                 raw = r.read()
                 out["status"] = r.status
                 gz = r.headers.get("Content-Encoding") == "gzip"
@@ -134,6 +141,8 @@ def fetch(base: str, path: str, want_hash: str | None, want_status: int = 200, t
             time.sleep(1.5 * (attempt + 1))
             continue
         if want_hash is None:
+            if path.endswith(".xml"):   # a 200 that is a login or error page is not the sitemap (review 4 Oct)
+                out["is_sitemap"] = b"<urlset" in body[:4096] or b"<sitemapindex" in body[:4096]
             out["ok"] = True
             return out
         m = HASH_RE.search(body.decode("utf-8", "replace"))
@@ -145,10 +154,12 @@ def fetch(base: str, path: str, want_hash: str | None, want_status: int = 200, t
     return out
 
 
-def run(conn, base: str, dry_run: bool = False, verify_n: int = 100, max_expire: int = 7000,
+def run(conn, base: str, dry_run: bool = False, verify_n: int = 100, max_expire: int = 7000, deadline: float | None = None,
         stamp: bool = True, log=print) -> dict:
     base = base.rstrip("/")
-    receipt = {"base": base, "pages_changed": 0, "pages_expired": 0, "pages_verified": 0, "takedown_pages": 0,
+    DEADLINE[0] = deadline
+    receipt = {"base": base, "pages_changed": 0, "pages_expired": 0, "pages_verified": 0, "pages_fetched": 0,
+               "takedown_pages": 0,
                "index_pages_verified": 0, "retired_verified": 0, "site_bytes_fetched": 0, "failed": []}
 
     clash = collisions(conn)
@@ -168,9 +179,9 @@ def run(conn, base: str, dry_run: bool = False, verify_n: int = 100, max_expire:
                s.expired_hash is distinct from s.page_hash as needs_expiry
           from site.brand_stats s
          where s.expired_hash is distinct from s.page_hash
-            or (s.served_hash is distinct from s.page_hash
-                and exists (select 1 from public.removals r
-                             where r.revalidated_at is null and s.brand_id = any (r.brand_ids)))
+            -- a page expired but never seen at its fingerprint (a fetch that failed, a run that ended first, or
+            -- night 1's unfetched sample) comes round again; it no longer waits for its data to change (review 4 Oct)
+            or s.served_hash is distinct from s.page_hash
          order by 4 desc, s.expired_at nulls first, md5(s.slug || current_date::text)""").fetchall()
     # After takedowns, the pages that have waited longest: with max_expire below the number changed (the cap
     # that bounds regeneration egress, ops/schedule.json), every page still comes round within a few days.
@@ -220,8 +231,14 @@ def run(conn, base: str, dry_run: bool = False, verify_n: int = 100, max_expire:
 
     ok_ids = []
     for i in range(0, len(to_verify), 200):
+        # the run's deadline holds here too: what is left stays unproven and comes round tomorrow (takedown pages
+        # are first in the list)
+        if deadline is not None and time.time() > deadline:
+            receipt["verify_stopped"] = f"the run's time ended with {len(to_verify) - i} pages left to fetch"
+            break
         chunk = to_verify[i:i + 200]
         res = verify([(f"/{r[1]}/", r[2], 200) for r in chunk])
+        receipt["pages_fetched"] += sum(1 for v in res if v["status"])
         good = [(r[0], r[2]) for r, v in zip(chunk, res) if v["ok"]]
         receipt["site_bytes_fetched"] += sum(v["bytes"] for v in res)
         receipt["failed"] += [{"path": v["path"], "status": v["status"], "hash": v["hash"], "takedown": bool(r[3])}
@@ -254,8 +271,8 @@ def run(conn, base: str, dry_run: bool = False, verify_n: int = 100, max_expire:
             conn.execute("update site.meta set served_boards_hash = %s where boards_hash = %s", (meta[0], meta[0]))
     if slugs_changed:
         v = fetch(base, "/sitemap.xml", None, 200)
-        if not v["ok"]:
-            receipt["failed"].append({"path": "/sitemap.xml", "status": v["status"]})
+        if not v["ok"] or not v.get("is_sitemap", True):
+            receipt["failed"].append({"path": "/sitemap.xml", "status": v["status"], "note": "not a sitemap"})
         elif stamp:
             conn.execute("update site.meta set served_slugs_hash = %s where slugs_hash = %s", (meta[2], meta[2]))
 
