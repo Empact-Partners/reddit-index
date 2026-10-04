@@ -1,0 +1,74 @@
+{
+ "night": "2026-10-04",
+ "run_id": "eef79c86-24b4-4399-bb51-a18db724e047",
+ "status": "failed",
+ "run_started": "2026-10-04T00:03:02.524440+00:00",
+ "run_finished": "2026-10-04T05:23:57.651273+00:00",
+ "run_minutes": 320.9,
+ "caps_hit": [],
+ "problems": [
+  "classify failed: OSError: [Errno 7] Argument list too long: 'codex'"
+ ],
+ "allowances_used": [
+  "collect: the time set aside for collection ended inside r/Architects"
+ ],
+ "egress_estimate_gb": 0.555,
+ "stages": {
+  "score": {},
+  "collect": {
+   "reddit_calls": 7550,
+   "mentions_new": 20067,
+   "subs_visited": 466,
+   "threads_new": 13586
+  },
+  "publish": {
+   "pages_expired": 2000,
+   "pages_verified": 728,
+   "takedown_pages": 628,
+   "failed": []
+  },
+  "refresh": {},
+  "classify": {
+   "error": "OSError: [Errno 7] Argument list too long: 'codex'"
+  },
+  "takedowns": {
+   "reddit_calls": 2000,
+   "docs_checked": 200000,
+   "docs_gone": 5388,
+   "docs_edited": 288
+  }
+ },
+ "reconcile": {
+  "new mentions": {
+   "receipt": 20067,
+   "database": 20067,
+   "match": true
+  },
+  "labels": {
+   "receipt": null,
+   "database": 25125,
+   "match": false
+  },
+  "not this product": {
+   "receipt": null,
+   "database": 5270,
+   "match": false
+  },
+  "takedowns found": {
+   "receipt": 5676,
+   "database": 5676,
+   "match": true
+  }
+ },
+ "receipt_matches_database": false,
+ "watchdog": {
+  "gb_last_24h": 0.89,
+  "gb_per_day_7d": 0.77,
+  "logged_at": "2026-10-04T07:01:25.113215215Z",
+  "window": "the 24 hours to 2026-10-04T07:01:25.113215215Z"
+ },
+ "gate_egress_gb": 0.89,
+ "gate_source": "watchdog day (upper bound)",
+ "gate_under_1_gb": true,
+ "last_tick": "2026-10-04T12:11:49+00:00"
+}

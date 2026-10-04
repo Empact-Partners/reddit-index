@@ -47,20 +47,25 @@ def vercel(method: str, path: str, body: dict | None = None) -> dict:
         raise SystemExit(f"vercel {method} {path}: HTTP {e.code} {e.read().decode()[:300]}")
 
 
-def preflight() -> int:
+def preflight(nights=("2026-10-05", "2026-10-06")) -> int:
+    """Two consecutive scheduled nights, each measured under 1 GB (ops/gate_meter.py), finished ok or capped,
+    with the receipt's counts matching the database; and schedule_check clean. Night 1 (2026-10-04) does not
+    count: its classify stage failed (Linux argument limit), fixed the same day."""
     missing = []
-    for night in ("2026-10-04", "2026-10-05"):
+    for night in nights:
         p = os.path.join(ROOT, "docs", "go-live", f"egress-{night}.json")
         if not os.path.exists(p):
             missing.append(f"no measurement for the night of {night}")
             continue
         g = json.load(open(p))
-        if not g.get("found_run"):
+        if not g.get("run_id"):
             missing.append(f"{night}: no scheduled run found")
-        elif not g.get("gate_under_1_gb"):
-            missing.append(f"{night}: {g['egress_gb']} GB, over the 1 GB gate")
         elif g.get("status") not in ("ok", "capped"):
-            missing.append(f"{night}: run status {g.get('status')}")
+            missing.append(f"{night}: run status {g.get('status')}: {g.get('problems')}")
+        elif g.get("gate_under_1_gb") is not True:
+            missing.append(f"{night}: egress {g.get('gate_egress_gb')} GB ({g.get('gate_source')}), not under the 1 GB gate")
+        elif g.get("receipt_matches_database") is not True:
+            missing.append(f"{night}: receipt does not match the database: {g.get('reconcile')}")
     sc = subprocess.run([sys.executable, os.path.join(ROOT, "scripts", "schedule_check.py")], capture_output=True,
                         text=True)
     if sc.returncode != 0:

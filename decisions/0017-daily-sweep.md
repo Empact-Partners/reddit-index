@@ -48,7 +48,7 @@ issues and optimize the whole mechanics and the whole mechanism behind it."
 | Reddit API calls | 15,000 (2,000 takedowns, 13,000 collection), 50 a minute | _to fill_ |
 | New mentions | 40,000 | _to fill_ |
 | Run time | 5.5 hours, window 00:00–05:30 UTC | _to fill_ |
-| Database egress | the run stops at 0.8 GB estimated; gate: under 1 GB a day measured | _to fill_ |
+| Database egress | the run stops at 0.7 GB estimated before publishing, which adds at most 1,000 page renders (about 0.2 GB); one day total of 1 GB for every index job together (`ops/day_egress.py`); gate: under 1 GB a day measured | _to fill_ |
 | GLM-5.3 | 3,000 credits | _to fill_ |
 | Jev | $1 | _to fill_ |
 | Vercel | one build per code change; none for data | 0 builds a day |
@@ -79,6 +79,34 @@ What the pilot taught, and what changed because of it:
   the backlog most brands change daily; afterwards about 2,000 a day.
 - The one-copy text trigger met a NOT NULL constraint within a minute of collection; fixed (migration 0021),
   22 dropped rows restored.
+
+## The first scheduled run (4 October)
+
+Run `eef79c86`, 00:03-05:24 UTC, unattended. Takedowns: 200,000 comments checked (every one on a page, then the
+longest-unchecked), 5,388 deleted and 288 edited on Reddit, 8,526 rows purged. Collection: 7,550 Reddit calls,
+466 subreddits, 20,067 new mentions, ended by its time allowance. Classification: 34,000 mentions judged (25,125
+labelled, 5,270 "not this product"; 1,969 GLM credits, $0.68 of Jev). 3,262 pages refreshed, 5,872 scored, 2,000
+expired, 728 fetched and proven on the preview (628 that had held a takedown), 0 failures. The egress
+watchdog's meter read **0.89 GB** for the whole day, 07:01 to 07:01 UTC (an upper bound for the run).
+
+It ended **failed**, and does not count toward the gates. What it taught, fixed the same day:
+
+- The classification step died on `Argument list too long`: the GLM prompt was passed as a program argument,
+  Linux caps one argument at 128 KB, and a batch of long comments passed it (macOS allows 1 MB, so the laptop
+  never saw it). The prompt now goes in on stdin (a 187 KB batch tested); a job that cannot start costs its own
+  items, and an error inside the stage keeps the counts of what it already wrote. The crash also took the
+  stage's counts off the receipt; the gate meter's reconciliation caught it (labels: receipt none, database
+  25,125).
+- Collection's order put all 553 waiting core subreddits before any other; with time for 466 a night, the other
+  1,354 (522 never visited, the subreddits behind the August brands) would never have come round. Now each is
+  ranked by how many of its due intervals have passed (core: a day, others: three).
+- The shared Reddit app ran out of quota 12 times in the night (another tool was using it): about 30 minutes of
+  collection lost. The dedicated app (owner step below) removes that.
+- The publisher expired 2,000 pages and fetched 728: the other 1,272 would have re-rendered on their first
+  visit, outside any measurement. It now expires at most 1,000 a night and fetches every one, and the receipt's
+  estimate counts those renders.
+- The receipt counted qualifying posts in the listings as "new threads" (13,586 against 11,476 stored for the
+  first time); it now reads the new threads back.
 
 ## Go-live gates
 

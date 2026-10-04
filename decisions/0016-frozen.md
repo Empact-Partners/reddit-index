@@ -81,6 +81,7 @@ database role, and proves its schedule by receipts.
 | 2026-10-03 02:20 | none (newest is still the parked image, no cron) — the old 02:00 slot passed | 0 outside a receipt (the new sweep's pilot wrote inside its own) | clean |
 | 2026-10-03 03:00 | none | 0 outside a receipt | clean |
 | 2026-10-03 08:00 | none | 0 outside a receipt | clean (first night proven) |
+| 2026-10-04 12:12 | none (newest is still the parked image, no cron) — the 02:00 slot passed a second time | 0 outside a receipt (the first scheduled sweep wrote inside its own) | clean (second night proven: **stopped**). The 02:20/03:00/08:00 watcher died with the session that started it; this check reads the same data afterwards |
 
 From 3 October the new sweep (decision 0017) writes too, always inside a receipt (`public.pipeline_runs`). The
 check counts only writes outside every receipt; `scripts/schedule_check.py` applies the same rule daily.

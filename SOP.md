@@ -203,19 +203,20 @@ Supporting facts worth keeping:
   Reddit lane is serialized.
 - Detached work must use `subprocess.Popen(..., start_new_session=True)`. `nohup ... &` dies
   with the tool call's process-group SIGTERM.
-- `caffeinate -i -m -s`, started the same way, keeps a long collection alive through an idle
-  screen.
+- Nothing holds the Mac awake any more (Vlad, 2026-10-04: the Mac sleeps as normal). A laptop job is a
+  launchd tick that does what is due when it runs and resumes after a wake; a bounded `caffeinate -i <one
+  command>` around one finite job is the most that is allowed. The daily sweep does not need the laptop at all.
 - When the worker reports `codex=unavailable: 'codex --version' timed out`, that is the box,
   not the binary. Do not start a wave.
 
 ## Running unattended (decisions/0013)
 
-Two launchd agents exist, and they are not the same kind of thing.
+`com.vladshvets.caffeinate` was **disabled on 2026-10-04** at Vlad's request (renamed
+`.plist.disabled-2026-10-04`): the Mac sleeps as normal. The daily sweep runs on Railway and needs no laptop.
 
-`com.vladshvets.caffeinate` is **permanent**. It keeps the Mac awake with `caffeinate -i -m -s`
-under `KeepAlive`. Start caffeinate from inside a tool call and the harness SIGTERMs it when
-the call ends — that is how a nine-hour run was lost to the lid-open machine sleeping on mains
-power on 2026-08-22.
+`com.vladshvets.ri-gate-meter` is **temporary**: a 10-minute tick (`ops/gate_meter.py tick`) that measures the
+go-live nights into `docs/go-live/`. Remove it after go-live:
+`launchctl bootout gui/$(id -u)/com.vladshvets.ri-gate-meter && rm ~/Library/LaunchAgents/com.vladshvets.ri-gate-meter.plist`.
 
 `com.vladshvets.reddit-index-pipeline` is **temporary and self-removing**. It carries one
 already-started multi-day run to its end and then deletes its own plist. It starts nothing

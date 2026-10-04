@@ -86,7 +86,7 @@ def run(conn, caps: dict, deadline: float, should_stop=lambda: None, log=print, 
     calls0 = rc.stats()["calls"]
     now = dt.datetime.now(dt.timezone.utc)
     subs, mapping, core, quiet = plan(conn, now)
-    rec = {"subs_planned": len(subs) + quiet, "subs_skipped_quiet": quiet, "subs_visited": 0, "threads_new": 0,
+    rec = {"subs_planned": len(subs) + quiet, "subs_skipped_quiet": quiet, "subs_visited": 0, "posts_qualified": 0,
            "mentions_new": 0, "mentions_rejected": 0, "trees_fetched": 0, "trees_failed": 0,
            "capped_listings": 0, "errors": 0, "reddit_calls": 0, "stopped": None, "allowance_used": None}
 
@@ -175,7 +175,7 @@ def run(conn, caps: dict, deadline: float, should_stop=lambda: None, log=print, 
                     elif capped:
                         rec["capped_listings"] += 1
                 rec["subs_visited"] += 1
-                rec["threads_new"] += len(qual)
+                rec["posts_qualified"] += len(qual)
                 rec["mentions_new"] += ins
                 rec["mentions_rejected"] += rej
                 rec["trees_fetched"] += len(fetched)
@@ -196,5 +196,9 @@ def run(conn, caps: dict, deadline: float, should_stop=lambda: None, log=print, 
         rec["stopped"] = str(s)
         log(f"  collect stopped: {s}")
     rec["reddit_calls"] = rc.stats()["calls"] - calls0
+    # threads stored for the first time by this stage, read back (the receipt used to count every qualifying post
+    # in the listings, including threads already stored: 13,586 against 11,476 new on 2026-10-04)
+    rec["threads_new"] = conn.execute("select count(*) from public.threads where first_seen_at >= to_timestamp(%s)",
+                                      (t0,)).fetchone()[0]
     rec["minutes"] = round((time.time() - t0) / 60, 1)
     return rec
