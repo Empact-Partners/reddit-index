@@ -58,6 +58,20 @@
    "receipt": 5676,
    "database": 5676,
    "match": true
+  },
+  "_complete": {
+   "receipt": null,
+   "database": null,
+   "match": false,
+   "missing": [
+    "labels",
+    "not this product"
+   ]
+  },
+  "_dangling_text": {
+   "receipt": 0,
+   "database": 0,
+   "match": true
   }
  },
  "receipt_matches_database": false,
@@ -70,5 +84,5 @@
  "gate_egress_gb": 0.89,
  "gate_source": "watchdog day (upper bound)",
  "gate_under_1_gb": true,
- "last_tick": "2026-10-04T12:11:49+00:00"
+ "last_tick": "2026-10-04T17:34:49+00:00"
 }

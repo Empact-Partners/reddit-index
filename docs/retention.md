@@ -43,3 +43,23 @@ At most 1.0 GB of measured egress in all, at most 0.4 GB a day, one monthly part
 transmit counter. Before and after each partition: the text every page shows (`site.rail_card`) for a sample of
 brands, compared word for word, and the counts the lookup job reads (`published.mentions` per brand), compared
 exactly. Any difference stops the step and undoes that partition from the archive copy.
+
+## Review and test before step 3 ran (2026-10-04)
+
+An independent review (Codex `gpt-6-astra`, low effort, no web) of this file's code found what step 3 could do
+wrong; fixed before it touched production text:
+
+- a row pointing at a row step 3 clears would have lost its text (views follow one pointer). Each chunk now
+  re-points such rows at the holder first, in the same transaction. Live data had 0 such rows (the insert trigger
+  and step 3 pick the same holder, the lowest brand_id with the text), and 0 dangling pointers.
+- the checksum summed the texts alone: a swap between rows or a NULL in place of text would not move it. It now
+  hashes each row's key with its readable text; a dangling-pointer count is checked after every partition.
+- a restore now puts back exactly the rows this run cleared (remembered in a temporary table), and a restore that
+  does not verify fails the step loudly.
+- `abs(hashtext(...))` overflowed on one value; every step's egress is measured on the node counter and recorded
+  on its receipt; `archive.mentions.body` is nullable (migration 0022), or `rejected` would have rolled back.
+
+Tested on a scratch sample inside the database (temporary tables write no write-ahead log, so no egress): 3,330
+rows of the September partition, 1,125 of them (34%) word-for-word copies of another row's text. Run 1 cleared
+1,125 and re-pointed a planted chain to the holder, readable text identical; run 2 changed nothing; a forced
+restore put back 1,126 rows and verified.

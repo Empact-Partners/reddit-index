@@ -64,6 +64,8 @@ def preflight(nights=("2026-10-05", "2026-10-06")) -> int:
             missing.append(f"{night}: run status {g.get('status')}: {g.get('problems')}")
         elif g.get("gate_under_1_gb") is not True:
             missing.append(f"{night}: egress {g.get('gate_egress_gb')} GB ({g.get('gate_source')}), not under the 1 GB gate")
+        elif g.get("reconcile", {}).get("_complete", {}).get("match") is not True:
+            missing.append(f"{night}: the receipt is missing core counts: {g['reconcile']['_complete'].get('missing')}")
         elif g.get("receipt_matches_database") is not True:
             missing.append(f"{night}: receipt does not match the database: {g.get('reconcile')}")
     sc = subprocess.run([sys.executable, os.path.join(ROOT, "scripts", "schedule_check.py")], capture_output=True,

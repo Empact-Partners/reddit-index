@@ -69,14 +69,16 @@ def main() -> int:
 
     conn = db.connect()
     conn.autocommit = True
-    s = spent(conn)
-    left = conn.execute("select count(*) from public.classify_queue").fetchone()[0]
     if a.status:
-        print(json.dumps({"spent": s, "budget": BUDGET, "queue": left}, indent=1))
+        print(json.dumps({"spent": spent(conn), "budget": BUDGET,
+                          "queue": conn.execute("select count(*) from public.classify_queue").fetchone()[0]}, indent=1))
         return 0
+    # the lock before the totals: a run that finished in between is counted (review 4 Oct)
     if not conn.execute("select pg_try_advisory_lock(%s)", (LOCK_KEY,)).fetchone()[0]:
         log("the daily sweep or another backlog run holds the lock: not running")
         return 0
+    s = spent(conn)
+    left = conn.execute("select count(*) from public.classify_queue").fetchone()[0]
 
     # one day total for every index job together (ops/day_egress.py): the backlog takes what the night's sweep
     # and the other jobs left of it, never more than its own daily and total ceilings

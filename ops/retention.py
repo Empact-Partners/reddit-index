@@ -33,8 +33,9 @@ LOCK_KEY = 0x52494458
 BUDGET = {"one_copy_gb_day": 0.4, "one_copy_gb_total": 1.0}
 CHUNKS = 32   # a partition is cleared in 32 slices by comment id, so no statement holds a long transaction
 
-READABLE = ("coalesce(m.body, (select k.body from public.mentions k where k.doc_id = m.doc_id "
+READABLE = ("coalesce(m.body, (select k.body from {holders} k where k.doc_id = m.doc_id "
             "and k.created_utc = m.created_utc and k.brand_id = m.body_from))")
+HOLDERS = "public.mentions"   # where a pointer's text is looked up (the test points it at its scratch table)
 
 
 def log(*a):
@@ -96,38 +97,71 @@ def rejected(conn) -> dict:
             "probe_rows_removed": probes}
 
 
+def qual(part: str) -> str:
+    return part if "." in part else f"public.{part}"
+
+
 def checksum(conn, part: str) -> tuple[int, str]:
-    r = conn.execute(f"select count(*), coalesce(sum(hashtextextended({READABLE}, 0)::numeric), 0) "
-                     f"from public.{part} m").fetchone()
+    """Every row's key with its readable text: a swap between rows, or a NULL where text was, changes it
+    (review 4 Oct: a sum over the texts alone was blind to both)."""
+    r = conn.execute(f"select count(*), coalesce(sum(hashtextextended(m.doc_id || '|' || m.brand_id::text || '|' || "
+                     f"m.created_utc::text || '|' || coalesce({READABLE.format(holders=HOLDERS)}, chr(1)), 0)::numeric), 0) "
+                     f"from {qual(part)} m").fetchone()
     return int(r[0]), str(r[1])
 
 
+def dangling(conn, part: str) -> int:
+    """Rows whose text lives on another row that is gone or holds no text: the one failure that loses text."""
+    return conn.execute(f"select count(*) from {qual(part)} m where m.body is null and not exists ("
+                        f"select 1 from {HOLDERS} h where h.doc_id = m.doc_id and h.created_utc = m.created_utc "
+                        f"and h.brand_id = m.body_from and h.body is not null)").fetchone()[0]
+
+
 def one_copy(conn, part: str, meter, room_bytes: float) -> dict:
-    out = {"partition": part, "cleared": 0}
+    """Clear a row's text where it is word for word the text of the comment's holder (its lowest brand_id with
+    text, the same row migration 0019's trigger points new rows at). Per chunk, in one transaction: rows that point
+    at a row about to be cleared are re-pointed at the holder first, so no chain is ever made (review 4 Oct), and
+    every cleared row is remembered in a temporary table, so a restore puts back exactly what this run took."""
+    out = {"partition": part, "cleared": 0, "repointed": 0}
+    T = qual(part)
+    conn.execute("create temporary table if not exists one_copy_cleared (doc_id text, created_utc timestamptz, "
+                 "brand_id bigint, holder bigint)")
+    conn.execute("truncate one_copy_cleared")
     before = checksum(conn, part)
+    holder = (f"select distinct on (doc_id, created_utc) doc_id, created_utc, brand_id, body from {T} "
+              f"where body is not null and abs(hashtext(doc_id)::bigint) % {CHUNKS} = {{k}} "
+              f"order by doc_id, created_utc, brand_id")
     for k in range(CHUNKS):
-        if meter() > room_bytes:
+        if meter() >= room_bytes:
             out["stopped"] = "egress budget for today reached"
             break
-        out["cleared"] += conn.execute(f"""
-            update public.{part} m set body = null, body_from = h.brand_id
-              from (select distinct on (doc_id, created_utc) doc_id, created_utc, brand_id, body
-                      from public.{part}
-                     where body is not null and abs(hashtext(doc_id)) % {CHUNKS} = {k}
-                     order by doc_id, created_utc, brand_id) h
-             where m.doc_id = h.doc_id and m.created_utc = h.created_utc and m.brand_id <> h.brand_id
-               and m.body is not null and m.body = h.body
-               and abs(hashtext(m.doc_id)) % {CHUNKS} = {k}""").rowcount
+        with conn.transaction():
+            out["repointed"] += conn.execute(f"""
+                update {T} d set body_from = h.brand_id
+                  from ({holder.format(k=k)}) h, {T} x
+                 where x.doc_id = h.doc_id and x.created_utc = h.created_utc and x.brand_id <> h.brand_id
+                   and x.body is not null and x.body = h.body
+                   and d.doc_id = x.doc_id and d.created_utc = x.created_utc and d.body_from = x.brand_id
+                   and abs(hashtext(d.doc_id)::bigint) % {CHUNKS} = {k}""").rowcount
+            out["cleared"] += conn.execute(f"""
+                with c as (
+                  update {T} m set body = null, body_from = h.brand_id
+                    from ({holder.format(k=k)}) h
+                   where m.doc_id = h.doc_id and m.created_utc = h.created_utc and m.brand_id <> h.brand_id
+                     and m.body is not null and m.body = h.body
+                     and abs(hashtext(m.doc_id)::bigint) % {CHUNKS} = {k}
+                  returning m.doc_id, m.created_utc, m.brand_id, h.brand_id as holder)
+                insert into one_copy_cleared select * from c""").rowcount
     after = checksum(conn, part)
-    out["checksum_equal"] = before == after
+    out["dangling"] = dangling(conn, part)
+    out["checksum_equal"] = before == after and out["dangling"] == 0
     out["rows"] = before[0]
-    if before != after:
-        restored = conn.execute(f"""
-            update public.{part} m set body = h.body, body_from = null
-              from public.{part} h
-             where m.body_from is not null and h.doc_id = m.doc_id and h.created_utc = m.created_utc
-               and h.brand_id = m.body_from""").rowcount
-        out["restored"] = restored
+    if not out["checksum_equal"]:
+        out["restored"] = conn.execute(f"""
+            update {T} m set body = h.body, body_from = null
+              from one_copy_cleared c, {HOLDERS} h
+             where m.doc_id = c.doc_id and m.created_utc = c.created_utc and m.brand_id = c.brand_id
+               and h.doc_id = c.doc_id and h.created_utc = c.created_utc and h.brand_id = c.holder""").rowcount
         out["restored_checksum_equal"] = checksum(conn, part) == before
     return out
 
@@ -158,6 +192,8 @@ def main() -> int:
         return 0
     run_id, t0 = str(uuid.uuid4()), time.time()
     notes: dict = {"step": cmd, "before": sizes(conn)}
+    import investigation_2026_10 as inv   # the node counter: every step's egress goes on its receipt (review 4 Oct)
+    start = inv._metrics()["transmit_bytes"]
     record(conn, run_id, t0, "running", notes)
     try:
         if cmd == "threads":
@@ -168,8 +204,6 @@ def main() -> int:
             notes["expired"] = {t: conn.execute(f"delete from archive.{t} where archived_at < now() - interval '14 days'").rowcount
                                 for t in ("threads", "mentions", "mention_sentiment")}
         elif cmd == "one-copy":
-            import investigation_2026_10 as inv
-            start = inv._metrics()["transmit_bytes"]
             last = {"v": start, "at": time.time()}
 
             def meter() -> float:
@@ -191,20 +225,21 @@ def main() -> int:
             for part in want:
                 if part not in parts:
                     raise SystemExit(f"no partition {part}")
-                if meter() > room:
+                if meter() >= room:
                     notes["stopped"] = "egress budget reached"
                     break
                 r = one_copy(conn, part, meter, room)
                 log(json.dumps(r))
                 notes["partitions"].append(r)
                 if not r["checksum_equal"]:
-                    notes["stopped"] = f"{part}: text changed under clearing; restored"
+                    notes["stopped"] = (f"{part}: text changed under clearing or a pointer dangled; restored "
+                                        f"({'verified' if r.get('restored_checksum_equal') else 'NOT verified'})")
+                    if not r.get("restored_checksum_equal"):
+                        raise RuntimeError(notes["stopped"])
                     break
                 if r.get("stopped"):
                     notes["stopped"] = r["stopped"]
                     break
-            last["v"], last["at"] = inv._metrics()["transmit_bytes"], time.time()
-            notes["egress_gb"] = round((last["v"] - start) / 1e9, 4)
         else:
             print(__doc__)
             return 2
@@ -213,6 +248,12 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001
         notes["error"] = f"{type(e).__name__}: {str(e)[:300]}"
         status = "failed"
+    try:   # the step's egress, failed or not (the write-ahead-log tail after this reading is not on it)
+        end = inv._metrics()["transmit_bytes"]
+        notes["egress_gb"] = round((end - start) / 1e9, 4) if end >= start else None
+        notes["egress_source"] = "node counter" if end >= start else "node counter reset during the step"
+    except Exception as e:  # noqa: BLE001
+        notes["egress_source"] = f"node counter unreadable at the end: {str(e)[:80]}"
     record(conn, run_id, t0, status, notes)
     log(json.dumps(notes, default=str))
     return 0 if status != "failed" else 1

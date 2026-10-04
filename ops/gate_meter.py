@@ -73,7 +73,8 @@ def receipt(day: dt.datetime):
     with db.connect() as conn:
         return conn.execute("select run_id, started_at, finished_at, status, notes from public.pipeline_runs "
                             "where stage = 'sweep' and started_at >= %s and started_at < %s "
-                            "and finished_at is not null and status <> 'running' order by started_at limit 1",
+                            "and finished_at is not null and status not in ('running', 'skipped') "
+                            "and coalesce(notes->>'manual', 'false') = 'false' order by started_at limit 1",
                             (day, day + dt.timedelta(hours=8))).fetchone()
 
 
@@ -100,6 +101,16 @@ def reconcile(rec: dict) -> dict:
             pairs["new threads"] = (st["collect"].get("threads_new"),
                                     one("select count(*) from public.threads where first_seen_at between %s and %s", a, b))
     out = {k: {"receipt": r, "database": d_, "match": (r == d_) if r is not None else d_ == 0} for k, (r, d_) in pairs.items()}
+    # a receipt that never reached a stage proves nothing about it: the core counts must be there (review 4 Oct)
+    missing = [k for k in ("new mentions", "labels", "not this product", "takedowns found") if out[k]["receipt"] is None]
+    out["_complete"] = {"receipt": None if missing else True, "database": None, "match": not missing,
+                        "missing": missing}
+    with db.connect() as conn:
+        out["_dangling_text"] = {"receipt": 0, "database": conn.execute(
+            "select count(*) from public.mentions m where m.body is null and not exists (select 1 from "
+            "public.mentions h where h.doc_id = m.doc_id and h.created_utc = m.created_utc "
+            "and h.brand_id = m.body_from and h.body is not null)").fetchone()[0]}
+        out["_dangling_text"]["match"] = out["_dangling_text"]["database"] == 0
     return out
 
 
@@ -154,7 +165,10 @@ def tick(night: str) -> dict:
     if "run_finished" in rec and "counter_after" not in rec and "counter_before" in rec:
         if t >= dt.datetime.fromisoformat(rec["run_finished"]) + TAIL:
             c = counter()
-            if c:
+            if c and c[0] < rec["counter_before"]["bytes"]:   # the node restarted: no window, never a low number
+                rec["counter_after"] = {"bytes": c[0], "at": c[1]}
+                rec["laptop_note"] = "the counter went down (node restart): no laptop measurement this night"
+            elif c:
                 rec["counter_after"] = {"bytes": c[0], "at": c[1]}
                 gb = (c[0] - rec["counter_before"]["bytes"]) / 1e9
                 rec["laptop_egress_gb"] = round(gb, 3)
@@ -169,8 +183,13 @@ def tick(night: str) -> dict:
         if w:
             rec["watchdog"] = w
             rec.pop("watchdog_error", None)
+            # the reading counts only if it came after the run and its tail: an earlier one does not contain it
+            if "run_finished" in rec and dt.datetime.fromisoformat(w["logged_at"][:26].replace("Z", "") + "+00:00") \
+                    < dt.datetime.fromisoformat(rec["run_finished"]) + TAIL:
+                w["covers_the_run"] = False
     # the gate: the exact laptop window when it exists, else the watchdog's day (an upper bound)
-    gb = rec.get("laptop_egress_gb", (rec.get("watchdog") or {}).get("gb_last_24h"))
+    wd = rec.get("watchdog") or {}
+    gb = rec.get("laptop_egress_gb", wd.get("gb_last_24h") if wd.get("covers_the_run", True) else None)
     if gb is not None and "run_id" in rec:
         rec["gate_egress_gb"] = gb
         rec["gate_source"] = "laptop window" if "laptop_egress_gb" in rec else "watchdog day (upper bound)"
