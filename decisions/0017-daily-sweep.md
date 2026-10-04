@@ -108,6 +108,30 @@ It ended **failed**, and does not count toward the gates. What it taught, fixed 
 - The receipt counted qualifying posts in the listings as "new threads" (13,586 against 11,476 stored for the
   first time); it now reads the new threads back.
 
+### Independent review before the gate nights (4 October)
+
+Two rounds by a second engine (Codex `gpt-6-astra`, low effort, no web search; about 0.3M tokens each): 16
+findings on the run path, then 5 on the day's own fixes. Adjudicated here; fixed the same afternoon:
+
+- a GLM outage (every job that started failed) ends classification with an error and leaves the items their
+  five tries; no GLM job starts or runs past the stage's deadline
+- label and rejection counts are the rows actually written, so the receipt equals the table
+- a scheduled run ends at 05:30 UTC however late it starts; refresh stops 8 minutes before the end (what is
+  left waits, oldest first, so a takedown's brands go first) and the publisher starts no request after it
+- every page whose served fingerprint differs from its data comes round again (night 1 left 1,485 expired and
+  never seen); a takedown is never stamped proven for a brand still waiting for its refresh; an unproven
+  takedown older than 36 hours fails the run whatever stages ran
+- a quiet subreddit with threads inside the comment-revisit window is still visited; a night where most
+  subreddits fail is an error, not a quiet night
+- time: collection ends 95 minutes before the run's end and classification 35 (refresh took 15 minutes on
+  night 1), so the night finishes inside its window
+
+Not changed, by decision: takedown pages are always published, over the 1,000-page cap (a legal duty before a
+budget); requests Reddit refused are not counted as calls (the 15,000 cap is far from binding).
+
+A live pilot after the fixes (`1bae1e4d`, by hand, tiny caps, no publish) finished ok with its receipt equal to
+the database: 256 labels, 44 "not this product", 33 mentions, 34 threads.
+
 ## Go-live gates
 
 | Gate | Measured | Met |

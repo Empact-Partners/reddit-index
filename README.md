@@ -2,7 +2,7 @@
 
 **Live: [redditindex.com](https://redditindex.com)** (noindex while provisional).
 
-## STATUS (kept current; last edit 2026-10-04 12:15 UTC)
+## STATUS (kept current; last edit 2026-10-04 18:00 UTC)
 
 | | |
 |---|---|
@@ -10,6 +10,8 @@
 | **Old collector** | Parked since 2026-10-02 20:47 UTC and **proven stopped**: two nights (3 and 4 Oct) with no deployment of it and no write outside a receipt. |
 | **The daily sweep** | Runs every day at 00:00 UTC on Railway (`reddit-index-sweep`, Virginia). First scheduled run, 4 Oct 00:03-05:24: 200,000 comments re-checked on Reddit (5,388 deleted, 288 edited there; 8,526 rows purged), 20,067 new mentions from 466 subreddits, 34,000 mentions classified, 3,262 pages refreshed, 5,872 scored, 728 pages proven on the preview (628 that had held a takedown). It ended **failed**: the classification step crashed on a Linux limit the laptop does not have. Fixed and redeployed 4 Oct 12:00 UTC, with two more fixes from the same night (every subreddit now comes round in turn; every page the run expires is rendered inside the run). |
 | **Cost** | The whole day of the first run sent 0.89 GB out of the database (the egress watchdog's meter; the gate is under 1 GB). |
+| **Reviewed** | 4 Oct: an independent second engine reviewed the nightly code twice (21 findings); the real ones are fixed and deployed, and a live test run after the fixes matched the database row for row. |
+| **Storage** | Database 3,455 MB before cleanup. Step 1 done 4 Oct: 177,292 threads with no mention moved to the archive (kept 14 days, then removed). Step 3, one copy of each comment's text, runs in the room the nightly runs leave under the 1 GB daily total. |
 | **Go-live gates** | Two consecutive scheduled nights finished ok, each under 1 GB, receipts matching the database: the runs of 5 and 6 Oct. Measured by `ops/gate_meter.py` into `docs/go-live/`. |
 | **Labels** | 565,142 mentions wait for a label; the nightly run classifies up to 60,000. 171,263 links to a parent company's web address set aside as "not this product". |
 | **What is happening** | Relaunch under Vlad's ruling of 2026-10-02. Draft decision: [decisions/0017](decisions/0017-daily-sweep.md) (on the sweep branch, PR #8). |
