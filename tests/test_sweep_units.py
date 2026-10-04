@@ -65,6 +65,18 @@ check("jev: a feeling under its threshold goes to GLM",
 check("jev: 'cannot tell' goes to GLM",
       cs.decide({"e": 0.95, "probs": {"pos": 0, "neg": 0, "neu": 0.1, "unsure": 0.9}}, T) is None)
 
+# ---- collection order (worker/collect.py) ----------------------------------------------------------------
+import datetime as _dt  # noqa: E402
+import collect  # noqa: E402
+
+_now = _dt.datetime(2026, 10, 5, tzinfo=_dt.timezone.utc)
+check("collect: never visited is the most overdue", collect.overdue(None, False, _now) == float("inf"))
+check("collect: a core subreddit a day old is due once", round(collect.overdue(_now - _dt.timedelta(days=1), True, _now), 3) == 1.0)
+check("collect: a non-core subreddit six days old outranks a core one a day old",
+      collect.overdue(_now - _dt.timedelta(days=6), False, _now) > collect.overdue(_now - _dt.timedelta(days=1), True, _now))
+check("collect: a non-core subreddit a day old waits behind a core one a day old",
+      collect.overdue(_now - _dt.timedelta(days=1), False, _now) < collect.overdue(_now - _dt.timedelta(days=1), True, _now))
+
 # ---- the takedown judge (worker/takedown.py) -------------------------------------------------------------
 import takedown as td  # noqa: E402
 

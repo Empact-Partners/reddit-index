@@ -16,8 +16,10 @@ that can be stopped and bounded:
   * the brand list and subreddit lists are the repository's, read at start: the old collector ran a
     19 August image for six weeks and never saw 4,471 brands added after it.
 
-Order is daily.py's: core subreddits first, then longest-waiting, so a run that stops at a cap resumes
-tomorrow where it stopped and every subreddit comes round.
+Order: most overdue first. A core subreddit is due every day, any other every ROTATE_DAYS days, and each is
+ranked by how many of its intervals have passed since its last visit (never visited: first). daily.py's order put
+every core subreddit before every other one; the first scheduled run (2026-10-04) had time for 466 subreddits
+with 553 core ones waiting, so under that order the other 1,354 would never have come round.
 """
 from __future__ import annotations
 
@@ -30,6 +32,7 @@ import reddit_client as rc
 from harvest import post_doc, tree_docs
 
 QUIET_DAYS = 3
+ROTATE_DAYS = 3   # a non-core subreddit is due every third day, a core one every day
 
 THREADS_UPSERT = (
     "INSERT INTO threads (id, subreddit_id, link_title, permalink, created_utc, num_comments, archived, score, "
@@ -56,7 +59,6 @@ def plan(conn, today: dt.datetime) -> tuple[list[str], dict, set, int]:
         "SELECT scope, finished_at, rows FROM ingest_state WHERE ym='daily' AND stage='new_listing' "
         "AND code_version=%s AND scope NOT LIKE '\\_%%'", (d.CODE_VERSION,)).fetchall()
     seen = {r[0].lower(): (r[1], r[2]) for r in rows}
-    never = dt.datetime(1970, 1, 1, tzinfo=dt.timezone.utc)
     subs, quiet = [], 0
     for s in mapping:
         fin, n = seen.get(s.lower(), (None, None))
@@ -64,8 +66,16 @@ def plan(conn, today: dt.datetime) -> tuple[list[str], dict, set, int]:
             quiet += 1
             continue
         subs.append(s)
-    subs.sort(key=lambda x: (x not in core, seen.get(x.lower(), (never, 0))[0] or never))
+    subs.sort(key=lambda x: (-overdue(seen.get(x.lower(), (None, 0))[0], x in core, today), x not in core))
     return subs, mapping, core, quiet
+
+
+def overdue(last_visit: dt.datetime | None, is_core: bool, today: dt.datetime) -> float:
+    """How many due intervals have passed since the last visit; never visited is the most overdue."""
+    if last_visit is None:
+        return float("inf")
+    days = (today - last_visit).total_seconds() / 86400
+    return days / (1.0 if is_core else ROTATE_DAYS)
 
 
 def run(conn, caps: dict, deadline: float, should_stop=lambda: None, log=print, run_id: str | None = None) -> dict:
