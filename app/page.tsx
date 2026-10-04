@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { getIndexRows, getMeta } from "@/lib/data/site-db";
+import { getIndex, getIndexRows } from "@/lib/data/site-db";
 import { buildBoards } from "@/lib/data/boards";
 import { buildSearchIndex } from "@/lib/data/search-index";
 import { IndexPage } from "@/components/pages/index-page";
@@ -17,8 +17,8 @@ export const revalidate = false;
 
 export async function generateMetadata(): Promise<Metadata> {
   // The fingerprint the sweep reads back to prove the served index is the current one.
-  const meta = await getMeta();
-  return { other: { "ri-hash": meta.boardsHash } };
+  const ix = await getIndex();
+  return { other: { "ri-hash": ix.hash } };
 }
 
 export default async function Home() {

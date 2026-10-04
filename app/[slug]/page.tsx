@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { SITE_URL } from "@/lib/env";
-import { getCompany, getIndexRows, getMeta } from "@/lib/data/site-db";
+import { getCompany, getIndex, getIndexRows } from "@/lib/data/site-db";
 import { getRegistry } from "@/lib/routing";
 import { buildBoards } from "@/lib/data/boards";
 import { buildSearchIndex } from "@/lib/data/search-index";
@@ -51,7 +51,7 @@ export async function generateMetadata(
 
   if (isCategory(slug)) {
     const c = CATEGORY_BY_SLUG[slug];
-    const [rows, meta] = await Promise.all([getIndexRows(), getMeta()]);
+    const { rows, hash } = await getIndex();
     // Count what the page actually SHOWS: the board's own rows.
     const boardRows = buildBoards(rows)[slug]?.rows ?? [];
     const n = boardRows.length;
@@ -77,7 +77,7 @@ export async function generateMetadata(
       alternates: { canonical: `/${slug}/` },
       openGraph: { title, description, url: `${SITE_URL}/${slug}/`, type: "website" },
       twitter: { title, description },
-      other: { "ri-hash": meta.boardsHash },
+      other: { "ri-hash": hash },
     };
   }
 
