@@ -7,8 +7,9 @@
   ops/go_live.py point          # the sweep publishes to https://redditindex.com from now on (schedule + redeploy)
   ops/go_live.py verify         # fetch the production site: pages, boards, notice, freshness date, fingerprints
 
-The pull requests are merged by hand between `vercel` and `point` (#5, #7, #8, in that order), so production
-builds from main with the read path.
+The pull requests are merged by hand between `vercel` and `point` (#7, then #8; #5 is already merged), so
+production builds from main with the read path. The production build prerenders only the home and category
+pages (about 150 MB of reads, as every preview build measured); company pages render when first requested.
 """
 from __future__ import annotations
 
@@ -84,11 +85,21 @@ def set_vercel() -> int:
 
 
 def point() -> int:
+    # Production has served none of these pages: the fingerprints recorded so far were proven on the preview. Every
+    # page starts unserved, so the nightly publisher expires, renders and proves them on production at its 1,000 a
+    # night (takedown pages first), inside the measured run, rather than on each page's first visit, outside it.
+    import db
+    with db.connect() as conn:
+        conn.autocommit = True
+        n = conn.execute("update site.brand_stats set served_hash = null, expired_hash = null, served_at = null, "
+                         "expired_at = null").rowcount
+        conn.execute("update site.meta set served_boards_hash = null, served_slugs_hash = null")
+    print(f"{n} pages marked unserved on production; the publisher proves them at 1,000 a night")
     p = os.path.join(ROOT, "ops", "schedule.json")
     d = json.load(open(p))
     d["site_url"] = PROD
     d.pop("site_url_note", None)
-    json.dump(d, open(p, "w"), indent=1)
+    json.dump(d, open(p, "w"), indent=1, ensure_ascii=False)
     open(p, "a").write("\n")
     print("ops/schedule.json site_url ->", PROD, "; redeploying the sweep")
     return subprocess.run([sys.executable, os.path.join(ROOT, "ops", "deploy_sweep.py")]).returncode
@@ -114,9 +125,9 @@ def verify() -> int:
         st, html = get(path)
         ok = st == 200 and "Not affiliated with, endorsed by" in html
         slug = path.strip("/")
-        if slug in hashes:
+        if slug in hashes:   # rendered from the current rows: the page's fingerprint is its row's
             m = re.search(r'name="ri-hash" content="([^"]+)"', html)
-            ok = ok and m is not None
+            ok = ok and m is not None and m.group(1) == hashes[slug]
         print(f"  {path}: {st}{'' if ok else '  <-- problem'}")
         bad += [] if ok else [path]
     st, body = get("/freshness.json")
