@@ -70,6 +70,9 @@ def wal_bytes(conn) -> int | None:
         return None
 
 
+RENDER_BYTES_PER_PAGE = 200_000
+
+
 class Run:
     def __init__(self, conn, sched: dict, args):
         self.conn, self.sched, self.args = conn, sched, args
@@ -87,6 +90,7 @@ class Run:
         self.receipt: dict = {"run_id": self.run_id, "code_version": CODE_VERSION, "manual": bool(args.manual),
                               "caps": caps, "stages": {}, "problems": [], "caps_hit": []}
         self.wal0 = wal_bytes(conn)
+        self.render_bytes = 0   # what the site reads to re-render the pages the publisher fetches (set by publish)
 
     # -- the switch, read before every stage and inside the long ones
     def stop_reason(self) -> str | None:
@@ -107,7 +111,7 @@ class Run:
         w = wal_bytes(self.conn)
         wal = (w - self.wal0) if (w is not None and self.wal0 is not None) else 0
         cs = sys.modules.get("classify_sweep")
-        return wal + (cs.READ_BYTES if cs else 0)
+        return wal + (cs.READ_BYTES if cs else 0) + self.render_bytes
 
     def record(self, status: str) -> None:
         self.receipt["status"] = status
@@ -154,6 +158,8 @@ def stage(run: Run, name: str, fn) -> None:
         run.receipt["problems"].append(f"{name} failed: {out['error']}")
         log(f"{name}: FAILED {out['error']}")
         traceback.print_exc()
+    if out.get("error") and not any(x.startswith(f"{name} failed") for x in run.receipt["problems"]):
+        run.receipt["problems"].append(f"{name} failed: {out['error']}")   # a stage that caught its own error
     out["minutes"] = round((time.time() - t) / 60, 1)
     run.receipt["stages"][name] = out
     if out.get("stopped"):
@@ -314,6 +320,12 @@ def main() -> int:
                                  join site.retired_page rp on rp.slug = br.slug
                                 where rp.gone_at is null)""").rowcount
         rec["takedown_receipts_stamped"] = stamped
+        # Every page the publisher fetched was re-rendered by the site from the database: about 0.2 MB a company
+        # page (measured on the pilot), counted here so the receipt's estimate covers the whole night (2026-10-04:
+        # the first scheduled run's estimate left them out and read 0.555 GB where the meter's day read 0.89).
+        pages = sum(int(rec.get(k) or 0) for k in ("pages_verified", "index_pages_verified", "retired_verified"))
+        run.render_bytes = pages * RENDER_BYTES_PER_PAGE
+        rec["render_estimate_gb"] = round(run.render_bytes / 1e9, 3)
         open_td = conn.execute("select count(*) from public.removals where revalidated_at is null "
                                "and detected_at < now() - interval '36 hours'").fetchone()[0]
         if open_td:

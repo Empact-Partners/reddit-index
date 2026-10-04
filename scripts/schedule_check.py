@@ -37,8 +37,11 @@ def railway(sched: dict) -> list[str]:
     out = []
     svcs = d.gql("query($p:String!){ project(id:$p){ services { edges { node { id name } } } } }",
                  {"p": d.PROJECT})["project"]["services"]["edges"]
+    # CRASHED is a live cron deployment whose last run exited non-zero (the sweep does that on a "failed" run;
+    # Railway still fires the next one, 2026-10-04): the receipt says why, so it is not a schedule finding.
     q = ("query($p:String!,$s:String!,$e:String!){ deployments(first:1, input:{projectId:$p, serviceId:$s, "
-         "environmentId:$e, status:{in:[SUCCESS, DEPLOYING, BUILDING, INITIALIZING, QUEUED, WAITING, SLEEPING]}}){ "
+         "environmentId:$e, status:{in:[SUCCESS, CRASHED, DEPLOYING, BUILDING, INITIALIZING, QUEUED, WAITING, "
+         "SLEEPING]}}){ "
          "edges { node { id status createdAt meta } } } }")
     seen = set()
     for e in svcs:

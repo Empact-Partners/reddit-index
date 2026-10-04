@@ -237,12 +237,15 @@ def _glm_env() -> dict:
 def glm_job(items: list[dict], model: str = "glm-5.3-flash", timeout: int = 900) -> tuple[dict | None, dict]:
     """One Codex CLI job on GLM. -> (answers keyed by item id, usage)."""
     with tempfile.TemporaryDirectory() as tmp:
+        # The prompt goes in on stdin ("-"), never as an argument: Linux caps one argument at 128 KB, and a batch of
+        # 100 long comments passed that on the first scheduled run (2026-10-04, "Argument list too long"). macOS
+        # allows 1 MB, which is why the laptop never saw it.
         cmd = ["codex", "exec", "--skip-git-repo-check", "-s", "read-only", "--ephemeral", "--json",
-               "-m", model, "-c", "model_reasoning_effort=low", glm_prompt(items)]
+               "-m", model, "-c", "model_reasoning_effort=low", "-"]
         try:
-            p = subprocess.run(cmd, cwd=tmp, env=_glm_env(), stdin=subprocess.DEVNULL, capture_output=True,
+            p = subprocess.run(cmd, cwd=tmp, env=_glm_env(), input=glm_prompt(items), capture_output=True,
                                text=True, timeout=timeout)
-        except subprocess.TimeoutExpired:
+        except (subprocess.TimeoutExpired, OSError):   # one job that cannot run costs its items, not the stage
             return None, {}
     text, usage = None, {}
     for line in p.stdout.splitlines():
@@ -347,6 +350,19 @@ def run(conn, cfg: dict, deadline: float, should_stop=lambda: None, log=print) -
     last_batch = {"glm": 0.0, "jev": 0.0}
     rec["queued"] = conn.execute("select count(*) from public.classify_queue").fetchone()[0]
     limit = int(cfg.get("max_items", 60000))
+    try:
+        _loop(conn, cfg, t, model, rec, last_batch, limit, deadline, should_stop, log)
+    except Exception as e:  # noqa: BLE001 - what was judged and written before the error stays on the receipt
+        rec["error"] = f"{type(e).__name__}: {str(e)[:300]}"
+        log(f"    classify: stopped by an error after {rec['labelled'] + rec['rejected']} written: {rec['error']}")
+    rec["jev_usd"] = round(rec["jev_usd"], 4)
+    rec["glm_credits"] = round(rec["glm_credits"], 1)
+    rec["read_bytes"] = READ_BYTES - read0
+    rec["left_in_queue"] = conn.execute("select count(*) from public.classify_queue").fetchone()[0]
+    return rec
+
+
+def _loop(conn, cfg, t, model, rec, last_batch, limit, deadline, should_stop, log) -> None:
     taken = 0
     while taken < limit:
         if time.time() > deadline:
@@ -414,8 +430,3 @@ def run(conn, cfg: dict, deadline: float, should_stop=lambda: None, log=print) -
         if rec["glm_credits"] > float(cfg.get("glm_credits_max", 3000)):
             rec["allowance_used"] = f"tonight's GLM allowance ({cfg.get('glm_credits_max')} credits) is used"
             break
-    rec["jev_usd"] = round(rec["jev_usd"], 4)
-    rec["glm_credits"] = round(rec["glm_credits"], 1)
-    rec["read_bytes"] = READ_BYTES - read0
-    rec["left_in_queue"] = conn.execute("select count(*) from public.classify_queue").fetchone()[0]
-    return rec
