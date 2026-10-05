@@ -90,3 +90,10 @@ a mention in newest-first order (the queue now runs in brand order to cut that).
 1.0 GB a day**, and above both the one daily total for every index job together, 2 GB (`ops/day_egress.py`), which
 is under the egress watchdog's alert line. GLM (60,000 credits in all, 18,060 spent) and Jev ($60, $5.11 spent)
 are unchanged.
+
+## Brand order, measured (5 October 2026, run 430bbc50)
+
+71,784 results (66,273 labelled, 5,511 "not this product") for 0.2278 GB on the node counter: **3.2 KB a mention**,
+against 8.7 KB the same morning in newest-first order. Every label still inserts into two large indexes and
+deletes from the queue's, but in brand order two of the three are touched in adjacent pages, so far fewer whole
+pages ship after each checkpoint. At this cost the 448,185 still queued need about 1.4 GB.

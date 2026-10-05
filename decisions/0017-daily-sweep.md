@@ -169,7 +169,8 @@ landed on random pages of three large indexes (mention_sentiment's two, 65 and 7
 From 5 October the backlog runs in brand order (new arrivals of the last 26 hours still first) and each batch is
 written in brand order, so two of the three indexes are touched in adjacent pages. Tonight's run measures it.
 Lengthening the checkpoint interval (Supabase project config) would cut this for every write; not changed while
-the gates run.
+the gates run. Measured that evening (run `430bbc50`): **3.2 KB a mention** in brand order (71,784 results for
+0.2278 GB), 64% less than newest-first.
 
 ## Go-live gates
 
