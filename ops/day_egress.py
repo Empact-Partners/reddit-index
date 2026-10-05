@@ -32,22 +32,26 @@ def used_today(conn) -> dict:
     today = dt.datetime.now(dt.timezone.utc).date()
     out = {"day": str(today), "sweep_gb": 0.0, "other_gb": 0.0, "sweep_source": "none"}
     gate = os.path.join(ROOT, "docs", "go-live", f"egress-{today}.json")
-    measured = None
+    measured, measured_run = None, None
     if os.path.exists(gate):
         g = json.load(open(gate))
         if g.get("run_id") and g.get("gate_egress_gb") is not None:   # ops/gate_meter.py's tick format (4 Oct on)
-            measured = float(g["gate_egress_gb"])
-    rows = conn.execute("select stage, notes from public.pipeline_runs where started_at::date = %s", (today,)).fetchall()
+            measured, measured_run = float(g["gate_egress_gb"]), g["run_id"]
+    rows = conn.execute("select run_id::text, stage, notes from public.pipeline_runs where started_at::date = %s",
+                        (today,)).fetchall()
     est = 0.0
-    for stage, notes in rows:
+    for run_id, stage, notes in rows:
         n = notes if isinstance(notes, dict) else json.loads(notes or "{}")
         v = float(n.get("egress_estimate_gb") or n.get("egress_gb") or 0)
-        if stage == "sweep":
+        if stage == "sweep" and run_id == measured_run:
+            continue          # measured below, on the node counter
+        if stage == "sweep":   # a by-hand day run: its receipt's estimate (it counts its page renders)
             est += v
         else:
             out["other_gb"] += v
     if measured is not None:
-        out["sweep_gb"], out["sweep_source"] = measured, "node counter (gate meter: " + str(g.get("gate_source")) + ")"
+        out["sweep_gb"] = measured + est
+        out["sweep_source"] = f"night run on the node counter ({g.get('gate_source')}) + day runs' estimates"
     else:
         out["sweep_gb"], out["sweep_source"] = est * SWEEP_ESTIMATE_TO_MEASURED, "receipt estimate x 1.6"
     out["used_gb"] = round(out["sweep_gb"] + out["other_gb"], 3)
