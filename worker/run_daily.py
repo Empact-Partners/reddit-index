@@ -118,6 +118,9 @@ class Run:
         return wal + (cs.READ_BYTES if cs else 0) + self.render_bytes
 
     def record(self, status: str) -> None:
+        if self.conn.closed:   # the laptop slept or the pooler dropped the session: the receipt still gets written
+            self.conn = db.connect()
+            self.conn.autocommit = True
         self.receipt["status"] = status
         self.receipt["minutes"] = round((time.time() - self.started) / 60, 1)
         self.receipt["egress_estimate_gb"] = round(self.egress_estimate() / 1e9, 3)
