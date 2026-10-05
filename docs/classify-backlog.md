@@ -81,3 +81,12 @@ day of about 18,000 new mentions projects to about 1,350 credits and $0.40.
 Mentions labelled before 25 August carry the old engines' labels, which give more opinions than GLM-5.3 does.
 Pages mix the two until the old labels are re-judged (about 481,000 mentions, about 36,000 credits at the same
 mix): an open item, not part of the backlog budget above.
+
+## Budget raised, 5 October 2026
+
+Vlad, 2026-10-05: "move on with the data collection." The egress budget declared on 2 October (1.5 GB in all,
+0.5 GB a day) had 0.4 GB left with 464,185 mentions still queued, and the daytime run of 5 October measured 8.7 KB
+a mention in newest-first order (the queue now runs in brand order to cut that). New ceilings: **4.0 GB in all,
+1.0 GB a day**, and above both the one daily total for every index job together, 2 GB (`ops/day_egress.py`), which
+is under the egress watchdog's alert line. GLM (60,000 credits in all, 18,060 spent) and Jev ($60, $5.11 spent)
+are unchanged.
