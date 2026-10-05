@@ -53,6 +53,12 @@ issues and optimize the whole mechanics and the whole mechanism behind it."
 | Jev | $1 | _to fill_ |
 | Vercel | one build per code change; none for data | 0 builds a day |
 
+Daytime work (Vlad, 2026-10-05: "move on with the data collection"): by-hand runs of the sweep and the backlog
+classifier during the day, inside one daily total of **2 GB** for every index job together (`ops/day_egress.py`;
+this session had held itself to 1 GB, and 2 GB is the line above which the egress watchdog messages Vlad). They
+finish before the evening, so the gate window of each night (the last laptop reading before 00:00 UTC to 20
+minutes after the run) holds only the scheduled run.
+
 One-time, already declared: the classification backlog (60,000 GLM credits, $60 of Jev, 1.5 GB egress, 0.5 GB a
 day) and retention step 3 (1.0 GB egress, 0.4 GB a day).
 

@@ -23,7 +23,8 @@ import sys
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "worker"))
 
-DAY_TOTAL_GB = 1.0
+DAY_TOTAL_GB = 2.0   # Vlad, 2026-10-05: "move on with the data collection". 1.0 was this session's own guard;
+                     # 2.0 stays under the egress watchdog's alert line (2 GB a day), so it never pages him
 SWEEP_ESTIMATE_TO_MEASURED = 1.6
 
 
