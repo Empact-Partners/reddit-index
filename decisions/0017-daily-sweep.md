@@ -148,6 +148,23 @@ plan's request-rate limit, hit by both sessions at once. Fixed the same morning:
 limit (not an alert), any other failure is still a fault, the provider's error text goes on the receipt, and at
 most 6 GLM jobs run at once (was 8). The gate nights move to 6 and 7 October.
 
+### Daytime, 5 October: what a label costs
+
+Night 2 measured **0.616 GB** on the laptop window (23:50 to 05:05 UTC), every receipt count equal to the
+database. The daytime backlog run that followed (`e0ce48ac`, 10:02-11:11 UTC) wrote 51,794 results (46,154
+labelled, 5,640 "not this product") and cost about **0.45 GB, 8.7 KB a mention**, four times the 2 October
+measurement; it stopped when its connection dropped (the laptop most likely slept), and its meter, refreshed every
+10 minutes, would have let it pass its 0.38 GB room by about 0.1 GB (now every minute). A quiet half hour with
+no job of ours read 0.22 GB a day: nothing else was reading the database.
+
+Why a label cost so much: `wal_compression` is already `zstd` and `checkpoint_timeout` is 5 minutes, so after
+each checkpoint the first change to any page ships the whole page. Newest-first, a batch's inserts and deletes
+landed on random pages of three large indexes (mention_sentiment's two, 65 and 70 MB, and the queue's, 59 MB).
+From 5 October the backlog runs in brand order (new arrivals of the last 26 hours still first) and each batch is
+written in brand order, so two of the three indexes are touched in adjacent pages. Tonight's run measures it.
+Lengthening the checkpoint interval (Supabase project config) would cut this for every write; not changed while
+the gates run.
+
 ## Go-live gates
 
 | Gate | Measured | Met |
