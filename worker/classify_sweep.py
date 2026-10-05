@@ -457,10 +457,20 @@ def _loop(conn, cfg, t, model, rec, last_batch, limit, deadline, should_stop, lo
         if rec["jev_usd"] + last_batch["jev"] > float(cfg.get("jev_usd_max", 1.0)):
             rec["allowance_used"] = f"tonight's Jev allowance (${cfg.get('jev_usd_max')}) is used"
             break
-        # newest first: what arrived since the last run, then the backlog from its newest mention down
+        # What arrived in the last day first (newest first), then the backlog in brand order. Brand order is the
+        # egress fix of 2026-10-05: every label inserts into two large indexes and deletes from the queue's, and
+        # after each checkpoint the first change to a page ships the whole 8 KB page to backup storage. Newest-first
+        # scattered a batch across the indexes (8.7 KB of egress a mention, measured that morning); in brand order
+        # the queue's and mention_sentiment_latest_idx's touches are adjacent.
+        n = min(2000, limit - taken)
         keys = conn.execute("select brand_id, doc_id, created_utc from public.classify_queue "
-                            "where attempts < 5 order by enqueued_at desc, created_utc desc limit %s",
-                            (min(2000, limit - taken),)).fetchall()
+                            "where attempts < 5 and enqueued_at > now() - interval '26 hours' "
+                            "order by enqueued_at desc, created_utc desc limit %s", (n,)).fetchall()
+        if len(keys) < n:
+            keys += conn.execute("select brand_id, doc_id, created_utc from public.classify_queue "
+                                 "where attempts < 5 and enqueued_at <= now() - interval '26 hours' "
+                                 "order by brand_id, doc_id, created_utc limit %s", (n - len(keys),)).fetchall()
+        keys.sort(key=lambda k: (k[0], k[1]))   # the batch's writes in brand order too
         if not keys:
             break
         taken += len(keys)
@@ -483,7 +493,9 @@ def _loop(conn, cfg, t, model, rec, last_batch, limit, deadline, should_stop, lo
         models = [MV_JEV if v else None for v in verdicts]
         rec["jev_decided"] += sum(v is not None for v in verdicts)
         residue = [i for i, v in enumerate(verdicts) if v is None]
-        tried = [True] * len(items)
+        # an item counts a try only when a judge was asked and could not settle it: Jev's residue with GLM switched
+        # off was never asked (the smoke test of 5 Oct took a try from 106 items that way)
+        tried = [True] * len(items) if cfg.get("glm", True) else [v is not None for v in verdicts]
         glm_down = glm_limited = False
         if residue and cfg.get("glm", True):
             g, spend = glm_judge([items[i] for i in residue], in_flight=int(cfg.get("glm_in_flight", 6)),
