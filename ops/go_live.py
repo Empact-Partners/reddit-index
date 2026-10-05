@@ -48,10 +48,11 @@ def vercel(method: str, path: str, body: dict | None = None) -> dict:
         raise SystemExit(f"vercel {method} {path}: HTTP {e.code} {e.read().decode()[:300]}")
 
 
-def preflight(nights=("2026-10-05", "2026-10-06")) -> int:
+def preflight(nights=("2026-10-06", "2026-10-07")) -> int:
     """Two consecutive scheduled nights, each measured under 1 GB (ops/gate_meter.py), finished ok or capped,
     with the receipt's counts matching the database; and schedule_check clean. Night 1 (2026-10-04) does not
-    count: its classify stage failed (Linux argument limit), fixed the same day."""
+    count: its classify stage failed (Linux argument limit), fixed the same day; nor does night 2 (2026-10-05): the
+    shared GLM plan's request-rate limit failed a whole batch, now retried and treated as a planned limit."""
     missing = []
     for night in nights:
         p = os.path.join(ROOT, "docs", "go-live", f"egress-{night}.json")

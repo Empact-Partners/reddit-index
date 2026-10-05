@@ -132,6 +132,22 @@ budget); requests Reddit refused are not counted as calls (the 15,000 cap is far
 A live pilot after the fixes (`1bae1e4d`, by hand, tiny caps, no publish) finished ok with its receipt equal to
 the database: 256 labels, 44 "not this product", 33 mentions, 34 threads.
 
+## Night 2 (5 October)
+
+Run `6d98d9bc`, 00:03-04:42 UTC, unattended. Takedowns: 200,000 checked, 6,329 deleted and 422 edited on Reddit,
+9,095 rows purged. Collection: 256 subreddits (the never-visited ones first), 10,525 new mentions, 8,176 new
+threads. Classification: 46,000 taken, 19,419 labelled, 4,174 "not this product". 1,673 pages refreshed, 5,901
+scored; 1,000 pages expired, fetched and proven on the preview (519 that had held a takedown), 152 boards, 0
+failures. Every stage finished inside the window.
+
+It ended **failed** and does not count: from 04:13 UTC a growing share of GLM jobs came back empty, and at 04:24
+a whole batch failed (17 of 17), so the new outage guard stopped classification (the items kept their tries,
+as designed). The other session that shares the Z.ai plan logged "Rate limit reached for requests" at 04:25: the
+plan's request-rate limit, hit by both sessions at once. Fixed the same morning: a refused job is retried after
+1, 2 and 4 minutes at half the width, a limit that still holds ends classification for the night as a planned
+limit (not an alert), any other failure is still a fault, the provider's error text goes on the receipt, and at
+most 6 GLM jobs run at once (was 8). The gate nights move to 6 and 7 October.
+
 ## Go-live gates
 
 | Gate | Measured | Met |
