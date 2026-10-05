@@ -116,7 +116,7 @@ def main() -> int:
 
     def egress() -> int:
         if meter["start"] is not None:
-            if time.time() - meter["at"] > 600:
+            if time.time() - meter["at"] > 60:   # 10 minutes of staleness let a run pass its room by 0.1 GB (5 Oct)
                 try:
                     meter["last"], meter["at"] = meter["read"](), time.time()
                 except Exception:  # noqa: BLE001 - a missed reading keeps the last one
@@ -131,6 +131,10 @@ def main() -> int:
         return None
 
     def record(status: str, rec: dict) -> None:
+        nonlocal conn
+        if conn.closed:   # the laptop slept or the pooler dropped the session: the receipt still gets written
+            conn = db.connect()
+            conn.autocommit = True
         if meter["start"] is not None:
             try:
                 meter["last"], meter["at"] = meter["read"](), time.time()
