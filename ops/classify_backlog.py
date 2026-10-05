@@ -32,7 +32,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "worker"))
 
 BUDGET = {"glm_credits_total": 60000, "glm_credits_run": 20000, "jev_usd_total": 60.0,
-          "egress_gb_total": 1.5, "egress_gb_day": 0.5, "glm_in_flight": 8}
+          "egress_gb_total": 1.5, "egress_gb_day": 0.5, "glm_in_flight": 6}
 LOCK_KEY = 0x52494458   # worker/run_daily.py's: one writer at a time
 
 
