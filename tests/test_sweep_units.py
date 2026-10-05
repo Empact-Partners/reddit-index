@@ -58,6 +58,32 @@ _out, _spend = cs.glm_judge(_items, in_flight=2, model="glm-5.3", deadline=_time
 check("glm: past the deadline no job starts and no item counts as asked",
       _spend["skipped_jobs"] == 2 and _spend["failed_jobs"] == 0 and not any(_spend["asked"]) and _out == [None] * 150)
 
+# the provider's rate limit: retried after a wait, then answered; a lasting limit is reported as a limit
+_calls = {"n": 0}
+_real_job, _real_sleep = cs.glm_job, cs.time.sleep
+
+
+def _flaky(chunk, model, timeout=900):
+    _calls["n"] += 1
+    if _calls["n"] <= 2:
+        return None, {"_error": "rate limit exceeded: Rate limit reached for requests[x]"}
+    return {f"i{j + 1}": ["pos", 0.9, True] for j in range(len(chunk))}, {"input_tokens": 10}
+
+
+cs.glm_job, cs.time.sleep = _flaky, (lambda s: None)
+_out, _spend = cs.glm_judge(_items[:200], in_flight=2, model="glm-5.3", deadline=_time.time() + 3600)
+check("glm: a rate-limited batch is retried and answered",
+      _spend["retried_jobs"] == 2 and _spend["failed_jobs"] == 0 and all(_spend["asked"]) and _out[0] == ("pos", 0.9))
+cs.glm_job = lambda chunk, model, timeout=900: (None, {"_error": "Rate limit reached for requests"})
+_out, _spend = cs.glm_judge(_items[:200], in_flight=2, model="glm-5.3", deadline=_time.time() + 3600)
+check("glm: a lasting rate limit is reported as the limit, items not asked",
+      _spend["rate_limited"] and _spend["failed_jobs"] == 2 and not any(_spend["asked"]) and _spend["retried_jobs"] == 6)
+cs.glm_job = lambda chunk, model, timeout=900: (None, {"_error": "401 unauthorized"})
+_out, _spend = cs.glm_judge(_items[:200], in_flight=2, model="glm-5.3", deadline=_time.time() + 3600)
+check("glm: another error is not retried and not called a rate limit",
+      not _spend["rate_limited"] and _spend["retried_jobs"] == 0 and _spend["failed_jobs"] == 2)
+cs.glm_job, cs.time.sleep = _real_job, _real_sleep
+
 # ---- Jev's precedence as arithmetic ----------------------------------------------------------------------
 T = {"reject_below": 0.2, "product_at": 0.9, "label_at": {"pos": 0.76, "neg": 0.81, "neu": 0.77}}
 check("jev: unanswered goes to GLM", cs.decide(None, T) is None)

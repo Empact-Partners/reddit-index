@@ -234,8 +234,13 @@ def _glm_env() -> dict:
             "ZAI_API_KEY": key}
 
 
+RATE_LIMIT = re.compile(r"rate.?limit|too many requests|\b429\b|concurren", re.I)
+
+
 def glm_job(items: list[dict], model: str = "glm-5.3-flash", timeout: float = 900) -> tuple[dict | None, dict]:
-    """One Codex CLI job on GLM. -> (answers keyed by item id, usage)."""
+    """One Codex CLI job on GLM. -> (answers keyed by item id, usage). A failed job carries usage["_error"]: what
+    the provider or the CLI said, so a night's receipt can tell a rate limit from a fault (2026-10-05: Z.ai's
+    request-rate limit, hit by two sessions sharing one plan, read only as "every job failed")."""
     with tempfile.TemporaryDirectory() as tmp:
         # The prompt goes in on stdin ("-"), never as an argument: Linux caps one argument at 128 KB, and a batch of
         # 100 long comments passed that on the first scheduled run (2026-10-04, "Argument list too long"). macOS
@@ -245,37 +250,54 @@ def glm_job(items: list[dict], model: str = "glm-5.3-flash", timeout: float = 90
         try:
             p = subprocess.run(cmd, cwd=tmp, env=_glm_env(), input=glm_prompt(items), capture_output=True,
                                text=True, timeout=timeout)
-        except (subprocess.TimeoutExpired, OSError):   # one job that cannot run costs its items, not the stage
-            return None, {}
-    text, usage = None, {}
+        except subprocess.TimeoutExpired:   # one job that cannot run costs its items, not the stage
+            return None, {"_error": f"timed out after {int(timeout)} s"}
+        except OSError as e:
+            return None, {"_error": f"could not start codex: {str(e)[:120]}"}
+    text, usage, errors = None, {}, []
     for line in p.stdout.splitlines():
         try:
             e = json.loads(line)
         except ValueError:
             continue
-        if e.get("type") == "item.completed" and (e.get("item") or {}).get("type") in ("agent_message", "assistant_message"):
-            text = e["item"].get("text")
-        if e.get("type") == "turn.completed":
+        t, it = e.get("type"), (e.get("item") or {})
+        if t == "item.completed" and it.get("type") in ("agent_message", "assistant_message"):
+            text = it.get("text")
+        elif t == "item.completed" and it.get("type") == "error" and "Skill descriptions" not in str(it.get("message")):
+            errors.append(str(it.get("message")))
+        elif t in ("error", "turn.failed"):
+            errors.append(str(e.get("message") or (e.get("error") or {}).get("message") or e)[:300])
+        if t == "turn.completed":
             usage = e.get("usage") or {}
     if not text:
+        tail = [x for x in p.stderr.splitlines() if x.strip() and "failed to load skill" not in x][-2:]
+        usage = dict(usage, _error=(errors[-1] if errors else " | ".join(tail) or f"no answer (exit {p.returncode})")[:300])
         return None, usage
     m = re.search(r"\{.*\}", text, re.S)
     try:
-        return (json.loads(m.group(0)) if m else None), usage
+        ans = json.loads(m.group(0)) if m else None
     except ValueError:
-        return None, usage
+        ans = None
+    if ans is None:
+        usage = dict(usage, _error="the answer was not the JSON object asked for")
+    return ans, usage
 
 
 def glm_judge(items: list[dict], in_flight: int = 6, model: str = "glm-5.3-flash", log=print,
               deadline: float | None = None) -> tuple[list[tuple | None], dict]:
     """-> per item ("reject", conf) | (label, conf) | None, and the summed usage. spend["asked"] marks the items
     whose job came back (GLM saw them and answered or skipped them); an item whose job failed or never started was
-    not asked, and must not lose one of its tries for it (review, 2026-10-04)."""
+    not asked, and must not lose one of its tries for it (review, 2026-10-04).
+
+    Jobs the provider refused for its request-rate limit are tried again, up to three more rounds, after 1, 2 and
+    4 minutes and at half the width each round (the plan is shared with other sessions; 2026-10-05). What still
+    fails is counted by its error, and spend["rate_limited"] says whether every remaining failure was the limit."""
     out: list[tuple | None] = [None] * len(items)
     asked = [False] * len(items)
     spend = {"input_tokens": 0, "cached_input_tokens": 0, "output_tokens": 0, "jobs": 0, "failed_jobs": 0,
-             "skipped_jobs": 0}
+             "skipped_jobs": 0, "retried_jobs": 0, "errors": {}}
     chunks = [(s, items[s:s + GLM_BATCH]) for s in range(0, len(items), GLM_BATCH)]
+    spend["jobs"] = len(chunks)
 
     def one(c):
         # a job never runs past the stage's deadline: its timeout is what is left (at most 15 minutes)
@@ -284,22 +306,44 @@ def glm_judge(items: list[dict], in_flight: int = 6, model: str = "glm-5.3-flash
             return "skipped", {}
         return glm_job(c[1], model, timeout=left)
 
-    with ThreadPoolExecutor(in_flight) as ex:
-        for (start, chunk), (ans, usage) in zip(chunks, ex.map(one, chunks)):
-            spend["jobs"] += 1
-            for k in ("input_tokens", "cached_input_tokens", "output_tokens"):
-                spend[k] += int(usage.get(k) or 0)
-            if ans == "skipped":
-                spend["skipped_jobs"] += 1
-                continue
-            if not isinstance(ans, dict):
-                spend["failed_jobs"] += 1
-                continue
-            for j in range(len(chunk)):
-                asked[start + j] = True
-                v = _glm_answer(ans.get(f"i{j + 1}"))
-                if v is not None:
-                    out[start + j] = v
+    pending, width, last_err = chunks, max(1, in_flight), {}
+    for rnd in range(4):
+        if rnd:
+            wait = 60 * 2 ** (rnd - 1)
+            if deadline is not None and time.time() + wait + 120 > deadline:
+                break
+            log(f"    GLM: {len(pending)} jobs refused for the provider's rate limit; again in {wait} s at width {width}")
+            time.sleep(wait)
+            spend["retried_jobs"] += len(pending)
+        again = []
+        with ThreadPoolExecutor(width) as ex:
+            for (start, chunk), (ans, usage) in zip(pending, ex.map(one, pending)):
+                for k in ("input_tokens", "cached_input_tokens", "output_tokens"):
+                    spend[k] += int(usage.get(k) or 0)
+                if ans == "skipped":
+                    spend["skipped_jobs"] += 1
+                    last_err.pop(start, None)
+                    continue
+                if not isinstance(ans, dict):
+                    last_err[start] = usage.get("_error") or "no answer"
+                    again.append((start, chunk))
+                    continue
+                last_err.pop(start, None)
+                for j in range(len(chunk)):
+                    asked[start + j] = True
+                    v = _glm_answer(ans.get(f"i{j + 1}"))
+                    if v is not None:
+                        out[start + j] = v
+        limited = [c for c in again if RATE_LIMIT.search(last_err.get(c[0], ""))]
+        if not limited or len(limited) < len(again):   # retry only a batch the limit alone refused
+            pending = again
+            break
+        pending, width = again, max(1, width // 2)
+    spend["failed_jobs"] = len(last_err)
+    for e in last_err.values():
+        key = e[:100]
+        spend["errors"][key] = spend["errors"].get(key, 0) + 1
+    spend["rate_limited"] = bool(last_err) and all(RATE_LIMIT.search(e) for e in last_err.values())
     spend["asked"] = asked
     a, c, o = GLM_RATES[model]
     unc = spend["input_tokens"] - spend["cached_input_tokens"]
@@ -440,13 +484,16 @@ def _loop(conn, cfg, t, model, rec, last_batch, limit, deadline, should_stop, lo
         rec["jev_decided"] += sum(v is not None for v in verdicts)
         residue = [i for i, v in enumerate(verdicts) if v is None]
         tried = [True] * len(items)
-        glm_down = False
+        glm_down = glm_limited = False
         if residue and cfg.get("glm", True):
             g, spend = glm_judge([items[i] for i in residue], in_flight=int(cfg.get("glm_in_flight", 6)),
                                  model=model, log=log, deadline=deadline)
             rec["glm_credits"] += spend["credits"]
             last_batch["glm"] = spend["credits"]
             rec["glm_failed_jobs"] = rec.get("glm_failed_jobs", 0) + spend["failed_jobs"]
+            rec["glm_retried_jobs"] = rec.get("glm_retried_jobs", 0) + spend["retried_jobs"]
+            for k, n in spend["errors"].items():   # what the provider said, on the receipt
+                rec.setdefault("glm_errors", {})[k] = rec.get("glm_errors", {}).get(k, 0) + n
             for i, v, a in zip(residue, g, spend["asked"]):
                 tried[i] = a          # an item whose GLM job failed or never ran keeps its tries
                 if v is not None:
@@ -455,15 +502,22 @@ def _loop(conn, cfg, t, model, rec, last_batch, limit, deadline, should_stop, lo
             # every job of the batch failed: GLM (or the codex CLI) is down, not the items. Stop asking tonight.
             started = spend["jobs"] - spend["skipped_jobs"]   # jobs the deadline left unstarted are not failures
             glm_down = started > 0 and spend["failed_jobs"] == started
+            glm_limited = glm_down and spend["rate_limited"]
         w = write(conn, items, verdicts, [m or MV_JEV for m in models], tried)
         rec["labelled"] += w["labelled"]
         rec["rejected"] += w["rejected"]
         rec["not_checked"] += sum(v is None for v in verdicts)
         log(f"    classify: {taken} taken, {rec['labelled']} labelled, {rec['rejected']} not this product, "
             f"{rec['not_checked']} not checked; Jev ${rec['jev_usd']:.3f}, GLM {rec['glm_credits']:.0f} credits", flush=True)
+        if glm_limited:   # the shared plan's request-rate limit held after the retries: a planned limit, not a fault
+            rec["allowance_used"] = (f"Z.ai's request-rate limit (the GLM plan is shared with other sessions) refused "
+                                     f"a whole batch after {spend['retried_jobs']} retries; what Jev settled was "
+                                     f"written, the rest keeps its tries")
+            break
         if glm_down:
             rec["error"] = (f"every GLM job of a batch failed ({spend['failed_jobs']} of {spend['jobs']}): "
-                            f"GLM or the codex CLI is unavailable; what Jev settled was written, the rest keeps its tries")
+                            f"{next(iter(spend['errors']), 'no error text')}; what Jev settled was written, the rest "
+                            f"keeps its tries")
             break
         if rec["jev_usd"] > float(cfg.get("jev_usd_max", 1.0)):
             rec["allowance_used"] = f"tonight's Jev allowance (${cfg.get('jev_usd_max')}) is used"
