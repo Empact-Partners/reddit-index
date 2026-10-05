@@ -1,6 +1,7 @@
 "use client";
 
 import { syne, publicSans } from "./fonts";
+import { NON_AFFILIATION } from "@/lib/legal";
 import "./globals.css";
 
 /**
@@ -27,6 +28,10 @@ export default function GlobalError({ reset }: { error: Error; reset: () => void
             </button>
           </section>
         </main>
+        {/* the root layout (and its footer) does not reach this page: the notice is required on every page */}
+        <footer className="container-site py-6" style={{ fontSize: "var(--fs-small, 0.8rem)" }}>
+          <p>{NON_AFFILIATION}</p>
+        </footer>
       </body>
     </html>
   );

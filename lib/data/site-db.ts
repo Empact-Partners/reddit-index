@@ -165,27 +165,46 @@ export const getMeta = cache(async (): Promise<SiteMeta> => {
  * process under the hash the database publishes for them: a build worker, or a lambda regenerating
  * several index pages, reads them once. The key is the content hash, so a remembered copy cannot be stale.
  */
-let indexMemo: { hash: string; rows: Promise<IndexRow[]> } | null = null;
+let indexMemo: { hash: string; at: number; index: Promise<{ hash: string; rows: IndexRow[] }> } | null = null;
 
-export async function getIndexRows(): Promise<IndexRow[]> {
+/**
+ * The rows AND the fingerprint they were read under, in one statement (one snapshot): a board page embeds the
+ * hash of the rows it rendered, never a hash read a moment earlier or later (review 2026-10-04). A render reads
+ * its metadata and its body within milliseconds, so an index remembered for under a minute is reused without
+ * asking the database; after that, a one-row read of site.meta decides whether the remembered rows still hold.
+ */
+export async function getIndex(): Promise<{ hash: string; rows: IndexRow[] }> {
+  if (indexMemo && Date.now() - indexMemo.at < 60_000) return indexMemo.index;
   const meta = await getMeta();
-  // The PROMISE is remembered, not the result: eighty pages rendering at once in a build worker share one
-  // read instead of each starting their own.
-  if (indexMemo && meta.boardsHash && indexMemo.hash === meta.boardsHash) return indexMemo.rows;
+  // The PROMISE is remembered, not the result: eighty pages rendering at once in a build worker share one read.
+  if (indexMemo && meta.boardsHash && indexMemo.hash === meta.boardsHash) {
+    indexMemo.at = Date.now();
+    return indexMemo.index;
+  }
   const load = (async () => {
     const res = await withRetry(() => db()`
-      select coalesce(json_agg(json_build_array(
+      select (select boards_hash from site.meta) as hash,
+             coalesce(json_agg(json_build_array(
                slug, name, primary_category_slug, page_score, page_n_op, total_mentions)), '[]'::json) as rows
       from site.brand_stats`);
     const raw = (res[0]?.rows ?? []) as Array<[string, string, string | null, number | null, number, number]>;
-    return raw.map(([slug, name, cat, score, nOp, mentions]): IndexRow => ({
-      slug, name, categorySlug: (cat ?? null) as CategorySlug | null, score, nOp, mentions,
-    }));
+    return {
+      hash: String(res[0]?.hash ?? ""),
+      rows: raw.map(([slug, name, cat, score, nOp, mentions]): IndexRow => ({
+        slug, name, categorySlug: (cat ?? null) as CategorySlug | null, score, nOp, mentions,
+      })),
+    };
   })();
-  indexMemo = { hash: meta.boardsHash, rows: load };
-  // a failed read must not be remembered
-  load.catch(() => { if (indexMemo?.rows === load) indexMemo = null; });
+  const memo = { hash: meta.boardsHash, at: Date.now(), index: load };
+  indexMemo = memo;
+  // remembered under the hash the rows were actually read with; a failed read is not remembered
+  load.then((ix) => { if (indexMemo === memo) memo.hash = ix.hash; })
+    .catch(() => { if (indexMemo === memo) indexMemo = null; });
   return load;
+}
+
+export async function getIndexRows(): Promise<IndexRow[]> {
+  return (await getIndex()).rows;
 }
 
 export type MethodologyParamRow = {
