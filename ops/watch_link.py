@@ -30,6 +30,8 @@ BATCH = 300
 
 
 def query(sql: str):
+    if dt.datetime.now(dt.timezone.utc).time() < dt.time(5, 30):   # checked before every request, batches included
+        raise SystemExit("inside the night window (00:00-05:30 UTC): not querying")
     import investigation_2026_10 as inv
     req = urllib.request.Request(f"https://api.supabase.com/v1/projects/{inv.REF}/database/query", method="POST",
                                  data=json.dumps({"query": sql}).encode(),
@@ -60,14 +62,13 @@ up as (
   returning board_id, brand_id, reddit_id, written_at)
 select up.board_id, b.slug as brand,
        exists (select 1 from public.mentions m where m.brand_id = up.brand_id and m.doc_id = up.reddit_id
-               and m.created_utc between up.written_at - interval '1 minute' and up.written_at + interval '1 minute') as in_index
+               and (up.written_at is null
+                    or m.created_utc between up.written_at - interval '1 hour' and up.written_at + interval '1 hour')) as in_index
 from up left join public.brands b on b.id = up.brand_id"""
 
 
 def link(rows: list[dict]) -> dict:
-    h = dt.datetime.now(dt.timezone.utc).time()
-    if h < dt.time(5, 30):
-        raise SystemExit("inside the night window (00:00-05:30 UTC): not linking")
+    rows = list({r["board_id"]: r for r in rows if r.get("board_id") and r.get("reddit_id")}.values())   # one row per record, the last wins
     out = {}
     for i in range(0, len(rows), BATCH):
         for r in query(upsert_sql(rows[i:i + BATCH])):
