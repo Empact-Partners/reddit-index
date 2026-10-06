@@ -87,7 +87,9 @@ def main() -> int:
         if room < 0.06:
             log(f"the day's room under the 2 GB line is used ({room:.2f} GB left); stopping")
             break
-        cap = min(0.7, room - 0.03)
+        # the run's cap is its own ESTIMATE, which reads low: on 6 Oct a pass capped at 0.128 GB moved the node counter
+        # by about 0.2 GB (day_egress.py uses the same x1.6 for the night). So the cap is the room divided by 1.6.
+        cap = min(0.7, (room - 0.03) / 1.6)
         t0 = dt.datetime.now(dt.timezone.utc)
         try:
             request(a.stages, a.max_calls, "21:30", cap)
