@@ -25,9 +25,10 @@
   "enabled": true,
   "glm_model": "glm-5.3",
   "max_items": 60000,
-  "jev_usd_max": 1.0,
-  "glm_credits_max": 3000,
-  "glm_in_flight": 6
+  "jev_usd_max": 3.0,
+  "glm_credits_max": 8000,
+  "glm_in_flight": 6,
+  "why_caps": "2026-10-06, Vlad: 'move ahead at full speed'. 280,000 mentions wait for a label; a run's egress cap (0.7 GB, and a daytime pass's room) is what bounds it, not the model allowance. GLM Max plan: 28,000 credits per 5 h"
  },
  "reserve_minutes_after_collect": 95,
  "reddit_pace_seconds": 1.2,
