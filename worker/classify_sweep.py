@@ -146,9 +146,14 @@ def jev_judge(items: list[dict], workers: int = 8, log=print) -> list[dict | Non
     res = client.evaluate_many(reqs, workers=workers, model=JEV_MODEL)
     out: list[dict | None] = [None] * len(items)
     usd = 0.0
+    errors: dict[str, int] = {}
     for (start, n), r in zip(spans, res):
         if not r or "_error" in r or (r.get("_meta") or {}).get("incomplete"):
-            continue                                   # a failure is residue, never a verdict
+            # a failure is residue, never a verdict; but it is COUNTED on the receipt (6 Oct: TypeSafe ran out of
+            # credits, every Jev request answered 402, and the receipt said only "Jev decided 0")
+            why = str((r or {}).get("_error") or ("incomplete" if r else "no answer"))[:120]
+            errors[why] = errors.get(why, 0) + 1
+            continue
         usd += float((r.get("_meta") or {}).get("usd") or 0)
         a = r.get("answers") or {}
         for j in range(n):
@@ -157,10 +162,12 @@ def jev_judge(items: list[dict], workers: int = 8, log=print) -> list[dict | Non
                 continue
             out[start + j] = {"e": float(e["noul"]), "probs": {k: float(v) for k, v in s["probabilities"].items()}}
     jev_judge.last_usd = usd
+    jev_judge.last_errors = errors
     return out
 
 
 jev_judge.last_usd = 0.0
+jev_judge.last_errors = {}
 
 
 def decide(j: dict | None, t: dict) -> tuple[str, float] | None:
@@ -489,6 +496,8 @@ def _loop(conn, cfg, t, model, rec, last_batch, limit, deadline, should_stop, lo
         j = jev_judge(items, log=log)
         rec["jev_usd"] += jev_judge.last_usd
         last_batch["jev"] = jev_judge.last_usd
+        for why, k in jev_judge.last_errors.items():
+            rec.setdefault("jev_errors", {})[why] = rec.get("jev_errors", {}).get(why, 0) + k
         verdicts = [decide(x, t) for x in j]
         models = [MV_JEV if v else None for v in verdicts]
         rec["jev_decided"] += sum(v is not None for v in verdicts)
