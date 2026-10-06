@@ -2,7 +2,7 @@
 
 **Live: [redditindex.com](https://redditindex.com)** (noindex while provisional).
 
-## STATUS (kept current; last edit 2026-10-05 05:00 UTC)
+## STATUS (kept current; last edit 2026-10-06 06:15 UTC)
 
 | | |
 |---|---|
@@ -12,7 +12,7 @@
 | **Cost** | The whole day of the first run sent 0.89 GB out of the database (the egress watchdog's meter; the gate is under 1 GB). |
 | **Reviewed** | 4 Oct: an independent second engine reviewed the nightly code twice (21 findings); the real ones are fixed and deployed, and a live test run after the fixes matched the database row for row. |
 | **Storage** | Database 3,455 MB before cleanup. Step 1 done 4 Oct: 177,292 threads with no mention moved to the archive (kept 14 days, then removed). Step 3, one copy of each comment's text, runs in the room the nightly runs leave under the 1 GB daily total. |
-| **Go-live gates** | Two consecutive scheduled nights finished ok, each under 1 GB, receipts matching the database. Night 1 (4 Oct) failed on a Linux limit; night 2 (5 Oct) ran every stage but failed when the shared GLM plan's rate limit refused a whole batch. Both fixed; the gate nights are now 6 and 7 Oct, go-live the morning of 7 Oct. |
+| **Go-live gates** | Two consecutive scheduled nights finished ok, each under 1 GB, receipts matching the database. **6 Oct: passed** (0.62 GB, every count equal). 7 Oct: tonight. Go-live the morning of 7 Oct if it passes. Nights 1 and 2 failed on two bugs, both fixed. |
 | **Labels** | 565,142 mentions wait for a label; the nightly run classifies up to 60,000. 171,263 links to a parent company's web address set aside as "not this product". |
 | **What is happening** | Relaunch under Vlad's ruling of 2026-10-02. Draft decision: [decisions/0017](decisions/0017-daily-sweep.md) (on the sweep branch, PR #8). |
 | **How to stop everything** | `python3 ops/ri.py stop "reason"` turns the daily sweep off and its database login off. The old collector cannot reach the database and runs a do-nothing image. |

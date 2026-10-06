@@ -172,6 +172,15 @@ Lengthening the checkpoint interval (Supabase project config) would cut this for
 the gates run. Measured that evening (run `430bbc50`): **3.2 KB a mention** in brand order (71,784 results for
 0.2278 GB), 64% less than newest-first.
 
+## Gate night 1 (6 October): passed
+
+Run `551a6e87`, 00:04-05:14 UTC, unattended, **ok**. Takedowns: 200,000 checked, 5,485 deleted and 436 edited on
+Reddit, 8,085 rows purged. Collection: 16,860 new mentions, 7,821 new threads. Classification: 36,502 labelled,
+4,594 "not this product" (the Jev nightly allowance of $1 ended it). 1,000 pages expired, fetched and proven.
+**0.62 GB** on the laptop window (23:53 to after the run), and the receipt equals the database on every count, no
+dangling text pointer. The laptop's network blocked the database port that morning, so the meter read the receipt
+through Supabase's Management API, and daytime passes moved to Railway (`ops/ri.py dayrun`, migration 0023).
+
 ## Go-live gates
 
 | Gate | Measured | Met |
