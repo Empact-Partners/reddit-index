@@ -183,7 +183,7 @@ def backfill(run: "Run", cfg: dict, log) -> dict:
     sweep.RUN_ID = run.run_id
     until = min(run.deadline - 95 * 60, time.time() + float(cfg.get("max_minutes", 150)) * 60)
     ctx = sweep.prepare(int(cfg.get("days", 90)))
-    known = {k.lower() for k in ctx["sub_ids"]}
+    known = {k.lower(): k for k in ctx["sub_ids"]}   # the name as the subreddits table spells it (the sweep's lookup is exact)
     calls0 = rc.stats()["calls"]
     try:
         for sub in subs:
@@ -197,13 +197,17 @@ def backfill(run: "Run", cfg: dict, log) -> dict:
             if rc.stats()["calls"] - calls0 >= run.caps["reddit_calls"]:
                 out["stopped"] = f"the pass's Reddit calls ({run.caps['reddit_calls']}) are used"
                 break
-            trees, m = sweep.run_subs([sub], ctx, int(cfg.get("tree_cap", 150)))
+            real = known.get(sub)
+            if real is None:   # not in the subreddits table yet: never marked done, so a later pass sweeps it once loaded
+                out.setdefault("unknown", []).append(sub)
+                continue
+            trees, m = sweep.run_subs([real], ctx, int(cfg.get("tree_cap", 150)))
             out["trees"] += trees
             out["mentions"] += m
-            st = sweep.load_state(sub, ctx["mode"])
+            st = sweep.load_state(real, ctx["mode"])
             finished = st.get("listings_done") and len(set(st.get("swept", []))) >= min(len(st.get("post_ids", [])),
                                                                                        int(cfg.get("tree_cap", 150)))
-            (out["done"] if finished or sub not in known else out["unfinished"]).append(sub)   # unknown: nothing to sweep
+            (out["done"] if finished else out["unfinished"]).append(sub)
             log(f"  backfill {sub}: {trees} trees, {m} mentions, {'done' if sub in out['done'] else 'not finished'}")
     finally:
         try:

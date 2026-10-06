@@ -189,16 +189,23 @@ def seed_subreddits():
 
     values = []
     for name, r in subs.items():
-        values.append(f"({lit(r['subreddit'])}, {lit(r['rule_posture'])}, "
+        # an empty posture is 'unknown' (the column's check allows permissive, capped, hostile, unknown): Phase B's
+        # 4,633 rows carried none, every batch holding one failed the check, and 1,254 subreddits never landed (6 Oct)
+        posture = r["rule_posture"] if r["rule_posture"] in ("permissive", "capped", "hostile", "unknown") else "unknown"
+        values.append(f"({lit(r['subreddit'])}, {lit(posture)}, "
                       f"{r['is_vendor_sub'] == 'True'}, "
                       f"{int(r.get('subscribers') or 0)}, "
                       f"{float(r.get('comments_per_hour') or 0)})")
+    lost = 0
     for batch in [values[i:i + 50] for i in range(0, len(values), 50)]:
         q = ("INSERT INTO subreddits (name, rule_posture, is_vendor_sub, subscribers, comments_per_hour) VALUES\n"
              + ",\n".join(batch) + "\nON CONFLICT (name) DO UPDATE SET "
              "rule_posture=EXCLUDED.rule_posture, is_vendor_sub=EXCLUDED.is_vendor_sub;")
-        sql(q, "subreddits")
-    print(f"  {len(subs)} subreddits")
+        if sql(q, "subreddits") is None:
+            lost += 1
+    print(f"  {len(subs)} subreddits" + (f"; {lost} BATCHES LOST (re-run --seed-subs)" if lost else ""))
+    if lost:
+        sys.exit(1)   # category_subreddits joins subreddits by name: never seed it over missing subreddits
 
 
 def seed_category_subreddits():
