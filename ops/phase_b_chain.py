@@ -89,7 +89,12 @@ def main() -> int:
         c = counter()
         return None if c is None or start is None or c < start else (c - start) / 1e9
 
+    # a second pass for a sweep a stall cut short (it resumes from its own state); never a third
+    jobs = jobs[:-1] + [(f"{l} (second pass)", cmd) for l, cmd in jobs[:-1]] + jobs[-1:]
     for label, cmd in jobs:
+        slug = label.split(" ")[0][len("sweep-90d-"):] if label.startswith("sweep-90d-") else None
+        if slug and slug in state["done"]:
+            continue
         u = used()
         if now() >= stop_at:
             log(f"stop: past the chain's start limit ({stop_at:%H:%M} UTC)")
@@ -123,8 +128,8 @@ def main() -> int:
                 break
         if stopped:
             break
-        if p.returncode == 0 and label.startswith("sweep-90d-"):
-            state["done"].append(label[len("sweep-90d-"):])
+        if p.returncode == 0 and slug:
+            state["done"].append(slug)
             json.dump(state, open(STATE, "w"), indent=1)
         log(f"{label} ended: exit {p.returncode}")
     log("chain ended")

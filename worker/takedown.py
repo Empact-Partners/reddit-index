@@ -162,9 +162,9 @@ def run(conn, max_calls: int = 2000, dry_run: bool = False, max_gone_share: floa
             "select doc_id, extract(epoch from min(loaded_at)) from public.mentions "
             "where doc_id = any (%s) group by 1", (chunk,)).fetchall())
         stored = {k: float(v) for k, v in stored.items()}
-        for d in chunk:
-            if d not in stored and d in watch_stored:
-                stored[d] = watch_stored[d]
+        for d in chunk:   # the earliest time either collection stored it: an edit after either one counts (review 0020)
+            if d in watch_stored:
+                stored[d] = min(stored.get(d, watch_stored[d]), watch_stored[d])
         got = judge(children, [c for c in chunk if c in stored], stored)
         verdicts.update(got)
         receipt["on_pages_checked"] += sum(1 for d in got if d in on_set)

@@ -32,11 +32,13 @@ ledgered in `public.removals`, its text dropped from the mirror and its card del
 
 ## How
 
-Migration 0026: `site.watch_card` (the cards), `site.watch_shown` (what the site reads; never a ledgered document),
+Migrations 0026 and 0027 (the fingerprint over every field a card renders, after the Codex review): `site.watch_card` (the cards), `site.watch_shown` (what the site reads; never a ledgered document),
 `site.watched_brand` (the disclosure list), `site.refresh_watch` (rebuilt on every refresh of a company and on every board
 link), `site.purge_watch`, and the page fingerprint extended so a page without watch cards hashes exactly as before (all
 5,965 fingerprints proven unchanged when it was applied). `ops/watch_link.py` carries the card fields from the board
-hourly. The nightly sweep's publisher re-renders and re-proves each changed page.
+hourly. The nightly sweep's publisher re-renders and re-proves each changed page. The collection chain's wrapper now
+stops a job that prints nothing for 20 minutes (a Reddit read hung 27 minutes on 6 Oct) and the chain gives a stalled
+sweep a second pass.
 
 ## Day one
 
