@@ -98,7 +98,14 @@ export const getCompany = cache(async (slug: string): Promise<CompanyPageData | 
                      'matched_form', c.matched_form, 'label', c.label, 'thread_title', c.thread_title)
                    order by c.created_utc desc, c.doc_id desc), '[]'::json)
               from site.rail_card c
-             where c.brand_slug = s.slug) as cards
+             where c.brand_slug = s.slug) as cards,
+           (select coalesce(json_agg(json_build_object(
+                     'subreddit', w.subreddit, 'doc_type', w.doc_type, 'author', w.author,
+                     'created_utc', w.created_utc, 'permalink', w.permalink, 'body', w.body,
+                     'matched_form', w.matched_form, 'sentiment', w.sentiment, 'thread_title', w.thread_title)
+                   order by w.created_utc desc, w.doc_id desc), '[]'::json)
+              from site.watch_shown w
+             where w.brand_slug = s.slug) as watch
     from site.brand_stats s
     where s.slug = ${slug}`);
   const r = rows[0];
@@ -121,6 +128,24 @@ export const getCompany = cache(async (slug: string): Promise<CompanyPageData | 
     permalink: String(c.permalink).startsWith("http") ? String(c.permalink) : `https://www.reddit.com${c.permalink}`,
   }));
 
+  // decisions/0020: the closer watch's mentions, in their own section, counted in nothing. Its sentiment is the
+  // watch's own reading (positive, negative, neutral or mixed), shown as the nearest of the card's three words.
+  const WATCH: Record<string, Sentiment> = { positive: "pos", negative: "neg", neutral: "neu", mixed: "neu" };
+  const watchMentions: Mention[] = ((r.watch ?? []) as Array<CardRow & { sentiment: string | null }>).map((c) => ({
+    brandName: name,
+    brandSlug: slug,
+    subreddit: String(c.subreddit),
+    author: String(c.author),
+    createdUtc: new Date(c.created_utc).toISOString(),
+    sentiment: WATCH[String(c.sentiment ?? "")] ?? "abstain",
+    docType: Number(c.doc_type) === 2 ? "post_body" : "comment",
+    matchedForm: String(c.matched_form ?? ""),
+    threadTitle: Number(c.doc_type) === 2 ? null : (c.thread_title || null),
+    body: String(c.body),
+    // site.refresh_watch keeps only Reddit's permalink shape
+    permalink: String(c.permalink),
+  }));
+
   const company: CompanyView = {
     slug,
     name,
@@ -135,6 +160,7 @@ export const getCompany = cache(async (slug: string): Promise<CompanyPageData | 
     oldestMention: r.oldest_mention ? new Date(r.oldest_mention as string).toISOString() : null,
     railSize: mentions.length,
     subredditStats: r.subreddit_stats as SubredditStat[],
+    watchMentions,
   };
   return {
     company,
@@ -205,6 +231,18 @@ export async function getIndex(): Promise<{ hash: string; rows: IndexRow[] }> {
 
 export async function getIndexRows(): Promise<IndexRow[]> {
   return (await getIndex()).rows;
+}
+
+/** decisions/0020: the companies the closer watch covers (Empact Partners' Reddit clients), for /methodology. */
+export async function getWatchedBrands(): Promise<Array<{ slug: string; name: string; since: string; hasPage: boolean }>> {
+  if (!DATABASE_URL_SITE) return [];
+  const rows = await withRetry(() => db()`
+    select coalesce(json_agg(json_build_object(
+             'slug', w.slug, 'name', w.name, 'since', w.since,
+             'hasPage', exists (select 1 from site.brand_stats s where s.slug = w.slug))
+           order by lower(w.name)), '[]'::json) as rows
+    from site.watched_brand w`);
+  return (rows[0]?.rows ?? []) as Array<{ slug: string; name: string; since: string; hasPage: boolean }>;
 }
 
 export type MethodologyParamRow = {

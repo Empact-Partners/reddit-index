@@ -14,7 +14,8 @@ person ran update.sh (last time: 25 August 2026) and had three faults this one d
     the card.
 
 What is checked, each run:
-  1. every document on a page (site.rail_key), every time: about 140,000 documents, 1,400 calls;
+  1. every document on a page (site.rail_key, and the closer watch's cards in site.watch_card, decision 0020),
+     every time: about 140,000 documents, 1,400 calls;
   2. then, with the calls that are left, the documents longest unchecked (public.doc_probe).
 
 What counts as gone: Reddit does not return it; its body is [deleted] or [removed]; its author is
@@ -124,11 +125,15 @@ def run(conn, max_calls: int = 2000, dry_run: bool = False, max_gone_share: floa
         return receipt
 
     # 1. every document on a page; 2. then the longest unchecked. One list, in that order.
-    on_pages = [r[0] for r in conn.execute("select distinct doc_id from site.rail_key order by 1")]
+    on_pages = [r[0] for r in conn.execute("select doc_id from site.rail_key union select doc_id from site.watch_card order by 1")]
+    # a watch card's document is not in public.mentions: its stored time is when the watch stored it (0020)
+    watch_stored = {d: float(t) for d, t in conn.execute(
+        "select doc_id, extract(epoch from min(stored_at)) from site.watch_card group by 1").fetchall()}
     room = max(0, max_calls * BATCH - len(on_pages))
     rest = [r[0] for r in conn.execute(
         "select p.doc_id from public.doc_probe p where not exists "
         "(select 1 from site.rail_key k where k.doc_id = p.doc_id) "
+        "and not exists (select 1 from site.watch_card w where w.doc_id = p.doc_id) "
         "order by p.checked_at nulls first, p.doc_id limit %s", (room,))] if room else []
     queue = (on_pages + rest)[: max_calls * BATCH]
     on_set = set(on_pages)
@@ -157,10 +162,13 @@ def run(conn, max_calls: int = 2000, dry_run: bool = False, max_gone_share: floa
             "select doc_id, extract(epoch from min(loaded_at)) from public.mentions "
             "where doc_id = any (%s) group by 1", (chunk,)).fetchall())
         stored = {k: float(v) for k, v in stored.items()}
+        for d in chunk:
+            if d not in stored and d in watch_stored:
+                stored[d] = watch_stored[d]
         got = judge(children, [c for c in chunk if c in stored], stored)
         verdicts.update(got)
         receipt["on_pages_checked"] += sum(1 for d in got if d in on_set)
-        ghosts = [c for c in chunk if c not in stored]
+        ghosts = [c for c in chunk if c not in stored and c not in watch_stored]
         if ghosts and not dry_run:   # a probe row whose document has no mention left: nothing to check, ever
             receipt["probe_rows_without_a_document"] += conn.execute(
                 "delete from public.doc_probe where doc_id = any (%s) and not exists "
@@ -190,6 +198,10 @@ def run(conn, max_calls: int = 2000, dry_run: bool = False, max_gone_share: floa
     for i in range(0, len(ids), 5000):
         part = ids[i:i + 5000]
         receipt["mentions_purged"] += purge(conn, {d: verdicts[d] for d in part})
+        gone_watch = [d for d in part if d in watch_stored and verdicts[d] != "alive"]
+        if gone_watch:   # decision 0020: ledgered, the card deleted and its text dropped, in one transaction
+            receipt["watch_purged"] = receipt.get("watch_purged", 0) + conn.execute(
+                "select site.purge_watch(%s::text[], %s::text[])", (gone_watch, [verdicts[d] for d in gone_watch])).fetchone()[0]
         # the stamp that moves the slow lap forward, for the survivors (a purge removed the others' rows)
         alive = [d for d in part if verdicts[d] == "alive"]
         conn.execute("insert into public.doc_probe (doc_id, checked_at) select d, now() from unnest(%s::text[]) d "

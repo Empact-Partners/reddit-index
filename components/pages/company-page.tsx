@@ -1,4 +1,6 @@
+import Link from "next/link";
 import { CompanyDashboard } from "@/components/company/company-dashboard";
+import { MentionList } from "@/components/data/mention-card";
 import { Breadcrumbs } from "@/components/site/breadcrumbs";
 import { CATEGORY_BY_SLUG } from "@/lib/generated/categories";
 import type { CompanyView } from "@/lib/data/types";
@@ -64,6 +66,27 @@ export function CompanyPage({
           ? `of ${boardSize} in ${primary.name}`
           : null}
       />
+
+      {/* decisions/0020 (Vlad, 2026-10-06: "nothing private, all public"): the closer watch's mentions, shown in
+          full with the same attribution as every card, counted in nothing above. */}
+      {company.watchMentions && company.watchMentions.length > 0 && (
+        <section id="closer-watch" className="mt-[var(--section)]" aria-labelledby="closer-watch-title">
+          <h2 id="closer-watch-title" style={{ fontSize: "var(--fs-h3)" }}>
+            More mentions, from a closer watch
+          </h2>
+          <p className="mt-3" style={{ fontSize: "var(--fs-body)", maxWidth: "72ch" }}>
+            Empact Partners, which runs this index, also runs Reddit marketing for {company.name}, so {company.name}&apos;s
+            name is watched in real time across more subreddits than the index reads for every company. These{" "}
+            {company.watchMentions.length === 1 ? "mention comes" : `${company.watchMentions.length} mentions come`} from that
+            watch, shown as found, newest first. They are not counted in the score, the totals, the subreddit table or the
+            rank above, so every company is measured the same way, and their sentiment is the watch&apos;s own reading.{" "}
+            <Link href="/methodology/#closer-watch" className="underline underline-offset-4">How this works</Link>
+          </p>
+          <div className="mt-6">
+            <MentionList mentions={company.watchMentions} />
+          </div>
+        </section>
+      )}
 
 
     </div>
