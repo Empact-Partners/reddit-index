@@ -1,5 +1,7 @@
 # 0016 — The index is frozen: no collection, no rebuilds
 
+> **Superseded 2026-10-06 by [0017](0017-daily-sweep.md):** the index refreshes itself once a day on Railway.
+
 **Status:** Accepted · **Date:** 2026-10-01 · **Decided by:** Vlad Shvets
 
 **Supersedes:** decision 0010's "run `worker/update.sh` at least weekly". Nothing updates the index now, by hand or otherwise.

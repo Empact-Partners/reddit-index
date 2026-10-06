@@ -28,12 +28,7 @@ PROD = "https://redditindex.com"
 
 # Exit 0 = skip the build, 1 = build (Vercel's Ignored Build Step). Only main builds, and only when something the
 # site is built from changed. VERCEL_GIT_PREVIOUS_SHA is the last deployed commit; without it, build.
-IGNORE_STEP = (
-    'if [ "$VERCEL_GIT_COMMIT_REF" != "main" ]; then echo "previews are off (decision 0017)"; exit 0; fi; '
-    'if [ -z "$VERCEL_GIT_PREVIOUS_SHA" ]; then exit 1; fi; '
-    'if git diff --quiet "$VERCEL_GIT_PREVIOUS_SHA" HEAD -- . ":(exclude)worker" ":(exclude)ops" '
-    '":(exclude)supabase" ":(exclude)docs" ":(exclude)decisions" ":(exclude)deploy" ":(exclude)*.md"; '
-    'then echo "no site change: data never rebuilds the site (decision 0017)"; exit 0; else exit 1; fi')
+IGNORE_STEP = "bash scripts/vercel-ignore.sh"   # the rule lives in the script: Vercel caps the command at 256 chars
 
 
 def vercel(method: str, path: str, body: dict | None = None) -> dict:

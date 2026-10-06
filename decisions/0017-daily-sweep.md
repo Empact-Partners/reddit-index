@@ -1,6 +1,6 @@
 # 0017 — The index refreshes itself once a day, inside declared budgets
 
-**Status:** Proposed — accepted when the go-live gates below are all measured and met · **Date:** 2026-10-03 ·
+**Status:** Accepted 2026-10-06 (live 11:25 UTC, on one counting night by Vlad's ruling) · **Date:** 2026-10-03 ·
 **Decided by:** Vlad Shvets (ruling of 2026-10-02), executed by Claude
 
 **Supersedes:** [0016](0016-frozen.md) (frozen) and [0010](0010-manual-on-demand.md) (manual, on demand).
@@ -45,12 +45,12 @@ issues and optimize the whole mechanics and the whole mechanism behind it."
 
 | | Ceiling | Normal day (measured) |
 |---|---|---|
-| Reddit API calls | 15,000 (2,000 takedowns, 13,000 collection), 50 a minute | _to fill_ |
-| New mentions | 40,000 | _to fill_ |
-| Run time | 5.5 hours, window 00:00–05:30 UTC | _to fill_ |
-| Database egress | the run stops at 0.7 GB estimated before publishing, which adds at most 1,000 page renders (about 0.2 GB); one day total of 1 GB for every index job together (`ops/day_egress.py`); gate: under 1 GB a day measured | _to fill_ |
-| GLM-5.3 | 3,000 credits | _to fill_ |
-| Jev | $1 | _to fill_ |
+| Reddit API calls | 15,000 (2,000 takedowns, 13,000 collection), 50 a minute | 2,000 takedowns + ~5,500-8,000 collection (time-bound; the shared app's quota stalls) |
+| New mentions | 40,000 | 10,000-17,000 |
+| Run time | 5.5 hours, window 00:00–05:30 UTC | 4.6-5.2 hours |
+| Database egress | the run stops at 0.7 GB estimated before publishing, which adds at most 1,000 page renders (about 0.2 GB); one day total of 1 GB for every index job together (`ops/day_egress.py`); gate: under 1 GB a day measured | 0.62 GB (5 and 6 Oct, node counter) |
+| GLM-5.3 | 3,000 credits | ~1,300-2,400 |
+| Jev | $1 | $0.92-1.00 (the binding nightly allowance) |
 | Vercel | one build per code change; none for data | 0 builds a day |
 
 Daytime work (Vlad, 2026-10-05: "move on with the data collection"): by-hand runs of the sweep and the backlog
@@ -181,14 +181,21 @@ Reddit, 8,085 rows purged. Collection: 16,860 new mentions, 7,821 new threads. C
 dangling text pointer. The laptop's network blocked the database port that morning, so the meter read the receipt
 through Supabase's Management API, and daytime passes moved to Railway (`ops/ri.py dayrun`, migration 0023).
 
+## Go-live on one counting night (Vlad, 6 October 11:25 UTC)
+
+Vlad chose to go live without waiting for the second counting night ("Go live now on the evidence we have"), on:
+gate night 1 passed (`551a6e87`: ok, 0.62 GB, every receipt count equal to the database), two clean daytime
+passes on Railway the same day (`1b8a76dd` on the laptop, `72fa80f6` on Railway, both ok), and `scripts/schedule_check.py`
+clean. The night of 7 October still runs and is measured, as a check after the fact.
+
 ## Go-live gates
 
 | Gate | Measured | Met |
 |---|---|---|
-| A full run plus the day's page regeneration under 1 GB of egress | _to fill_ | |
-| Two consecutive scheduled runs, unattended, receipts matching the database | _to fill_ | |
-| The site shows the latest run's data and its date | _to fill_ | |
-| The egress watchdog's baseline re-recorded after the planned work | _to fill_ | |
+| A full run plus the day's page regeneration under 1 GB of egress | 6 Oct (`551a6e87`): 0.62 GB on the node counter, the run and the 1,000 pages it rendered | yes |
+| Two consecutive scheduled runs, unattended, receipts matching the database | 6 Oct: ok, every count equal (16,860 mentions, 36,502 labels, 4,594 rejections, 5,921 takedowns, 7,821 threads, 0 dangling pointers). The second night was waived by Vlad on 6 Oct; 7 Oct is measured after the fact | one of two, waived |
+| The site shows the latest run's data and its date | `ops/go_live.py verify` 6 Oct 11:29 UTC: home, methodology, five largest pages 200 with the notice, each page's fingerprint equal to its row, `/freshness.json` refreshedAt 2026-10-06T11:13:58Z, unknown slug 404 | yes |
+| The egress watchdog's baseline re-recorded after the planned work | 6 Oct 11:35 UTC, record mode, 20 of 21 projects read, back to live | yes |
 
 ## Not changed
 

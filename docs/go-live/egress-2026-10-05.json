@@ -1,0 +1,106 @@
+{
+ "night": "2026-10-05",
+ "last_tick": "2026-10-06T11:18:41+00:00",
+ "counter_before": {
+  "bytes": 1448393112697.0,
+  "at": "2026-10-04T23:50:50+00:00"
+ },
+ "run_id": "6d98d9bc-da8a-45a8-8fa1-cb00e6084776",
+ "status": "failed",
+ "run_started": "2026-10-05T00:03:08.445277+00:00",
+ "run_finished": "2026-10-05T04:42:50.568623+00:00",
+ "run_minutes": 279.7,
+ "caps_hit": [],
+ "problems": [
+  "classify failed: every GLM job of a batch failed (17 of 17): GLM or the codex CLI is unavailable; what Jev settled was written, the rest keeps its tries"
+ ],
+ "allowances_used": [
+  "collect: the time set aside for collection ended inside r/eulaw"
+ ],
+ "egress_estimate_gb": 0.738,
+ "stages": {
+  "score": {},
+  "collect": {
+   "reddit_calls": 5505,
+   "mentions_new": 10525,
+   "subs_visited": 256,
+   "threads_new": 8176,
+   "posts_qualified": 8176
+  },
+  "publish": {
+   "pages_expired": 1000,
+   "pages_verified": 1000,
+   "takedown_pages": 519,
+   "failed": [],
+   "render_estimate_gb": 0.2
+  },
+  "refresh": {},
+  "classify": {
+   "labelled": 19419,
+   "rejected": 4174,
+   "not_checked": 22407,
+   "glm_credits": 1278.7,
+   "jev_usd": 0.9184,
+   "error": "every GLM job of a batch failed (17 of 17): GLM or the codex CLI is unavailable; what Jev settled was written, the rest keeps its tries"
+  },
+  "takedowns": {
+   "reddit_calls": 2000,
+   "docs_checked": 200000,
+   "docs_gone": 6329,
+   "docs_edited": 422
+  }
+ },
+ "reconcile": {
+  "new mentions": {
+   "receipt": 10525,
+   "database": 10525,
+   "match": true
+  },
+  "labels": {
+   "receipt": 19419,
+   "database": 19419,
+   "match": true
+  },
+  "not this product": {
+   "receipt": 4174,
+   "database": 4174,
+   "match": true
+  },
+  "takedowns found": {
+   "receipt": 6751,
+   "database": 6751,
+   "match": true
+  },
+  "new threads": {
+   "receipt": 8176,
+   "database": 8176,
+   "match": true
+  },
+  "_complete": {
+   "receipt": true,
+   "database": null,
+   "match": true,
+   "missing": []
+  },
+  "_dangling_text": {
+   "receipt": 0,
+   "database": 0,
+   "match": true
+  }
+ },
+ "receipt_matches_database": true,
+ "counter_after": {
+  "bytes": 1449009042287.0,
+  "at": "2026-10-05T05:05:30+00:00"
+ },
+ "laptop_egress_gb": 0.616,
+ "gate_egress_gb": 0.616,
+ "gate_source": "laptop window",
+ "gate_under_1_gb": true,
+ "watchdog": {
+  "gb_last_24h": 0.95,
+  "gb_per_day_7d": 0.85,
+  "logged_at": "2026-10-05T07:03:30.271923739Z",
+  "window": "the 24 hours to 2026-10-05T07:03:30.271923739Z"
+ }
+}

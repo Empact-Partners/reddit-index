@@ -1,0 +1,104 @@
+{
+ "night": "2026-10-06",
+ "last_tick": "2026-10-06T11:18:41+00:00",
+ "counter_before": {
+  "bytes": 1450246685664.0,
+  "at": "2026-10-05T23:52:58+00:00"
+ },
+ "run_id": "551a6e87-12d2-4d15-99ad-b74d45c6303f",
+ "status": "ok",
+ "run_started": "2026-10-06T00:04:01.668464+00:00",
+ "run_finished": "2026-10-06T05:14:39.624688+00:00",
+ "run_minutes": 310.6,
+ "caps_hit": [],
+ "problems": [],
+ "allowances_used": [
+  "collect: the time set aside for collection ended inside r/weirddalle",
+  "classify: tonight's Jev allowance ($1.0) is used"
+ ],
+ "egress_estimate_gb": 0.75,
+ "stages": {
+  "score": {},
+  "collect": {
+   "reddit_calls": 7130,
+   "mentions_new": 16860,
+   "subs_visited": 440,
+   "threads_new": 7821,
+   "posts_qualified": 12594
+  },
+  "publish": {
+   "pages_expired": 1000,
+   "pages_verified": 1000,
+   "takedown_pages": 594,
+   "failed": [],
+   "render_estimate_gb": 0.2
+  },
+  "refresh": {},
+  "classify": {
+   "labelled": 36502,
+   "rejected": 4594,
+   "not_checked": 8899,
+   "glm_credits": 2148.9,
+   "jev_usd": 0.9893
+  },
+  "takedowns": {
+   "reddit_calls": 2000,
+   "docs_checked": 200000,
+   "docs_gone": 5485,
+   "docs_edited": 436
+  }
+ },
+ "reconcile": {
+  "new mentions": {
+   "receipt": 16860,
+   "database": 16860,
+   "match": true
+  },
+  "labels": {
+   "receipt": 36502,
+   "database": 36502,
+   "match": true
+  },
+  "not this product": {
+   "receipt": 4594,
+   "database": 4594,
+   "match": true
+  },
+  "takedowns found": {
+   "receipt": 5921,
+   "database": 5921,
+   "match": true
+  },
+  "new threads": {
+   "receipt": 7821,
+   "database": 7821,
+   "match": true
+  },
+  "_complete": {
+   "receipt": true,
+   "database": null,
+   "match": true,
+   "missing": []
+  },
+  "_dangling_text": {
+   "receipt": 0,
+   "database": 0,
+   "match": true
+  }
+ },
+ "receipt_matches_database": true,
+ "counter_after": {
+  "bytes": 1450866831980.0,
+  "at": "2026-10-06T06:00:53+00:00"
+ },
+ "laptop_egress_gb": 0.62,
+ "gate_egress_gb": 0.62,
+ "gate_source": "laptop window",
+ "gate_under_1_gb": true,
+ "watchdog": {
+  "gb_last_24h": 1.77,
+  "gb_per_day_7d": 1.03,
+  "logged_at": "2026-10-06T07:01:22.916139475Z",
+  "window": "the 24 hours to 2026-10-06T07:01:22.916139475Z"
+ }
+}
