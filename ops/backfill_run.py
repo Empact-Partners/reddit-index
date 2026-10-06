@@ -30,7 +30,8 @@ sys.path.insert(0, os.path.join(ROOT, "worker"))
 sys.path.insert(0, os.path.join(ROOT, "scripts"))
 NIGHT_GUARD = dt.time(23, 40)   # the job is stopped at this UTC time at the latest (the sweep starts at 00:00)
 GRACE = 60
-STALL_MIN = 20                  # no line of output for this long is a hang, not work (6 Oct: a Reddit read sat 27 min)
+STALL_MIN = 8                   # no line of output for this long is a hang: 20 trees or a printed rate-limit wait come far sooner
+                                # (6 Oct: a Reddit read sat 27 min; three 20-minute stalls cost an hour)
 
 
 def night_deadline(now: dt.datetime) -> dt.datetime:
@@ -56,6 +57,22 @@ def stop_group(pgid: int, grace: float = GRACE) -> None:
             except (ProcessLookupError, PermissionError):
                 return
             time.sleep(1)
+
+
+def where_stuck(pgid: int) -> str:
+    """What the stalled job's processes are waiting in (macOS `sample`), for the log: a network read, a database
+    wait, a sleep. Best effort; never fails the stop."""
+    try:
+        pids = subprocess.run(["pgrep", "-g", str(pgid)], capture_output=True, text=True, timeout=10).stdout.split()
+        out = []
+        for pid in pids[:3]:
+            smp = subprocess.run(["/usr/bin/sample", pid, "1"], capture_output=True, text=True, timeout=30).stdout
+            frames = [ln.strip() for ln in smp.splitlines()
+                      if any(k in ln for k in ("PySSL", "_ssl__", "psycopg", "time_sleep", "poll", "recv", "urlopen", "getaddrinfo"))]
+            out.append(f"  pid {pid}: " + (" | ".join(dict.fromkeys(f.split("(in")[0].strip(" +!|:0123456789") for f in frames))[:400] or "no network or wait frame"))
+        return "where it waited:\n" + "\n".join(out)
+    except Exception as e:  # noqa: BLE001
+        return f"where it waited: unknown ({type(e).__name__})"
 
 
 def _counter():
@@ -131,6 +148,7 @@ def main() -> int:
             elif time.time() - heard["at"] > STALL_MIN * 60 and not state["stopped"]:
                 state["stopped"] = f"stalled: no output for {STALL_MIN} minutes (resumes from its state next time)"
                 print(f"backfill {label}: {state['stopped']}", flush=True)
+                print(where_stuck(p.pid), flush=True)
                 stop_group(p.pid)
             time.sleep(5)
         rc = p.returncode
