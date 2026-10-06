@@ -1,6 +1,6 @@
 # 0018 — The Empact Reddit partners and their competitors in the index
 
-**Status:** Draft — prepared 2026-10-06, applied after decision 0017 is accepted (go-live) · **Decided by:** Vlad
+**Status:** Accepted 2026-10-06, applied the same day after 0017 (go-live, 11:25 UTC) · **Decided by:** Vlad
 Shvets (instructions relayed by the reddit-mentions session, 2026-10-05), executed by Claude
 
 ## What Vlad asked
@@ -32,3 +32,13 @@ differs from the tracker's, `Empact-Partners/reddit-mentions` `config/partners.j
 
 The tracker's mentions never enter `public.mentions` (reddit-mentions decision D5: a partner-chosen, real-time
 watch would bias the index's uniform scores). `01-legal.md`. The Supabase project. The site stays noindex.
+
+## Applied, 6 Oct 2026
+
+| | |
+|---|---|
+| Loaded | 8 categories (159 in all), 10,689 brands (all 15 partners among them), 441 aliases, 5,309 category-subreddit rows, by `worker/load.py --seed --only-changed origin/main`; brand parity 2,220 of 2,220 |
+| Core | 176 core slots across the 8 new categories, 13 to 22 each partner-priority (`select_core_subs.py --add-categories`) |
+| Collection | 90-day sweeps of the new categories' core subreddits, then the post backfill, by `ops/phase_b_chain.py` in the day (receipts, stops by 23:15 UTC, inside the day's room under the 2 GB line); the nightly run visits due partner-priority subreddits first once the sweep image is redeployed |
+| Review | Codex round 3 on the branch: six majors (night guard, receipts on every path, the chain's clock and room checks, duplicate resolution before `--only-changed`), all fixed |
+| Linked | the Organic Mentions board and the index: decision 0019 |
