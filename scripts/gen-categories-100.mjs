@@ -25,6 +25,15 @@ const FLOOR = 0.030;  // hard sanity floor; the ACHIEVED maximin is reported and
 // ── icons: 80 new, distinct from the 20 shipped and from each other ─────────
 // added for the never-replied expansion (P4)
 const ROSTER_ICONS = {
+  // Phase B, the Empact Reddit partners' categories (decision 0018)
+  'artist-booking': 'guitar',
+  'eor-global-payroll': 'earth',
+  'log-management-siem': 'scroll-text',
+  'sales-planning': 'target',
+  'itsm': 'life-buoy',
+  'aba-therapy': 'brain',
+  'commercial-insurance-brokerage': 'briefcase',
+  'recreation-entertainment-insurance': 'ferris-wheel',
   'sales-intelligence': 'binoculars',
   'affiliate-referral-marketing': 'handshake',
   'ai-agent-platforms': 'bot-message-square',
