@@ -692,8 +692,8 @@ appfolio-property-manager,App Folio,alias,SAFE,0,False
 appfolio-property-manager,AFPM,alias,SAFE,0,False
 appfolio-property-manager,appfolio.com,domain,SAFE,0,False
 appsheet,AppSheet,canonical,AMBIGUOUS,1,True
-appsheet,Google AppSheet,alias,SAFE,0,False
-appsheet,App Sheet,alias,SAFE,0,False
+appsheet,Google AppSheet,alias,SAFE,0,True
+appsheet,App Sheet,alias,SAFE,0,True
 appsheet,appsheet.com,domain,SAFE,0,False
 appsignal,AppSignal,canonical,SAFE,0,False
 appsignal,App Signal,alias,SAFE,0,False
@@ -842,7 +842,7 @@ azure-data-factory,Azure Data Factory,canonical,SAFE,0,False
 azure-data-factory,ADF,alias,SAFE,0,False
 azure-data-factory,Data Factory,alias,SAFE,0,False
 azure-data-factory,azure.microsoft.com,domain,SAFE,0,False
-azure-devops,Azure DevOps,canonical,SAFE,0,False
+azure-devops,Azure DevOps,canonical,SAFE,0,True
 azure-devops,ADO,alias,SAFE,0,True
 azure-devops,AzDO,alias,SAFE,0,False
 azure-devops,VSTS,alias,SAFE,0,False
@@ -860,7 +860,7 @@ azure-monitor,azure.microsoft.com,domain,SAFE,0,False
 azure-pipelines,Azure Pipelines,canonical,SAFE,0,False
 azure-pipelines,Azure DevOps Pipelines,alias,SAFE,0,False
 azure-pipelines,ADO Pipelines,alias,SAFE,0,False
-azure-pipelines,Azure DevOps,alias,SAFE,0,False
+azure-pipelines,Azure DevOps,alias,SAFE,0,True
 azure-pipelines,azure.microsoft.com,domain,SAFE,0,False
 azure-pipelines,dev.azure.com,domain,SAFE,0,False
 azure-resource-manager,Azure Resource Manager,canonical,SAFE,0,False
@@ -1042,10 +1042,10 @@ boldsign,BoldSign,canonical,AMBIGUOUS,1,False
 boldsign,Bold Sign,alias,SAFE,0,False
 boldsign,boldsign.com,domain,SAFE,0,False
 bolt,Bolt,canonical,HOSTILE,2,True
-bolt,Bolt.new,domain,SAFE,0,False
+bolt,Bolt.new,domain,SAFE,0,True
 bolt,Bolt AI,alias,SAFE,0,False
 bolt,StackBlitz Bolt,alias,SAFE,0,False
-bolt-new,Bolt.new,domain,SAFE,0,False
+bolt-new,Bolt.new,domain,SAFE,0,True
 bolt-new,Bolt,alias,SAFE,0,True
 bonsai,Bonsai,canonical,HOSTILE,2,True
 bonsai,Hello Bonsai,alias,SAFE,0,False
@@ -1395,12 +1395,12 @@ cloudways,Cloudways,canonical,SAFE,0,False
 cloudways,CW,alias,SAFE,0,False
 cloudways,cloudways.com,domain,SAFE,0,False
 clover,Clover,canonical,HOSTILE,2,True
-clover,Clover POS,alias,SAFE,0,False
+clover,Clover POS,alias,SAFE,0,True
 clover,CloverPOS,alias,HOSTILE,2,False
 clover,clover.com,domain,SAFE,0,False
 clover-for-restaurants,Clover for Restaurants,canonical,SAFE,0,False
 clover-for-restaurants,Clover,alias,HOSTILE,2,True
-clover-for-restaurants,Clover POS,alias,SAFE,0,False
+clover-for-restaurants,Clover POS,alias,SAFE,0,True
 clover-for-restaurants,Clover Dining,alias,SAFE,0,False
 clover-for-restaurants,clover.com,domain,SAFE,0,False
 cmic,CMiC,canonical,HOSTILE,2,False
@@ -1699,12 +1699,12 @@ dlt,dltHub,alias,HOSTILE,2,False
 dlt,data load tool,alias,SAFE,0,False
 dlt,dlthub.com,domain,SAFE,0,False
 docebo,Docebo,canonical,SAFE,0,True
-docebo,Docebo Learn,alias,SAFE,0,False
-docebo,Docebo LMS,alias,SAFE,0,False
+docebo,Docebo Learn,alias,SAFE,0,True
+docebo,Docebo LMS,alias,SAFE,0,True
 docebo,docebo.com,domain,SAFE,0,False
-docebo-learn,Docebo Learn,canonical,SAFE,0,False
+docebo-learn,Docebo Learn,canonical,SAFE,0,True
 docebo-learn,Docebo,alias,SAFE,0,True
-docebo-learn,Docebo LMS,alias,SAFE,0,False
+docebo-learn,Docebo LMS,alias,SAFE,0,True
 docebo-learn,docebo.com,domain,SAFE,0,False
 dochub,DocHub,canonical,HOSTILE,2,False
 dochub,Doc Hub,alias,SAFE,0,False
@@ -2364,9 +2364,9 @@ google-analytics,GA,alias,SAFE,0,False
 google-analytics,GA4,alias,SAFE,0,False
 google-analytics,Google Analytics 4,alias,SAFE,0,False
 google-analytics,analytics.google.com,domain,SAFE,0,False
-google-appsheet,Google AppSheet,canonical,SAFE,0,False
+google-appsheet,Google AppSheet,canonical,SAFE,0,True
 google-appsheet,AppSheet,alias,SAFE,0,True
-google-appsheet,App Sheet,alias,SAFE,0,False
+google-appsheet,App Sheet,alias,SAFE,0,True
 google-appsheet,appsheet.com,domain,SAFE,0,False
 google-classroom,Google Classroom,canonical,SAFE,0,False
 google-classroom,Classroom,alias,SAFE,0,True
@@ -3105,12 +3105,12 @@ libsyn,Libsyn,canonical,SAFE,0,False
 libsyn,libsyn.com,domain,SAFE,0,False
 lightspeed-restaurant,Lightspeed Restaurant,canonical,SAFE,0,False
 lightspeed-restaurant,Lightspeed,alias,AMBIGUOUS,1,True
-lightspeed-restaurant,Lightspeed POS,alias,SAFE,0,False
+lightspeed-restaurant,Lightspeed POS,alias,SAFE,0,True
 lightspeed-restaurant,Lightspeed K-Series,alias,SAFE,0,False
 lightspeed-restaurant,L-Series,alias,AMBIGUOUS,1,False
 lightspeed-restaurant,lightspeedhq.com,domain,SAFE,0,False
 lightspeed-retail,Lightspeed Retail,canonical,SAFE,0,False
-lightspeed-retail,Lightspeed POS,alias,SAFE,0,False
+lightspeed-retail,Lightspeed POS,alias,SAFE,0,True
 lightspeed-retail,Lightspeed,alias,SAFE,0,True
 lightspeed-retail,Lightspeed Retail POS,alias,SAFE,0,False
 lightspeed-retail,Vend,alias,SAFE,0,True
@@ -3537,11 +3537,11 @@ monogame,MonoGame,canonical,AMBIGUOUS,1,False
 monogame,MG,alias,AMBIGUOUS,1,False
 monogame,monogame.net,domain,SAFE,0,False
 moodle,Moodle,canonical,AMBIGUOUS,1,True
-moodle,Moodle LMS,alias,SAFE,0,False
+moodle,Moodle LMS,alias,SAFE,0,True
 moodle,MoodleCloud,alias,AMBIGUOUS,1,False
 moodle,moodle.org,domain,SAFE,0,False
 moodle,moodle.com,domain,SAFE,0,False
-moodle-lms,Moodle LMS,canonical,SAFE,0,False
+moodle-lms,Moodle LMS,canonical,SAFE,0,True
 moodle-lms,Moodle,alias,SAFE,0,True
 moodle-lms,moodle.com,domain,SAFE,0,False
 moodle-lms,moodle.org,domain,SAFE,0,False
@@ -5708,11 +5708,11 @@ vscodium,vscodium.com,domain,SAFE,0,False
 vultr,Vultr,canonical,SAFE,0,False
 vultr,vultr.com,domain,SAFE,0,False
 vwo,VWO,canonical,HOSTILE,2,True
-vwo,Visual Website Optimizer,alias,SAFE,0,False
+vwo,Visual Website Optimizer,alias,SAFE,0,True
 vwo,vwo.com,domain,SAFE,0,False
 vwo-insights,VWO Insights,canonical,SAFE,0,False
 vwo-insights,VWO,alias,SAFE,0,True
-vwo-insights,Visual Website Optimizer,alias,SAFE,0,False
+vwo-insights,Visual Website Optimizer,alias,SAFE,0,True
 vwo-insights,vwo.com,domain,SAFE,0,False
 vyos,VyOS,canonical,SAFE,0,False
 vyos,Vyatta fork,alias,SAFE,0,False
@@ -5805,13 +5805,13 @@ windscribe,Wind$cribe,alias,SAFE,0,False
 windscribe,windscribe.com,domain,SAFE,0,False
 windsurf,Windsurf,canonical,HOSTILE,2,True
 windsurf,Windsurf AI,alias,SAFE,0,False
-windsurf,Windsurf Editor,alias,SAFE,0,False
+windsurf,Windsurf Editor,alias,SAFE,0,True
 windsurf,Codeium,alias,HOSTILE,2,False
-windsurf,Codeium Windsurf,alias,SAFE,0,False
+windsurf,Codeium Windsurf,alias,SAFE,0,True
 windsurf,windsurf.com,domain,SAFE,0,False
-windsurf-editor,Windsurf Editor,canonical,SAFE,0,False
+windsurf-editor,Windsurf Editor,canonical,SAFE,0,True
 windsurf-editor,Windsurf,alias,SAFE,0,True
-windsurf-editor,Codeium Windsurf,alias,SAFE,0,False
+windsurf-editor,Codeium Windsurf,alias,SAFE,0,True
 windsurf-editor,windsurf.com,domain,SAFE,0,False
 wiremock,WireMock,canonical,SAFE,0,False
 wiremock,Wire Mock,alias,SAFE,0,False
@@ -6284,10 +6284,10 @@ aidbox,aidbox.app,domain,SAFE,0,False
 aidbox,health-samurai.io,domain,SAFE,0,False
 aikido-cloud,Aikido Cloud,canonical,SAFE,0,False
 aikido-cloud,Aikido,alias,HOSTILE,2,True
-aikido-cloud,Aikido Security,alias,SAFE,0,False
+aikido-cloud,Aikido Security,alias,SAFE,0,True
 aikido-cloud,Aikido CSPM,alias,SAFE,0,False
 aikido-cloud,aikido.dev,domain,SAFE,0,False
-aikido-security,Aikido Security,canonical,SAFE,0,False
+aikido-security,Aikido Security,canonical,SAFE,0,True
 aikido-security,Aikido,alias,AMBIGUOUS,1,True
 aikido-security,Aikido.dev,domain,SAFE,0,False
 ainfluencer,Ainfluencer,canonical,SAFE,0,False
@@ -7378,12 +7378,12 @@ command-zero,CMD Zero,alias,SAFE,0,False
 command-zero,CmdZero,alias,AMBIGUOUS,1,False
 command-zero,C0,alias,AMBIGUOUS,1,False
 command-zero,cmdzero.io,domain,SAFE,0,False
-commanders-act,Commanders Act,canonical,SAFE,0,False
+commanders-act,Commanders Act,canonical,SAFE,0,True
 commanders-act,TrustCommander,alias,HOSTILE,2,False
 commanders-act,CommandersAct,alias,HOSTILE,2,True
 commanders-act,commandersact.com,domain,SAFE,0,False
 commanders-act-cdp,Commanders Act CDP,canonical,SAFE,0,False
-commanders-act-cdp,Commanders Act,alias,SAFE,0,False
+commanders-act-cdp,Commanders Act,alias,SAFE,0,True
 commanders-act-cdp,CommandersAct,alias,SAFE,0,True
 commanders-act-cdp,CA CDP,alias,SAFE,0,False
 commanders-act-cdp,commandersact.com,domain,SAFE,0,False
@@ -8594,14 +8594,14 @@ fuel-finance,FuelFinance,alias,HOSTILE,2,False
 fuel-finance,Fuel FP&A,alias,SAFE,0,False
 fuel-finance,fuelfinance.me,domain,SAFE,0,False
 full-circle-insights,Full Circle Insights,canonical,SAFE,0,False
-full-circle-insights,Full Circle,alias,SAFE,0,False
+full-circle-insights,Full Circle,alias,SAFE,0,True
 full-circle-insights,FCI,alias,AMBIGUOUS,1,False
 full-circle-insights,fullcircleinsights.com,domain,SAFE,0,False
 fullcast,Fullcast,canonical,SAFE,0,False
 fullcast,Fullcast.io,domain,SAFE,0,False
 fullcast,fullcast.com,domain,SAFE,0,False
 fullcircl,FullCircl,canonical,SAFE,0,False
-fullcircl,Full Circle,alias,SAFE,0,False
+fullcircl,Full Circle,alias,SAFE,0,True
 fullcircl,FullCircl KYC,alias,SAFE,0,False
 fullcircl,W2 Global Data,alias,SAFE,0,False
 fullcircl,fullcircl.com,domain,SAFE,0,False
@@ -9008,9 +9008,9 @@ hume-ai,hume.ai,domain,SAFE,0,False
 hummingbot,Hummingbot,canonical,SAFE,0,False
 hummingbot,hummingbot.org,domain,SAFE,0,False
 hunter,Hunter,canonical,HOSTILE,2,True
-hunter,Hunter.io,domain,SAFE,0,False
+hunter,Hunter.io,domain,SAFE,0,True
 hunter-campaigns,Hunter Campaigns,canonical,SAFE,0,False
-hunter-campaigns,Hunter.io,domain,SAFE,0,False
+hunter-campaigns,Hunter.io,domain,SAFE,0,True
 hunter-campaigns,Hunter,alias,AMBIGUOUS,1,True
 hustle,Hustle,canonical,HOSTILE,2,True
 hustle,Hustle P2P,alias,SAFE,0,False
@@ -13917,12 +13917,12 @@ acoustic-campaign,Silverpop,alias,AMBIGUOUS,1,False
 acoustic-campaign,acoustic.com,domain,SAFE,0,False
 acoustic-experience-analytics-tealeaf,Acoustic Experience Analytics (Tealeaf),canonical,SAFE,0,False
 acoustic-experience-analytics-tealeaf,Tealeaf,alias,SAFE,0,True
-acoustic-experience-analytics-tealeaf,Acoustic Tealeaf,alias,SAFE,0,False
-acoustic-experience-analytics-tealeaf,IBM Tealeaf,alias,SAFE,0,False
+acoustic-experience-analytics-tealeaf,Acoustic Tealeaf,alias,SAFE,0,True
+acoustic-experience-analytics-tealeaf,IBM Tealeaf,alias,SAFE,0,True
 acoustic-experience-analytics-tealeaf,acoustic.com,domain,SAFE,0,False
-acoustic-tealeaf,Acoustic Tealeaf,canonical,SAFE,0,False
+acoustic-tealeaf,Acoustic Tealeaf,canonical,SAFE,0,True
 acoustic-tealeaf,Tealeaf,alias,SAFE,0,True
-acoustic-tealeaf,IBM Tealeaf,alias,SAFE,0,False
+acoustic-tealeaf,IBM Tealeaf,alias,SAFE,0,True
 acoustic-tealeaf,acoustic.com,domain,SAFE,0,False
 acquire,Acquire,canonical,HOSTILE,2,True
 acquire,Acquire.io,domain,SAFE,0,False
@@ -14313,7 +14313,7 @@ anymeeting,anymeeting.com,domain,SAFE,0,False
 anymeeting,intermedia.com,domain,SAFE,0,False
 anything,Anything,canonical,HOSTILE,2,True
 anything,Create,alias,HOSTILE,2,True
-anything,Create.xyz,domain,SAFE,0,False
+anything,Create.xyz,domain,SAFE,0,True
 anything,createanything.com,domain,SAFE,0,False
 anything,anything.com,domain,SAFE,0,False
 anythingllm,AnythingLLM,canonical,SAFE,0,False
@@ -15015,8 +15015,8 @@ bigchange,BigChange,canonical,HOSTILE,2,False
 bigchange,JobWatch,alias,HOSTILE,2,False
 bigchange,bigchange.com,domain,SAFE,0,False
 bigfix,BigFix,canonical,SAFE,0,True
-bigfix,HCL BigFix,alias,SAFE,0,False
-bigfix,IBM BigFix,alias,SAFE,0,False
+bigfix,HCL BigFix,alias,SAFE,0,True
+bigfix,IBM BigFix,alias,SAFE,0,True
 bigfix,bigfix.com,domain,SAFE,0,False
 bigfix,hcl-software.com,domain,SAFE,0,False
 bigscoots,BigScoots,canonical,SAFE,0,False
@@ -16415,7 +16415,7 @@ crazy-domains,CD registrar,alias,SAFE,0,False
 crazy-domains,crazydomains.com,domain,SAFE,0,False
 crazy-domains,crazydomains.com.au,domain,SAFE,0,False
 create,Create,canonical,HOSTILE,2,True
-create,Create.xyz,domain,SAFE,0,False
+create,Create.xyz,domain,SAFE,0,True
 create,Create AI,alias,SAFE,0,False
 create,Anything,alias,HOSTILE,2,True
 creatio,Creatio,canonical,AMBIGUOUS,1,False
@@ -16773,13 +16773,13 @@ designspark-mechanical,designspark.com,domain,SAFE,0,False
 desk365,Desk365,canonical,SAFE,0,False
 desk365,Desk 365,alias,SAFE,0,False
 desk365,desk365.io,domain,SAFE,0,False
-deskera-books,Deskera Books,canonical,SAFE,0,False
+deskera-books,Deskera Books,canonical,SAFE,0,True
 deskera-books,Deskera,alias,SAFE,0,True
-deskera-books,Deskera ERP,alias,SAFE,0,False
+deskera-books,Deskera ERP,alias,SAFE,0,True
 deskera-books,deskera.com,domain,SAFE,0,False
-deskera-erp,Deskera ERP,canonical,SAFE,0,False
+deskera-erp,Deskera ERP,canonical,SAFE,0,True
 deskera-erp,Deskera,alias,SAFE,0,True
-deskera-erp,Deskera Books,alias,SAFE,0,False
+deskera-erp,Deskera Books,alias,SAFE,0,True
 deskera-erp,deskera.com,domain,SAFE,0,False
 deskin,DeskIn,canonical,AMBIGUOUS,1,False
 deskin,DeskIn Remote Desktop,alias,SAFE,0,False
@@ -16952,10 +16952,10 @@ doku,Doku Payments,alias,SAFE,0,False
 doku,DOKU Wallet,alias,SAFE,0,False
 doku,doku.com,domain,SAFE,0,False
 dolibarr,Dolibarr,canonical,SAFE,0,True
-dolibarr,Dolibarr ERP CRM,alias,SAFE,0,False
+dolibarr,Dolibarr ERP CRM,alias,SAFE,0,True
 dolibarr,Doli,alias,SAFE,0,True
 dolibarr,dolibarr.org,domain,SAFE,0,False
-dolibarr-erp-crm,Dolibarr ERP CRM,canonical,SAFE,0,False
+dolibarr-erp-crm,Dolibarr ERP CRM,canonical,SAFE,0,True
 dolibarr-erp-crm,Dolibarr,alias,SAFE,0,True
 dolibarr-erp-crm,dolibarr.org,domain,SAFE,0,False
 domain-com,Domain.com,domain,SAFE,0,False
@@ -17429,11 +17429,11 @@ enumerate-central,Enumerate,alias,AMBIGUOUS,1,True
 enumerate-central,TOPS [ONE],alias,SAFE,0,False
 enumerate-central,TOPS One,alias,SAFE,0,False
 enumerate-central,goenumerate.com,domain,SAFE,0,False
-env-zero,env zero,canonical,SAFE,0,False
+env-zero,env zero,canonical,SAFE,0,True
 env-zero,env0,alias,SAFE,0,True
 env-zero,env0.com,domain,SAFE,0,False
 env0,env0,canonical,SAFE,0,True
-env0,Env Zero,alias,SAFE,0,False
+env0,Env Zero,alias,SAFE,0,True
 env0,env0.com,domain,SAFE,0,False
 envia-com,Envia.com,domain,SAFE,0,False
 envia-com,Envia,alias,HOSTILE,2,False
@@ -17634,13 +17634,13 @@ expensya,Expensya,canonical,SAFE,0,False
 expensya,Medius Expensya,alias,SAFE,0,False
 expensya,Expensya by Medius,alias,SAFE,0,False
 expensya,expensya.com,domain,SAFE,0,False
-explain-everything,Explain Everything,canonical,SAFE,0,False
-explain-everything,Explain Everything Whiteboard,alias,SAFE,0,False
-explain-everything,EE Whiteboard,alias,SAFE,0,False
+explain-everything,Explain Everything,canonical,SAFE,0,True
+explain-everything,Explain Everything Whiteboard,alias,SAFE,0,True
+explain-everything,EE Whiteboard,alias,SAFE,0,True
 explain-everything,explaineverything.com,domain,SAFE,0,False
-explain-everything-whiteboard,Explain Everything Whiteboard,canonical,SAFE,0,False
-explain-everything-whiteboard,Explain Everything,alias,SAFE,0,False
-explain-everything-whiteboard,EE Whiteboard,alias,SAFE,0,False
+explain-everything-whiteboard,Explain Everything Whiteboard,canonical,SAFE,0,True
+explain-everything-whiteboard,Explain Everything,alias,SAFE,0,True
+explain-everything-whiteboard,EE Whiteboard,alias,SAFE,0,True
 explain-everything-whiteboard,explaineverything.com,domain,SAFE,0,False
 express-invoice,Express Invoice,canonical,SAFE,0,False
 express-invoice,NCH Express Invoice,alias,SAFE,0,False
@@ -18845,9 +18845,9 @@ hbuilderx,HBuilderX,canonical,SAFE,0,False
 hbuilderx,HBuilder X,alias,SAFE,0,False
 hbuilderx,HBuilder,alias,SAFE,0,False
 hbuilderx,dcloud.io,domain,SAFE,0,False
-hcl-bigfix,HCL BigFix,canonical,SAFE,0,False
+hcl-bigfix,HCL BigFix,canonical,SAFE,0,True
 hcl-bigfix,BigFix,alias,SAFE,0,True
-hcl-bigfix,IBM BigFix,alias,SAFE,0,False
+hcl-bigfix,IBM BigFix,alias,SAFE,0,True
 hcl-bigfix,Tivoli Endpoint Manager,alias,SAFE,0,False
 hcl-bigfix,TEM,alias,SAFE,0,True
 hcl-bigfix,bigfix.com,domain,SAFE,0,False
@@ -18874,10 +18874,10 @@ heartland-payroll,Heartland Payment Systems,alias,SAFE,0,False
 heartland-payroll,heartland.us,domain,SAFE,0,False
 heartland-restaurant,Heartland Restaurant,canonical,SAFE,0,False
 heartland-restaurant,Heartland Restaurant POS,alias,SAFE,0,False
-heartland-restaurant,Heartland POS,alias,SAFE,0,False
+heartland-restaurant,Heartland POS,alias,SAFE,0,True
 heartland-restaurant,heartland.us,domain,SAFE,0,False
 heartland-retail,Heartland Retail,canonical,SAFE,0,False
-heartland-retail,Heartland POS,alias,SAFE,0,False
+heartland-retail,Heartland POS,alias,SAFE,0,True
 heartland-retail,Springboard Retail,alias,SAFE,0,False
 heartland-retail,Springboard POS,alias,SAFE,0,False
 heartland-retail,heartland.us,domain,SAFE,0,False
@@ -19014,11 +19014,11 @@ homebank,Home Bank,alias,SAFE,0,False
 homebank,gethomebank.org,domain,SAFE,0,False
 homebase,Homebase,canonical,HOSTILE,2,True
 homebase,Homebase app,alias,SAFE,0,False
-homebase,Join Homebase,alias,SAFE,0,False
+homebase,Join Homebase,alias,SAFE,0,True
 homebase,joinhomebase.com,domain,SAFE,0,False
 homebase-payroll,Homebase Payroll,canonical,SAFE,0,False
 homebase-payroll,Homebase,alias,SAFE,0,True
-homebase-payroll,Join Homebase,alias,SAFE,0,False
+homebase-payroll,Join Homebase,alias,SAFE,0,True
 homebase-payroll,joinhomebase.com,domain,SAFE,0,False
 homerun,Homerun,canonical,HOSTILE,2,False
 homerun,Homerun HR,alias,SAFE,0,False
@@ -19594,7 +19594,7 @@ itranslate,iTranslate Translator,alias,SAFE,0,False
 itranslate,iTranslate app,alias,SAFE,0,False
 itranslate,itranslate.com,domain,SAFE,0,False
 itrent,iTrent,canonical,SAFE,0,True
-itrent,MHR iTrent,alias,SAFE,0,False
+itrent,MHR iTrent,alias,SAFE,0,True
 itrent,MidlandHR iTrent,alias,SAFE,0,False
 itrent,mhrglobal.com,domain,SAFE,0,False
 itslearning,itslearning,canonical,HOSTILE,2,False
@@ -19640,12 +19640,12 @@ jasmin-sms-gateway,Jasmin,alias,SAFE,0,False
 jasmin-sms-gateway,Jasmin SMS,alias,SAFE,0,False
 jasmin-sms-gateway,jasminsms.com,domain,SAFE,0,False
 jasper,Jasper,canonical,HOSTILE,2,True
-jasper,Jasper AI,alias,SAFE,0,False
+jasper,Jasper AI,alias,SAFE,0,True
 jasper,Jarvis,alias,HOSTILE,2,True
 jasper,Conversion.ai,domain,SAFE,0,False
 jasper,jasper.ai,domain,SAFE,0,False
 jasper-chat,Jasper Chat,canonical,SAFE,0,False
-jasper-chat,Jasper AI,alias,SAFE,0,False
+jasper-chat,Jasper AI,alias,SAFE,0,True
 jasper-chat,Jasper,alias,AMBIGUOUS,1,True
 jasper-chat,jasper.ai,domain,SAFE,0,False
 jazzhr,JazzHR,canonical,SAFE,0,False
@@ -20307,12 +20307,12 @@ learn365,LMS365,alias,SAFE,0,False
 learn365,Learn 365,alias,SAFE,0,False
 learn365,Zensai Learn365,alias,SAFE,0,False
 learn365,zensai.com,domain,SAFE,0,False
-learning-pool,Learning Pool,canonical,SAFE,0,False
+learning-pool,Learning Pool,canonical,SAFE,0,True
 learning-pool,Learning Pool LMS,alias,SAFE,0,False
 learning-pool,LP LMS,alias,SAFE,0,False
 learning-pool,learningpool.com,domain,SAFE,0,False
 learning-pool-platform,Learning Pool Platform,canonical,SAFE,0,False
-learning-pool-platform,Learning Pool,alias,SAFE,0,False
+learning-pool-platform,Learning Pool,alias,SAFE,0,True
 learning-pool-platform,LP Platform,alias,SAFE,0,False
 learning-pool-platform,learningpool.com,domain,SAFE,0,False
 learnpress,LearnPress,canonical,AMBIGUOUS,1,False
@@ -21109,7 +21109,7 @@ mezmo,mezmo.com,domain,SAFE,0,False
 mgmt,mgmt,canonical,HOSTILE,2,False
 mgmt,mgmt config,alias,SAFE,0,False
 mgmt,mgmtconfig.com,domain,SAFE,0,False
-mhr-itrent,MHR iTrent,canonical,SAFE,0,False
+mhr-itrent,MHR iTrent,canonical,SAFE,0,True
 mhr-itrent,iTrent,alias,SAFE,0,True
 mhr-itrent,MHR,alias,SAFE,0,False
 mhr-itrent,mhrglobal.com,domain,SAFE,0,False
@@ -21743,8 +21743,8 @@ newforma-project-center,NPC,alias,SAFE,0,False
 newforma-project-center,Newforma ProjectCenter,alias,SAFE,0,False
 newforma-project-center,newforma.com,domain,SAFE,0,False
 newsletter,Newsletter,canonical,HOSTILE,2,True
-newsletter,The Newsletter Plugin,alias,SAFE,0,False
-newsletter,Newsletter Plugin,alias,SAFE,0,False
+newsletter,The Newsletter Plugin,alias,SAFE,0,True
+newsletter,Newsletter Plugin,alias,SAFE,0,True
 newsletter,TNP,alias,HOSTILE,2,False
 newsletter,thenewsletterplugin.com,domain,SAFE,0,False
 nexcess,Nexcess,canonical,SAFE,0,False
@@ -26059,8 +26059,8 @@ the-edge,Edge POS,alias,SAFE,0,False
 the-edge,The Edge POS,alias,SAFE,0,False
 the-edge,Edge for Jewelers,alias,SAFE,0,False
 the-edge,theedgeforjewelers.com,domain,SAFE,0,False
-the-newsletter-plugin,The Newsletter Plugin,canonical,SAFE,0,False
-the-newsletter-plugin,Newsletter Plugin,alias,SAFE,0,False
+the-newsletter-plugin,The Newsletter Plugin,canonical,SAFE,0,True
+the-newsletter-plugin,Newsletter Plugin,alias,SAFE,0,True
 the-newsletter-plugin,Newsletter for WordPress,alias,SAFE,0,False
 the-newsletter-plugin,thenewsletterplugin.com,domain,SAFE,0,False
 the-t-shirt-mill,The T-Shirt Mill,canonical,SAFE,0,False
@@ -26459,9 +26459,9 @@ trimble-viewpoint-vista,Viewpoint Vista,alias,SAFE,0,False
 trimble-viewpoint-vista,VP Vista,alias,SAFE,0,False
 trimble-viewpoint-vista,viewpoint.com,domain,SAFE,0,False
 trinet,TriNet,canonical,SAFE,0,True
-trinet,TriNet PEO,alias,SAFE,0,False
+trinet,TriNet PEO,alias,SAFE,0,True
 trinet,trinet.com,domain,SAFE,0,False
-trinet-peo,TriNet PEO,canonical,SAFE,0,False
+trinet-peo,TriNet PEO,canonical,SAFE,0,True
 trinet-peo,TriNet,alias,SAFE,0,True
 trinet-peo,trinet.com,domain,SAFE,0,False
 trio,Trio,canonical,HOSTILE,2,True
@@ -26723,18 +26723,18 @@ uniqkey,Uniq Key,alias,SAFE,0,False
 uniqkey,uniqkey.eu,domain,SAFE,0,False
 unisender,UniSender,canonical,SAFE,0,False
 unisender,unisender.com,domain,SAFE,0,False
-unit4-erp,Unit4 ERP,canonical,SAFE,0,False
+unit4-erp,Unit4 ERP,canonical,SAFE,0,True
 unit4-erp,Unit4,alias,SAFE,0,True
 unit4-erp,Agresso,alias,SAFE,0,True
-unit4-erp,Unit4 Business World,alias,SAFE,0,False
+unit4-erp,Unit4 Business World,alias,SAFE,0,True
 unit4-erp,UBW,alias,SAFE,0,False
 unit4-erp,unit4.com,domain,SAFE,0,False
 unit4-erpx,Unit4 ERPx,canonical,SAFE,0,False
 unit4-erpx,ERPx,alias,SAFE,0,False
-unit4-erpx,Unit4 ERP,alias,SAFE,0,False
+unit4-erpx,Unit4 ERP,alias,SAFE,0,True
 unit4-erpx,Unit4,alias,SAFE,0,True
 unit4-erpx,Agresso,alias,SAFE,0,True
-unit4-erpx,Unit4 Business World,alias,SAFE,0,False
+unit4-erpx,Unit4 Business World,alias,SAFE,0,True
 unit4-erpx,unit4.com,domain,SAFE,0,False
 unito,Unito,canonical,SAFE,0,False
 unito,Unito.io,domain,SAFE,0,False
@@ -28025,7 +28025,7 @@ atlas,atlashxm.com,domain,SAFE,0,False
 attentive-ai,Attentive AI,canonical,SAFE,0,False
 attentive-ai,Attentive.ai,domain,SAFE,0,False
 attentive-ai,Automeasure,alias,AMBIGUOUS,1,False
-attentive-ai,Beam AI,alias,SAFE,0,False
+attentive-ai,Beam AI,alias,SAFE,0,True
 attentive-ai,BIM CoPilot,alias,SAFE,0,False
 aurigo,Aurigo,canonical,SAFE,0,False
 aurigo,aurigo.com,domain,SAFE,0,False
@@ -28888,15 +28888,15 @@ hirebridge,hirebridge.com,domain,SAFE,0,False
 hiredscore,HiredScore,canonical,SAFE,0,False
 hiredscore,hiredscore.com,domain,SAFE,0,False
 hireez,HireEZ,canonical,SAFE,0,True
-hireez,hireez.com,domain,SAFE,0,False
+hireez,hireez.com,domain,SAFE,0,True
 hireez,Hiretual,alias,SAFE,0,True
-hireez,hiretual.com,domain,SAFE,0,False
+hireez,hiretual.com,domain,SAFE,0,True
 hireful,Hireful,canonical,SAFE,0,False
 hireful,hireful.co.uk,domain,SAFE,0,False
 hiretual,hiretual,canonical,SAFE,0,True
-hiretual,hiretual.com,domain,SAFE,0,False
+hiretual,hiretual.com,domain,SAFE,0,True
 hiretual,HireEZ,alias,SAFE,0,True
-hiretual,hireez.com,domain,SAFE,0,False
+hiretual,hireez.com,domain,SAFE,0,True
 hirevue,HireVue,canonical,SAFE,0,False
 hirevue,hirevue.com,domain,SAFE,0,False
 hitfilm,HitFilm,canonical,SAFE,0,False
@@ -30560,6 +30560,366 @@ zyte,Zyte API,alias,SAFE,0,False
 zyte,Scrapy Cloud,alias,SAFE,0,False
 zyte,Scrapinghub,alias,SAFE,0,False
 zyte,zyte.com,domain,SAFE,0,False
+systemone,SystemOne,canonical,HOSTILE,2,False
+systemone,systemonesoftware,alias,HOSTILE,2,False
+systemone,System One Software,alias,SAFE,0,False
+systemone,systemonesoftware.com,domain,SAFE,0,False
+gigwell,Gigwell,canonical,SAFE,0,False
+gigwell,gigwell.com,domain,SAFE,0,False
+master-tour,Master Tour,canonical,SAFE,0,False
+aboss,ABOSS,canonical,SAFE,0,False
+prism-fm,Prism.fm,domain,SAFE,0,False
+stagent,Stagent,canonical,SAFE,0,False
+stagent,stagent.com,domain,SAFE,0,False
+artistu,Artistu,canonical,SAFE,0,False
+artistu,artistu.io,domain,SAFE,0,False
+band-pencil,Band Pencil,canonical,SAFE,0,False
+band-pencil,bandpencil.com,domain,SAFE,0,False
+slasify,Slasify,canonical,SAFE,0,False
+slasify,slasify.com,domain,SAFE,0,False
+oyster-hr,Oyster HR,canonical,SAFE,0,False
+oyster-hr,oysterhr.com,domain,SAFE,0,False
+remote-people,Remote People,canonical,SAFE,0,True
+remote-people,RemotePeople,alias,AMBIGUOUS,1,False
+remote-people,Remote People EOR,alias,SAFE,0,False
+remote-people,remotepeople.com,domain,SAFE,0,False
+skuad,Skuad,canonical,SAFE,0,False
+skuad,skuad.io,domain,SAFE,0,False
+atlas-hxm,Atlas HXM,canonical,SAFE,0,False
+atlas-hxm,atlashxm.com,domain,SAFE,0,False
+payoneer,Payoneer,canonical,SAFE,0,False
+payoneer,payoneer.com,domain,SAFE,0,False
+links-international,Links International,canonical,SAFE,0,False
+links-international,linksinternational.com,domain,SAFE,0,False
+104,104薪資代管,canonical,AMBIGUOUS,1,False
+104,104.com.tw,domain,SAFE,0,False
+ayp-group,AYP Group,canonical,SAFE,0,False
+ayp-group,ayp-group.com,domain,SAFE,0,False
+worksuite,Worksuite,canonical,SAFE,0,False
+worksuite,worksuite.com,domain,SAFE,0,False
+alliance-risk,Alliance Risk,canonical,SAFE,0,False
+alliance-risk,joinalliancerisk,alias,AMBIGUOUS,1,False
+alliance-risk,Alliance Risk Insurance Services,alias,SAFE,0,False
+alliance-risk,Alliance Risk Insurance,alias,SAFE,0,False
+alliance-risk,Join Alliance Risk,alias,SAFE,0,False
+alliance-risk,Expansion Venture Capital,alias,SAFE,0,False
+alliance-risk,Expansion VC,alias,SAFE,0,False
+alliance-risk,joinalliancerisk.com,domain,SAFE,0,False
+alliance-risk,expansionvc.com,domain,SAFE,0,False
+coalition,Coalition,canonical,HOSTILE,2,True
+coalition,Coalition Insurance,alias,SAFE,0,False
+coalition,Coalition Cyber,alias,SAFE,0,False
+coalition,coalitioninc.com,domain,SAFE,0,False
+at-bay,At-Bay,canonical,AMBIGUOUS,1,False
+at-bay,at-bay.com,domain,SAFE,0,False
+chubb,Chubb,canonical,SAFE,0,False
+chubb,chubb.com,domain,SAFE,0,False
+cowbell,Cowbell,canonical,HOSTILE,2,True
+cowbell,Cowbell Cyber,alias,SAFE,0,False
+cowbell,Cowbell Insurance,alias,SAFE,0,False
+cowbell,cowbell.insure,domain,SAFE,0,False
+beazley,Beazley,canonical,SAFE,0,False
+beazley,beazley.com,domain,SAFE,0,False
+biberk,biBERK,canonical,SAFE,0,False
+biberk,biberk.com,domain,SAFE,0,False
+hiscox,Hiscox,canonical,SAFE,0,False
+hiscox,hiscox.com,domain,SAFE,0,False
+the-hartford,The Hartford,canonical,SAFE,0,False
+the-hartford,thehartford.com,domain,SAFE,0,False
+aig,AIG,canonical,AMBIGUOUS,1,False
+aig,aig.com,domain,SAFE,0,False
+allianz-commercial,Allianz Commercial,canonical,SAFE,0,False
+axa-xl,AXA XL,canonical,SAFE,0,False
+axa-xl,axaxl.com,domain,SAFE,0,False
+axis,AXIS,canonical,HOSTILE,2,True
+axis,AXIS Capital,alias,SAFE,0,False
+axis,AXIS Insurance,alias,SAFE,0,False
+axis,axiscapital.com,domain,SAFE,0,False
+berkley,Berkley,canonical,SAFE,0,False
+cna,CNA,canonical,HOSTILE,2,True
+cna,CNA Insurance,alias,SAFE,0,False
+cna,CNA Financial,alias,SAFE,0,False
+cna,cna.com,domain,SAFE,0,False
+corvus-by-travelers,Corvus by Travelers,canonical,SAFE,0,False
+embroker,Embroker,canonical,SAFE,0,False
+embroker,embroker.com,domain,SAFE,0,False
+founder-shield,Founder Shield,canonical,SAFE,0,False
+founder-shield,foundershield.com,domain,SAFE,0,False
+founders-insurance,Founders Insurance,canonical,SAFE,0,False
+founders-insurance,foundersinsurance.com,domain,SAFE,0,False
+gallagher,Gallagher,canonical,SAFE,0,False
+great-american-insurance,Great American Insurance,canonical,SAFE,0,False
+great-american-insurance,Great American Insurance Group,alias,SAFE,0,False
+great-american-insurance,gaig.com,domain,SAFE,0,False
+hdi-global,HDI Global,canonical,SAFE,0,False
+insureon,Insureon,canonical,SAFE,0,False
+insureon,insureon.com,domain,SAFE,0,False
+liberty-mutual,Liberty Mutual,canonical,SAFE,0,False
+liberty-mutual,libertymutual.com,domain,SAFE,0,False
+markel,Markel,canonical,SAFE,0,False
+markel,markel.com,domain,SAFE,0,False
+marsh-mclennan-agency,Marsh McLennan Agency,canonical,SAFE,0,False
+nationwide,Nationwide,canonical,HOSTILE,2,True
+nationwide,Nationwide Insurance,alias,SAFE,0,False
+nationwide,Nationwide Mutual,alias,SAFE,0,False
+nationwide,nationwide.com,domain,SAFE,0,False
+newfront,Newfront,canonical,SAFE,0,False
+newfront,newfront.com,domain,SAFE,0,False
+next-insurance,Next Insurance,canonical,SAFE,0,True
+next-insurance,NEXT Insurance Inc,alias,SAFE,0,False
+next-insurance,nextinsurance,alias,AMBIGUOUS,1,False
+next-insurance,nextinsurance.com,domain,SAFE,0,False
+simply-business,Simply Business,canonical,SAFE,0,False
+simply-business,simplybusiness.com,domain,SAFE,0,False
+society-insurance,Society Insurance,canonical,SAFE,0,False
+society-insurance,societyinsurance.com,domain,SAFE,0,False
+thimble,Thimble,canonical,HOSTILE,2,True
+thimble,Thimble Insurance,alias,SAFE,0,False
+thimble,thimble.com,domain,SAFE,0,False
+travelers,Travelers,canonical,SAFE,0,False
+travelers,travelers.com,domain,SAFE,0,False
+vouch,Vouch,canonical,HOSTILE,2,True
+vouch,Vouch Insurance,alias,SAFE,0,False
+vouch,vouch.us,domain,SAFE,0,False
+woodruff-sawyer,Woodruff Sawyer,canonical,SAFE,0,False
+woodruff-sawyer,woodruffsawyer.com,domain,SAFE,0,False
+zurich,Zurich,canonical,SAFE,0,False
+specialty-insurance,Specialty Insurance,canonical,SAFE,0,True
+specialty-insurance,specialtyinsurancesc,alias,HOSTILE,2,False
+specialty-insurance,Specialty Insurance Services USA,alias,SAFE,0,False
+specialty-insurance,Specialty Insurance Services,alias,SAFE,0,True
+specialty-insurance,Specialty Insurance LLC,alias,SAFE,0,False
+specialty-insurance,Specialty Insurance SC,alias,SAFE,0,False
+specialty-insurance,specialtyinsurancesc.com,domain,SAFE,0,False
+k-and-k-insurance,K&K Insurance,canonical,SAFE,0,False
+cossio-insurance-agency,Cossio Insurance Agency,canonical,SAFE,0,False
+prime-insurance,Prime Insurance,canonical,SAFE,0,True
+prime-insurance,Prime Insurance Company,alias,SAFE,0,False
+prime-insurance,primeis.com,domain,SAFE,0,False
+sadler-sports-and-recreation,Sadler Sports & Recreation,canonical,SAFE,0,False
+hub-international,HUB International,canonical,SAFE,0,False
+hub-international,hubinternational.com,domain,SAFE,0,False
+american-specialty-insurance,American Specialty Insurance,canonical,SAFE,0,False
+american-specialty-insurance,americanspecialty.com,domain,SAFE,0,False
+axethrowinginsurance-com,AxeThrowingInsurance.com,domain,SAFE,0,False
+esp-specialty,ESP Specialty,canonical,SAFE,0,False
+esp-specialty,espspecialty.com,domain,SAFE,0,False
+granite-insurance,Granite Insurance,canonical,SAFE,0,False
+granite-insurance,graniteinsurance.com,domain,SAFE,0,False
+insurance-allies,Insurance Allies,canonical,SAFE,0,False
+insurance-allies,insuranceallies.com,domain,SAFE,0,False
+kelly-insurance-group,Kelly Insurance Group,canonical,SAFE,0,False
+kelly-insurance-group,kellyinsurancegroup.com,domain,SAFE,0,False
+leavitt-group,Leavitt Group,canonical,SAFE,0,False
+mcgowan-allied-specialty,McGowan Allied Specialty,canonical,SAFE,0,False
+philadelphia-insurance,Philadelphia Insurance,canonical,SAFE,0,False
+pro-insurance-group,Pro Insurance Group,canonical,SAFE,0,False
+ryan-specialty,Ryan Specialty,canonical,SAFE,0,False
+ryan-specialty,ryanspecialty.com,domain,SAFE,0,False
+sterlingrisk,SterlingRisk,canonical,SAFE,0,False
+sterlingrisk,sterlingrisk.com,domain,SAFE,0,False
+veracity-insurance,Veracity Insurance,canonical,SAFE,0,False
+veracity-insurance,veracityinsurance.com,domain,SAFE,0,False
+xinsurance,XINSURANCE,canonical,SAFE,0,False
+xinsurance,xinsurance.com,domain,SAFE,0,False
+clementine-aba,Clementine ABA,canonical,SAFE,0,False
+clementine-aba,clementineaba,alias,HOSTILE,2,False
+clementine-aba,Clementine Autism,alias,SAFE,0,False
+clementine-aba,Clementine,alias,HOSTILE,2,False
+clementine-aba,clementineaba.com,domain,SAFE,0,False
+hopebridge,Hopebridge,canonical,SAFE,0,False
+centria-autism,Centria Autism,canonical,SAFE,0,False
+action-behavior-centers,Action Behavior Centers,canonical,SAFE,0,False
+bluesprig,BlueSprig,canonical,SAFE,0,False
+autism-learning-partners,Autism Learning Partners,canonical,SAFE,0,False
+learn-behavioral,LEARN Behavioral,canonical,SAFE,0,False
+proud-moments-aba,Proud Moments ABA,canonical,SAFE,0,False
+behavioral-innovations,Behavioral Innovations,canonical,SAFE,0,False
+caravel-autism-health,Caravel Autism Health,canonical,SAFE,0,False
+trumpet-behavioral-health,Trumpet Behavioral Health,canonical,SAFE,0,False
+lighthouse-autism-center,Lighthouse Autism Center,canonical,SAFE,0,False
+abs-kids,ABS Kids,canonical,SAFE,0,False
+positive-behavior-supports,Positive Behavior Supports,canonical,SAFE,0,False
+kyo-autism-therapy,Kyo Autism Therapy,canonical,SAFE,0,False
+florida-autism-center,Florida Autism Center,canonical,SAFE,0,False
+1000xstocks,1000xStocks,canonical,AMBIGUOUS,1,False
+1000xstocks,1000X Stocks,alias,SAFE,0,False
+1000xstocks,1000xstocks.com,domain,SAFE,0,False
+yahoo-finance,Yahoo Finance,canonical,SAFE,0,False
+morningstar,Morningstar,canonical,SAFE,0,False
+morningstar,morningstar.com,domain,SAFE,0,False
+wecantrack,wecantrack,canonical,SAFE,0,False
+wecantrack,wecantrack.com,domain,SAFE,0,False
+trackonomics,Trackonomics,canonical,SAFE,0,False
+trackonomics,trackonomics.net,domain,SAFE,0,False
+affluent,Affluent,canonical,HOSTILE,2,True
+affluent,Affluent.io,domain,SAFE,0,False
+affilimate,Affilimate,canonical,SAFE,0,False
+affilimate,affilimate.com,domain,SAFE,0,False
+strackr,Strackr,canonical,SAFE,0,False
+strackr,strackr.com,domain,SAFE,0,False
+metaview,Metaview,canonical,HOSTILE,2,False
+metaview,Metaview AI,alias,SAFE,0,False
+metaview,Fillmore,alias,HOSTILE,2,False
+metaview,metaview.ai,domain,SAFE,0,False
+linkedin-recruiter,LinkedIn Recruiter,canonical,SAFE,0,False
+sourcewhale,SourceWhale,canonical,SAFE,0,False
+sourcewhale,sourcewhale.com,domain,SAFE,0,False
+eightfold-ai,Eightfold AI,canonical,SAFE,0,False
+access-vincere,Access Vincere,canonical,SAFE,0,False
+peoplegpt,PeopleGPT,canonical,SAFE,0,False
+beamery,Beamery,canonical,SAFE,0,False
+beamery,beamery.com,domain,SAFE,0,False
+candidate-fyi,candidate.fyi,domain,SAFE,0,False
+sapia-ai,Sapia.ai,domain,SAFE,0,False
+honeit,Honeit,canonical,SAFE,0,False
+honeit,honeit.com,domain,SAFE,0,False
+vervoe,Vervoe,canonical,SAFE,0,False
+vervoe,vervoe.com,domain,SAFE,0,False
+apriora,Apriora,canonical,SAFE,0,False
+hirelogic,HireLogic,canonical,SAFE,0,False
+hirelogic,hirelogic.com,domain,SAFE,0,False
+lehire,Lehire,canonical,SAFE,0,False
+lehire,lehire.io,domain,SAFE,0,False
+noon,Noon,canonical,HOSTILE,2,True
+noon,Noon AI,alias,SAFE,0,False
+noon,noon.ai,domain,SAFE,0,False
+ribbon,Ribbon,canonical,HOSTILE,2,True
+ribbon,Ribbon AI,alias,SAFE,0,False
+ribbon,ribbon.ai,domain,SAFE,0,False
+lingo-app,Lingo App,canonical,SAFE,0,False
+lingo-app,lingoapp,alias,HOSTILE,2,False
+lingo-app,Lingo DAM,alias,SAFE,0,False
+lingo-app,lingoapp.com,domain,SAFE,0,False
+marq,Marq,canonical,AMBIGUOUS,1,False
+marq,marq.com,domain,SAFE,0,False
+akeneo,Akeneo,canonical,SAFE,0,False
+akeneo,akeneo.com,domain,SAFE,0,False
+pimberly,Pimberly,canonical,SAFE,0,False
+pimberly,pimberly.com,domain,SAFE,0,False
+inriver,inRiver,canonical,SAFE,0,False
+inriver,inriver.com,domain,SAFE,0,False
+syndigo,Syndigo,canonical,SAFE,0,False
+syndigo,syndigo.com,domain,SAFE,0,False
+devrev,DevRev,canonical,SAFE,0,False
+devrev,Computer by DevRev,alias,SAFE,0,False
+devrev,devrev.ai,domain,SAFE,0,False
+devrev,computer.io,domain,SAFE,0,False
+jira-software,Jira Software,canonical,SAFE,0,False
+jira-service-management,Jira Service Management,canonical,SAFE,0,False
+jira-service-management,JSM,alias,SAFE,0,False
+zoho-desk,Zoho Desk,canonical,SAFE,0,False
+microsoft-365,Microsoft 365,canonical,SAFE,0,False
+manageengine-servicedesk-plus,ManageEngine ServiceDesk Plus,canonical,SAFE,0,False
+salesloft,Salesloft,canonical,SAFE,0,False
+salesloft,salesloft.com,domain,SAFE,0,False
+zoominfo,ZoomInfo,canonical,SAFE,0,False
+zoominfo,zoominfo.com,domain,SAFE,0,False
+atomicwork,Atomicwork,canonical,SAFE,0,False
+atomicwork,atomicwork.com,domain,SAFE,0,False
+clari,Clari,canonical,SAFE,0,False
+clari,clari.com,domain,SAFE,0,False
+freshworks,Freshworks,canonical,SAFE,0,False
+freshworks,freshworks.com,domain,SAFE,0,False
+microsoft-copilot-studio,Microsoft Copilot Studio,canonical,SAFE,0,False
+rollstack,Rollstack,canonical,SAFE,0,False
+rollstack,rollstack.com,domain,SAFE,0,False
+eesel-ai,eesel AI,canonical,SAFE,0,False
+matik,Matik,canonical,SAFE,0,False
+matik,matik.io,domain,SAFE,0,False
+canny,Canny,canonical,HOSTILE,2,True
+canny,Canny.io,domain,SAFE,0,False
+enterpret,Enterpret,canonical,SAFE,0,False
+enterpret,enterpret.com,domain,SAFE,0,False
+genesys,Genesys,canonical,SAFE,0,False
+genesys,genesys.com,domain,SAFE,0,False
+gainsight,Gainsight,canonical,SAFE,0,False
+gainsight,gainsight.com,domain,SAFE,0,False
+lorikeet,Lorikeet,canonical,HOSTILE,2,True
+lorikeet,Lorikeet AI,alias,SAFE,0,False
+lorikeet,Lorikeet CX,alias,SAFE,0,False
+seismic,Seismic,canonical,HOSTILE,2,True
+seismic,Seismic Software,alias,SAFE,0,False
+seismic,seismic.com,domain,SAFE,0,False
+wordpress,WordPress,canonical,SAFE,0,False
+wordpress,wordpress.org,domain,SAFE,0,False
+replit,Replit,canonical,SAFE,0,False
+replit,replit.com,domain,SAFE,0,False
+cargo,Cargo,canonical,HOSTILE,2,True
+cargo,Cargo.site,domain,SAFE,0,False
+cargo,Cargo Collective,alias,SAFE,0,False
+figma-sites,Figma Sites,canonical,SAFE,0,False
+bill-spend-and-expense,BILL Spend & Expense,canonical,SAFE,0,False
+bill-spend-and-expense,Bill.com,domain,SAFE,0,False
+bill-spend-and-expense,BILL Spend,alias,SAFE,0,False
+sap-concur,SAP Concur,canonical,SAFE,0,False
+sap-concur,Concur,alias,AMBIGUOUS,1,True
+sap-concur,Concur Expense,alias,SAFE,0,False
+sap-concur,concur.com,domain,SAFE,0,False
+emburse,Emburse,canonical,SAFE,0,False
+emburse,emburse.com,domain,SAFE,0,False
+airwallex,Airwallex,canonical,SAFE,0,False
+airwallex,airwallex.com,domain,SAFE,0,False
+egencia,Egencia,canonical,SAFE,0,False
+egencia,egencia.com,domain,SAFE,0,False
+hubdoc,Hubdoc,canonical,SAFE,0,False
+hubdoc,hubdoc.com,domain,SAFE,0,False
+smart-receipts,Smart Receipts,canonical,SAFE,0,False
+smart-receipts,smartreceipts.co,domain,SAFE,0,False
+travelperk,TravelPerk,canonical,SAFE,0,False
+autoentry,AutoEntry,canonical,SAFE,0,False
+autoentry,autoentry.com,domain,SAFE,0,False
+canon-imageformula,Canon imageFORMULA,canonical,SAFE,0,False
+engine,Engine,canonical,HOSTILE,2,True
+engine,Engine.com,domain,SAFE,0,False
+engine,Hotel Engine,alias,SAFE,0,False
+epson-rapidreceipt,Epson RapidReceipt,canonical,SAFE,0,False
+pex,PEX,canonical,HOSTILE,2,True
+pex,PEX Card,alias,SAFE,0,False
+pex,pexcard,alias,HOSTILE,2,False
+pex,pexcard.com,domain,SAFE,0,False
+scansnap,ScanSnap,canonical,SAFE,0,False
+sparkreceipt,SparkReceipt,canonical,SAFE,0,False
+sparkreceipt,sparkreceipt.com,domain,SAFE,0,False
+xero-expenses,Xero Expenses,canonical,SAFE,0,False
+logmanager,Logmanager,canonical,HOSTILE,2,False
+logmanager,logmanager.com,domain,SAFE,0,False
+logmanager,logmanager.cz,domain,SAFE,0,False
+elastic-elk,Elastic / ELK,canonical,SAFE,0,False
+elastic-elk,ELK stack,alias,SAFE,0,False
+elastic-elk,Elasticsearch,alias,SAFE,0,False
+elastic-elk,Kibana,alias,SAFE,0,False
+splunk,Splunk,canonical,SAFE,0,False
+splunk,splunk.com,domain,SAFE,0,False
+grafana-loki,Grafana Loki,canonical,SAFE,0,False
+grafana-loki,Loki,alias,SAFE,0,False
+microsoft-sentinel,Microsoft Sentinel,canonical,SAFE,0,False
+microsoft-sentinel,Azure Sentinel,alias,SAFE,0,False
+syslog-ng,syslog-ng,canonical,SAFE,0,False
+syslog-ng,syslog-ng.com,domain,SAFE,0,False
+ibm-qradar,IBM QRadar,canonical,SAFE,0,False
+manageengine,ManageEngine,canonical,SAFE,0,False
+manageengine,manageengine.com,domain,SAFE,0,False
+solarwinds,SolarWinds,canonical,SAFE,0,False
+solarwinds,solarwinds.com,domain,SAFE,0,False
+lative,Lative,canonical,AMBIGUOUS,1,False
+lative,Lative AI,alias,SAFE,0,False
+lative,lative.ai,domain,SAFE,0,False
+lative,lative.io,domain,SAFE,0,False
+workday-adaptive-planning,Workday Adaptive Planning,canonical,SAFE,0,False
+teamohana,TeamOhana,canonical,SAFE,0,False
+teamohana,teamohana.com,domain,SAFE,0,False
+charthop,ChartHop,canonical,SAFE,0,False
+charthop,charthop.com,domain,SAFE,0,False
+varicent,Varicent,canonical,SAFE,0,False
+varicent,varicent.com,domain,SAFE,0,False
+xactly,Xactly,canonical,SAFE,0,False
+amazon-web-services,Amazon Web Services,canonical,SAFE,0,False
+amazon-web-services,AWS,alias,SAFE,0,False
+amazon-web-services,Amazon Lightsail,alias,SAFE,0,False
+linode-akamai-cloud,Linode (Akamai Cloud),canonical,SAFE,0,False
+linode-akamai-cloud,Linode,alias,SAFE,0,False
+linode-akamai-cloud,Akamai Cloud,alias,SAFE,0,False
 14-ai,14.ai,domain,SAFE,0,False
 1mind,1mind,canonical,SAFE,0,False
 1mind,1mind.com,domain,SAFE,0,False
