@@ -26,6 +26,9 @@ relationship and proper links between the Reddit index and their organic mention
 
 ## What is deliberately not linked
 
+*Since decision 0020 the watch's mentions are SHOWN on the company pages, in their own section; they are still counted in
+nothing.*
+
 The tracker's mentions never enter `public.mentions` and never move a score (its D5; 0018). The index ranks every brand
 on the same uniform collection; a partner watched closer than its competitors would rank higher for being watched, not for
 being discussed. `watch.*` is outside the site's reads (the site role reads `site.*` only), carries no persona name

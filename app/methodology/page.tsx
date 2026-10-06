@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getMethodologyParams } from "@/lib/data/methodology";
+import { getWatchedBrands } from "@/lib/data/site-db";
 import { METHODOLOGY_VERSION } from "@/lib/format";
 
 export const dynamic = "force-static";
@@ -50,6 +51,7 @@ export const metadata: Metadata = {
 export default async function Methodology() {
   const params = await getMethodologyParams();
   const commit = params[0]?.gitCommit ?? "unrecorded";
+  const watched = await getWatchedBrands();
 
   return (
     <article className="py-[var(--section)]" style={{ maxWidth: "72ch" }}>
@@ -268,6 +270,41 @@ Reddit Love Score = round(100 · Q₀.₁₀(posterior))`}</Pre>
         </p>
       </Section>
 
+      <Section title="A closer watch, counted in nothing" id="closer-watch">
+        <p>
+          This index is run by Empact Partners, which also runs Reddit marketing
+          for some of the companies it ranks. Those companies&apos; names are
+          watched in real time across more subreddits than the index reads for
+          everyone else. What that watch finds is shown on their pages, in its
+          own section under the counted one, in full and linked back to Reddit
+          like every other card, with its sentiment as the watch reads it.
+        </p>
+        <p>
+          It never enters a number. The score, the totals, the subreddit table
+          and the rank are computed from the index&apos;s own collection alone,
+          which reads every company the same way; a company watched more closely
+          would otherwise rank higher for being watched, not for what Reddit
+          says. Comments placed by Empact&apos;s own accounts are neither counted
+          nor shown in either section. The watch&apos;s mentions are checked
+          against Reddit every day and taken off when deleted, removed or
+          edited there, as every card is.
+        </p>
+        {watched.length > 0 && (
+          <p>
+            Watched since {watched.map((w) => w.since).sort()[0]}:{" "}
+            {watched.map((w, i) => (
+              <span key={w.slug}>
+                {i > 0 ? ", " : ""}
+                {w.hasPage
+                  ? <Link href={`/${w.slug}/`} className="underline underline-offset-4">{w.name}</Link>
+                  : w.name}
+              </span>
+            ))}
+            .
+          </p>
+        )}
+      </Section>
+
       <Section title="Every frozen parameter">
         <p>
           These were fixed before any data was collected. Changing one is a
@@ -312,9 +349,9 @@ Reddit Love Score = round(100 · Q₀.₁₀(posterior))`}</Pre>
   );
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({ title, children, id }: { title: string; children: React.ReactNode; id?: string }) {
   return (
-    <section className="mt-[var(--section)]">
+    <section className="mt-[var(--section)]" id={id}>
       <h2 style={{ fontSize: "var(--fs-h3)" }}>{title}</h2>
       <div className="mt-5 grid gap-5" style={{ fontSize: "var(--fs-body)" }}>
         {children}

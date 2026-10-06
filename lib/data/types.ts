@@ -42,6 +42,10 @@ export type CompanyView = {
   oldestMention: string | null;
   /** How many cards the page carries (at most 80 comments + 40 posts, newest first). */
   railSize: number;
+  /** decisions/0020: mentions found by the closer, real-time watch Empact runs for its Reddit clients (at most 60,
+   *  newest first). Shown in their own section and counted in NOTHING above: not the score, the totals, the
+   *  subreddit table or the rank. Empty for every company that is not watched. */
+  watchMentions?: Mention[];
   subredditStats: SubredditStat[];
 };
 

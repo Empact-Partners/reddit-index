@@ -30,6 +30,7 @@ sys.path.insert(0, os.path.join(ROOT, "worker"))
 sys.path.insert(0, os.path.join(ROOT, "scripts"))
 NIGHT_GUARD = dt.time(23, 40)   # the job is stopped at this UTC time at the latest (the sweep starts at 00:00)
 GRACE = 60
+STALL_MIN = 20                  # no line of output for this long is a hang, not work (6 Oct: a Reddit read sat 27 min)
 
 
 def night_deadline(now: dt.datetime) -> dt.datetime:
@@ -107,8 +108,18 @@ def main() -> int:
     try:
         if state["stopped"]:
             raise RuntimeError("stopped before the job started")
-        p = subprocess.Popen(["/usr/bin/caffeinate", "-i", *cmd], cwd=ROOT, env={**os.environ, "RI_RUN_ID": run_id},
-                             start_new_session=True)   # its own process group: a stop reaches the job, not only caffeinate
+        p = subprocess.Popen(["/usr/bin/caffeinate", "-i", *cmd], cwd=ROOT, env={**os.environ, "RI_RUN_ID": run_id, "PYTHONUNBUFFERED": "1"},
+                             start_new_session=True,   # its own process group: a stop reaches the job, not only caffeinate
+                             stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1)
+        heard = {"at": time.time()}
+
+        def relay():   # the job's output, passed through, and the time of its last line (the stall watchdog)
+            for line in p.stdout:
+                heard["at"] = time.time()
+                sys.stdout.write(line)
+                sys.stdout.flush()
+        import threading
+        threading.Thread(target=relay, daemon=True).start()
         state["proc"] = p
         if os.environ.get("RI_JOB_PIDFILE"):
             with open(os.environ["RI_JOB_PIDFILE"], "w") as f:
@@ -116,6 +127,10 @@ def main() -> int:
         while p.poll() is None:
             if dt.datetime.now(dt.timezone.utc) >= deadline and not state["stopped"]:
                 state["stopped"] = f"{NIGHT_GUARD:%H:%M} UTC: the night run's window"
+                stop_group(p.pid)
+            elif time.time() - heard["at"] > STALL_MIN * 60 and not state["stopped"]:
+                state["stopped"] = f"stalled: no output for {STALL_MIN} minutes (resumes from its state next time)"
+                print(f"backfill {label}: {state['stopped']}", flush=True)
                 stop_group(p.pid)
             time.sleep(5)
         rc = p.returncode
