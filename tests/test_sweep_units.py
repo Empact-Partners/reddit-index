@@ -118,6 +118,11 @@ _r = site_publish.fetch("https://example.invalid", "/x/", "h")
 check("publish: no request starts after the run's end", _r["ok"] is False and _r["status"] is None and "error" in _r)
 site_publish.DEADLINE[0] = None
 
+check("collect: a due partner-priority subreddit goes before a more overdue ordinary one",
+      collect.rank(1.2, True, False) < collect.rank(5.0, False, True))
+check("collect: a partner-priority subreddit not yet due waits behind a due one",
+      collect.rank(0.4, True, False) > collect.rank(1.1, False, False))
+
 # ---- the takedown judge (worker/takedown.py) -------------------------------------------------------------
 import takedown as td  # noqa: E402
 
