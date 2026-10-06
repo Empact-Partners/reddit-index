@@ -181,6 +181,13 @@ Reddit, 8,085 rows purged. Collection: 16,860 new mentions, 7,821 new threads. C
 dangling text pointer. The laptop's network blocked the database port that morning, so the meter read the receipt
 through Supabase's Management API, and daytime passes moved to Railway (`ops/ri.py dayrun`, migration 0023).
 
+## Go-live on one counting night (Vlad, 6 October 11:25 UTC)
+
+Vlad chose to go live without waiting for the second counting night ("Go live now on the evidence we have"), on:
+gate night 1 passed (`551a6e87`: ok, 0.62 GB, every receipt count equal to the database), two clean daytime
+passes on Railway the same day (`1b8a76dd` on the laptop, `72fa80f6` on Railway, both ok), and `scripts/schedule_check.py`
+clean. The night of 7 October still runs and is measured, as a check after the fact.
+
 ## Go-live gates
 
 | Gate | Measured | Met |
