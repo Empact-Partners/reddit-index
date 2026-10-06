@@ -158,6 +158,47 @@ def _cache_path(path, params, bucket):
 _last_call = [0.0]
 
 
+READ_DEADLINE = 60.0
+
+
+def _read_body(f, started: float) -> bytes:
+    """The whole body, or a TimeoutError once READ_DEADLINE has passed since the request began.
+
+    The socket timeout (40 s) bounds each read, not the response: on 6 Oct one of Reddit's edge addresses sent this
+    laptop 42 bytes a second, so every read returned something, no timeout ever fired, and one listing call sat for
+    27 minutes. A timer shuts the socket down at the deadline (that interrupts a read blocked anywhere, chunk framing
+    included); the deadline is also checked between chunks and before EOF is accepted. A TimeoutError is a network
+    error to get(): it waits and retries on a NEW connection, which DNS usually points at another edge."""
+    import socket
+    import threading
+    sock = getattr(getattr(getattr(f, "fp", None), "raw", None), "_sock", None)
+
+    def cut():
+        try:
+            if sock is not None:
+                sock.shutdown(socket.SHUT_RDWR)
+        except OSError:
+            pass
+    timer = threading.Timer(max(0.5, READ_DEADLINE - (time.time() - started)), cut)
+    timer.daemon = True
+    timer.start()
+    out = []
+    try:
+        while True:
+            b = f.read1(65536)
+            if time.time() - started > READ_DEADLINE:
+                raise TimeoutError(f"the response was still arriving after {READ_DEADLINE:.0f}s")
+            if not b:
+                return b"".join(out)
+            out.append(b)
+    except (OSError, ValueError, http.client.HTTPException) as e:
+        if isinstance(e, TimeoutError) or time.time() - started >= READ_DEADLINE - 1:
+            raise TimeoutError(f"the response was still arriving after {READ_DEADLINE:.0f}s") from e
+        raise
+    finally:
+        timer.cancel()
+
+
 def get(path, params=None, bucket="misc", tries=3, use_cache=True):
     """One authenticated GET. Cached on disk by (path, params).
 
@@ -204,7 +245,7 @@ def get(path, params=None, bucket="misc", tries=3, use_cache=True):
             with urllib.request.urlopen(req, timeout=40) as f:
                 _stats["calls"] += 1
                 _read_ratelimit(f.headers)
-                data = json.loads(f.read())
+                data = json.loads(_read_body(f, _last_call[0]))
             # use_cache=False means DO NOT CACHE — it used to skip only the
             # READ, so the streaming lanes (daily /new pages, fresh comment
             # trees) wrote a file per call that nothing would ever read back.

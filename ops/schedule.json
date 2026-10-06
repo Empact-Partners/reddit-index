@@ -35,5 +35,21 @@
  "max_expire_note": "The publisher expires at most 1,000 changed pages a night (takedown pages always first) and fetches every one it expires, so the site re-renders them inside the measured run and a visitor afterwards costs the database nothing until the page next changes. Pages beyond the cap wait, longest-waiting first, and each shows its own data date. Was 2,000 expired with 100 fetched (2026-10-03): the other 1,900 would have re-rendered on the first visit, outside any measurement.",
  "reserve_minutes_after_classify": 35,
  "reserve_note": "Collection ends 95 minutes before the run's end, classification 35 minutes before it, so refresh (15 minutes for 3,262 brands on 4 Oct), score and publish (about 3 minutes per 1,000 pages) finish inside the window. Classification gets about an hour: the nightly GLM allowance of 3,000 credits is about 50,000 mentions.",
- "classify_note": "GLM jobs at most 6 at once (was 8): the Z.ai plan is shared with other sessions, and on 2026-10-05 at 04:25 UTC the plan's request-rate limit refused both this run and another session's jobs. A refused batch is retried after 1, 2 and 4 minutes at half the width; a limit that holds ends classification for the night as a planned limit, never a fault."
+ "classify_note": "GLM jobs at most 6 at once (was 8): the Z.ai plan is shared with other sessions, and on 2026-10-05 at 04:25 UTC the plan's request-rate limit refused both this run and another session's jobs. A refused batch is retried after 1, 2 and 4 minutes at half the width; a limit that holds ends classification for the night as a planned limit, never a fault.",
+ "backfill": {
+  "days": 90,
+  "tree_cap": 150,
+  "max_minutes": 150,
+  "categories": [
+   "recreation-entertainment-insurance",
+   "commercial-insurance-brokerage",
+   "artist-booking",
+   "eor-global-payroll",
+   "log-management-siem",
+   "sales-planning",
+   "aba-therapy",
+   "itsm"
+  ],
+  "why": "decision 0018: the 90-day history of the partner categories' core subreddits, on Railway in daytime passes only (the laptop's route to Reddit ran at ~10 KB/s on 6 Oct)"
+ }
 }

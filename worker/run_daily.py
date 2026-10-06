@@ -52,6 +52,8 @@ CODE_VERSION = "sweep-v1"
 LOCK_KEY = 0x52494458  # "RIDX": one sweep at a time, whatever starts it
 VLAD = "U016BPWFC7Q"
 STAGES = ["takedowns", "collect", "classify", "refresh", "score", "publish"]
+# Only a daytime pass that names it runs this (decision 0018: the partner categories' 90-day history). Never the night.
+EXTRA_STAGES = ["backfill"]
 
 
 def load_schedule() -> dict:
@@ -141,6 +143,74 @@ def in_window(sched: dict) -> bool:
     end = dt.datetime.strptime(sched["window_utc"][1], "%H:%M").time()
     t = now.time()
     return start <= t <= end if start <= end else (t >= start or t <= end)
+
+
+def backfill_subs(categories: list[str], csv_path: str) -> list[str]:
+    """The core subreddits of these categories, category by category in the given order, each once."""
+    import csv
+    by_cat: dict[str, list[str]] = {}
+    for r in csv.DictReader(open(csv_path)):
+        if r["category_slug"] in categories and r.get("is_core") == "True":
+            by_cat.setdefault(r["category_slug"], []).append(r["subreddit"].lower())
+    out: list[str] = []
+    for c in categories:
+        for s in sorted(by_cat.get(c, [])):
+            if s not in out:
+                out.append(s)
+    return out
+
+
+def backfill(run: "Run", cfg: dict, log) -> dict:
+    """Decision 0018: the 90-day sweep (worker/sweep.py) of the partner categories' core subreddits, a subreddit at a
+    time, inside this pass's time, Reddit-call and egress limits. A container's disk is new every pass, so what is done
+    is read from the earlier receipts (stages.backfill.done), never from local files: a pass takes the next ones."""
+    import reddit_client as rc
+    if not cfg.get("categories"):
+        return {"skipped": "no backfill declared in ops/schedule.json"}
+    done = set()
+    for (d,) in run.conn.execute("select notes->'stages'->'backfill'->'done' from public.pipeline_runs "
+                                 "where stage = 'sweep' and notes->'stages'->'backfill'->'done' is not null").fetchall():
+        done.update(d or [])
+    subs = [s for s in backfill_subs(cfg["categories"], os.path.join(ROOT, "data", "category-subreddits.csv")) if s not in done]
+    out = {"queue": len(subs), "done": [], "unfinished": [], "trees": 0, "mentions": 0, "stopped": None}
+    if not subs:
+        out["note"] = "every declared subreddit is done"
+        return out
+    os.environ["RI_RUN_ID"] = run.run_id   # the sweep's rows carry this receipt (schedule_check matches them)
+    import sweep
+    sweep.RUN_ID = run.run_id
+    until = min(run.deadline - 95 * 60, time.time() + float(cfg.get("max_minutes", 150)) * 60)
+    ctx = sweep.prepare(int(cfg.get("days", 90)))
+    known = {k.lower() for k in ctx["sub_ids"]}
+    calls0 = rc.stats()["calls"]
+    try:
+        for sub in subs:
+            reason = run.stop_reason()
+            if reason:
+                out["stopped"] = reason
+                break
+            if time.time() >= until:
+                out["stopped"] = "the pass's backfill time is used; the next pass continues"
+                break
+            if rc.stats()["calls"] - calls0 >= run.caps["reddit_calls"]:
+                out["stopped"] = f"the pass's Reddit calls ({run.caps['reddit_calls']}) are used"
+                break
+            trees, m = sweep.run_subs([sub], ctx, int(cfg.get("tree_cap", 150)))
+            out["trees"] += trees
+            out["mentions"] += m
+            st = sweep.load_state(sub, ctx["mode"])
+            finished = st.get("listings_done") and len(set(st.get("swept", []))) >= min(len(st.get("post_ids", [])),
+                                                                                       int(cfg.get("tree_cap", 150)))
+            (out["done"] if finished or sub not in known else out["unfinished"]).append(sub)   # unknown: nothing to sweep
+            log(f"  backfill {sub}: {trees} trees, {m} mentions, {'done' if sub in out['done'] else 'not finished'}")
+    finally:
+        try:
+            ctx["conn"].close()
+        except Exception:  # noqa: BLE001
+            pass
+    out["reddit_calls"] = rc.stats()["calls"] - calls0
+    out["left"] = len(subs) - len(out["done"])
+    return out
 
 
 def stage(run: Run, name: str, fn) -> None:
@@ -314,6 +384,10 @@ def main() -> int:
                            run.deadline - sched.get("reserve_minutes_after_collect", 95) * 60, run.stop_reason, log,
                            run_id=run.run_id)
     stage(run, "collect", collect_stage)
+
+    def backfill_stage():
+        return backfill(run, sched.get("backfill") or {}, log)
+    stage(run, "backfill", backfill_stage)
 
     def classify_stage():
         if not sched.get("classify", {}).get("enabled"):
