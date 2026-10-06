@@ -1,0 +1,31 @@
+brand,change
+SystemOne,"""System One"" is an ordinary phrase (handoff)"
+Specialty Insurance,the name is an ordinary insurance phrase (handoff): matched by domain and its distinctive forms only
+wecantrack,"""We Can Track"" is plain English"
+Great American,"""great American"" is an ordinary phrase"
+Remote People,"""remote people"" is an ordinary phrase"
+American Specialty,"""American specialty"" is an ordinary phrase"
+Prime Insurance,"""prime insurance"" is an ordinary phrase"
+Next Insurance,"""next insurance"" occurs in plain English (""my next insurance"")"
+CNA,CNA is Certified Nursing Assistant on Reddit
+PEX,PEX is plumbing pipe
+Cargo,cargo is Rust's build tool and a common noun
+Engine,engine is a common noun
+SAP Concur,"""concur"" is a verb"
+BILL Spend & Expense,bill is a common noun
+Affluent,affluent is an adjective
+Noon,noon is a common noun
+Ribbon,ribbon is a common noun
+Canny,"canny is an adjective (a feedback board; no feedback category, help-desk kept)"
+Lorikeet,a bird
+Seismic,"sales enablement, not help-desk; seismic is an adjective"
+Coalition,common noun
+Cowbell,common noun
+AXIS,common noun
+Nationwide,common adjective
+Thimble,common noun
+Vouch,common verb
+LEARN Behavioral,"""learn"" is a common verb; the full name is the brand"
+Lingo,"lingoapp.com, a DAM; not lingo-dev: bare lingo disabled (handoff)"
+Overture,dropped: a common word with no domain and no distinctive form to match by
+Lingo,"canonical name Lingo App (slug lingo-app): never a bare Lingo beside Lingo.dev on the site"
