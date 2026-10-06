@@ -1,5 +1,7 @@
 # 0010 — Manual on-demand updates; classification on the DeepSeek API
 
+> **Superseded 2026-10-06 by [0017](0017-daily-sweep.md):** one scheduled daily sweep replaces runs by hand.
+
 **Status:** Accepted · **Date:** 2026-08-18 · **Decided by:** Vlad Shvets
 
 **Supersedes:** the daily-cadence ruling of 2026-08-17 (HANDOFF, "collect daily, classify daily, publish daily") and the free-Haiku-only classification ruling of 2026-08-17 (`classify_api.py` docstring, README, docs/sentiment.md, docs/worker.md).
