@@ -87,6 +87,8 @@ class Run:
             caps["takedown_calls"] = args.takedown_calls
         if args.max_mentions is not None:
             caps["mentions"] = args.max_mentions
+        if getattr(args, "max_egress_gb", None):   # a daytime pass: the day's room under the 2 GB line, from its requester
+            caps["egress_gb"] = min(caps["egress_gb"], float(args.max_egress_gb))
         self.caps = caps
         self.deadline = self.started + caps["minutes"] * 60
         if getattr(args, "day_end", None):   # a daytime pass ends by its requested time, well before the night
@@ -304,6 +306,7 @@ def main() -> int:
     sched = load_schedule()
 
     args.day_end = None
+    args.max_egress_gb = None
     if not args.manual and not in_window(sched):
         # A start outside the night window is refused unless a daytime pass was requested in the last 20 minutes
         # (public.day_run_request, migration 0023; `ops/ri.py dayrun`). The request is consumed here, so one
@@ -312,7 +315,7 @@ def main() -> int:
         c0.autocommit = True
         try:
             req = c0.execute("delete from public.day_run_request where requested_at > now() - interval '20 minutes' "
-                             "returning stages, max_calls, end_by_utc").fetchone()
+                             "returning stages, max_calls, end_by_utc, max_egress_gb").fetchone()
             c0.execute("delete from public.day_run_request")   # an older request is never acted on later
         finally:
             c0.close()
@@ -322,6 +325,7 @@ def main() -> int:
         args.manual, args.no_dm = True, True
         args.stages = [x.strip() for x in req[0].split(",") if x.strip()]
         args.max_calls, args.day_end = int(req[1]), req[2]
+        args.max_egress_gb = float(req[3]) if req[3] is not None else None   # the day's room, measured by the requester
         log(f"a daytime pass was requested: stages {args.stages}, {args.max_calls} Reddit calls, ends by {req[2]} UTC")
 
     conn = db.connect()
