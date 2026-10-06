@@ -25,7 +25,7 @@ import time
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path[:0] = [os.path.join(ROOT, d) for d in ("ops", "scripts", "worker")]
-LINE_GB = 1.95   # Vlad's 2 GB a day, with a margin for the write-ahead-log tail after a pass
+LINE_GB = 1.90   # Vlad's 2 GB a day, less 0.1 GB for what moves after the last pass (6 Oct: the tail and normal reads took the day to 2.036 GB from 1.95)
 
 
 def log(*a):
