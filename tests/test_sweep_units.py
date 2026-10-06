@@ -145,5 +145,18 @@ check("takedown: edited after we stored it", got["t1_d"] == "source_edited")
 check("takedown: not in Reddit's answer is gone", got["t1_e"] == "source_deleted")
 check("takedown: a post removed by moderators is gone even with its title kept", got["t3_f"] == "source_deleted")
 
+# ---- the backfill wrapper's night guard (ops/backfill_run.py, review round 3) -----------------------------
+import datetime as _dt  # noqa: E402
+sys.path.insert(0, os.path.join(ROOT, "ops"))
+import backfill_run as bfr  # noqa: E402
+
+_t = _dt.datetime(2026, 10, 6, 21, 0, tzinfo=_dt.timezone.utc)
+check("backfill: a day job is stopped by 23:40 UTC that day", bfr.night_deadline(_t) == _t.replace(hour=23, minute=40))
+check("backfill: 21:00 UTC is outside the night", not bfr.in_night(_t))
+check("backfill: 23:45 UTC is inside the night", bfr.in_night(_t.replace(hour=23, minute=45)))
+check("backfill: 03:00 UTC is inside the night", bfr.in_night(_t.replace(hour=3)))
+check("backfill: 05:30 UTC is outside the night", not bfr.in_night(_t.replace(hour=5, minute=30)))
+
 print(f"\ntest_sweep_units: {len(FAILS)} failure(s)" + (": " + "; ".join(FAILS) if FAILS else ""))
 sys.exit(bool(FAILS))
+

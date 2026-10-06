@@ -6,10 +6,14 @@
 2. the post backfill (`worker/backfill_posts.py`), which resumes from its own watermark.
 
 Each job runs through `ops/backfill_run.py` (a 'backfill' receipt, RI_RUN_ID on its rows, the Mac awake for the job
-only). The chain stops starting jobs at STOP_UTC, kills the running one at KILL_UTC (both well before the night
-run at 00:00), and kills it as soon as the database's node counter has moved by the day's remaining room under the
-2 GB line (`ops/day_egress.py`). Every job resumes from disk or its watermark, so a stop loses nothing. A category
-whose sweep finished is recorded in docs/phase-b/chain-state.json and skipped next time.
+only, its own process group, stopped by 23:40 UTC by itself). The chain:
+  - starts no job after STOP_AT, or when the day's room under the 2 GB line (`ops/day_egress.py`) is already used;
+  - stops the running job at KILL_AT (absolute, dated, checked every minute whether or not the counter could be read),
+    or as soon as the database's node counter has moved by the day's room;
+  - a stop is SIGTERM to the wrapper (which stops the job's group and closes the receipt); a wrapper still alive after
+    five minutes is killed, and so is the job's group (its id comes from RI_JOB_PIDFILE).
+Every job resumes from disk or its watermark, so a stop loses nothing. A category whose sweep finished is recorded in
+docs/phase-b/chain-state.json and skipped next time.
 
   python3 ops/phase_b_chain.py
 """
@@ -22,6 +26,7 @@ import os
 import signal
 import subprocess
 import sys
+import tempfile
 import time
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -42,14 +47,35 @@ def log(*a):
     print(f"[{now():%H:%M:%S}]", *a, flush=True)
 
 
+def counter():
+    try:
+        import investigation_2026_10 as inv
+        return inv._metrics()["transmit_bytes"]
+    except Exception:  # noqa: BLE001 - a missed reading never disables the clock
+        return None
+
+
+def kill_group_from(pidfile: str) -> None:
+    try:
+        pg = int(open(pidfile).read().strip())
+        os.killpg(pg, signal.SIGKILL)
+    except (OSError, ValueError):
+        pass
+
+
 def main() -> int:
     import db
     import day_egress
-    import investigation_2026_10 as inv
+    t = now()
+    if t.time() < dt.time(5, 30):
+        log("inside the night window: not starting")
+        return 1
+    stop_at = dt.datetime.combine(t.date(), STOP_UTC, tzinfo=dt.timezone.utc)
+    kill_at = dt.datetime.combine(t.date(), KILL_UTC, tzinfo=dt.timezone.utc)
     with db.connect() as c:
         room = day_egress.used_today(c)["room_gb"] - 0.05
-    start = inv._metrics()["transmit_bytes"]
-    log(f"room under the 2 GB line today: {room:.2f} GB")
+    start = counter()
+    log(f"room under the 2 GB line today: {room:.2f} GB; starts nothing after {stop_at:%H:%M}, stops by {kill_at:%H:%M} UTC")
     state = json.load(open(STATE)) if os.path.exists(STATE) else {"done": []}
     core = {}
     for r in csv.DictReader(open(os.path.join(ROOT, "data", "category-subreddits.csv"))):
@@ -58,28 +84,42 @@ def main() -> int:
     jobs = [(f"sweep-90d-{slug}", ["python3", "worker/sweep.py", "--days", "90", "--tree-cap", "150", "--only",
                                    ",".join(core[slug])]) for slug in NEW if slug in core and slug not in state["done"]]
     jobs.append(("posts-backfill", ["python3", "worker/backfill_posts.py"]))
+
+    def used() -> float | None:
+        c = counter()
+        return None if c is None or start is None or c < start else (c - start) / 1e9
+
     for label, cmd in jobs:
-        t = now().time()
-        if t >= STOP_UTC or t < dt.time(5, 30):
-            log(f"stop: {t:%H:%M} UTC is past the chain's start limit ({STOP_UTC:%H:%M}) or in the night window")
+        u = used()
+        if now() >= stop_at:
+            log(f"stop: past the chain's start limit ({stop_at:%H:%M} UTC)")
+            break
+        if room <= 0 or (u is not None and u >= room):
+            log(f"stop: the day's room under the 2 GB line is used ({room:.2f} GB)")
             break
         log(f"start {label}")
-        p = subprocess.Popen(["python3", "ops/backfill_run.py", label, "--", *cmd], cwd=ROOT)
+        pidfile = os.path.join(tempfile.gettempdir(), f"ri-phase-b-{os.getpid()}.pgid")
+        p = subprocess.Popen(["python3", "ops/backfill_run.py", label, "--", *cmd], cwd=ROOT,
+                             env={**os.environ, "RI_JOB_PIDFILE": pidfile})
         stopped = None
         while p.poll() is None:
             time.sleep(60)
-            try:
-                used = (inv._metrics()["transmit_bytes"] - start) / 1e9
-            except Exception:  # noqa: BLE001 - a missed reading keeps the job running one more minute
-                continue
-            if used >= room:
-                stopped = f"the day's room under the 2 GB line ({room:.2f} GB) used"
-            elif now().time() >= KILL_UTC:
+            if now() >= kill_at:
                 stopped = f"{KILL_UTC:%H:%M} UTC: the night run's window approaches"
+            else:
+                u = used()
+                if u is not None and u >= room:
+                    stopped = f"the day's room under the 2 GB line ({room:.2f} GB) used"
             if stopped:
                 log(f"stopping {label}: {stopped}")
                 p.send_signal(signal.SIGTERM)
-                p.wait(timeout=300)
+                try:
+                    p.wait(timeout=300)
+                except subprocess.TimeoutExpired:
+                    log(f"{label}: the wrapper did not stop in five minutes; killing it and the job's group")
+                    kill_group_from(pidfile)
+                    p.kill()
+                    p.wait(timeout=60)
                 break
         if stopped:
             break
