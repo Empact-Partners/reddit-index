@@ -77,7 +77,10 @@ def connect(tries=CONNECT_TRIES):
     last = None
     for attempt in range(tries):
         try:
-            return psycopg.connect(dsn(), autocommit=False, connect_timeout=20)
+            # TCP keepalives: a connection the network dropped without a word (the laptop's on 6 Oct, three times) errors
+            # within about a minute instead of leaving a query waiting forever on a socket nobody will answer
+            return psycopg.connect(dsn(), autocommit=False, connect_timeout=20, keepalives=1, keepalives_idle=30,
+                                   keepalives_interval=10, keepalives_count=3)
         except Exception as e:
             last = e
             if not is_transient(e) and attempt >= 2:
