@@ -229,7 +229,10 @@ def get(path, params=None, bucket="misc", tries=3, use_cache=True):
                     reset = float(e.headers.get("x-ratelimit-reset") or 0)
                 except (TypeError, ValueError):
                     pass
-                time.sleep(max(reset if e.code == 429 else 0.0, 3 * attempt))
+                wait = max(reset if e.code == 429 else 0.0, 3 * attempt)
+                if wait >= 30:   # SAY SO (as the pacing above does): a long wait is not a hang, and a stall watchdog reads output
+                    print(f"  Reddit answered {e.code}: waiting {wait:.0f}s before retrying (not a hang)", flush=True)
+                time.sleep(wait)
                 continue
             _stats["errors"] += 1
             return {"_err": e.code}
