@@ -10,7 +10,7 @@
   "00:00",
   "05:30"
  ],
- "site_url": "https://reddit-index-git-feat-site-read-path-empact-partners.vercel.app",
+ "site_url": "https://redditindex.com",
  "caps": {
   "reddit_calls": 15000,
   "takedown_calls": 2000,
@@ -29,7 +29,6 @@
   "glm_credits_max": 3000,
   "glm_in_flight": 6
  },
- "site_url_note": "The trial runs before go-live publish to the read-path preview (protected; the sweep sends the bypass header). At go-live, decision 0017, this becomes https://redditindex.com.",
  "reserve_minutes_after_collect": 95,
  "reddit_pace_seconds": 1.2,
  "egress_note": "The run stops at 0.7 GB estimated (write-ahead log + text the classifier reads) before the publisher, which adds at most 1,000 page renders of about 0.2 MB each: at most about 0.9 GB a night. The estimate now counts the renders. Measured 2026-10-04: the first scheduled run's whole day read 0.89 GB on the node counter (the supabase watchdog's daily reading).",
