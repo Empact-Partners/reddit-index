@@ -707,6 +707,9 @@
     text-decoration: underline; text-underline-offset: 3px;
   }
   .empact-mark { width: 11px; height: 10px; display: inline-block; }
+  /* The freshness line sits above the venture line, same size and ink, a little air between. */
+  .venture-foot .venture-fresh { margin-bottom: 6px; }
+  .venture-foot .venture-legal { margin-top: 6px; opacity: 0.8; }
 
   /* The brand highlighted inside a quote, in the BRAND'S colour — its primary
      category's --cat washed into paper. Contrast is safe by construction:

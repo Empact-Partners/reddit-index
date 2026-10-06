@@ -1,0 +1,40 @@
+{
+ "_what": "The ONE declaration of when the sweep runs and what it may spend. worker/run_daily.py reads it at start and refuses to run outside window_utc; scripts/schedule_check.py compares it with what Railway actually runs and with the receipts in public.pipeline_runs. Change it here, then redeploy.",
+ "railway": {
+  "project_id": "90cd4c29-797c-4552-90d9-81c3b9914ffa",
+  "environment_id": "f3a7784c-7cd9-4cb8-a9ea-05efe657a7ff",
+  "service_name": "reddit-index-sweep",
+  "cron": "0 0 * * *"
+ },
+ "window_utc": [
+  "00:00",
+  "05:30"
+ ],
+ "site_url": "https://reddit-index-git-feat-site-read-path-empact-partners.vercel.app",
+ "caps": {
+  "reddit_calls": 15000,
+  "takedown_calls": 2000,
+  "mentions": 40000,
+  "minutes": 330,
+  "egress_gb": 0.7
+ },
+ "takedown_brake_share": 0.15,
+ "verify_pages": 1000,
+ "max_expire_pages": 1000,
+ "classify": {
+  "enabled": true,
+  "glm_model": "glm-5.3",
+  "max_items": 60000,
+  "jev_usd_max": 1.0,
+  "glm_credits_max": 3000,
+  "glm_in_flight": 6
+ },
+ "site_url_note": "The trial runs before go-live publish to the read-path preview (protected; the sweep sends the bypass header). At go-live, decision 0017, this becomes https://redditindex.com.",
+ "reserve_minutes_after_collect": 95,
+ "reddit_pace_seconds": 1.2,
+ "egress_note": "The run stops at 0.7 GB estimated (write-ahead log + text the classifier reads) before the publisher, which adds at most 1,000 page renders of about 0.2 MB each: at most about 0.9 GB a night. The estimate now counts the renders. Measured 2026-10-04: the first scheduled run's whole day read 0.89 GB on the node counter (the supabase watchdog's daily reading).",
+ "max_expire_note": "The publisher expires at most 1,000 changed pages a night (takedown pages always first) and fetches every one it expires, so the site re-renders them inside the measured run and a visitor afterwards costs the database nothing until the page next changes. Pages beyond the cap wait, longest-waiting first, and each shows its own data date. Was 2,000 expired with 100 fetched (2026-10-03): the other 1,900 would have re-rendered on the first visit, outside any measurement.",
+ "reserve_minutes_after_classify": 35,
+ "reserve_note": "Collection ends 95 minutes before the run's end, classification 35 minutes before it, so refresh (15 minutes for 3,262 brands on 4 Oct), score and publish (about 3 minutes per 1,000 pages) finish inside the window. Classification gets about an hour: the nightly GLM allowance of 3,000 credits is about 50,000 mentions.",
+ "classify_note": "GLM jobs at most 6 at once (was 8): the Z.ai plan is shared with other sessions, and on 2026-10-05 at 04:25 UTC the plan's request-rate limit refused both this run and another session's jobs. A refused batch is retried after 1, 2 and 4 minutes at half the width; a limit that holds ends classification for the night as a planned limit, never a fault."
+}

@@ -1,19 +1,27 @@
-import { revalidateTag } from "next/cache";
+import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
 
 /**
- * The publish endpoint. Bearer-gated, and the ONLY way the pipeline touches the
- * site — 08-architecture.md §4 keeps this separate from the deploy hook, which
- * is for code and schema changes only.
+ * The publish endpoint: the ONLY way a page on this site changes between code deploys.
  *
- * The caller DIFFS: step 9 of the daily pass compares freshly computed scores
- * against the previous run and sends only the tags whose published result
- * changed. The slug set is logged on every call, because §4 is explicit that a
- * day sending thousands of tags is a defect in the diff rather than a busy news
- * day, and you cannot notice that without the log.
+ * The daily sweep works out which pages' data changed (site.brand_stats.page_hash against served_hash) and
+ * posts their paths here. revalidatePath expires each one immediately; the next request renders it from the
+ * `site` schema. The sweep then fetches every path it named and reads the page's fingerprint back, so "the
+ * page was updated" is proven by the served page, never by this route answering 200.
+ *
+ * Until October 2026 this called revalidateTag against tags no page carried, did nothing, and returned 200;
+ * delete-sync stamped its takedown receipts on that 200.
+ *
+ * Bearer-gated. It reads no data: it cannot be used to make the site query anything.
  */
+
+const MAX_PATHS = 500;
+/** "/", "/slug/" (or "/slug"), and the three generated files. Nothing else is a page here. */
+const PAGE = /^\/(?:[a-z0-9]+(?:-[a-z0-9]+)*\/?)?$/;
+const FILES = new Set(["/sitemap.xml", "/llms.txt", "/freshness.json"]);
+
 export async function POST(request: Request) {
   const secret = process.env.REVALIDATE_SECRET;
   if (!secret) {
@@ -23,19 +31,27 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
-  let tags: string[];
+  let paths: string[];
   try {
-    const body = (await request.json()) as { tags?: unknown };
-    tags = Array.isArray(body.tags) ? body.tags.filter((t): t is string => typeof t === "string") : [];
+    const body = (await request.json()) as { paths?: unknown };
+    paths = Array.isArray(body.paths) ? body.paths.filter((p): p is string => typeof p === "string") : [];
   } catch {
-    return NextResponse.json({ error: "expected {\"tags\": [...]}" }, { status: 400 });
+    return NextResponse.json({ error: "expected {\"paths\": [...]}" }, { status: 400 });
   }
-  if (tags.length === 0) {
-    return NextResponse.json({ error: "no tags" }, { status: 400 });
+  if (paths.length === 0) {
+    return NextResponse.json({ error: "no paths" }, { status: 400 });
+  }
+  if (paths.length > MAX_PATHS) {
+    return NextResponse.json({ error: `at most ${MAX_PATHS} paths a call` }, { status: 400 });
+  }
+  const bad = paths.filter((p) => !(PAGE.test(p) || FILES.has(p)));
+  if (bad.length) {
+    return NextResponse.json({ error: "not a page on this site", bad: bad.slice(0, 10) }, { status: 400 });
   }
 
-  console.log(`[revalidate] ${tags.length} tags: ${tags.join(", ")}`);
-  for (const tag of tags) revalidateTag(tag, "max");
+  // revalidatePath drops a trailing slash itself, so "/hubspot/" and "/hubspot" name the same page.
+  for (const p of paths) revalidatePath(p);
+  console.log(`[revalidate] ${paths.length} paths` + (paths.length <= 20 ? `: ${paths.join(" ")}` : ""));
 
-  return NextResponse.json({ revalidated: tags.length, tags, at: new Date().toISOString() });
+  return NextResponse.json({ revalidated: paths.length, at: new Date().toISOString() });
 }

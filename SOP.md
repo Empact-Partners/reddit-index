@@ -1,44 +1,68 @@
-# SOP — Updating the Reddit Index
+# SOP: running the Reddit Index
 
-**The index has no scheduled jobs** ([decisions/0010](decisions/0010-manual-on-demand.md)). It updates when you run one command. "Update reddit index" means exactly this:
+**The index refreshes itself once a day** ([decisions/0017](decisions/0017-daily-sweep.md), which replaces
+0010's "run update.sh by hand" and 0016's freeze). Nobody runs anything for a normal day. This page is what to do
+when you want to look, stop it, change it, or catch up.
 
-```bash
-~/Projects/reddit-index/worker/update.sh
-```
+## What runs, and when
 
-That is the whole procedure. The script wraps itself in `caffeinate -i` (safe to close other apps, don't sleep the Mac deliberately), runs six stages to completion, prints a verdict, and exits. Nothing runs afterward, nothing auto-resumes, nothing is scheduled.
+One job, `worker/run_daily.py`, on its own Railway service `reddit-index-sweep` (project `reddit-index`,
+Virginia, next to the database), at **00:00 UTC**, inside a window that ends **05:30 UTC**. The schedule is
+declared once, in `ops/schedule.json`. Stages, each resumable from what the database says:
 
-## What it runs, in order
-
-| # | Stage | What you'll see | Typical duration |
+| # | Stage | What it does | Bounded by |
 |---|---|---|---|
-| 1 | **collect** — `daily.py --core-only` | per-subreddit lines: threads found, mentions inserted, watermark advance across the 527 core subs | ~2–3 h from a week's gap; minutes if recent |
-| 2 | **classify** — `classify_api.py --deepseek 16 --haiku 0 --allow-metered` | batch commits, running items/min, spend estimate | ~1,100 items/min → 30K items ≈ 30 min |
-| 3 | **score** — `score_db.py` | category scores written, calibration gate verdict, `load.py --scores`, prune | ~5–10 min |
-| 4 | **delete-sync** — `delete_sync.py --limit 60000 --publish-follows` | docs probed, removals propagated (legal condition, decisions/0002 — never skip) | ~2 min |
-| 5 | **publish** — `publish.py` | Vercel deployment id, poll to READY (falls back to git empty-commit push if the API refuses) | 10–40 min build |
-| 6 | **verify** — `healthcheck.py --json` | 15 assertions + live-site check; **the script's exit code is this verdict** | seconds |
+| 1 | takedowns | every comment on a page re-checked against Reddit, then the longest-unchecked; deleted, removed or edited ones purged (`worker/takedown.py`) | 2,000 Reddit calls; a brake refuses to purge if over 15% look gone |
+| 2 | collect | new posts and recent comment trees from every scoring subreddit (`worker/collect.py`) | 13,000 calls, 40,000 new mentions, ends an hour before the deadline |
+| 3 | classify | new mentions labelled: a rule, then Jev, then GLM-5.3 (`worker/classify_sweep.py`, `docs/classify-backlog.md`) | 60,000 mentions, 3,000 GLM credits, $1 of Jev, never 06:00-10:00 UTC |
+| 4 | refresh | every brand whose data changed recomputed inside the database (`site.refresh_brand`) | |
+| 5 | score | score and rank every page (`worker/site_score.py`) | |
+| 6 | publish | changed pages expired on the site and the ones that must be proven fetched (`worker/site_publish.py`); a takedown's receipt is stamped only after its page was SEEN without the card | 7,000 pages |
+| 7 | receipt | one row in `public.pipeline_runs` (stage `sweep`) with every count; the site's "Data refreshed" date | |
 
-Exit 0 = the site is updated and healthy. Non-zero = read the verify block; the failing assertion names the broken stage.
+Whole run: 50 Reddit calls a minute, 5.5 hours, stops at 0.8 GB of estimated database egress. Vlad gets **one Slack
+DM only when a run fails, hits a real limit (the egress cap, an abnormal flood of new mentions), brakes a purge, or
+cannot prove a takedown**. Never a daily report. Using up a planned nightly allowance is how a normal night ends
+(collection rotates through the subreddits inside its Reddit calls; classification works through the backlog
+inside its credits): it is written on the receipt as `allowances_used` and alerts nobody.
 
-## Rehearsal (before trusting a change)
+## Look
 
 ```bash
-worker/update.sh --rehearse     # ~15 min: 10-min collect cap, 800-item classify cap
+python3 ops/ri.py status            # switch, login, last runs, queue, next run
+python3 scripts/schedule_check.py   # Railway manifests vs ops/schedule.json, a receipt per night, no stray writes
+python3 ops/classify_backlog.py --status
+python3 ops/retention.py status
 ```
 
-Expected: healthcheck fails coverage/backlog assertions on a bounded rehearsal — that's the bound, not a defect. Reference rehearsal (2026-08-18, exit chain proven): collect 10.5 min → 1,777 threads / 2,277 mentions / 395 calls, zero errors · classify 410 items / $0.11 · score 4,264 rows (calibration gate quarantined 2 categories, by design) · delete-sync 22,647 docs ~6 min · Vercel publish READY in 5.0 min · total 27 min. Verify correctly flagged what a bounded run leaves undone (`sub_coverage` 5%, `revisit_backlog`, 106K label `backlog`) — the exit code is an honest verdict, not noise.
+## Stop, start
 
-## Cost (DeepSeek, the only metered stage)
+```bash
+python3 ops/ri.py stop "reason"     # switch off AND the sweep's database login off; the site keeps serving
+python3 ops/ri.py start
+python3 ops/ri.py publish off       # keep collecting, stop telling the site
+```
 
-- **~$0.18 per 1,000 items.** A weekly-scale backlog (~30–50K items) ≈ **$6–9**. Reference: the 153,748-item historical backlog cost $27.22 (112 min, zero truncations).
-- Key: auto-resolved from `~/.claude.json` (the parked `deepseek` MCP entry). If classify exits 1 immediately, the gate/key message above it says which it was.
-- The classify stage prints its own running spend estimate (`SPEND`), and stage 2's summary line is the number to note.
-- `qa_audit.py` (manual QA tool, not part of this chain) also spends DeepSeek credit ungated — know that before running it.
+A running sweep reads the switch before every stage and every 25 subreddits.
 
-## Cadence guidance (not automation)
+## Change it
 
-**Run at least weekly.** Collection is the only stage that loses data to waiting (decisions/0010): past ~7 days, `/new`'s reach is outrun by ~1 subreddit in 49 and threads leave the 72h comment-revisit window; past ~14 days, ~3 subs. Classify/score/publish lose nothing to waiting, ever.
+- Code or schedule: edit, then `python3 ops/deploy_sweep.py`. It builds a clean folder (never the repository
+  root, whose `railway.json` belongs to the parked old collector), sets the service's cron, region and restart
+  policy from `ops/schedule.json` (Railway ignores them in the file), and deploys. Then run
+  `scripts/schedule_check.py`. A deploy does not start a run; the next 00:00 UTC does.
+- Database: a numbered file in `supabase/migrations/`, applied with `python3 ops/migrate.py --apply <prefix>`.
+  The sweep logs in as `ri_sweep` (grants in 0015/0016/0020, row-level-security policies in 0018); the site
+  as `ri_site` (schema `site` only, 5 s timeout). `ops/sweep_role.py --check` proves the sweep's role.
+- A run by hand, outside the window: `worker/run_daily.py --manual` (pilot caps: `--max-calls`,
+  `--takedown-calls`, `--max-mentions`, `--classify-items`).
+
+## One-time and periodic jobs
+
+- **Classification backlog** (mentions collected 25 Aug to 2 Oct with no label): `ops/classify_backlog.py
+  --until 05:30`, inside its declared budget (60,000 GLM credits, $60 of Jev, 1.5 GB egress, 0.5 GB a day). It
+  shares the sweep's lock, so run it outside 00:00-05:30 or after the night's run.
+- **Retention** (`docs/retention.md`): `ops/retention.py threads | rejected | one-copy <partition> | expire-archive`.
 
 ## Before you change how collection runs — READ THE SPEC
 
@@ -61,7 +85,13 @@ Two things that document now states and did not before:
 
 There was no runbook for this until the never-replied expansion needed one
 ([decisions/0012](decisions/0012-never-replied-expansion.md)). The mechanics existed; the
-order did not. Both procedures are **hand-run**, like everything else here (0010).
+order did not. Both procedures are **hand-run**; the daily sweep only collects for what they produce.
+
+**After any change to `data/` (brands, aliases, subreddits), redeploy the sweep**: `python3 ops/deploy_sweep.py`.
+The sweep's image carries its own copy of the brand data; until the redeploy, the new brands are not collected.
+(The old collector ran a 19 August image for six weeks and never collected for 4,471 brands added after it.)
+
+**The daily sweep is a Reddit client too.** Never run these hand tools between 00:00 and 05:30 UTC.
 
 **Serialize anything that touches Reddit.** `daily.py`, `sweep.py`, `backfill_posts.py` and
 `discover_v2.py --stage evidence` each drive `worker/reddit_client.py`, and a second
@@ -173,19 +203,30 @@ Supporting facts worth keeping:
   Reddit lane is serialized.
 - Detached work must use `subprocess.Popen(..., start_new_session=True)`. `nohup ... &` dies
   with the tool call's process-group SIGTERM.
-- `caffeinate -i -m -s`, started the same way, keeps a long collection alive through an idle
-  screen.
+- Nothing holds the Mac awake any more (Vlad, 2026-10-04: the Mac sleeps as normal). A laptop job is a
+  launchd tick that does what is due when it runs and resumes after a wake; a bounded `caffeinate -i <one
+  command>` around one finite job is the most that is allowed. The daily sweep does not need the laptop at all.
 - When the worker reports `codex=unavailable: 'codex --version' timed out`, that is the box,
   not the binary. Do not start a wave.
 
+## A daytime pass (more collection and labelling during the day)
+
+`python3 ops/ri.py dayrun [calls] [HH:MM]` writes one request (`public.day_run_request`, migration 0023) through
+Supabase's Management API and starts the sweep's Railway service once. The sweep consumes the request and runs one
+by-hand pass (collect, classify, refresh, score, publish; default 10,000 Reddit calls, ends by 21:30 UTC), marked
+`manual` and `day_run` on its receipt, so the go-live gate never counts it. Without a request younger than 20
+minutes an out-of-window start is refused, as before. Keep the day under 2 GB (`python3 ops/day_egress.py`), and
+start it so classification lands outside Z.ai's peak (06:00-10:00 UTC). Nothing runs on the laptop: it can sleep,
+and its network may block the database port.
+
 ## Running unattended (decisions/0013)
 
-Two launchd agents exist, and they are not the same kind of thing.
+`com.vladshvets.caffeinate` was **disabled on 2026-10-04** at Vlad's request (renamed
+`.plist.disabled-2026-10-04`): the Mac sleeps as normal. The daily sweep runs on Railway and needs no laptop.
 
-`com.vladshvets.caffeinate` is **permanent**. It keeps the Mac awake with `caffeinate -i -m -s`
-under `KeepAlive`. Start caffeinate from inside a tool call and the harness SIGTERMs it when
-the call ends — that is how a nine-hour run was lost to the lid-open machine sleeping on mains
-power on 2026-08-22.
+`com.vladshvets.ri-gate-meter` is **temporary**: a 10-minute tick (`ops/gate_meter.py tick`) that measures the
+go-live nights into `docs/go-live/`. Remove it after go-live:
+`launchctl bootout gui/$(id -u)/com.vladshvets.ri-gate-meter && rm ~/Library/LaunchAgents/com.vladshvets.ri-gate-meter.plist`.
 
 `com.vladshvets.reddit-index-pipeline` is **temporary and self-removing**. It carries one
 already-started multi-day run to its end and then deletes its own plist. It starts nothing
@@ -222,53 +263,23 @@ The full sequence it drives, each a finite sequence that aborts rather than retr
 `data/run_collection_all.py` (90-day sweep, classify, score, delete-sync, publish) ->
 `data/run_finish_all.py` (outreach-pool expansion, wave-2 queues, gates).
 
-## Catching up classification after a run (added 2026-08-25)
-
-A ship batch classifies only its own five categories, and a lane that is down for one batch
-leaves that batch's mentions unlabelled — the categories still ship, with the labels that
-exist. Mentions are never lost; a label is a thing you can compute later.
-
-After collection finishes, drain the backlog in one pass:
-
-```bash
-python3 - <<'EOF' > /tmp/catchup_slugs.txt
-import csv, json
-new = {p['slug'] for p in json.load(open('data/.roster-import/map/clusters.json'))['proposed']}
-print('\n'.join(sorted({r['slug'] for r in csv.DictReader(open('data/brands.csv'))
-    if r['primary_category_slug'] in new
-    or new & set((r.get('also_in_category_slugs') or '').split(';'))})))
-EOF
-
-python3 worker/classify_brands.py --slugs-file /tmp/catchup_slugs.txt \
-    --haiku 8 --deepseek 0 --allow-metered     # then score + publish
-python3 worker/score_db.py && python3 worker/publish.py
-```
-
-**Run it when collection is DONE, not alongside it, and ramp the worker count.**
-`classify_api.py`'s header explains why and it is not optional advice: the Haiku lane is one
-local `claude` process per worker, so it costs kernel scheduling rather than RAM, and the
-number to ramp on is COMPLETED ITEMS PER MINUTE, never a resource gauge. On 2026-08-25
-`--haiku 20` beside a live sweep took the box to load 76 with 971 MB of swap free in five
-minutes (post-mortem I4). Start at 8, watch the items/min line, and go wider only if it is
-still climbing and swap is not falling.
-
-There is no hurry: the sweep is rate-limit bound, so it does not go faster for having the CPU,
-and classification is fully resumable off its on-disk skip-set — stopping it loses nothing.
-
-Pick the lane by what can actually bill. `--deepseek` needs credit (check
-`https://api.deepseek.com/user/balance`); `--haiku` needs Max-plan quota. If neither can, a
-lane that RAISES gives up after 12 consecutive failures, and a lane that HANGS is caught by
-the aggregate `stalled at 0/N — stopping` detector instead.
-
 ## When something fails
 
-**Re-run `worker/update.sh`.** Every stage is idempotent: collect resumes from watermarks, classify is an anti-join (already-labelled items are never re-paid; on-disk caches also skip entity-rejects), score is a full recompute, delete-sync walks a cursor, publish is a rebuild. There is no partial-state cleanup, ever.
+Read the DM, then `python3 ops/ri.py status`. Every stage resumes from the database, so the next night's run
+picks up where the failed one stopped; nothing needs cleaning up by hand. A run by hand inside a day is safe:
+`worker/run_daily.py --manual`.
 
-- Chain is **not `set -e`**: one failed stage doesn't abort the rest — the site still publishes with the data it has. Check each `… exited N` line.
-- classify exit 2 = argparse (flags bug) — nothing was labelled; exit 1 = gate/key refusal.
-- publish fallback fires automatically (git empty commit → Vercel builds every push).
-- DeepSeek down? One-off fallback: edit nothing, run `python3 worker/classify_api.py` (bare = 16 Haiku CLI workers on the Max plan) — knowing it draws the shared Claude quota. That trade is yours to make in the moment, not a default.
+- No receipt for a night: the schedule did not fire, or the run died before it could write. Railway's
+  deployment logs say which (`scripts/schedule_check.py` names the night).
+- A takedown not proven within 36 hours: the run says so in its DM. The site page still showed the card when
+  it was fetched; the next run expires and fetches it again.
+- The brake fired: more than 15% of checked comments looked gone at once. Nothing was purged. Usually an API
+  hiccup; if it repeats, look at a sample by hand before lowering the brake.
 
-## What was retired (2026-08-18)
+## What was retired
 
-Seven launchd lanes (collector, classifier, publisher, watchdog, keepawake, daily, health → plists in `worker/launchd/retired-2026-08-18/`), the Railway collection cron (service Offline; `railway.json` cron removed), `daily_mac.sh` (chain lives inside `update.sh`), and the `claude-rq` auto-resume daemon (post-mortem: `~/.claude/scripts/retired/resume-on-reset-RETIRED-2026-08-18/RETIRED.md`). **Never reintroduce a scheduler or auto-resumer here without a new ruling — decisions/0010.**
+2026-08-18: seven launchd lanes and `daily_mac.sh`. 2026-10-02/03: `worker/update.sh` (the hand-run chain),
+`worker/delete_sync.py` (replaced by `worker/takedown.py`, which never reads a failed batch as "deleted"),
+`worker/publish.py` (a full rebuild per update; the site now regenerates only the pages that changed), the
+DeepSeek lane (provider retired), and the old Railway collector service (parked on a do-nothing image, its
+database password rotated; decision 0016's addendum).

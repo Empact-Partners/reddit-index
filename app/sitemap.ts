@@ -1,29 +1,24 @@
 import type { MetadataRoute } from "next";
 import { getRegistry } from "@/lib/routing";
+import { getMeta } from "@/lib/data/site-db";
 import { SITE_URL } from "@/lib/env";
 
-// The ONE data route in this app that did not pin itself to build time. Without
-// it the sitemap is rendered by a function and only CDN-cached, so every cache
-// expiry re-runs getRegistry() -> getSnapshot() — the whole-corpus read — and
-// /sitemap.xml is the single most-probed path on any live domain. Measured
-// 2026-09-17: `x-vercel-cache: HIT` but NO `x-nextjs-prerender` header, unlike
-// every other route here. Pinned so it is emitted once per build, like the pages
-// it lists. See the note on `revalidate` in app/[slug]/page.tsx.
+// Emitted once and cached; the daily sweep expires it only when the SET of pages changes. Without the pin
+// the sitemap is rendered by a function on every cache expiry, and /sitemap.xml is the single most-probed
+// path on any live domain. It reads the slug list (short rows), never the corpus.
 export const dynamic = "force-static";
 
 /**
- * Built from the SAME registry that mints the routes, so the sitemap can
- * never list a page that 404s or miss one that exists. robots.ts has
- * advertised /sitemap.xml since day one — until now nothing emitted it, which
- * would have shipped a robots file pointing at a 404 the moment the site
- * went public.
+ * Built from the SAME registry that mints the routes, so the sitemap can never list a page that 404s or
+ * miss one that exists.
  *
- * Priorities are the crawl order that matters for this site: the index and
- * the category boards are the product, company pages are the long tail.
+ * Priorities are the crawl order that matters for this site: the index and the category boards are the
+ * product, company pages are the long tail.
  */
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const reg = await getRegistry();
-  const now = new Date();
+  const [reg, meta] = await Promise.all([getRegistry(), getMeta()]);
+  // The date the data was last refreshed, not the date this file happened to be generated.
+  const now = meta.lastSuccessAt ? new Date(meta.lastSuccessAt) : new Date();
   return [
     { url: `${SITE_URL}/`, lastModified: now, changeFrequency: "daily", priority: 1 },
     { url: `${SITE_URL}/methodology/`, lastModified: now, changeFrequency: "monthly", priority: 0.5 },

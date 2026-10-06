@@ -60,6 +60,8 @@ def load_aliases():
     """Returns list of (alias_lower, brand_slug, surface_class, min_corroborating, bare_disabled)"""
     rows = []
     for r in csv.DictReader(open(os.path.join(REPO, "data", "brand-aliases.csv"))):
+        if r.get("alias_type") == "domain" and not address_names_product(r["alias"], r["brand_slug"]):
+            continue   # a parent company's address (github.com for GitHub Actions): see address_names_product
         rows.append((
             r["alias"].lower(),
             r["brand_slug"],
@@ -182,6 +184,70 @@ def _is_plain_english(alias):
     return all(known(t) for t in toks)
 
 
+# ── a web address names a product only when it names the WHOLE product ──────────
+# Measured 2 Oct 2026 (docs/investigation-2026-10.md): 184,775 stored mentions were a link to a parent
+# company's address filed under one of its products — every github.com link as GitHub Actions (54,220),
+# every google.com link as Google Sheets (38,952), every apple.com link as Keynote (14,024). The address came
+# in as a SAFE alias from the gazetteer, so nothing downstream looked at it again.
+#
+# The rule: every word of the brand's slug must appear in the address (github.com does not say "actions";
+# sheets.google.com says both words), or one part of the address must be the brand's whole name run together,
+# alone or with a known prefix or suffix (getoutline.com, squareup.com, datadoghq.com). A product's own short
+# address that says neither is listed by hand below. Losing an address costs little: the brand's own name still matches through the gated path.
+OWN_ADDRESSES = {
+    ("youtu.be", "youtube"), ("c.ai", "character-ai"), ("draw.io", "diagrams-net"), ("kit.com", "convertkit"),
+    ("comfy.org", "comfyui"), ("sr.ht", "sourcehut"), ("system.io", "systeme-io"), ("dr.web", "dr-web-security-space"),
+    ("stalw.art", "stalwart-mail-server"), ("ti.to", "tito"), ("anchor.fm", "spotify-for-creators"),
+    ("live.com", "outlook"), ("linuxcontainers.org", "incus"), ("monarch.com", "monarch-money"),
+    ("me.com", "icloud-mail"), ("mac.com", "icloud-mail"), ("twinery.org", "twine"),
+    # own addresses whose suffix is a generic word, which the affix rule deliberately does not accept
+    ("code.visualstudio.com", "visual-studio-code"), ("keepersecurity.com", "keeper"),
+    ("audacityteam.org", "audacity"), ("payloadcms.com", "payload"), ("ampcode.com", "amp"),
+    ("oxygenbuilder.com", "oxygen"), ("bricksbuilder.io", "bricks"), ("baculasystems.com", "bacula"),
+    ("olivevideoeditor.org", "olive"), ("passwordstore.org", "pass"), ("mmonit.com", "monit"),
+    ("rosegardenmusic.com", "rosegarden"), ("sumatrapdfreader.org", "sumatrapdf"),
+    ("budgetwithbuckets.com", "buckets"), ("appinventor.mit.edu", "mit-app-inventor"),
+    ("savannah.nongnu.org", "gnu-savannah"),
+}
+
+
+_AFFIXES = {"get", "try", "use", "join", "go", "my", "the", "with", "hey", "hello", "meet",
+            "hq", "app", "apps", "inc", "io", "ai", "up", "ly", "suite", "online", "software", "now", "dev"}
+
+
+def address_names_product(domain, slug):
+    d = (domain or "").strip().lower().strip(".")
+    if (d, slug) in OWN_ADDRESSES:
+        return True
+    parts = [p for p in d.split(".") if p]
+    if len(parts) < 2:
+        return False
+    words = set(parts)
+    for p in parts:
+        words.update(re.split(r"[-_/]+", p))      # a path names a product too: zoho.com/crm, proton.me/pass
+    toks = [t for t in re.split(r"[^a-z0-9]+", slug.lower()) if t]
+    if not toks:
+        return False
+    if all(t in words for t in toks):
+        return True
+    # A product's own vanity address: its whole name inside one part of the address when the name is long enough
+    # to be distinctive (five letters or more: surferseo.com), or with a known prefix or suffix when it is short
+    # (getoutline.com, squareup.com). Never a short name inside another word: github.com contains "git" and is
+    # not Git's address (review, 2026-10-03).
+    flat = "".join(toks)
+
+    def vanity(name: str, part: str) -> bool:
+        part = part.replace("-", "")
+        if part == name:
+            return True
+        if len(name) >= 5 and name in part:          # surferseo.com, semaphoreci.com, writewithharper.com
+            return True
+        if part.startswith(name) and part[len(name):] in _AFFIXES:   # a short name needs a known affix
+            return True
+        return part.endswith(name) and part[: len(part) - len(name)] in _AFFIXES
+    return any(vanity(flat, w) for w in words)
+
+
 _dom_claims = None
 
 
@@ -214,6 +280,8 @@ def _domain_identifies(domain, slug, all_domains):
                     _dom_claims.setdefault(dd.strip().lower(), set()).add(s)
     d = domain.strip().lower()
     if len(_dom_claims.get(d, ())) > 1:
+        return False
+    if not address_names_product(d, slug):
         return False
     parts = [p for p in d.split(".") if p]
     if len(parts) < 2:

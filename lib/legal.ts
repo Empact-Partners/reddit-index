@@ -1,8 +1,8 @@
 /**
- * The non-affiliation notice. It lived in footer slot 4 when every page had a
- * footer; the homepage is now bare by explicit instruction, so the notice
- * lives on /methodology and at the foot of company pages instead. The string
- * itself is unchanged — no rewording, no shortening, no softening.
+ * The non-affiliation notice, required in the footer of every page (01-legal.md,
+ * decision 0001). Rendered by the venture footer, which every page carries. Until
+ * 2026-10-03 it rendered on /methodology only (the investigation found it). The
+ * string itself is unchanged: no rewording, no shortening, no softening.
  */
 export const NON_AFFILIATION =
   "Not affiliated with, endorsed by, or sponsored by Reddit, Inc. 'Reddit' is a trademark of Reddit, Inc., used here descriptively.";

@@ -1,0 +1,1742 @@
+[
+{
+"slug": "1password",
+"name": "1Password",
+"primary_category_slug": "password-managers",
+"page_score": 74,
+"page_n_op": 555,
+"total_mentions": 1705,
+"board_rank": 5,
+"board_size": 50
+},
+{
+"slug": "accelo",
+"name": "Accelo",
+"primary_category_slug": "project-management",
+"page_score": 35,
+"page_n_op": 1,
+"total_mentions": 4,
+"board_rank": 23,
+"board_size": 50
+},
+{
+"slug": "act-crm",
+"name": "Act! CRM",
+"primary_category_slug": "crm",
+"page_score": 58,
+"page_n_op": 9,
+"total_mentions": 25,
+"board_rank": 20,
+"board_size": 74
+},
+{
+"slug": "activecollab",
+"name": "ActiveCollab",
+"primary_category_slug": "project-management",
+"page_score": 30,
+"page_n_op": 0,
+"total_mentions": 1,
+"board_rank": 38,
+"board_size": 50
+},
+{
+"slug": "agile-crm",
+"name": "Agile CRM",
+"primary_category_slug": "crm",
+"page_score": 34,
+"page_n_op": 3,
+"total_mentions": 3,
+"board_rank": 70,
+"board_size": 74
+},
+{
+"slug": "aha",
+"name": "Aha!",
+"primary_category_slug": "project-management",
+"page_score": 30,
+"page_n_op": 0,
+"total_mentions": 3,
+"board_rank": 34,
+"board_size": 50
+},
+{
+"slug": "akeyless",
+"name": "Akeyless",
+"primary_category_slug": "password-managers",
+"page_score": 74,
+"page_n_op": 14,
+"total_mentions": 19,
+"board_rank": 8,
+"board_size": 50
+},
+{
+"slug": "akiflow",
+"name": "Akiflow",
+"primary_category_slug": "project-management",
+"page_score": 26,
+"page_n_op": 1,
+"total_mentions": 3,
+"board_rank": 48,
+"board_size": 50
+},
+{
+"slug": "aliasvault",
+"name": "AliasVault",
+"primary_category_slug": "password-managers",
+"page_score": 60,
+"page_n_op": 8,
+"total_mentions": 55,
+"board_rank": 16,
+"board_size": 50
+},
+{
+"slug": "any-do",
+"name": "Any.do",
+"primary_category_slug": "project-management",
+"page_score": 30,
+"page_n_op": 0,
+"total_mentions": 2,
+"board_rank": 36,
+"board_size": 50
+},
+{
+"slug": "apollo-io",
+"name": "Apollo.io",
+"primary_category_slug": "crm",
+"page_score": 53,
+"page_n_op": 19,
+"total_mentions": 50,
+"board_rank": 26,
+"board_size": 74
+},
+{
+"slug": "apptivo",
+"name": "Apptivo",
+"primary_category_slug": "crm",
+"page_score": 32,
+"page_n_op": 1,
+"total_mentions": 3,
+"board_rank": 71,
+"board_size": 74
+},
+{
+"slug": "asana",
+"name": "Asana",
+"primary_category_slug": "project-management",
+"page_score": 47,
+"page_n_op": 102,
+"total_mentions": 589,
+"board_rank": 12,
+"board_size": 50
+},
+{
+"slug": "attio",
+"name": "Attio",
+"primary_category_slug": "crm",
+"page_score": 77,
+"page_n_op": 299,
+"total_mentions": 619,
+"board_rank": 5,
+"board_size": 74
+},
+{
+"slug": "authpass",
+"name": "AuthPass",
+"primary_category_slug": "password-managers",
+"page_score": 53,
+"page_n_op": 0,
+"total_mentions": 2,
+"board_rank": 36,
+"board_size": 50
+},
+{
+"slug": "ballpark",
+"name": "Ballpark",
+"primary_category_slug": "project-management",
+"page_score": 30,
+"page_n_op": 0,
+"total_mentions": 1,
+"board_rank": 39,
+"board_size": 50
+},
+{
+"slug": "basecamp",
+"name": "Basecamp",
+"primary_category_slug": "project-management",
+"page_score": 46,
+"page_n_op": 65,
+"total_mentions": 152,
+"board_rank": 14,
+"board_size": 50
+},
+{
+"slug": "birdview-psa",
+"name": "Birdview PSA",
+"primary_category_slug": "project-management",
+"page_score": 30,
+"page_n_op": 0,
+"total_mentions": 22,
+"board_rank": 31,
+"board_size": 50
+},
+{
+"slug": "bitrix24",
+"name": "Bitrix24",
+"primary_category_slug": "crm",
+"page_score": 60,
+"page_n_op": 48,
+"total_mentions": 80,
+"board_rank": 19,
+"board_size": 74
+},
+{
+"slug": "bitwarden",
+"name": "Bitwarden",
+"primary_category_slug": "password-managers",
+"page_score": 75,
+"page_n_op": 1023,
+"total_mentions": 3382,
+"board_rank": 4,
+"board_size": 50
+},
+{
+"slug": "bqe-core",
+"name": "BQE CORE",
+"primary_category_slug": "project-management",
+"page_score": 37,
+"page_n_op": 5,
+"total_mentions": 12,
+"board_rank": 21,
+"board_size": 50
+},
+{
+"slug": "breakcold",
+"name": "Breakcold",
+"primary_category_slug": "crm",
+"page_score": 67,
+"page_n_op": 14,
+"total_mentions": 19,
+"board_rank": 9,
+"board_size": 74
+},
+{
+"slug": "capsule",
+"name": "Capsule",
+"primary_category_slug": "crm",
+"page_score": 41,
+"page_n_op": 3,
+"total_mentions": 6,
+"board_rank": 45,
+"board_size": 74
+},
+{
+"slug": "celoxis",
+"name": "Celoxis",
+"primary_category_slug": "project-management",
+"page_score": 56,
+"page_n_op": 7,
+"total_mentions": 14,
+"board_rank": 3,
+"board_size": 50
+},
+{
+"slug": "clickpoint",
+"name": "ClickPoint",
+"primary_category_slug": "crm",
+"page_score": 37,
+"page_n_op": 0,
+"total_mentions": 1,
+"board_rank": 58,
+"board_size": 74
+},
+{
+"slug": "clickup",
+"name": "ClickUp",
+"primary_category_slug": "project-management",
+"page_score": 53,
+"page_n_op": 246,
+"total_mentions": 784,
+"board_rank": 6,
+"board_size": 50
+},
+{
+"slug": "close",
+"name": "Close",
+"primary_category_slug": "crm",
+"page_score": 84,
+"page_n_op": 33,
+"total_mentions": 94,
+"board_rank": 2,
+"board_size": 74
+},
+{
+"slug": "codebook",
+"name": "Codebook",
+"primary_category_slug": "password-managers",
+"page_score": 53,
+"page_n_op": 0,
+"total_mentions": 1,
+"board_rank": 39,
+"board_size": 50
+},
+{
+"slug": "copper",
+"name": "Copper",
+"primary_category_slug": "crm",
+"page_score": 46,
+"page_n_op": 2,
+"total_mentions": 7,
+"board_rank": 32,
+"board_size": 74
+},
+{
+"slug": "creatio",
+"name": "Creatio",
+"primary_category_slug": "crm",
+"page_score": 65,
+"page_n_op": 13,
+"total_mentions": 38,
+"board_rank": 13,
+"board_size": 74
+},
+{
+"slug": "dashlane",
+"name": "Dashlane",
+"primary_category_slug": "password-managers",
+"page_score": 44,
+"page_n_op": 73,
+"total_mentions": 175,
+"board_rank": 46,
+"board_size": 50
+},
+{
+"slug": "daylite",
+"name": "Daylite",
+"primary_category_slug": "crm",
+"page_score": 37,
+"page_n_op": 0,
+"total_mentions": 6,
+"board_rank": 52,
+"board_size": 74
+},
+{
+"slug": "dealcloud",
+"name": "DealCloud",
+"primary_category_slug": "crm",
+"page_score": 37,
+"page_n_op": 0,
+"total_mentions": 2,
+"board_rank": 55,
+"board_size": 74
+},
+{
+"slug": "delinea-secret-server",
+"name": "Delinea Secret Server",
+"primary_category_slug": "password-managers",
+"page_score": 53,
+"page_n_op": 0,
+"total_mentions": 52,
+"board_rank": 29,
+"board_size": 50
+},
+{
+"slug": "devolutions-hub-business",
+"name": "Devolutions Hub Business",
+"primary_category_slug": "password-managers",
+"page_score": 53,
+"page_n_op": 0,
+"total_mentions": 13,
+"board_rank": 30,
+"board_size": 50
+},
+{
+"slug": "dock",
+"name": "Dock",
+"primary_category_slug": "crm",
+"page_score": 42,
+"page_n_op": 1,
+"total_mentions": 1,
+"board_rank": 41,
+"board_size": 74
+},
+{
+"slug": "drivecentric",
+"name": "DriveCentric",
+"primary_category_slug": "crm",
+"page_score": 42,
+"page_n_op": 1,
+"total_mentions": 1,
+"board_rank": 42,
+"board_size": 74
+},
+{
+"slug": "ebsta",
+"name": "Ebsta",
+"primary_category_slug": "crm",
+"page_score": 37,
+"page_n_op": 0,
+"total_mentions": 1,
+"board_rank": 59,
+"board_size": 74
+},
+{
+"slug": "engagebay",
+"name": "EngageBay",
+"primary_category_slug": "crm",
+"page_score": 88,
+"page_n_op": 78,
+"total_mentions": 118,
+"board_rank": 1,
+"board_size": 74
+},
+{
+"slug": "enpass",
+"name": "Enpass",
+"primary_category_slug": "password-managers",
+"page_score": 60,
+"page_n_op": 17,
+"total_mentions": 72,
+"board_rank": 15,
+"board_size": 50
+},
+{
+"slug": "espocrm",
+"name": "EspoCRM",
+"primary_category_slug": "crm",
+"page_score": 70,
+"page_n_op": 13,
+"total_mentions": 51,
+"board_rank": 7,
+"board_size": 74
+},
+{
+"slug": "eway-crm",
+"name": "eWay-CRM",
+"primary_category_slug": "crm",
+"page_score": 37,
+"page_n_op": 0,
+"total_mentions": 1,
+"board_rank": 60,
+"board_size": 74
+},
+{
+"slug": "favro",
+"name": "Favro",
+"primary_category_slug": "project-management",
+"page_score": 26,
+"page_n_op": 1,
+"total_mentions": 1,
+"board_rank": 49,
+"board_size": 50
+},
+{
+"slug": "fibery",
+"name": "Fibery",
+"primary_category_slug": "project-management",
+"page_score": 54,
+"page_n_op": 9,
+"total_mentions": 31,
+"board_rank": 5,
+"board_size": 50
+},
+{
+"slug": "flowlu",
+"name": "Flowlu",
+"primary_category_slug": "crm",
+"page_score": 42,
+"page_n_op": 1,
+"total_mentions": 10,
+"board_rank": 35,
+"board_size": 74
+},
+{
+"slug": "folk",
+"name": "folk",
+"primary_category_slug": "crm",
+"page_score": 66,
+"page_n_op": 10,
+"total_mentions": 17,
+"board_rank": 10,
+"board_size": 74
+},
+{
+"slug": "follow-up-boss",
+"name": "Follow Up Boss",
+"primary_category_slug": "crm",
+"page_score": 50,
+"page_n_op": 8,
+"total_mentions": 57,
+"board_rank": 28,
+"board_size": 74
+},
+{
+"slug": "freedcamp",
+"name": "Freedcamp",
+"primary_category_slug": "project-management",
+"page_score": 24,
+"page_n_op": 2,
+"total_mentions": 2,
+"board_rank": 50,
+"board_size": 50
+},
+{
+"slug": "freshsales",
+"name": "Freshsales",
+"primary_category_slug": "crm",
+"page_score": 80,
+"page_n_op": 49,
+"total_mentions": 76,
+"board_rank": 3,
+"board_size": 74
+},
+{
+"slug": "function-point",
+"name": "Function Point",
+"primary_category_slug": "project-management",
+"page_score": 30,
+"page_n_op": 0,
+"total_mentions": 3,
+"board_rank": 35,
+"board_size": 50
+},
+{
+"slug": "ganttpro",
+"name": "GanttPRO",
+"primary_category_slug": "project-management",
+"page_score": 35,
+"page_n_op": 1,
+"total_mentions": 1,
+"board_rank": 26,
+"board_size": 50
+},
+{
+"slug": "ganttproject",
+"name": "GanttProject",
+"primary_category_slug": "project-management",
+"page_score": 35,
+"page_n_op": 1,
+"total_mentions": 2,
+"board_rank": 25,
+"board_size": 50
+},
+{
+"slug": "goldmine-crm",
+"name": "GoldMine CRM",
+"primary_category_slug": "crm",
+"page_score": 54,
+"page_n_op": 22,
+"total_mentions": 450,
+"board_rank": 24,
+"board_size": 74
+},
+{
+"slug": "heylogin",
+"name": "heylogin",
+"primary_category_slug": "password-managers",
+"page_score": 57,
+"page_n_op": 1,
+"total_mentions": 14,
+"board_rank": 22,
+"board_size": 50
+},
+{
+"slug": "highlevel",
+"name": "HighLevel",
+"primary_category_slug": "crm",
+"page_score": 65,
+"page_n_op": 95,
+"total_mentions": 463,
+"board_rank": 11,
+"board_size": 74
+},
+{
+"slug": "hive",
+"name": "Hive",
+"primary_category_slug": "project-management",
+"page_score": 30,
+"page_n_op": 0,
+"total_mentions": 1,
+"board_rank": 40,
+"board_size": 50
+},
+{
+"slug": "hubspot",
+"name": "HubSpot",
+"primary_category_slug": "crm",
+"page_score": 53,
+"page_n_op": 2545,
+"total_mentions": 5956,
+"board_rank": 25,
+"board_size": 74
+},
+{
+"slug": "huly",
+"name": "Huly",
+"primary_category_slug": "project-management",
+"page_score": 30,
+"page_n_op": 0,
+"total_mentions": 2,
+"board_rank": 37,
+"board_size": 50
+},
+{
+"slug": "hypervault",
+"name": "Hypervault",
+"primary_category_slug": "password-managers",
+"page_score": 53,
+"page_n_op": 0,
+"total_mentions": 3,
+"board_rank": 35,
+"board_size": 50
+},
+{
+"slug": "infisical",
+"name": "Infisical",
+"primary_category_slug": "password-managers",
+"page_score": 62,
+"page_n_op": 9,
+"total_mentions": 21,
+"board_rank": 14,
+"board_size": 50
+},
+{
+"slug": "insightly",
+"name": "Insightly",
+"primary_category_slug": "crm",
+"page_score": 65,
+"page_n_op": 23,
+"total_mentions": 39,
+"board_rank": 12,
+"board_size": 74
+},
+{
+"slug": "ironvest",
+"name": "IronVest",
+"primary_category_slug": "password-managers",
+"page_score": 53,
+"page_n_op": 0,
+"total_mentions": 2,
+"board_rank": 37,
+"board_size": 50
+},
+{
+"slug": "jira",
+"name": "Jira",
+"primary_category_slug": "project-management",
+"page_score": 37,
+"page_n_op": 856,
+"total_mentions": 4649,
+"board_rank": 20,
+"board_size": 50
+},
+{
+"slug": "kantata",
+"name": "Kantata",
+"primary_category_slug": "project-management",
+"page_score": 40,
+"page_n_op": 2,
+"total_mentions": 10,
+"board_rank": 17,
+"board_size": 50
+},
+{
+"slug": "keap",
+"name": "Keap",
+"primary_category_slug": "crm",
+"page_score": 42,
+"page_n_op": 1,
+"total_mentions": 10,
+"board_rank": 36,
+"board_size": 74
+},
+{
+"slug": "keepass",
+"name": "KeePass",
+"primary_category_slug": "password-managers",
+"page_score": 81,
+"page_n_op": 233,
+"total_mentions": 866,
+"board_rank": 3,
+"board_size": 50
+},
+{
+"slug": "keepass2android",
+"name": "KeePass2Android",
+"primary_category_slug": "password-managers",
+"page_score": 42,
+"page_n_op": 4,
+"total_mentions": 28,
+"board_rank": 49,
+"board_size": 50
+},
+{
+"slug": "keepassdroid",
+"name": "KeePassDroid",
+"primary_category_slug": "password-managers",
+"page_score": 57,
+"page_n_op": 1,
+"total_mentions": 3,
+"board_rank": 26,
+"board_size": 50
+},
+{
+"slug": "keepassdx",
+"name": "KeePassDX",
+"primary_category_slug": "password-managers",
+"page_score": 74,
+"page_n_op": 29,
+"total_mentions": 122,
+"board_rank": 6,
+"board_size": 50
+},
+{
+"slug": "keepassium",
+"name": "KeePassium",
+"primary_category_slug": "password-managers",
+"page_score": 68,
+"page_n_op": 5,
+"total_mentions": 47,
+"board_rank": 10,
+"board_size": 50
+},
+{
+"slug": "keepassxc",
+"name": "KeePassXC",
+"primary_category_slug": "password-managers",
+"page_score": 84,
+"page_n_op": 123,
+"total_mentions": 470,
+"board_rank": 1,
+"board_size": 50
+},
+{
+"slug": "keeper",
+"name": "Keeper",
+"primary_category_slug": "password-managers",
+"page_score": 63,
+"page_n_op": 3,
+"total_mentions": 13,
+"board_rank": 13,
+"board_size": 50
+},
+{
+"slug": "kommo",
+"name": "Kommo",
+"primary_category_slug": "crm",
+"page_score": 55,
+"page_n_op": 10,
+"total_mentions": 28,
+"board_rank": 23,
+"board_size": 74
+},
+{
+"slug": "kylas",
+"name": "Kylas",
+"primary_category_slug": "crm",
+"page_score": 37,
+"page_n_op": 0,
+"total_mentions": 2,
+"board_rank": 56,
+"board_size": 74
+},
+{
+"slug": "lastpass",
+"name": "LastPass",
+"primary_category_slug": "password-managers",
+"page_score": 11,
+"page_n_op": 221,
+"total_mentions": 521,
+"board_rank": 50,
+"board_size": 50
+},
+{
+"slug": "lawmatics",
+"name": "Lawmatics",
+"primary_category_slug": "crm",
+"page_score": 46,
+"page_n_op": 2,
+"total_mentions": 5,
+"board_rank": 33,
+"board_size": 74
+},
+{
+"slug": "lead-anywhere",
+"name": "Lead Anywhere",
+"primary_category_slug": "crm",
+"page_score": 37,
+"page_n_op": 0,
+"total_mentions": 26,
+"board_rank": 49,
+"board_size": 74
+},
+{
+"slug": "leadsquared",
+"name": "LeadSquared",
+"primary_category_slug": "crm",
+"page_score": 41,
+"page_n_op": 3,
+"total_mentions": 10,
+"board_rank": 44,
+"board_size": 74
+},
+{
+"slug": "leantime",
+"name": "Leantime",
+"primary_category_slug": "project-management",
+"page_score": 30,
+"page_n_op": 0,
+"total_mentions": 11,
+"board_rank": 32,
+"board_size": 50
+},
+{
+"slug": "less-annoying-crm",
+"name": "Less Annoying CRM",
+"primary_category_slug": "crm",
+"page_score": 62,
+"page_n_op": 11,
+"total_mentions": 24,
+"board_rank": 15,
+"board_size": 74
+},
+{
+"slug": "linear",
+"name": "Linear",
+"primary_category_slug": "project-management",
+"page_score": 60,
+"page_n_op": 35,
+"total_mentions": 193,
+"board_rank": 2,
+"board_size": 50
+},
+{
+"slug": "liondesk",
+"name": "LionDesk",
+"primary_category_slug": "crm",
+"page_score": 34,
+"page_n_op": 3,
+"total_mentions": 4,
+"board_rank": 69,
+"board_size": 74
+},
+{
+"slug": "lofty",
+"name": "Lofty",
+"primary_category_slug": "crm",
+"page_score": 37,
+"page_n_op": 0,
+"total_mentions": 1,
+"board_rank": 61,
+"board_size": 74
+},
+{
+"slug": "logmeonce",
+"name": "LogMeOnce",
+"primary_category_slug": "password-managers",
+"page_score": 57,
+"page_n_op": 1,
+"total_mentions": 5,
+"board_rank": 25,
+"board_size": 50
+},
+{
+"slug": "lytho",
+"name": "Lytho",
+"primary_category_slug": "project-management",
+"page_score": 30,
+"page_n_op": 0,
+"total_mentions": 1,
+"board_rank": 41,
+"board_size": 50
+},
+{
+"slug": "macpass",
+"name": "MacPass",
+"primary_category_slug": "password-managers",
+"page_score": 51,
+"page_n_op": 2,
+"total_mentions": 3,
+"board_rank": 40,
+"board_size": 50
+},
+{
+"slug": "maximizer-crm",
+"name": "Maximizer CRM",
+"primary_category_slug": "crm",
+"page_score": 37,
+"page_n_op": 0,
+"total_mentions": 3,
+"board_rank": 54,
+"board_size": 74
+},
+{
+"slug": "meistertask",
+"name": "MeisterTask",
+"primary_category_slug": "project-management",
+"page_score": 30,
+"page_n_op": 0,
+"total_mentions": 1,
+"board_rank": 42,
+"board_size": 50
+},
+{
+"slug": "method-crm",
+"name": "Method CRM",
+"primary_category_slug": "crm",
+"page_score": 61,
+"page_n_op": 7,
+"total_mentions": 12,
+"board_rank": 17,
+"board_size": 74
+},
+{
+"slug": "monday-com",
+"name": "monday.com",
+"primary_category_slug": "project-management",
+"page_score": 54,
+"page_n_op": 36,
+"total_mentions": 178,
+"board_rank": 4,
+"board_size": 50
+},
+{
+"slug": "monday-crm",
+"name": "monday CRM",
+"primary_category_slug": "crm",
+"page_score": 52,
+"page_n_op": 62,
+"total_mentions": 296,
+"board_rank": 27,
+"board_size": 74
+},
+{
+"slug": "msecure",
+"name": "mSecure",
+"primary_category_slug": "password-managers",
+"page_score": 47,
+"page_n_op": 1,
+"total_mentions": 14,
+"board_rank": 42,
+"board_size": 50
+},
+{
+"slug": "nethunt-crm",
+"name": "NetHunt CRM",
+"primary_category_slug": "crm",
+"page_score": 42,
+"page_n_op": 1,
+"total_mentions": 2,
+"board_rank": 40,
+"board_size": 74
+},
+{
+"slug": "netsuite",
+"name": "NetSuite",
+"primary_category_slug": "crm",
+"page_score": 38,
+"page_n_op": 227,
+"total_mentions": 662,
+"board_rank": 47,
+"board_size": 74
+},
+{
+"slug": "netwrix-password-secure",
+"name": "Netwrix Password Secure",
+"primary_category_slug": "password-managers",
+"page_score": 53,
+"page_n_op": 0,
+"total_mentions": 4,
+"board_rank": 33,
+"board_size": 50
+},
+{
+"slug": "nimble",
+"name": "Nimble",
+"primary_category_slug": "crm",
+"page_score": 37,
+"page_n_op": 0,
+"total_mentions": 4,
+"board_rank": 53,
+"board_size": 74
+},
+{
+"slug": "nocrm",
+"name": "noCRM",
+"primary_category_slug": "crm",
+"page_score": 37,
+"page_n_op": 0,
+"total_mentions": 1,
+"board_rank": 62,
+"board_size": 74
+},
+{
+"slug": "nocrm-io",
+"name": "noCRM.io",
+"primary_category_slug": "crm",
+"page_score": 31,
+"page_n_op": 9,
+"total_mentions": 119,
+"board_rank": 74,
+"board_size": 74
+},
+{
+"slug": "nordpass",
+"name": "NordPass",
+"primary_category_slug": "password-managers",
+"page_score": 59,
+"page_n_op": 60,
+"total_mentions": 138,
+"board_rank": 20,
+"board_size": 50
+},
+{
+"slug": "notion",
+"name": "Notion",
+"primary_category_slug": "project-management",
+"page_score": 48,
+"page_n_op": 141,
+"total_mentions": 1499,
+"board_rank": 11,
+"board_size": 50
+},
+{
+"slug": "nutshell",
+"name": "Nutshell",
+"primary_category_slug": "crm",
+"page_score": 37,
+"page_n_op": 2,
+"total_mentions": 8,
+"board_rank": 50,
+"board_size": 74
+},
+{
+"slug": "onepagecrm",
+"name": "OnePageCRM",
+"primary_category_slug": "crm",
+"page_score": 50,
+"page_n_op": 3,
+"total_mentions": 6,
+"board_rank": 29,
+"board_size": 74
+},
+{
+"slug": "ontraport",
+"name": "Ontraport",
+"primary_category_slug": "crm",
+"page_score": 42,
+"page_n_op": 1,
+"total_mentions": 4,
+"board_rank": 38,
+"board_size": 74
+},
+{
+"slug": "openproject",
+"name": "OpenProject",
+"primary_category_slug": "project-management",
+"page_score": 51,
+"page_n_op": 10,
+"total_mentions": 95,
+"board_rank": 10,
+"board_size": 50
+},
+{
+"slug": "outreach",
+"name": "Outreach",
+"primary_category_slug": "crm",
+"page_score": 31,
+"page_n_op": 20,
+"total_mentions": 311,
+"board_rank": 73,
+"board_size": 74
+},
+{
+"slug": "overloop",
+"name": "Overloop",
+"primary_category_slug": "crm",
+"page_score": 61,
+"page_n_op": 7,
+"total_mentions": 8,
+"board_rank": 18,
+"board_size": 74
+},
+{
+"slug": "pass",
+"name": "pass",
+"primary_category_slug": "password-managers",
+"page_score": 60,
+"page_n_op": 2,
+"total_mentions": 7,
+"board_rank": 19,
+"board_size": 50
+},
+{
+"slug": "passbolt",
+"name": "Passbolt",
+"primary_category_slug": "password-managers",
+"page_score": 65,
+"page_n_op": 11,
+"total_mentions": 42,
+"board_rank": 11,
+"board_size": 50
+},
+{
+"slug": "password-boss",
+"name": "Password Boss",
+"primary_category_slug": "password-managers",
+"page_score": 46,
+"page_n_op": 3,
+"total_mentions": 5,
+"board_rank": 45,
+"board_size": 50
+},
+{
+"slug": "password-depot",
+"name": "Password Depot",
+"primary_category_slug": "password-managers",
+"page_score": 53,
+"page_n_op": 0,
+"total_mentions": 2,
+"board_rank": 38,
+"board_size": 50
+},
+{
+"slug": "password-safe",
+"name": "Password Safe",
+"primary_category_slug": "password-managers",
+"page_score": 57,
+"page_n_op": 4,
+"total_mentions": 18,
+"board_rank": 21,
+"board_size": 50
+},
+{
+"slug": "passwordstate",
+"name": "Passwordstate",
+"primary_category_slug": "password-managers",
+"page_score": 47,
+"page_n_op": 1,
+"total_mentions": 2,
+"board_rank": 44,
+"board_size": 50
+},
+{
+"slug": "passwork",
+"name": "Passwork",
+"primary_category_slug": "password-managers",
+"page_score": 74,
+"page_n_op": 19,
+"total_mentions": 45,
+"board_rank": 7,
+"board_size": 50
+},
+{
+"slug": "pipedrive",
+"name": "Pipedrive",
+"primary_category_slug": "crm",
+"page_score": 70,
+"page_n_op": 661,
+"total_mentions": 1364,
+"board_rank": 6,
+"board_size": 74
+},
+{
+"slug": "pipeline-crm",
+"name": "Pipeline CRM",
+"primary_category_slug": "crm",
+"page_score": 61,
+"page_n_op": 7,
+"total_mentions": 15,
+"board_rank": 16,
+"board_size": 74
+},
+{
+"slug": "pleasant-password-server",
+"name": "Pleasant Password Server",
+"primary_category_slug": "password-managers",
+"page_score": 47,
+"page_n_op": 1,
+"total_mentions": 181,
+"board_rank": 41,
+"board_size": 50
+},
+{
+"slug": "productboard",
+"name": "Productboard",
+"primary_category_slug": "project-management",
+"page_score": 33,
+"page_n_op": 4,
+"total_mentions": 27,
+"board_rank": 29,
+"board_size": 50
+},
+{
+"slug": "productive",
+"name": "Productive",
+"primary_category_slug": "project-management",
+"page_score": 26,
+"page_n_op": 1,
+"total_mentions": 5,
+"board_rank": 47,
+"board_size": 50
+},
+{
+"slug": "projectlibre",
+"name": "ProjectLibre",
+"primary_category_slug": "project-management",
+"page_score": 35,
+"page_n_op": 1,
+"total_mentions": 5,
+"board_rank": 22,
+"board_size": 50
+},
+{
+"slug": "projectmanager",
+"name": "ProjectManager",
+"primary_category_slug": "project-management",
+"page_score": 40,
+"page_n_op": 2,
+"total_mentions": 3,
+"board_rank": 18,
+"board_size": 50
+},
+{
+"slug": "proofhub",
+"name": "ProofHub",
+"primary_category_slug": "project-management",
+"page_score": 44,
+"page_n_op": 3,
+"total_mentions": 5,
+"board_rank": 16,
+"board_size": 50
+},
+{
+"slug": "prospect-crm",
+"name": "Prospect CRM",
+"primary_category_slug": "crm",
+"page_score": 37,
+"page_n_op": 0,
+"total_mentions": 1,
+"board_rank": 63,
+"board_size": 74
+},
+{
+"slug": "proton-pass",
+"name": "Proton Pass",
+"primary_category_slug": "password-managers",
+"page_score": 73,
+"page_n_op": 226,
+"total_mentions": 853,
+"board_rank": 9,
+"board_size": 50
+},
+{
+"slug": "psono",
+"name": "Psono",
+"primary_category_slug": "password-managers",
+"page_score": 60,
+"page_n_op": 5,
+"total_mentions": 31,
+"board_rank": 18,
+"board_size": 50
+},
+{
+"slug": "real-geeks",
+"name": "Real Geeks",
+"primary_category_slug": "crm",
+"page_score": 42,
+"page_n_op": 1,
+"total_mentions": 3,
+"board_rank": 39,
+"board_size": 74
+},
+{
+"slug": "recruit-crm",
+"name": "Recruit CRM",
+"primary_category_slug": "crm",
+"page_score": 45,
+"page_n_op": 6,
+"total_mentions": 18,
+"board_rank": 34,
+"board_size": 74
+},
+{
+"slug": "redmine",
+"name": "Redmine",
+"primary_category_slug": "project-management",
+"page_score": 53,
+"page_n_op": 11,
+"total_mentions": 35,
+"board_rank": 7,
+"board_size": 50
+},
+{
+"slug": "redtail-crm",
+"name": "Redtail CRM",
+"primary_category_slug": "crm",
+"page_score": 37,
+"page_n_op": 0,
+"total_mentions": 1,
+"board_rank": 64,
+"board_size": 74
+},
+{
+"slug": "roboform",
+"name": "RoboForm",
+"primary_category_slug": "password-managers",
+"page_score": 84,
+"page_n_op": 124,
+"total_mentions": 350,
+"board_rank": 2,
+"board_size": 50
+},
+{
+"slug": "safeincloud-2",
+"name": "SafeInCloud 2",
+"primary_category_slug": "password-managers",
+"page_score": 63,
+"page_n_op": 3,
+"total_mentions": 14,
+"board_rank": 12,
+"board_size": 50
+},
+{
+"slug": "salesflare",
+"name": "Salesflare",
+"primary_category_slug": "crm",
+"page_score": 56,
+"page_n_op": 8,
+"total_mentions": 16,
+"board_rank": 21,
+"board_size": 74
+},
+{
+"slug": "salesforce",
+"name": "Salesforce",
+"primary_category_slug": "crm",
+"page_score": 39,
+"page_n_op": 2135,
+"total_mentions": 6517,
+"board_rank": 46,
+"board_size": 74
+},
+{
+"slug": "salesmate",
+"name": "Salesmate",
+"primary_category_slug": "crm",
+"page_score": 56,
+"page_n_op": 5,
+"total_mentions": 11,
+"board_rank": 22,
+"board_size": 74
+},
+{
+"slug": "samsung-pass",
+"name": "Samsung Pass",
+"primary_category_slug": "password-managers",
+"page_score": 42,
+"page_n_op": 4,
+"total_mentions": 31,
+"board_rank": 48,
+"board_size": 50
+},
+{
+"slug": "scoro",
+"name": "Scoro",
+"primary_category_slug": "project-management",
+"page_score": 33,
+"page_n_op": 4,
+"total_mentions": 15,
+"board_rank": 30,
+"board_size": 50
+},
+{
+"slug": "secrets",
+"name": "Secrets",
+"primary_category_slug": "password-managers",
+"page_score": 53,
+"page_n_op": 13,
+"total_mentions": 498,
+"board_rank": 28,
+"board_size": 50
+},
+{
+"slug": "securden-password-vault",
+"name": "Securden Password Vault",
+"primary_category_slug": "password-managers",
+"page_score": 57,
+"page_n_op": 1,
+"total_mentions": 2,
+"board_rank": 27,
+"board_size": 50
+},
+{
+"slug": "securesafe",
+"name": "SecureSafe",
+"primary_category_slug": "password-managers",
+"page_score": 53,
+"page_n_op": 0,
+"total_mentions": 7,
+"board_rank": 31,
+"board_size": 50
+},
+{
+"slug": "shortcut",
+"name": "Shortcut",
+"primary_category_slug": "project-management",
+"page_score": 47,
+"page_n_op": 4,
+"total_mentions": 63,
+"board_rank": 13,
+"board_size": 50
+},
+{
+"slug": "smartsheet",
+"name": "Smartsheet",
+"primary_category_slug": "project-management",
+"page_score": 45,
+"page_n_op": 38,
+"total_mentions": 162,
+"board_rank": 15,
+"board_size": 50
+},
+{
+"slug": "spectre",
+"name": "Spectre",
+"primary_category_slug": "password-managers",
+"page_score": 42,
+"page_n_op": 6,
+"total_mentions": 412,
+"board_rank": 47,
+"board_size": 50
+},
+{
+"slug": "splashid",
+"name": "SplashID",
+"primary_category_slug": "password-managers",
+"page_score": 47,
+"page_n_op": 1,
+"total_mentions": 4,
+"board_rank": 43,
+"board_size": 50
+},
+{
+"slug": "spotio",
+"name": "SPOTIO",
+"primary_category_slug": "crm",
+"page_score": 34,
+"page_n_op": 3,
+"total_mentions": 5,
+"board_rank": 68,
+"board_size": 74
+},
+{
+"slug": "sticky-password",
+"name": "Sticky Password",
+"primary_category_slug": "password-managers",
+"page_score": 57,
+"page_n_op": 4,
+"total_mentions": 11,
+"board_rank": 23,
+"board_size": 50
+},
+{
+"slug": "streak",
+"name": "Streak",
+"primary_category_slug": "crm",
+"page_score": 48,
+"page_n_op": 7,
+"total_mentions": 9,
+"board_rank": 31,
+"board_size": 74
+},
+{
+"slug": "sugarcrm",
+"name": "SugarCRM",
+"primary_category_slug": "crm",
+"page_score": 38,
+"page_n_op": 4,
+"total_mentions": 27,
+"board_rank": 48,
+"board_size": 74
+},
+{
+"slug": "suitecrm",
+"name": "SuiteCRM",
+"primary_category_slug": "crm",
+"page_score": 62,
+"page_n_op": 17,
+"total_mentions": 56,
+"board_rank": 14,
+"board_size": 74
+},
+{
+"slug": "sunsama",
+"name": "Sunsama",
+"primary_category_slug": "project-management",
+"page_score": 28,
+"page_n_op": 6,
+"total_mentions": 9,
+"board_rank": 46,
+"board_size": 50
+},
+{
+"slug": "synerosystems",
+"name": "SyneroSystems",
+"primary_category_slug": "crm",
+"page_score": 37,
+"page_n_op": 0,
+"total_mentions": 1,
+"board_rank": 65,
+"board_size": 74
+},
+{
+"slug": "taiga",
+"name": "Taiga",
+"primary_category_slug": "project-management",
+"page_score": 30,
+"page_n_op": 0,
+"total_mentions": 1,
+"board_rank": 43,
+"board_size": 50
+},
+{
+"slug": "tara-ai",
+"name": "Tara AI",
+"primary_category_slug": "project-management",
+"page_score": 30,
+"page_n_op": 0,
+"total_mentions": 1,
+"board_rank": 44,
+"board_size": 50
+},
+{
+"slug": "team-password-manager",
+"name": "Team Password Manager",
+"primary_category_slug": "password-managers",
+"page_score": 60,
+"page_n_op": 2,
+"total_mentions": 48,
+"board_rank": 17,
+"board_size": 50
+},
+{
+"slug": "teamgantt",
+"name": "TeamGantt",
+"primary_category_slug": "project-management",
+"page_score": 40,
+"page_n_op": 2,
+"total_mentions": 2,
+"board_rank": 19,
+"board_size": 50
+},
+{
+"slug": "teamgate-crm",
+"name": "Teamgate CRM",
+"primary_category_slug": "crm",
+"page_score": 32,
+"page_n_op": 1,
+"total_mentions": 2,
+"board_rank": 72,
+"board_size": 74
+},
+{
+"slug": "teamhood",
+"name": "Teamhood",
+"primary_category_slug": "project-management",
+"page_score": 68,
+"page_n_op": 14,
+"total_mentions": 32,
+"board_rank": 1,
+"board_size": 50
+},
+{
+"slug": "teampass",
+"name": "TeamPass",
+"primary_category_slug": "password-managers",
+"page_score": 57,
+"page_n_op": 1,
+"total_mentions": 11,
+"board_rank": 24,
+"board_size": 50
+},
+{
+"slug": "teampassword",
+"name": "TeamPassword",
+"primary_category_slug": "password-managers",
+"page_score": 53,
+"page_n_op": 0,
+"total_mentions": 6,
+"board_rank": 32,
+"board_size": 50
+},
+{
+"slug": "teamwork-com",
+"name": "Teamwork.com",
+"primary_category_slug": "project-management",
+"page_score": 35,
+"page_n_op": 1,
+"total_mentions": 4,
+"board_rank": 24,
+"board_size": 50
+},
+{
+"slug": "things",
+"name": "Things",
+"primary_category_slug": "project-management",
+"page_score": 34,
+"page_n_op": 6,
+"total_mentions": 254,
+"board_rank": 27,
+"board_size": 50
+},
+{
+"slug": "timelinesai",
+"name": "TimelinesAI",
+"primary_category_slug": "crm",
+"page_score": 37,
+"page_n_op": 0,
+"total_mentions": 1,
+"board_rank": 66,
+"board_size": 74
+},
+{
+"slug": "todoist",
+"name": "Todoist",
+"primary_category_slug": "project-management",
+"page_score": 33,
+"page_n_op": 57,
+"total_mentions": 139,
+"board_rank": 28,
+"board_size": 50
+},
+{
+"slug": "trello",
+"name": "Trello",
+"primary_category_slug": "project-management",
+"page_score": 51,
+"page_n_op": 284,
+"total_mentions": 1040,
+"board_rank": 9,
+"board_size": 50
+},
+{
+"slug": "twenty",
+"name": "Twenty",
+"primary_category_slug": "crm",
+"page_score": 78,
+"page_n_op": 27,
+"total_mentions": 68,
+"board_rank": 4,
+"board_size": 74
+},
+{
+"slug": "uniqkey",
+"name": "UNIQKEY",
+"primary_category_slug": "password-managers",
+"page_score": 53,
+"page_n_op": 0,
+"total_mentions": 4,
+"board_rank": 34,
+"board_size": 50
+},
+{
+"slug": "vault-crm",
+"name": "Vault CRM",
+"primary_category_slug": "crm",
+"page_score": 42,
+"page_n_op": 1,
+"total_mentions": 9,
+"board_rank": 37,
+"board_size": 74
+},
+{
+"slug": "vtiger-crm",
+"name": "Vtiger CRM",
+"primary_category_slug": "crm",
+"page_score": 41,
+"page_n_op": 5,
+"total_mentions": 13,
+"board_rank": 43,
+"board_size": 74
+},
+{
+"slug": "wealthbox",
+"name": "Wealthbox",
+"primary_category_slug": "crm",
+"page_score": 48,
+"page_n_op": 16,
+"total_mentions": 26,
+"board_rank": 30,
+"board_size": 74
+},
+{
+"slug": "whise",
+"name": "WHISE",
+"primary_category_slug": "crm",
+"page_score": 37,
+"page_n_op": 0,
+"total_mentions": 1,
+"board_rank": 67,
+"board_size": 74
+},
+{
+"slug": "wise-agent",
+"name": "Wise Agent",
+"primary_category_slug": "crm",
+"page_score": 37,
+"page_n_op": 0,
+"total_mentions": 2,
+"board_rank": 57,
+"board_size": 74
+},
+{
+"slug": "workamajig",
+"name": "Workamajig",
+"primary_category_slug": "project-management",
+"page_score": 30,
+"page_n_op": 0,
+"total_mentions": 1,
+"board_rank": 45,
+"board_size": 50
+},
+{
+"slug": "workbooks-crm",
+"name": "Workbooks CRM",
+"primary_category_slug": "crm",
+"page_score": 37,
+"page_n_op": 0,
+"total_mentions": 8,
+"board_rank": 51,
+"board_size": 74
+},
+{
+"slug": "workzone",
+"name": "Workzone",
+"primary_category_slug": "project-management",
+"page_score": 30,
+"page_n_op": 0,
+"total_mentions": 5,
+"board_rank": 33,
+"board_size": 50
+},
+{
+"slug": "wrike",
+"name": "Wrike",
+"primary_category_slug": "project-management",
+"page_score": 52,
+"page_n_op": 18,
+"total_mentions": 58,
+"board_rank": 8,
+"board_size": 50
+},
+{
+"slug": "zoho-crm",
+"name": "Zoho CRM",
+"primary_category_slug": "crm",
+"page_score": 69,
+"page_n_op": 768,
+"total_mentions": 2357,
+"board_rank": 8,
+"board_size": 74
+}
+]

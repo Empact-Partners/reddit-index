@@ -47,10 +47,17 @@ export type BoardData = Record<string, ScopeBoard>;
 export const PER_LIST = 100;
 export const LIST_CAP = Number.POSITIVE_INFINITY;
 
-/** Score descending; mentions break ties; slug makes it deterministic. */
+/**
+ * Score descending; mentions break ties; slug makes it deterministic.
+ *
+ * The slug comparison is plain character order, NOT localeCompare. worker/site_score.py stores each
+ * company's rank using this same rule, and a locale-aware comparison is not the same on every runtime
+ * (it weighs hyphens and digits differently from Python's string order), so the rank on a company page
+ * could have disagreed with the row's position on the board it links to.
+ */
 export function byBoardOrder(a: BoardRow, b: BoardRow): number {
   return (b.score - a.score) || (b.mentions - a.mentions)
-    || a.brandSlug.localeCompare(b.brandSlug);
+    || (a.brandSlug < b.brandSlug ? -1 : a.brandSlug > b.brandSlug ? 1 : 0);
 }
 
 /**

@@ -1,10 +1,9 @@
 # The worker
 
-**The index updates on demand** — a human runs `worker/update.sh` and that is
-the only trigger (decisions/0010, 2026-08-18; the two-machine daily loop below
-is retired: Railway is Offline, all launchd lanes are booted out with plists
-archived in `worker/launchd/retired-2026-08-18/`). Operating procedure:
-[SOP.md](../SOP.md).
+**The index updates itself once a day** (decisions/0017): `worker/run_daily.py` on the Railway service
+`reddit-index-sweep`, 00:00 UTC, bounded and resumable. Operating procedure: [SOP.md](../SOP.md). The chain
+below (`update.sh`, Mac-side) is the August design it replaced, kept because its stages' mechanics still
+describe what the sweep's stages reuse; where they differ, SOP.md and the sweep's code are right.
 
 ```
 worker/update.sh — one chain, run to completion, exit:
@@ -412,12 +411,14 @@ Everything in `worker/`. A dead lane must not be runnable by accident.
 
 | script | status |
 |---|---|
-| `daily.py` | **current** — the collection pass (stage 1 of `update.sh`; ran on Railway until 2026-08-18) |
-| `update.sh` | **current** — THE chain: collect, classify, score, delete-sync, publish, verify (replaced `daily_mac.sh`) |
+| `run_daily.py` | **current** — THE daily sweep: takedowns, collect, classify, refresh, score, publish, receipt (decisions/0017) |
+| `takedown.py`, `collect.py`, `classify_sweep.py`, `site_score.py`, `site_publish.py`, `site_fill_lib.py`, `rubric.py` | **current** — the sweep's stages |
+| `daily.py` | **current as a library** — `collect.py` reuses its listing, qualification and insert helpers; its own main loop ran the old collector (on Railway until 2026-10-02, decisions/0016) |
+| `update.sh` | **retired 2026-10-03** — the hand-run chain of decisions/0010 |
 | `healthcheck.py` | **current** — the verify stage at the end of the chain |
-| `classify_api.py` | **current** — the classifier: 16 DeepSeek API workers (decisions/0010); the Haiku CLI pool is the fallback, and `--deepseek` still needs `--allow-metered` |
-| `score_db.py` | **current** — scoring from Supabase, calibration gate, prune |
-| `delete_sync.py` | **current** — deletion propagation + revalidate |
+| `classify_api.py` | **retired 2026-10-03** — DeepSeek is retired; the classifier is `classify_sweep.py` |
+| `score_db.py` | **current, weekly** — the 365-day `brand_category_scores` table other tools read; the site's scores come from `site_score.py` |
+| `delete_sync.py` | **retired 2026-10-03** — replaced by `takedown.py` (a batch Reddit did not answer is not checked, never "deleted") |
 | `backfill_posts.py` | **current** — one-off, resumable: re-reads every stored thread through `/api/info` so historical post TITLES finally resolve |
 | `backfill_labels.py` | **current** — recovery: commits labels that exist in the on-disk cache but never reached Postgres |
 | `qa_audit.py` | **current** — invariants, recall, precision, entity audit |
@@ -457,65 +458,14 @@ python3 scripts/attack-mode.py --off    # clear the challenge, then re-probe
 
 ## Deployment
 
-### Railway (the fetch)
+### Railway (the sweep)
 
-`railway.json` is the whole configuration:
-
-```json
-{
-  "build": { "builder": "DOCKERFILE", "dockerfilePath": "Dockerfile" },
-  "deploy": { "cronSchedule": "0 2 * * *", "restartPolicyType": "NEVER" }
-}
-```
-
-`restartPolicyType: NEVER` matters — a cron container that restarts on exit
-would re-run the pass immediately.
-
-The `Dockerfile` is python:3.12-slim plus `psycopg[binary]` and
-`pyahocorasick`, and it copies `worker/` and **six** data files:
-`categories.csv`, `category-subreddits.csv`, `brands.csv`, `brand-aliases.csv`,
-`alias-blocklist.csv`, `english-words.txt`.
-
-The last two were missing, and the container therefore resolved against a
-different gazetteer than the Mac: 41 blocklisted alias→brand pairs the entity
-gate rejects (`aws`→amazon-route-53, `app`→astro-pixel-processor) resolved
-anyway, and slim images have no `/usr/share/dict/words`, so 31 aliases that the
-plain-word guard should have caught resolved bare. Two guards now:
-`resolve.py` **raises** when either input is absent rather than silently
-changing behaviour, and the image build asserts parity, so a wrong gazetteer
-fails the **build** rather than a 02:00 cron:
-
-```dockerfile
-RUN python3 -c "import sys; sys.path.insert(0,'/app/worker'); import resolve; \
-    assert len(resolve._BLOCKED) >= 40, resolve._BLOCKED; \
-    assert len(resolve._ENGLISH) > 200000, len(resolve._ENGLISH)"
-```
-
-Deploy:
-
-```bash
-cd ~/Projects/reddit-index && railway up
-```
-
-`.railwayignore` keeps the Next app, `node_modules`, caches and docs out of the
-build context — the image is the worker and its CSVs, nothing else.
-
-Environment on the cron service:
-
-| var | value | why |
-|---|---|---|
-| `REDDIT_CLIENT_ID` / `_SECRET` / `_USER_AGENT` | app-only OAuth | `reddit_client` raises at import without all three |
-| `SUPABASE_PROJECT_REF` | project ref | becomes the pooler user `postgres.<ref>` |
-| `SUPABASE_DB_PASSWORD` | db password | scoped to this one database; the org-wide Supabase PAT never enters the container |
-| `RI_CACHE` | `/tmp/ri-cache` | the image is read-only elsewhere |
-| `RI_MAX_MINUTES` | `600` | the code default is 0 (no budget) — 10h lives here, not in the source |
-| `RI_CLASSIFY_LIMIT` | unset | caps the nightly classifier; set it only to rehearse the chain end to end |
-| `RI_TREES_PER_SUB` | `24` | revisit budget per sub per pass |
-| optional | `RI_MAX_PAGES`, `RI_SLEEP`, `RI_NET_MAX_WAIT`, `RI_DB_CONNECT_TRIES`, `SUPABASE_DB_HOST/PORT/USER/NAME/REGION` | |
-
-Transport is the Supavisor **session** pooler
-(`aws-0-<region>.pooler.supabase.com:5432`), which resolves to IPv4. The direct
-DB host is IPv6-only and unreachable from a Railway container.
+The sweep's schedule is NOT in `railway.json`. Railway keeps the cron, region and restart policy on the service
+and copies them into each deployment's manifest; a cron in the file was read and not applied (2026-10-02), and a
+cron removed from the file kept running from the manifest for seven weeks (decisions/0016). So:
+`ops/schedule.json` declares it, `ops/deploy_sweep.py` sets it on the service before every deploy, and
+`scripts/schedule_check.py` proves the newest deployment carries it. The repository root's `railway.json`
+belongs to the parked old collector service and points at `Dockerfile.parked`.
 
 ### Mac (the whole chain)
 

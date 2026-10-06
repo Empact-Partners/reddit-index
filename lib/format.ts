@@ -3,11 +3,10 @@
  * DOM, at Small or larger, never truncated (09-design.md).
  */
 
-/** 07-index-methodology.md §6: a trailing 12-month window, uniform weight. */
-export const SCORING_WINDOW_MONTHS = 12;
-
-/** The published method version. Frozen before the first production crawl. */
-export const METHODOLOGY_VERSION = "2.2.0";
+/** The published method version. Its frozen parameters are the rows of public.methodology_params with this
+ *  version (append-only). 2.3.0, 2026-10-03: mentions judged not about the company are not counted; the
+ *  parent-web-address rule; Jev then GLM-5.3. */
+export const METHODOLOGY_VERSION = "2.3.0";
 
 const MONTHS = [
   "Jan", "Feb", "Mar", "Apr", "May", "Jun",
