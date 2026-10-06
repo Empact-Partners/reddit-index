@@ -71,8 +71,26 @@ def plan(conn, today: dt.datetime) -> tuple[list[str], dict, set, int]:
             quiet += 1
             continue
         subs.append(s)
-    subs.sort(key=lambda x: (-overdue(seen.get(x.lower(), (None, 0))[0], x in core, today), x not in core))
+    prio = partner_priority()
+    ov = {x: overdue(seen.get(x.lower(), (None, 0))[0], x in core, today) for x in subs}
+    # decision 0018: a due partner-priority subreddit (where an Empact partner is AI-cited, posted or named) goes
+    # before every other due subreddit; then the most overdue, core before the rest
+    subs.sort(key=lambda x: rank(ov[x], x.lower() in prio, x in core))
     return subs, mapping, core, quiet
+
+
+def rank(overdue_by: float, priority: bool, is_core: bool) -> tuple:
+    """Sort key: a due partner-priority subreddit first, then the most overdue, core before the rest."""
+    return (0 if (priority and overdue_by >= 1) else 1, -overdue_by, not is_core)
+
+
+def partner_priority() -> set[str]:
+    """Scoring subreddits marked partner_priority=1 in data/category-subreddits.csv (decision 0018)."""
+    import csv
+    import os
+    with open(os.path.join(d.REPO, "data", "category-subreddits.csv")) as f:
+        return {r["subreddit"].lower() for r in csv.DictReader(f)
+                if r.get("partner_priority") == "1" and r.get("is_scoring") == "True"}
 
 
 def overdue(last_visit: dt.datetime | None, is_core: bool, today: dt.datetime) -> float:

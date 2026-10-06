@@ -84,12 +84,12 @@ def database(sched: dict, since: str) -> tuple[list[str], dict]:
         # receipt id on every mention it writes): a write inside a sweep's time window by anything else is caught.
         until = ("coalesce(case when r.status = 'running' then least(now(), r.started_at + interval '8 hours') "
                  "else r.finished_at end, now())")
-        cover = ("not exists (select 1 from public.pipeline_runs r where r.stage in ('sweep', 'repair') and {col} between "
+        cover = ("not exists (select 1 from public.pipeline_runs r where r.stage in ('sweep', 'repair', 'backfill') and {col} between "
                  "r.started_at - interval '2 minutes' and " + until + " + interval '2 minutes')")
         cover_mentions = ("not exists (select 1 from public.pipeline_runs r where r.run_id = t.run_id) and "
                           "(t.loaded_at >= '2026-10-03T09:00:00Z' or " + cover.format(col="t.loaded_at") + ")")
         cover_any = ("not exists (select 1 from public.pipeline_runs r where r.stage in ('sweep', "
-                     "'classify-backlog', 'retention', 'repair') and {col} between r.started_at - interval '2 minutes' "
+                     "'classify-backlog', 'retention', 'repair', 'backfill') and {col} between r.started_at - interval '2 minutes' "
                      "and " + until + " + interval '2 minutes')")
         for table, col, rule in (("public.mentions", "loaded_at", cover_mentions), ("public.threads", "first_seen_at", cover),
                                  ("public.mention_sentiment", "scored_at", cover_any),

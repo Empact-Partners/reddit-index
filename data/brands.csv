@@ -74,7 +74,7 @@ Freshdesk,freshdesk,help-desk,,low,SAFE,False,0,freshdesk.com,,,gazetteer
 Intercom,intercom,help-desk,live-chat,high,HOSTILE,True,2,intercom.com,,'intercom' is a common English noun for the hardware device,gazetteer
 Front,front,help-desk,live-chat,high,HOSTILE,True,2,frontapp.com;front.com,in front;up front;front end;front-end;front of;storefront;front door;front page;front line;front desk;waterfront,'front' is an extremely common English noun,gazetteer
 Help Scout,help-scout,help-desk,live-chat;wikis,medium,AMBIGUOUS,True,1,helpscout.com,,alias collides with the generic phrase,gazetteer
-ServiceNow,servicenow,help-desk,field-service;intelligent-document-processing;internal-tools;no-code;project-management;security-operations-automation,medium,AMBIGUOUS,True,1,servicenow.com,,alias 'SNOW' collides with weather,gazetteer
+ServiceNow,servicenow,help-desk,field-service;intelligent-document-processing;internal-tools;itsm;no-code;project-management;security-operations-automation,medium,AMBIGUOUS,True,1,servicenow.com,,alias 'SNOW' collides with weather,gazetteer
 SAP,sap,erp,accounting;business-intelligence;carbon-accounting-esg-reporting;configure-price-quote;contract-lifecycle-management;crm;customer-data-platforms;data-warehouses;databases;digital-adoption-platforms;ecommerce;etl;field-service;financial-planning-analysis;hr;identity;internal-tools;inventory;lms;localization;marketing-automation;pos;recruiting;revenue-intelligence;workflow-automation,medium,AMBIGUOUS,True,1,sap.com,,also a common English noun (tree sap) and slang,gazetteer
 Odoo,odoo,erp,accounting;crm;ecommerce;expense-management;field-service;hr;inventory;invoicing;pos;procurement-automation;recruiting;restaurant-pos,low,SAFE,False,0,odoo.com,,,gazetteer
 Sage Intacct,sage-intacct,erp,,high,HOSTILE,True,2,intacct.com,,"'Sage' is a herb, a colour and a given name",gazetteer
@@ -5447,7 +5447,7 @@ FreeSWITCH,freeswitch,voip,,low,SAFE,False,0,freeswitch.com,,The distinctive cap
 Freightcom,freightcom,shipping,,medium,AMBIGUOUS,True,1,freightcom.com,,The concatenated brand is distinctive in Canadian shipping discussions.,fleet-expand-2026-08
 FreightPOP,freightpop,shipping,,low,SAFE,False,0,freightpop.com,,The freight-prefixed brand is unmistakable in practitioner discussions.,fleet-expand-2026-08
 FreshLearn,freshlearn,course-platforms,,low,SAFE,False,0,freshlearn.com,,The closed compound is a recognizable product brand.,fleet-expand-2026-08
-Freshservice,freshservice,help-desk,,low,SAFE,False,0,freshservice.com,,The closed compound is a distinctive Freshworks product name.,fleet-expand-2026-08
+Freshservice,freshservice,help-desk,itsm,low,SAFE,False,0,freshservice.com,,The closed compound is a distinctive Freshworks product name.,fleet-expand-2026-08
 Friendica,friendica,community-platforms,,low,SAFE,False,0,friendi.ca,,The coined name is distinctive in Fediverse discussions.,fleet-expand-2026-08
 FrogLearn,froglearn,lms,,low,SAFE,False,0,frogeducation.com,,"The joined Learn product name is clear, though the Frog shorthand alone is highly ambiguous.",fleet-expand-2026-08
 Frollo,frollo,budgeting,,low,SAFE,False,0,frollo.com.au,,Invented name strongly identifies the Australian service.,fleet-expand-2026-08
@@ -5623,7 +5623,7 @@ HackMD,hackmd,note-taking,,low,SAFE,False,0,hackmd.io,,The branded Markdown abbr
 Haiku Deck,haiku-deck,presentations,,low,SAFE,False,0,haikudeck.com,,The two-word name is strongly associated with the presentation maker.,fleet-expand-2026-08
 Haiper,haiper,ai-video,,low,SAFE,False,0,haiper.ai,,The unusual spelling distinguishes the video generator from the adjective hyper.,fleet-expand-2026-08
 Halaxy,halaxy,scheduling,,low,SAFE,False,0,halaxy.com,,The coined health-platform name is highly distinctive.,fleet-expand-2026-08
-HaloITSM,haloitsm,help-desk,,low,SAFE,False,0,haloitsm.com,,The ITSM suffix makes the product name unambiguous.,fleet-expand-2026-08
+HaloITSM,haloitsm,help-desk,itsm,low,SAFE,False,0,haloitsm.com,,The ITSM suffix makes the product name unambiguous.,fleet-expand-2026-08
 HammerTech,hammertech,construction,,low,SAFE,False,0,hammertech.com,,A distinctive compound brand in construction operations and safety.,fleet-expand-2026-08
 Hancom Office Show,hancom-office-show,presentations,,medium,AMBIGUOUS,True,1,hancom.com,,The maker-qualified name distinguishes the Korean presentation editor from ordinary uses of show.,fleet-expand-2026-08
 HandiFox,handifox,inventory,,low,SAFE,False,0,handifox.com,,The coined compound name is unlikely to be used generically.,fleet-expand-2026-08
@@ -7476,7 +7476,7 @@ Softgen,softgen,ai-coding,,medium,AMBIGUOUS,True,1,softgen.ai,,A compact coined 
 SoftPlan,softplan,cad,,medium,AMBIGUOUS,True,1,softplan.com,,The fused and capitalized brand is distinctive in residential design discussion.,fleet-expand-2026-08
 Sogolytics,sogolytics,survey-tools,,low,SAFE,False,0,sogolytics.com,,The coined name is distinctive; SoGoSurvey is its widely used former name.,fleet-expand-2026-08
 SolarWinds Observability,solarwinds-observability,observability,,low,SAFE,False,0,solarwinds.com,,The vendor-qualified product name is unambiguous.,fleet-expand-2026-08
-SolarWinds Service Desk,solarwinds-service-desk,help-desk,,low,SAFE,False,0,solarwinds.com,,SolarWinds makes the full product name distinctive; Samanage is its well-known former name.,fleet-expand-2026-08
+SolarWinds Service Desk,solarwinds-service-desk,help-desk,itsm,low,SAFE,False,0,solarwinds.com,,SolarWinds makes the full product name distinctive; Samanage is its well-known former name.,fleet-expand-2026-08
 Soldo,soldo,expense-management,,medium,AMBIGUOUS,True,1,soldo.com,,Soldo is a distinctive fintech brand in current English-language discussion.,fleet-expand-2026-08
 Solidgate,solidgate,payment-processing,,medium,AMBIGUOUS,True,1,solidgate.com,,The fused name is distinctive in fintech contexts.,fleet-expand-2026-08
 solidtime,solidtime,time-tracking,,medium,AMBIGUOUS,True,1,solidtime.io,,"The lowercase closed form is branded, but the spaced phrase occurs descriptively.",fleet-expand-2026-08
@@ -7655,7 +7655,7 @@ Synchroteam,synchroteam,field-service,,low,SAFE,False,0,synchroteam.com,,A disti
 Syncthing,syncthing,backup-storage,cloud-storage,low,SAFE,False,0,syncthing.net,,The fused product name is distinctive despite being built from common words.,fleet-expand-2026-08
 Synergy Wholesale,synergy-wholesale,domain-registrars,,medium,AMBIGUOUS,True,1,synergywholesale.com,team synergy;corporate synergy;build synergy;energy synergy;character synergy;deck synergy;brand synergy,"The full name is specific, but Australian users often shorten it to the common business and gaming term Synergy.",fleet-expand-2026-08
 Synthesys,synthesys,ai-video,,medium,AMBIGUOUS,True,1,synthesys.io,,The nonstandard spelling distinguishes the avatar-video suite from the ordinary word synthesis.,fleet-expand-2026-08
-SysAid,sysaid,help-desk,,low,SAFE,False,0,sysaid.com,,The branded capitalization and compound are distinctive.,fleet-expand-2026-08
+SysAid,sysaid,help-desk,itsm,low,SAFE,False,0,sysaid.com,,The branded capitalization and compound are distinctive.,fleet-expand-2026-08
 sysPass,syspass,password-managers,,medium,AMBIGUOUS,True,1,,,The stylized sysPass name is distinctive.,fleet-expand-2026-08
 SYSPRO,syspro,erp,inventory,low,SAFE,False,0,syspro.com,,The coined all-caps brand is highly distinctive.,fleet-expand-2026-08
 systemli,systemli,email-providers,,medium,AMBIGUOUS,True,1,systemli.org,,The stylized coined name is specific to the privacy-oriented collective.,fleet-expand-2026-08
@@ -7833,7 +7833,7 @@ TokenTax,tokentax,tax-software,,low,SAFE,False,0,tokentax.co,,The fused brand cl
 Tolan,tolan,ai-assistants,,medium,AMBIGUOUS,True,1,tolans.com,Tolan family;Tolan surname;Tolan character;Tolan Shaw;Tolan album;Tolan book,"The uncommon name is shared by people and fictional characters, but AI-companion context resolves it.",fleet-expand-2026-08
 Tongyi Lingma,tongyi-lingma,ai-coding,,low,SAFE,False,0,lingma.aliyun.com,,The full romanized Chinese brand is highly specific to Alibaba's coding assistant.,fleet-expand-2026-08
 TopClass LMS,topclass-lms,lms,,low,SAFE,False,0,topclasslms.com,,The LMS qualifier clearly identifies the association-learning product.,fleet-expand-2026-08
-TOPdesk,topdesk,help-desk,,medium,AMBIGUOUS,True,1,topdesk.com,,The capitalization and closed compound identify the ITSM product.,fleet-expand-2026-08
+TOPdesk,topdesk,help-desk,itsm,medium,AMBIGUOUS,True,1,topdesk.com,,The capitalization and closed compound identify the ITSM product.,fleet-expand-2026-08
 TopSolid,topsolid,cad,,low,SAFE,False,0,topsolid.com,,The fused brand is distinctive in manufacturing CAD discussion.,fleet-expand-2026-08
 Torque3D,torque3d,game-engines,,low,SAFE,False,0,torque3d.org,,The 3D suffix and fused spelling identify the engine clearly.,fleet-expand-2026-08
 Toshl Finance,toshl-finance,budgeting,,low,SAFE,False,0,toshl.com,,Invented Toshl name is highly distinctive.,fleet-expand-2026-08
@@ -9520,6 +9520,184 @@ Zinier,zinier,field-service,,low,SAFE,False,0,zinier.com,,Zinier is a distinctiv
 Zip Security,zip-security,identity,,high,HOSTILE,True,2,zipsec.com,zip security settings;zip security password;zip security issue,The ordinary words in the two-word name can occur together in discussions of secured ZIP archives.,roster-import-2026-08
 Zuplo,zuplo,api-tools,,low,SAFE,False,0,zuplo.com,,Zuplo is a distinctive coined platform name.,roster-import-2026-08
 Zyte,zyte,api-tools,,low,SAFE,False,0,zyte.com,,Zyte is a distinctive brand; Scrapinghub is its former name and Scrapy Cloud and Zyte API are its named services.,roster-import-2026-08
+SystemOne,systemone,artist-booking,,high,HOSTILE,True,2,systemonesoftware.com,systemone lims;system one staffing;systemone staffing;system one services;system one tv;systemone.com;system 1;system one thinking,"Empact partner. Cloud platform for music booking agencies: artist bookings, offers and holds, contracts, tour advancing, settlements and itineraries (systemonesoftware.com). Not SystemOne LIMS, System One staffing, o",empact-partners-2026-10
+Gigwell,gigwell,artist-booking,,low,SAFE,False,0,gigwell.com,,Competitor of an Empact partner in artist-booking.,empact-partners-2026-10
+Master Tour,master-tour,artist-booking,,medium,AMBIGUOUS,True,1,,,Competitor of an Empact partner in artist-booking.,empact-partners-2026-10
+ABOSS,aboss,artist-booking,,low,SAFE,False,0,,,Competitor of an Empact partner in artist-booking.,empact-partners-2026-10
+Prism.fm,prism-fm,artist-booking,,low,SAFE,False,0,,,Competitor of an Empact partner in artist-booking.,empact-partners-2026-10
+Stagent,stagent,artist-booking,,low,SAFE,False,0,stagent.com,,Competitor of an Empact partner in artist-booking.,empact-partners-2026-10
+Artistu,artistu,artist-booking,,low,SAFE,False,0,artistu.io,,Competitor of an Empact partner in artist-booking.,empact-partners-2026-10
+Band Pencil,band-pencil,artist-booking,,medium,AMBIGUOUS,True,1,bandpencil.com,,Competitor of an Empact partner in artist-booking.,empact-partners-2026-10
+Slasify,slasify,eor-global-payroll,,low,SAFE,False,0,slasify.com,,"Empact partner. Employer of record, global payroll and global contractor management, Asia-first (slasify.com).",empact-partners-2026-10
+Oyster HR,oyster-hr,eor-global-payroll,,low,SAFE,False,0,oysterhr.com,,Competitor of an Empact partner in eor-global-payroll.,empact-partners-2026-10
+Remote People,remote-people,eor-global-payroll,,medium,AMBIGUOUS,True,1,remotepeople.com,,Competitor of an Empact partner in eor-global-payroll.,empact-partners-2026-10
+Skuad,skuad,eor-global-payroll,,low,SAFE,False,0,skuad.io,,Competitor of an Empact partner in eor-global-payroll.,empact-partners-2026-10
+Atlas HXM,atlas-hxm,eor-global-payroll,,low,SAFE,False,0,atlashxm.com,,Competitor of an Empact partner in eor-global-payroll.,empact-partners-2026-10
+Payoneer,payoneer,eor-global-payroll,,low,SAFE,False,0,payoneer.com,,Competitor of an Empact partner in eor-global-payroll.,empact-partners-2026-10
+Links International,links-international,eor-global-payroll,,medium,AMBIGUOUS,True,1,linksinternational.com,,Competitor of an Empact partner in eor-global-payroll.,empact-partners-2026-10
+104薪資代管,104,eor-global-payroll,,medium,AMBIGUOUS,True,1,104.com.tw,,Competitor of an Empact partner in eor-global-payroll.,empact-partners-2026-10
+AYP Group,ayp-group,eor-global-payroll,,low,SAFE,False,0,ayp-group.com,,Competitor of an Empact partner in eor-global-payroll.,empact-partners-2026-10
+Worksuite,worksuite,eor-global-payroll,,low,SAFE,False,0,worksuite.com,,Competitor of an Empact partner in eor-global-payroll.,empact-partners-2026-10
+Alliance Risk,alliance-risk,commercial-insurance-brokerage,,medium,AMBIGUOUS,True,1,joinalliancerisk.com;expansionvc.com,nato;military alliance;alliance risk of;rebel alliance,"Empact partner. US commercial insurance brokerage and risk advisory for mid-market businesses: cyber liability, management liability (D&O, E&O, EPLI), liquor liability and related lines across about twenty industries",empact-partners-2026-10
+Coalition,coalition,commercial-insurance-brokerage,,high,HOSTILE,True,2,coalitioninc.com,,Competitor of an Empact partner in commercial-insurance-brokerage.,empact-partners-2026-10
+At-Bay,at-bay,commercial-insurance-brokerage,,medium,AMBIGUOUS,True,1,at-bay.com,,Competitor of an Empact partner in commercial-insurance-brokerage.,empact-partners-2026-10
+Chubb,chubb,commercial-insurance-brokerage,,low,SAFE,False,0,chubb.com,,Competitor of an Empact partner in commercial-insurance-brokerage.,empact-partners-2026-10
+Cowbell,cowbell,commercial-insurance-brokerage,,high,HOSTILE,True,2,cowbell.insure,,Competitor of an Empact partner in commercial-insurance-brokerage.,empact-partners-2026-10
+Beazley,beazley,commercial-insurance-brokerage,,low,SAFE,False,0,beazley.com,,Competitor of an Empact partner in commercial-insurance-brokerage.,empact-partners-2026-10
+biBERK,biberk,commercial-insurance-brokerage,,low,SAFE,False,0,biberk.com,,Competitor of an Empact partner in commercial-insurance-brokerage.,empact-partners-2026-10
+Hiscox,hiscox,commercial-insurance-brokerage,,low,SAFE,False,0,hiscox.com,,Competitor of an Empact partner in commercial-insurance-brokerage.,empact-partners-2026-10
+The Hartford,the-hartford,commercial-insurance-brokerage,,low,SAFE,False,0,thehartford.com,,Competitor of an Empact partner in commercial-insurance-brokerage.,empact-partners-2026-10
+AIG,aig,commercial-insurance-brokerage,,medium,AMBIGUOUS,True,1,aig.com,,Competitor of an Empact partner in commercial-insurance-brokerage.,empact-partners-2026-10
+Allianz Commercial,allianz-commercial,commercial-insurance-brokerage,,low,SAFE,False,0,,,Competitor of an Empact partner in commercial-insurance-brokerage.,empact-partners-2026-10
+AXA XL,axa-xl,commercial-insurance-brokerage,,low,SAFE,False,0,axaxl.com,,Competitor of an Empact partner in commercial-insurance-brokerage.,empact-partners-2026-10
+AXIS,axis,commercial-insurance-brokerage,,high,HOSTILE,True,2,axiscapital.com,,Competitor of an Empact partner in commercial-insurance-brokerage.,empact-partners-2026-10
+Berkley,berkley,commercial-insurance-brokerage,,low,SAFE,False,0,,,Competitor of an Empact partner in commercial-insurance-brokerage.,empact-partners-2026-10
+CNA,cna,commercial-insurance-brokerage,,high,HOSTILE,True,2,cna.com,,Competitor of an Empact partner in commercial-insurance-brokerage.,empact-partners-2026-10
+Corvus by Travelers,corvus-by-travelers,commercial-insurance-brokerage,,low,SAFE,False,0,,,Competitor of an Empact partner in commercial-insurance-brokerage.,empact-partners-2026-10
+Embroker,embroker,commercial-insurance-brokerage,,low,SAFE,False,0,embroker.com,,Competitor of an Empact partner in commercial-insurance-brokerage.,empact-partners-2026-10
+Founder Shield,founder-shield,commercial-insurance-brokerage,,medium,AMBIGUOUS,True,1,foundershield.com,,Competitor of an Empact partner in commercial-insurance-brokerage.,empact-partners-2026-10
+Founders Insurance,founders-insurance,commercial-insurance-brokerage,,low,SAFE,False,0,foundersinsurance.com,,Competitor of an Empact partner in commercial-insurance-brokerage.,empact-partners-2026-10
+Gallagher,gallagher,commercial-insurance-brokerage,,low,SAFE,False,0,,,Competitor of an Empact partner in commercial-insurance-brokerage.,empact-partners-2026-10
+Great American Insurance,great-american-insurance,commercial-insurance-brokerage,,medium,AMBIGUOUS,True,1,gaig.com,,Competitor of an Empact partner in commercial-insurance-brokerage.,empact-partners-2026-10
+HDI Global,hdi-global,commercial-insurance-brokerage,,low,SAFE,False,0,,,Competitor of an Empact partner in commercial-insurance-brokerage.,empact-partners-2026-10
+Insureon,insureon,commercial-insurance-brokerage,,low,SAFE,False,0,insureon.com,,Competitor of an Empact partner in commercial-insurance-brokerage.,empact-partners-2026-10
+Liberty Mutual,liberty-mutual,commercial-insurance-brokerage,,medium,AMBIGUOUS,True,1,libertymutual.com,,Competitor of an Empact partner in commercial-insurance-brokerage.,empact-partners-2026-10
+Markel,markel,commercial-insurance-brokerage,,low,SAFE,False,0,markel.com,,Competitor of an Empact partner in commercial-insurance-brokerage.,empact-partners-2026-10
+Marsh McLennan Agency,marsh-mclennan-agency,commercial-insurance-brokerage,,low,SAFE,False,0,,,Competitor of an Empact partner in commercial-insurance-brokerage.,empact-partners-2026-10
+Nationwide,nationwide,commercial-insurance-brokerage,,high,HOSTILE,True,2,nationwide.com,,Competitor of an Empact partner in commercial-insurance-brokerage.,empact-partners-2026-10
+Newfront,newfront,commercial-insurance-brokerage,,low,SAFE,False,0,newfront.com,,Competitor of an Empact partner in commercial-insurance-brokerage.,empact-partners-2026-10
+Next Insurance,next-insurance,commercial-insurance-brokerage,,medium,AMBIGUOUS,True,1,nextinsurance.com,,Competitor of an Empact partner in commercial-insurance-brokerage.,empact-partners-2026-10
+Simply Business,simply-business,commercial-insurance-brokerage,,medium,AMBIGUOUS,True,1,simplybusiness.com,,Competitor of an Empact partner in commercial-insurance-brokerage.,empact-partners-2026-10
+Society Insurance,society-insurance,commercial-insurance-brokerage,,medium,AMBIGUOUS,True,1,societyinsurance.com,,Competitor of an Empact partner in commercial-insurance-brokerage.,empact-partners-2026-10
+Thimble,thimble,commercial-insurance-brokerage,,high,HOSTILE,True,2,thimble.com,,Competitor of an Empact partner in commercial-insurance-brokerage.,empact-partners-2026-10
+Travelers,travelers,commercial-insurance-brokerage,,low,SAFE,False,0,travelers.com,,Competitor of an Empact partner in commercial-insurance-brokerage.,empact-partners-2026-10
+Vouch,vouch,commercial-insurance-brokerage,,high,HOSTILE,True,2,vouch.us,,Competitor of an Empact partner in commercial-insurance-brokerage.,empact-partners-2026-10
+Woodruff Sawyer,woodruff-sawyer,commercial-insurance-brokerage,,medium,AMBIGUOUS,True,1,woodruffsawyer.com,,Competitor of an Empact partner in commercial-insurance-brokerage.,empact-partners-2026-10
+Zurich,zurich,commercial-insurance-brokerage,,low,SAFE,False,0,,,Competitor of an Empact partner in commercial-insurance-brokerage.,empact-partners-2026-10
+Specialty Insurance,specialty-insurance,recreation-entertainment-insurance,,high,HOSTILE,True,2,specialtyinsurancesc.com,,"Empact partner. Specialty Insurance Services USA (specialtyinsurancesc.com): a US insurance program for recreation and entertainment businesses (paintball fields, trampoline parks, gun and archery ranges, axe throwin",empact-partners-2026-10
+K&K Insurance,k-and-k-insurance,recreation-entertainment-insurance,,medium,AMBIGUOUS,True,1,,,Competitor of an Empact partner in recreation-entertainment-insurance.,empact-partners-2026-10
+Cossio Insurance Agency,cossio-insurance-agency,recreation-entertainment-insurance,,low,SAFE,False,0,,,Competitor of an Empact partner in recreation-entertainment-insurance.,empact-partners-2026-10
+Prime Insurance,prime-insurance,recreation-entertainment-insurance,,medium,AMBIGUOUS,True,1,primeis.com,,Competitor of an Empact partner in recreation-entertainment-insurance.,empact-partners-2026-10
+Sadler Sports & Recreation,sadler-sports-and-recreation,recreation-entertainment-insurance,,low,SAFE,False,0,,,Competitor of an Empact partner in recreation-entertainment-insurance.,empact-partners-2026-10
+HUB International,hub-international,recreation-entertainment-insurance,,medium,AMBIGUOUS,True,1,hubinternational.com,,Competitor of an Empact partner in recreation-entertainment-insurance.,empact-partners-2026-10
+American Specialty Insurance,american-specialty-insurance,recreation-entertainment-insurance,,medium,AMBIGUOUS,True,1,americanspecialty.com,,Competitor of an Empact partner in recreation-entertainment-insurance.,empact-partners-2026-10
+AxeThrowingInsurance.com,axethrowinginsurance-com,recreation-entertainment-insurance,,low,SAFE,False,0,,,Competitor of an Empact partner in recreation-entertainment-insurance.,empact-partners-2026-10
+ESP Specialty,esp-specialty,recreation-entertainment-insurance,,low,SAFE,False,0,espspecialty.com,,Competitor of an Empact partner in recreation-entertainment-insurance.,empact-partners-2026-10
+Granite Insurance,granite-insurance,recreation-entertainment-insurance,,medium,AMBIGUOUS,True,1,graniteinsurance.com,,Competitor of an Empact partner in recreation-entertainment-insurance.,empact-partners-2026-10
+Insurance Allies,insurance-allies,recreation-entertainment-insurance,,medium,AMBIGUOUS,True,1,insuranceallies.com,,Competitor of an Empact partner in recreation-entertainment-insurance.,empact-partners-2026-10
+Kelly Insurance Group,kelly-insurance-group,recreation-entertainment-insurance,,medium,AMBIGUOUS,True,1,kellyinsurancegroup.com,,Competitor of an Empact partner in recreation-entertainment-insurance.,empact-partners-2026-10
+Leavitt Group,leavitt-group,recreation-entertainment-insurance,,low,SAFE,False,0,,,Competitor of an Empact partner in recreation-entertainment-insurance.,empact-partners-2026-10
+McGowan Allied Specialty,mcgowan-allied-specialty,recreation-entertainment-insurance,,low,SAFE,False,0,,,Competitor of an Empact partner in recreation-entertainment-insurance.,empact-partners-2026-10
+Philadelphia Insurance,philadelphia-insurance,recreation-entertainment-insurance,,low,SAFE,False,0,,,Competitor of an Empact partner in recreation-entertainment-insurance.,empact-partners-2026-10
+Pro Insurance Group,pro-insurance-group,recreation-entertainment-insurance,,medium,AMBIGUOUS,True,1,,,Competitor of an Empact partner in recreation-entertainment-insurance.,empact-partners-2026-10
+Ryan Specialty,ryan-specialty,recreation-entertainment-insurance,,low,SAFE,False,0,ryanspecialty.com,,Competitor of an Empact partner in recreation-entertainment-insurance.,empact-partners-2026-10
+SterlingRisk,sterlingrisk,recreation-entertainment-insurance,,low,SAFE,False,0,sterlingrisk.com,,Competitor of an Empact partner in recreation-entertainment-insurance.,empact-partners-2026-10
+Veracity Insurance,veracity-insurance,recreation-entertainment-insurance,,medium,AMBIGUOUS,True,1,veracityinsurance.com,,Competitor of an Empact partner in recreation-entertainment-insurance.,empact-partners-2026-10
+XINSURANCE,xinsurance,recreation-entertainment-insurance,,low,SAFE,False,0,xinsurance.com,,Competitor of an Empact partner in recreation-entertainment-insurance.,empact-partners-2026-10
+Clementine ABA,clementine-aba,aba-therapy,,high,HOSTILE,True,2,clementineaba.com,,"Empact partner. Clementine ABA (clementineaba.com): an applied behaviour analysis (ABA) therapy provider for autistic children and their families, hiring BCBAs and RBTs. 'Clementine' alone (the fruit, the name) is no",empact-partners-2026-10
+Hopebridge,hopebridge,aba-therapy,,low,SAFE,False,0,,,Competitor of an Empact partner in aba-therapy.,empact-partners-2026-10
+Centria Autism,centria-autism,aba-therapy,,low,SAFE,False,0,,,Competitor of an Empact partner in aba-therapy.,empact-partners-2026-10
+Action Behavior Centers,action-behavior-centers,aba-therapy,,low,SAFE,False,0,,,Competitor of an Empact partner in aba-therapy.,empact-partners-2026-10
+BlueSprig,bluesprig,aba-therapy,,low,SAFE,False,0,,,Competitor of an Empact partner in aba-therapy.,empact-partners-2026-10
+Autism Learning Partners,autism-learning-partners,aba-therapy,,low,SAFE,False,0,,,Competitor of an Empact partner in aba-therapy.,empact-partners-2026-10
+LEARN Behavioral,learn-behavioral,aba-therapy,,low,SAFE,False,0,,,Competitor of an Empact partner in aba-therapy.,empact-partners-2026-10
+Proud Moments ABA,proud-moments-aba,aba-therapy,,low,SAFE,False,0,,,Competitor of an Empact partner in aba-therapy.,empact-partners-2026-10
+Behavioral Innovations,behavioral-innovations,aba-therapy,,low,SAFE,False,0,,,Competitor of an Empact partner in aba-therapy.,empact-partners-2026-10
+Caravel Autism Health,caravel-autism-health,aba-therapy,,medium,AMBIGUOUS,True,1,,,Competitor of an Empact partner in aba-therapy.,empact-partners-2026-10
+Trumpet Behavioral Health,trumpet-behavioral-health,aba-therapy,,medium,AMBIGUOUS,True,1,,,Competitor of an Empact partner in aba-therapy.,empact-partners-2026-10
+Lighthouse Autism Center,lighthouse-autism-center,aba-therapy,,medium,AMBIGUOUS,True,1,,,Competitor of an Empact partner in aba-therapy.,empact-partners-2026-10
+ABS Kids,abs-kids,aba-therapy,,low,SAFE,False,0,,,Competitor of an Empact partner in aba-therapy.,empact-partners-2026-10
+Positive Behavior Supports,positive-behavior-supports,aba-therapy,,low,SAFE,False,0,,,Competitor of an Empact partner in aba-therapy.,empact-partners-2026-10
+Kyo Autism Therapy,kyo-autism-therapy,aba-therapy,,low,SAFE,False,0,,,Competitor of an Empact partner in aba-therapy.,empact-partners-2026-10
+Florida Autism Center,florida-autism-center,aba-therapy,,medium,AMBIGUOUS,True,1,,,Competitor of an Empact partner in aba-therapy.,empact-partners-2026-10
+1000xStocks,1000xstocks,investment-research,,medium,AMBIGUOUS,True,1,1000xstocks.com,next 1000x;find 1000x;potential 1000x;1000x stocks to;1000x stocks that;1000x gains;1000x returns,"Empact partner. 1000xStocks (1000xstocks.com): a stock research platform for individual investors: valuation, financial statements, earnings calls, SEC filings, screening and three-year projections for US equities. T",empact-partners-2026-10
+Yahoo Finance,yahoo-finance,investment-research,,medium,AMBIGUOUS,True,1,,,Competitor of an Empact partner in investment-research.,empact-partners-2026-10
+Morningstar,morningstar,investment-research,,low,SAFE,False,0,morningstar.com,,Competitor of an Empact partner in investment-research.,empact-partners-2026-10
+wecantrack,wecantrack,affiliate-referral-marketing,,low,SAFE,False,0,wecantrack.com,,Empact partner; a coined name. The phrase alias 'We Can Track' was dropped in review.,empact-partners-2026-10
+Trackonomics,trackonomics,affiliate-referral-marketing,,low,SAFE,False,0,trackonomics.net,,Competitor of an Empact partner in affiliate-referral-marketing.,empact-partners-2026-10
+Affluent,affluent,affiliate-referral-marketing,,high,HOSTILE,True,2,affluent.io,,Competitor of an Empact partner in affiliate-referral-marketing.,empact-partners-2026-10
+Affilimate,affilimate,affiliate-referral-marketing,,low,SAFE,False,0,affilimate.com,,Competitor of an Empact partner in affiliate-referral-marketing.,empact-partners-2026-10
+Strackr,strackr,affiliate-referral-marketing,,low,SAFE,False,0,strackr.com,,Competitor of an Empact partner in affiliate-referral-marketing.,empact-partners-2026-10
+Metaview,metaview,recruiting,,high,HOSTILE,True,2,metaview.ai,the fillmore;fillmore east;fillmore west;fillmore street;millard fillmore;fillmore auditorium;fillmore detroit;fillmore philadelphia;fillmore miami;fillmore charlotte;fillmore minneapolis;fillmore new orleans;fillmore silver spring;fillmore district,"Empact partner. Metaview (metaview.ai): AI for recruiting teams: interview notes, candidate screening, sourcing and scheduling; Fillmore is its AI recruiting agent. Not Meta's VR products, not the venue The Fillmore.",empact-partners-2026-10
+LinkedIn Recruiter,linkedin-recruiter,recruiting,,low,SAFE,False,0,,,Competitor of an Empact partner in recruiting.,empact-partners-2026-10
+SourceWhale,sourcewhale,recruiting,,low,SAFE,False,0,sourcewhale.com,,Competitor of an Empact partner in recruiting.,empact-partners-2026-10
+Eightfold AI,eightfold-ai,recruiting,,medium,AMBIGUOUS,True,1,,,Competitor of an Empact partner in recruiting.,empact-partners-2026-10
+Access Vincere,access-vincere,recruiting,,low,SAFE,False,0,,,Competitor of an Empact partner in recruiting.,empact-partners-2026-10
+PeopleGPT,peoplegpt,recruiting,,low,SAFE,False,0,,,Competitor of an Empact partner in recruiting.,empact-partners-2026-10
+Beamery,beamery,recruiting,,low,SAFE,False,0,beamery.com,,Competitor of an Empact partner in recruiting.,empact-partners-2026-10
+candidate.fyi,candidate-fyi,recruiting,,low,SAFE,False,0,,,Competitor of an Empact partner in recruiting.,empact-partners-2026-10
+Sapia.ai,sapia-ai,recruiting,,low,SAFE,False,0,,,Competitor of an Empact partner in recruiting.,empact-partners-2026-10
+Honeit,honeit,recruiting,,low,SAFE,False,0,honeit.com,,Competitor of an Empact partner in recruiting.,empact-partners-2026-10
+Vervoe,vervoe,recruiting,,low,SAFE,False,0,vervoe.com,,Competitor of an Empact partner in recruiting.,empact-partners-2026-10
+Apriora,apriora,recruiting,,low,SAFE,False,0,,,Competitor of an Empact partner in recruiting.,empact-partners-2026-10
+HireLogic,hirelogic,recruiting,,low,SAFE,False,0,hirelogic.com,,Competitor of an Empact partner in recruiting.,empact-partners-2026-10
+Lehire,lehire,recruiting,,low,SAFE,False,0,lehire.io,,Competitor of an Empact partner in recruiting.,empact-partners-2026-10
+Noon,noon,recruiting,,high,HOSTILE,True,2,noon.ai,,Competitor of an Empact partner in recruiting.,empact-partners-2026-10
+Ribbon,ribbon,recruiting,,high,HOSTILE,True,2,ribbon.ai,,Competitor of an Empact partner in recruiting.,empact-partners-2026-10
+Lingo App,lingo-app,digital-asset-management,,high,HOSTILE,True,2,lingoapp.com,lingo.dev;lingo dev;industry lingo;local lingo;learn the lingo;lingo bingo;lingodeer;lingopie;lingoda;lingokids;lingq;lingo game show;lingo (game;abbott lingo;lingo biosensor;lingo cgm;lingo glucose,"Empact partner. Lingo (lingoapp.com), the digital asset management app from The Noun Project: a lighter-weight DAM for organising and sharing brand-approved assets, with a focus on cannabis brands sharing assets with",empact-partners-2026-10
+Marq,marq,digital-asset-management,,medium,AMBIGUOUS,True,1,marq.com,,Competitor of an Empact partner in digital-asset-management.,empact-partners-2026-10
+Akeneo,akeneo,digital-asset-management,,low,SAFE,False,0,akeneo.com,,Competitor of an Empact partner in digital-asset-management.,empact-partners-2026-10
+Pimberly,pimberly,digital-asset-management,,low,SAFE,False,0,pimberly.com,,Competitor of an Empact partner in digital-asset-management.,empact-partners-2026-10
+inRiver,inriver,digital-asset-management,,low,SAFE,False,0,inriver.com,,Competitor of an Empact partner in digital-asset-management.,empact-partners-2026-10
+Syndigo,syndigo,digital-asset-management,,low,SAFE,False,0,syndigo.com,,Competitor of an Empact partner in digital-asset-management.,empact-partners-2026-10
+DevRev,devrev,help-desk,itsm,low,SAFE,False,0,devrev.ai;computer.io,,"Empact partner. DevRev (devrev.ai): an AI-native platform for customer support, IT service management and product teams, built around Computer, its AI teammate (computer.io).",empact-partners-2026-10
+Jira Software,jira-software,help-desk,,low,SAFE,False,0,,,Competitor of an Empact partner in help-desk.,empact-partners-2026-10
+Jira Service Management,jira-service-management,help-desk,itsm,low,SAFE,False,0,,,Competitor of an Empact partner in help-desk.,empact-partners-2026-10
+Zoho Desk,zoho-desk,help-desk,,low,SAFE,False,0,,,Competitor of an Empact partner in help-desk.,empact-partners-2026-10
+Microsoft 365,microsoft-365,help-desk,,low,SAFE,False,0,,,Competitor of an Empact partner in help-desk.,empact-partners-2026-10
+ManageEngine ServiceDesk Plus,manageengine-servicedesk-plus,help-desk,itsm,low,SAFE,False,0,,,Competitor of an Empact partner in help-desk.,empact-partners-2026-10
+Salesloft,salesloft,help-desk,,low,SAFE,False,0,salesloft.com,,Competitor of an Empact partner in help-desk.,empact-partners-2026-10
+ZoomInfo,zoominfo,help-desk,,low,SAFE,False,0,zoominfo.com,,Competitor of an Empact partner in help-desk.,empact-partners-2026-10
+Atomicwork,atomicwork,help-desk,,low,SAFE,False,0,atomicwork.com,,Competitor of an Empact partner in help-desk.,empact-partners-2026-10
+Clari,clari,help-desk,,low,SAFE,False,0,clari.com,,Competitor of an Empact partner in help-desk.,empact-partners-2026-10
+Freshworks,freshworks,help-desk,,low,SAFE,False,0,freshworks.com,,Competitor of an Empact partner in help-desk.,empact-partners-2026-10
+Microsoft Copilot Studio,microsoft-copilot-studio,help-desk,,low,SAFE,False,0,,,Competitor of an Empact partner in help-desk.,empact-partners-2026-10
+Rollstack,rollstack,help-desk,,low,SAFE,False,0,rollstack.com,,Competitor of an Empact partner in help-desk.,empact-partners-2026-10
+eesel AI,eesel-ai,help-desk,,low,SAFE,False,0,,,Competitor of an Empact partner in help-desk.,empact-partners-2026-10
+Matik,matik,help-desk,,low,SAFE,False,0,matik.io,,Competitor of an Empact partner in help-desk.,empact-partners-2026-10
+Canny,canny,help-desk,,high,HOSTILE,True,2,canny.io,,Competitor of an Empact partner in help-desk.,empact-partners-2026-10
+Enterpret,enterpret,help-desk,,low,SAFE,False,0,enterpret.com,,Competitor of an Empact partner in help-desk.,empact-partners-2026-10
+Genesys,genesys,help-desk,,low,SAFE,False,0,genesys.com,,Competitor of an Empact partner in help-desk.,empact-partners-2026-10
+Gainsight,gainsight,help-desk,,low,SAFE,False,0,gainsight.com,,Competitor of an Empact partner in help-desk.,empact-partners-2026-10
+Lorikeet,lorikeet,help-desk,,high,HOSTILE,True,2,,,Competitor of an Empact partner in help-desk.,empact-partners-2026-10
+Seismic,seismic,sales-enablement,,high,HOSTILE,True,2,seismic.com,,Competitor of an Empact partner in help-desk.,empact-partners-2026-10
+WordPress,wordpress,website-builders,,low,SAFE,False,0,wordpress.org,,Competitor of an Empact partner in website-builders.,empact-partners-2026-10
+Replit,replit,website-builders,,low,SAFE,False,0,replit.com,,Competitor of an Empact partner in website-builders.,empact-partners-2026-10
+Cargo,cargo,website-builders,,high,HOSTILE,True,2,cargo.site,,Competitor of an Empact partner in website-builders.,empact-partners-2026-10
+Figma Sites,figma-sites,website-builders,,low,SAFE,False,0,,,Competitor of an Empact partner in website-builders.,empact-partners-2026-10
+BILL Spend & Expense,bill-spend-and-expense,expense-management,,medium,AMBIGUOUS,True,1,bill.com,,Competitor of an Empact partner in expense-management.,empact-partners-2026-10
+SAP Concur,sap-concur,expense-management,,medium,AMBIGUOUS,True,1,concur.com,,Competitor of an Empact partner in expense-management.,empact-partners-2026-10
+Emburse,emburse,expense-management,,low,SAFE,False,0,emburse.com,,Competitor of an Empact partner in expense-management.,empact-partners-2026-10
+Airwallex,airwallex,expense-management,,low,SAFE,False,0,airwallex.com,,Competitor of an Empact partner in expense-management.,empact-partners-2026-10
+Egencia,egencia,expense-management,,low,SAFE,False,0,egencia.com,,Competitor of an Empact partner in expense-management.,empact-partners-2026-10
+Hubdoc,hubdoc,expense-management,,low,SAFE,False,0,hubdoc.com,,Competitor of an Empact partner in expense-management.,empact-partners-2026-10
+Smart Receipts,smart-receipts,expense-management,,medium,AMBIGUOUS,True,1,smartreceipts.co,,Competitor of an Empact partner in expense-management.,empact-partners-2026-10
+TravelPerk,travelperk,expense-management,,low,SAFE,False,0,,,Competitor of an Empact partner in expense-management.,empact-partners-2026-10
+AutoEntry,autoentry,expense-management,,low,SAFE,False,0,autoentry.com,,Competitor of an Empact partner in expense-management.,empact-partners-2026-10
+Canon imageFORMULA,canon-imageformula,expense-management,,low,SAFE,False,0,,,Competitor of an Empact partner in expense-management.,empact-partners-2026-10
+Engine,engine,expense-management,,high,HOSTILE,True,2,engine.com,,Competitor of an Empact partner in expense-management.,empact-partners-2026-10
+Epson RapidReceipt,epson-rapidreceipt,expense-management,,low,SAFE,False,0,,,Competitor of an Empact partner in expense-management.,empact-partners-2026-10
+PEX,pex,expense-management,,high,HOSTILE,True,2,pexcard.com,,Competitor of an Empact partner in expense-management.,empact-partners-2026-10
+ScanSnap,scansnap,expense-management,,low,SAFE,False,0,,,Competitor of an Empact partner in expense-management.,empact-partners-2026-10
+SparkReceipt,sparkreceipt,expense-management,,low,SAFE,False,0,sparkreceipt.com,,Competitor of an Empact partner in expense-management.,empact-partners-2026-10
+Xero Expenses,xero-expenses,expense-management,,low,SAFE,False,0,,,Competitor of an Empact partner in expense-management.,empact-partners-2026-10
+Logmanager,logmanager,log-management-siem,,high,HOSTILE,True,2,logmanager.com;logmanager.cz,logmanager.getlogger;logmanager.getlogmanager;java.util.logging;log4j;logmanager::;new logmanager;getlogger,"Empact partner. Logmanager (logmanager.com, LOGmanager): log management with SIEM capabilities for security and IT operations teams, built in the Czech Republic. Not the LogManager class in Java, Unity or .NET code, ",empact-partners-2026-10
+Elastic / ELK,elastic-elk,log-management-siem,,low,SAFE,False,0,,,Competitor of an Empact partner in log-management-siem.,empact-partners-2026-10
+Splunk,splunk,log-management-siem,,low,SAFE,False,0,splunk.com,,Competitor of an Empact partner in log-management-siem.,empact-partners-2026-10
+Grafana Loki,grafana-loki,log-management-siem,,low,SAFE,False,0,,,Competitor of an Empact partner in log-management-siem.,empact-partners-2026-10
+Microsoft Sentinel,microsoft-sentinel,log-management-siem,,low,SAFE,False,0,,,Competitor of an Empact partner in log-management-siem.,empact-partners-2026-10
+syslog-ng,syslog-ng,log-management-siem,,low,SAFE,False,0,syslog-ng.com,,Competitor of an Empact partner in log-management-siem.,empact-partners-2026-10
+IBM QRadar,ibm-qradar,log-management-siem,,low,SAFE,False,0,,,Competitor of an Empact partner in log-management-siem.,empact-partners-2026-10
+ManageEngine,manageengine,log-management-siem,,low,SAFE,False,0,manageengine.com,,Competitor of an Empact partner in log-management-siem.,empact-partners-2026-10
+SolarWinds,solarwinds,log-management-siem,,low,SAFE,False,0,solarwinds.com,,Competitor of an Empact partner in log-management-siem.,empact-partners-2026-10
+Lative,lative,sales-planning,,medium,AMBIGUOUS,True,1,lative.ai;lative.io,lative case;allative;elative;ablative;lative beauty;locative,"Empact partner. Lative (lative.ai): an AI-native sales planning platform for revenue teams: sales capacity planning, quota modelling, productivity and efficiency analysis and simulations in one live plan. Not the lat",empact-partners-2026-10
+Workday Adaptive Planning,workday-adaptive-planning,sales-planning,,low,SAFE,False,0,,,Competitor of an Empact partner in sales-planning.,empact-partners-2026-10
+TeamOhana,teamohana,sales-planning,,low,SAFE,False,0,teamohana.com,,Competitor of an Empact partner in sales-planning.,empact-partners-2026-10
+ChartHop,charthop,sales-planning,,low,SAFE,False,0,charthop.com,,Competitor of an Empact partner in sales-planning.,empact-partners-2026-10
+Varicent,varicent,sales-planning,,low,SAFE,False,0,varicent.com,,Competitor of an Empact partner in sales-planning.,empact-partners-2026-10
+Xactly,xactly,sales-planning,,low,SAFE,False,0,,,Competitor of an Empact partner in sales-planning.,empact-partners-2026-10
+Amazon Web Services,amazon-web-services,cloud-hosting,,low,SAFE,False,0,,,Competitor of an Empact partner in cloud-hosting.,empact-partners-2026-10
+Linode (Akamai Cloud),linode-akamai-cloud,cloud-hosting,,low,SAFE,False,0,,,Competitor of an Empact partner in cloud-hosting.,empact-partners-2026-10
 14.ai,14-ai,voice-ai,,low,SAFE,False,0,14.ai,,The punctuated numeric brand is highly distinctive when written in full.,roster-import-2026-08
 1mind,1mind,ai-agent-platforms,,low,SAFE,False,0,1mind.com,,The number-prefixed coinage is distinctive as a full token.,roster-import-2026-08
 1upHealth,1uphealth,healthcare-data-platforms,,low,SAFE,False,0,1up.health,,"The stylized healthcare brand is distinctive, including its spaced rendering.",roster-import-2026-08

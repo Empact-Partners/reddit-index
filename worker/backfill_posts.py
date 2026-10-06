@@ -56,7 +56,7 @@ CODE_VERSION = "backfill-posts-v1"
 DONE_FP = os.path.join(HERE, ".cache", "backfill_posts.done")
 SCOPE = "_backfill_posts"
 BATCH = 100                      # /api/info's hard ceiling
-RUN_ID = str(uuid.uuid4())
+RUN_ID = os.environ.get("RI_RUN_ID") or str(uuid.uuid4())   # a receipt's id, so schedule_check can match the rows (0018)
 
 INSERT = (
     "INSERT INTO mentions (brand_id, doc_id, doc_type, thread_id, subreddit_id, "
@@ -73,7 +73,7 @@ INSERT = (
 REPAIR = ("UPDATE mentions m SET body = v.body "
           "FROM (VALUES %s) AS v(doc_id, body) "
           "WHERE m.thread_id = v.doc_id AND m.doc_id = v.doc_id AND m.doc_type = 2 "
-          "AND m.body IS DISTINCT FROM v.body")
+          "AND m.body IS DISTINCT FROM v.body AND m.body_from IS NULL")   # a row pointing at another's text stays one copy (0019)
 # Keyed on thread_id, which is INDEXED (mentions_thread_id_idx); for a post
 # document doc_id IS the thread id, so this is the same rows by a fast path.
 # The first cut matched on doc_id + created_utc instead: no index covers

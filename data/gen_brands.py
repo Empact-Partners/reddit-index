@@ -419,7 +419,10 @@ def main():
             # `Close CRM` and `close.com` are unambiguous, `close` is not.
             qualified = ("." in form) or (len(form.split()) > 1)
             eff = "SAFE" if qualified else fcls
-            disabled = (not qualified) and (fkey in BARE_DISABLED or fkey in b.get("_bare", set()))
+            # A form the row names in bare_disabled_forms is never matchable, qualified or not (2026-10-06): a
+            # multi-word name is SAFE on sight, and some are ordinary English ("system one", "specialty insurance",
+            # "great american", "we can track"); those brands match only through their domain and distinctive forms.
+            disabled = fkey in b.get("_bare", set()) or ((not qualified) and fkey in BARE_DISABLED)
             alias_rows.append({
                 "brand_slug": s,
                 "alias": form,

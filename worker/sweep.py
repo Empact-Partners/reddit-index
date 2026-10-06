@@ -51,7 +51,7 @@ from daily import (  # noqa: E402
 )
 
 CODE_VERSION = "sweep-v2"
-RUN_ID = str(uuid.uuid4())
+RUN_ID = os.environ.get("RI_RUN_ID") or str(uuid.uuid4())   # a receipt's id, so schedule_check can match the rows (0018)
 PAGES = 10               # per listing lane (Reddit stops around 1000 anyway)
 MIN_COMMENTS_LEGACY = 3  # the backfill floor for all-time threads
 MIN_COMMENTS_DAYS = 2    # depth plan: a thread nobody answered has no opinions

@@ -118,6 +118,11 @@ _r = site_publish.fetch("https://example.invalid", "/x/", "h")
 check("publish: no request starts after the run's end", _r["ok"] is False and _r["status"] is None and "error" in _r)
 site_publish.DEADLINE[0] = None
 
+check("collect: a due partner-priority subreddit goes before a more overdue ordinary one",
+      collect.rank(1.2, True, False) < collect.rank(5.0, False, True))
+check("collect: a partner-priority subreddit not yet due waits behind a due one",
+      collect.rank(0.4, True, False) > collect.rank(1.1, False, False))
+
 # ---- the takedown judge (worker/takedown.py) -------------------------------------------------------------
 import takedown as td  # noqa: E402
 
@@ -140,5 +145,18 @@ check("takedown: edited after we stored it", got["t1_d"] == "source_edited")
 check("takedown: not in Reddit's answer is gone", got["t1_e"] == "source_deleted")
 check("takedown: a post removed by moderators is gone even with its title kept", got["t3_f"] == "source_deleted")
 
+# ---- the backfill wrapper's night guard (ops/backfill_run.py, review round 3) -----------------------------
+import datetime as _dt  # noqa: E402
+sys.path.insert(0, os.path.join(ROOT, "ops"))
+import backfill_run as bfr  # noqa: E402
+
+_t = _dt.datetime(2026, 10, 6, 21, 0, tzinfo=_dt.timezone.utc)
+check("backfill: a day job is stopped by 23:40 UTC that day", bfr.night_deadline(_t) == _t.replace(hour=23, minute=40))
+check("backfill: 21:00 UTC is outside the night", not bfr.in_night(_t))
+check("backfill: 23:45 UTC is inside the night", bfr.in_night(_t.replace(hour=23, minute=45)))
+check("backfill: 03:00 UTC is inside the night", bfr.in_night(_t.replace(hour=3)))
+check("backfill: 05:30 UTC is outside the night", not bfr.in_night(_t.replace(hour=5, minute=30)))
+
 print(f"\ntest_sweep_units: {len(FAILS)} failure(s)" + (": " + "; ".join(FAILS) if FAILS else ""))
 sys.exit(bool(FAILS))
+
