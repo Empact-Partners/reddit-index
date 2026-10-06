@@ -209,6 +209,16 @@ Supporting facts worth keeping:
 - When the worker reports `codex=unavailable: 'codex --version' timed out`, that is the box,
   not the binary. Do not start a wave.
 
+## A daytime pass (more collection and labelling during the day)
+
+`python3 ops/ri.py dayrun [calls] [HH:MM]` writes one request (`public.day_run_request`, migration 0023) through
+Supabase's Management API and starts the sweep's Railway service once. The sweep consumes the request and runs one
+by-hand pass (collect, classify, refresh, score, publish; default 10,000 Reddit calls, ends by 21:30 UTC), marked
+`manual` and `day_run` on its receipt, so the go-live gate never counts it. Without a request younger than 20
+minutes an out-of-window start is refused, as before. Keep the day under 2 GB (`python3 ops/day_egress.py`), and
+start it so classification lands outside Z.ai's peak (06:00-10:00 UTC). Nothing runs on the laptop: it can sleep,
+and its network may block the database port.
+
 ## Running unattended (decisions/0013)
 
 `com.vladshvets.caffeinate` was **disabled on 2026-10-04** at Vlad's request (renamed
