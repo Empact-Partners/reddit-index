@@ -35,5 +35,5 @@ reaches: `python3 ops/watch_link.py --coverage`.
 ## Day one
 
 On 6 Oct 2026 the board held 350 mentions (Framer 184, Contabo 144, Metaview 8, Expensify 8, DevRev 6), most of them the
-tracker's first look back over the last month. The index's own collection held N of them; the partners' 90-day Phase B
+tracker's first look back over the last month. The index's own collection held 104 of them (30%: Contabo 93 of 144, Framer 10 of 184, Expensify 1 of 8, Metaview 0 of 8, DevRev 0 of 6); the partners' 90-day Phase B
 sweeps (0018) and the partner-priority collection order are what close that gap, uniformly, for their competitors too.
