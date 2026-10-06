@@ -124,9 +124,30 @@ def lit(v):
     return "'" + esc(v) + "'"
 
 
+ONLY_CHANGED_REF = None   # --only-changed <git ref>: load only rows that differ from that ref's CSVs (decision 0018)
+
+
+def _changed(rows, rel_path, key, fields):
+    """The rows of a data CSV that are new or different since ONLY_CHANGED_REF. A full re-seed rewrote every row
+    (287,000 category-subreddit rows, 10,688 brands): write-ahead log the egress meter bills, for nothing."""
+    if not ONLY_CHANGED_REF:
+        return rows
+    import io
+    import subprocess
+    old_txt = subprocess.run(["git", "show", f"{ONLY_CHANGED_REF}:{rel_path}"], cwd=REPO, capture_output=True,
+                             text=True, check=True).stdout
+    old = {key(r): r for r in csv.DictReader(io.StringIO(old_txt))}
+    pick = lambda r: tuple((r or {}).get(f) for f in fields)  # noqa: E731 - only the columns the seed writes
+    return [r for r in rows if key(r) not in old or pick(old[key(r)]) != pick(r)]
+
+
 def seed_categories():
     print("seeding categories…")
-    rows = list(csv.DictReader(open(os.path.join(REPO, "data", "categories.csv"))))
+    rows = _changed(list(csv.DictReader(open(os.path.join(REPO, "data", "categories.csv")))), "data/categories.csv",
+                    lambda r: r["slug"], ("category", "icon", "hex", "threshold_tier", "precision_target_pp", "n_min"))
+    if not rows:
+        print("  no category changed")
+        return
     values = []
     for r in rows:
         values.append(f"({lit(r['slug'])}, {lit(r['category'])}, {lit(r['icon'])}, "
@@ -141,7 +162,9 @@ def seed_categories():
 
 def seed_subreddits():
     print("seeding subreddits…")
-    rows = list(csv.DictReader(open(os.path.join(REPO, "data", "category-subreddits.csv"))))
+    rows = _changed(list(csv.DictReader(open(os.path.join(REPO, "data", "category-subreddits.csv")))),
+                    "data/category-subreddits.csv", lambda r: (r["category_slug"], r["subreddit"].lower()),
+                    ("subreddit", "rule_posture", "is_vendor_sub", "is_scoring", "bb_per_hour"))
     subs = {}
     for r in rows:
         name = r["subreddit"]
@@ -164,7 +187,9 @@ def seed_subreddits():
 
 def seed_category_subreddits():
     print("seeding category_subreddits…")
-    raw = list(csv.DictReader(open(os.path.join(REPO, "data", "category-subreddits.csv"))))
+    raw = _changed(list(csv.DictReader(open(os.path.join(REPO, "data", "category-subreddits.csv")))),
+                   "data/category-subreddits.csv", lambda r: (r["category_slug"], r["subreddit"].lower()),
+                   ("is_scoring", "bb_per_hour"))
     # A subreddit can appear twice in one category under different casing, and
     # Postgres refuses an ON CONFLICT that touches the same row twice in one
     # statement. Keep the scoring row where there is one.
@@ -206,7 +231,10 @@ def seed_category_subreddits():
 
 def seed_brands():
     print("seeding brands…")
-    rows = list(csv.DictReader(open(os.path.join(REPO, "data", "brands.csv"))))
+    rows = _changed(list(csv.DictReader(open(os.path.join(REPO, "data", "brands.csv")))), "data/brands.csv",
+                    lambda r: r["slug"], ("brand", "primary_category_slug", "ambiguity_class", "surface_class",
+                                          "require_context", "min_corroborating", "domains", "stop_contexts",
+                                          "ambiguity_note"))
     for batch in [rows[i:i + 20] for i in range(0, len(rows), 20)]:
         values = []
         for r in batch:
@@ -231,7 +259,9 @@ def seed_brands():
 
 def seed_aliases():
     print("seeding brand_aliases…")
-    rows = list(csv.DictReader(open(os.path.join(REPO, "data", "brand-aliases.csv"))))
+    rows = _changed(list(csv.DictReader(open(os.path.join(REPO, "data", "brand-aliases.csv")))),
+                    "data/brand-aliases.csv", lambda r: (r["brand_slug"], r["alias"].lower()),
+                    ("alias_type", "surface_class", "min_corroborating", "bare_disabled"))
     for batch in [rows[i:i + 30] for i in range(0, len(rows), 30)]:
         values = []
         for r in batch:
@@ -244,7 +274,9 @@ def seed_aliases():
              + ",\n".join(values)
              + "\n) AS v(alias, bslug, atype, cls, min_c, disabled)\n"
              "JOIN brands b ON b.slug = v.bslug\n"
-             "ON CONFLICT (alias, brand_id) DO NOTHING;")
+             "ON CONFLICT (alias, brand_id) DO UPDATE SET alias_type=EXCLUDED.alias_type, "
+             "surface_class=EXCLUDED.surface_class, min_corroborating=EXCLUDED.min_corroborating, "
+             "bare_disabled=EXCLUDED.bare_disabled;")
         sql(q, "aliases")
     print(f"  {len(rows)} aliases")
 
@@ -446,7 +478,11 @@ def main():
     ap.add_argument("--scores", action="store_true")
     ap.add_argument("--mentions", action="store_true")
     ap.add_argument("--all", action="store_true")
+    ap.add_argument("--only-changed", metavar="GIT_REF", default=None,
+                    help="with --seed or --seed-subs: load only the rows that differ from this ref's CSVs")
     args = ap.parse_args()
+    global ONLY_CHANGED_REF
+    ONLY_CHANGED_REF = args.only_changed
 
     if args.seed or args.all:
         seed_categories()

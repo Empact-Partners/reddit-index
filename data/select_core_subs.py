@@ -152,6 +152,11 @@ def main():
             # community is worth materially less per call than the category's
             # own, however busy it is
             score = base * (1.0 if t >= 1.0 else 0.55)
+            # decision 0018: where an Empact partner is AI-cited, posted or named, the subreddit is topical by that
+            # evidence and is tracked hardest ("the powerful subreddits ... tracked hardest", Vlad, 2026-10-05).
+            # New partner rows carry no measurements yet, so without this they all tie and the pick is arbitrary.
+            if r.get("partner_priority") == "1":
+                score = base + 1.0
             out.append((score, r))
         out.sort(key=lambda x: -x[0])
         scored[slug] = out
