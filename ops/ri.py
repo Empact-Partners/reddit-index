@@ -5,6 +5,7 @@
   python3 ops/ri.py stop "reason"           # the sweep does nothing from its next check on
   python3 ops/ri.py start                   # switch on (publishing stays as it is)
   python3 ops/ri.py publish on|off          # whether the sweep tells the site about changed pages
+  python3 ops/ri.py dayrun [calls] [HH:MM]  # one daytime pass on Railway now (default 10,000 calls, ends 21:30 UTC)
 
 `stop` does two things, each enough on its own:
   * public.sweep_control.enabled = false. A running sweep reads it before every stage and every 25 subreddits
@@ -53,7 +54,36 @@ def status(conn) -> dict:
     return out
 
 
+def dayrun(calls: int, end_by: str) -> int:
+    """A daytime pass on Railway (Vlad, 2026-10-05: move on with the data collection). Writes the request row
+    (migration 0023) through Supabase's Management API, so it works from a network that blocks the database port,
+    then starts the sweep's Railway service once. The sweep consumes the request; without one it refuses."""
+    import urllib.request
+    sys.path.insert(0, os.path.join(ROOT, "scripts"))
+    sys.path.insert(0, os.path.join(ROOT, "ops"))
+    import investigation_2026_10 as inv
+    import deploy_sweep as d
+    sql = (f"insert into public.day_run_request (max_calls, end_by_utc) values ({int(calls)}, '{end_by}'::time) "
+           f"returning requested_at")
+    req = urllib.request.Request(f"https://api.supabase.com/v1/projects/{inv.REF}/database/query", method="POST",
+                                 data=json.dumps({"query": sql}).encode(),
+                                 headers={"Authorization": "Bearer " + inv._mgmt_token(),
+                                          "Content-Type": "application/json", "User-Agent": "Mozilla/5.0"})
+    print("requested:", json.loads(urllib.request.urlopen(req, timeout=120).read()))
+    svcs = d.gql("query($p:String!){ project(id:$p){ services { edges { node { id name } } } } }",
+                 {"p": d.PROJECT})["project"]["services"]["edges"]
+    sid = [e["node"]["id"] for e in svcs if e["node"]["name"] == d.NAME][0]
+    si = d.gql("query($s:String!,$e:String!){ serviceInstance(serviceId:$s, environmentId:$e){ id } }",
+               {"s": sid, "e": d.ENV})["serviceInstance"]["id"]
+    out = d.gql("mutation($i: DeploymentInstanceExecutionCreateInput!){ deploymentInstanceExecutionCreate(input: $i) }",
+                {"i": {"serviceInstanceId": si}})
+    print("started on Railway:", out)
+    return 0
+
+
 def main() -> int:
+    if len(sys.argv) >= 2 and sys.argv[1] == "dayrun":
+        return dayrun(int(sys.argv[2]) if len(sys.argv) > 2 else 10000, sys.argv[3] if len(sys.argv) > 3 else "21:30")
     if len(sys.argv) < 2 or sys.argv[1] not in ("status", "stop", "start", "publish"):
         print(__doc__)
         return 2
