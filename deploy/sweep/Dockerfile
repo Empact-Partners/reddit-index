@@ -23,7 +23,7 @@ COPY codex-zai/ /app/codex-zai/
 # (placeholder Reddit values: the client refuses to import without them; the real ones are Railway variables)
 RUN codex --version \
  && REDDIT_CLIENT_ID=build REDDIT_CLIENT_SECRET=build REDDIT_USER_AGENT=build python3 -c "import sys; sys.path.insert(0,'/app/worker'); import resolve, collect, takedown, classify_sweep, \
-    site_score, site_publish, run_daily; assert len(resolve._BLOCKED) >= 40; assert len(resolve._ENGLISH) > 200000; \
+    site_score, site_publish, run_daily, sweep; assert run_daily.backfill_subs(['itsm'], '/app/data/category-subreddits.csv'); assert len(resolve._BLOCKED) >= 40; assert len(resolve._ENGLISH) > 200000; \
     import json; json.load(open('/app/ops/schedule.json')); json.load(open('/app/ops/classify_thresholds.json')); \
     print('sweep image ok')"
 

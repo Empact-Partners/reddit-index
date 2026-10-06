@@ -157,6 +157,15 @@ check("backfill: 23:45 UTC is inside the night", bfr.in_night(_t.replace(hour=23
 check("backfill: 03:00 UTC is inside the night", bfr.in_night(_t.replace(hour=3)))
 check("backfill: 05:30 UTC is outside the night", not bfr.in_night(_t.replace(hour=5, minute=30)))
 
+# ---- the Railway backfill's queue (worker/run_daily.py backfill_subs, decision 0018) ----------------------------
+import tempfile as _tf  # noqa: E402
+import run_daily as _rd  # noqa: E402
+_csv = _tf.NamedTemporaryFile("w", suffix=".csv", delete=False)
+_csv.write("category_slug,subreddit,is_core\nb,Zeta,True\na,beta,True\na,Alpha,True\nb,alpha,True\na,gamma,False\nc,x,True\n")
+_csv.close()
+check("backfill: core subreddits, category by category in the given order, each once, lower case",
+      _rd.backfill_subs(["a", "b"], _csv.name) == ["alpha", "beta", "zeta"], _rd.backfill_subs(["a", "b"], _csv.name))
+
 print(f"\ntest_sweep_units: {len(FAILS)} failure(s)" + (": " + "; ".join(FAILS) if FAILS else ""))
 sys.exit(bool(FAILS))
 
