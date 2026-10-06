@@ -68,23 +68,79 @@ def counter() -> tuple[float, str] | None:
         return None
 
 
-def receipt(day: dt.datetime):
+class _ApiConn:
+    """The few reads the meter needs, through Supabase's Management API (HTTPS) when the database port is not
+    reachable from this network (6 Oct: outbound 5432 and 6543 blocked on the laptop's network). Parameters are
+    inlined as quoted literals: they are timestamps and ids from our own receipts."""
+
+    def __init__(self):
+        import investigation_2026_10 as inv
+        self.inv = inv
+        self.closed = False
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *a):
+        return False
+
+    def execute(self, sql: str, params=()):
+        import urllib.request
+        for p in params:
+            v = p.isoformat() if hasattr(p, "isoformat") else str(p)
+            sql = sql.replace("%s", "'" + v.replace("'", "''") + "'", 1)
+        req = urllib.request.Request(
+            f"https://api.supabase.com/v1/projects/{self.inv.REF}/database/query", method="POST",
+            data=json.dumps({"query": sql}).encode(),
+            headers={"Authorization": "Bearer " + self.inv._mgmt_token(), "Content-Type": "application/json",
+                     "User-Agent": "Mozilla/5.0"})
+        rows = json.loads(urllib.request.urlopen(req, timeout=600).read())
+        return _Rows([tuple(r.values()) for r in rows])
+
+
+class _Rows:
+    def __init__(self, rows):
+        self.rows = rows
+
+    def fetchone(self):
+        return self.rows[0] if self.rows else None
+
+    def fetchall(self):
+        return self.rows
+
+
+def _conn():
+    if os.environ.get("RI_DB_VIA_API"):
+        return _ApiConn()
+    import socket
     import db
-    with db.connect() as conn:
-        return conn.execute("select run_id, started_at, finished_at, status, notes from public.pipeline_runs "
-                            "where stage = 'sweep' and started_at >= %s and started_at < %s "
-                            "and finished_at is not null and status not in ('running', 'skipped') "
-                            "and coalesce(notes->>'manual', 'false') = 'false' order by started_at limit 1",
-                            (day, day + dt.timedelta(hours=8))).fetchone()
+    try:   # a quick look at the port first: db.connect() retries for minutes on a network that blocks it
+        socket.create_connection((os.environ.get("SUPABASE_DB_HOST") or "aws-0-us-east-1.pooler.supabase.com",
+                                  int(os.environ.get("SUPABASE_DB_PORT", "5432"))), timeout=8).close()
+    except OSError:
+        return _ApiConn()
+    return db.connect()
+
+
+def receipt(day: dt.datetime):
+    with _conn() as conn:
+        r = conn.execute("select run_id, started_at, finished_at, status, notes from public.pipeline_runs "
+                         "where stage = 'sweep' and started_at >= %s and started_at < %s "
+                         "and finished_at is not null and status not in ('running', 'skipped') "
+                         "and coalesce(notes->>'manual', 'false') = 'false' order by started_at limit 1",
+                         (day, day + dt.timedelta(hours=8))).fetchone()
+    if r and isinstance(r[1], str):   # through the API: text, not datetimes
+        r = (r[0], dt.datetime.fromisoformat(r[1]), dt.datetime.fromisoformat(r[2]), r[3], r[4])
+    return r
 
 
 def reconcile(rec: dict) -> dict:
     """The gate's second half: the receipt's counts against the rows in the database for the same run."""
-    import db
     st = rec.get("stages") or {}
     a, b = rec["run_started"], rec["run_finished"]
-    with db.connect() as conn:
-        conn.execute("set statement_timeout = '10min'")
+    with _conn() as conn:
+        if not isinstance(conn, _ApiConn):
+            conn.execute("set statement_timeout = '10min'")
         one = lambda q, *p: conn.execute(q, p).fetchone()[0]  # noqa: E731
         pairs = {
             "new mentions": ((st.get("collect") or {}).get("mentions_new"),
@@ -105,7 +161,7 @@ def reconcile(rec: dict) -> dict:
     missing = [k for k in ("new mentions", "labels", "not this product", "takedowns found") if out[k]["receipt"] is None]
     out["_complete"] = {"receipt": None if missing else True, "database": None, "match": not missing,
                         "missing": missing}
-    with db.connect() as conn:
+    with _conn() as conn:
         out["_dangling_text"] = {"receipt": 0, "database": conn.execute(
             "select count(*) from public.mentions m where m.body is null and not exists (select 1 from "
             "public.mentions h where h.doc_id = m.doc_id and h.created_utc = m.created_utc "

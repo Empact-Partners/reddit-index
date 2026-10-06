@@ -87,11 +87,15 @@ class Run:
             caps["mentions"] = args.max_mentions
         self.caps = caps
         self.deadline = self.started + caps["minutes"] * 60
+        if getattr(args, "day_end", None):   # a daytime pass ends by its requested time, well before the night
+            end = dt.datetime.combine(dt.datetime.now(dt.timezone.utc).date(), args.day_end, dt.timezone.utc)
+            self.deadline = min(self.deadline, end.timestamp())
         if not args.manual:   # a scheduled run also ends with its window, however late it started (review 4 Oct)
             end = dt.datetime.combine(dt.datetime.now(dt.timezone.utc).date(),
                                       dt.datetime.strptime(sched["window_utc"][1], "%H:%M").time(), dt.timezone.utc)
             self.deadline = min(self.deadline, end.timestamp())   # a start after the end leaves no time at all
         self.receipt: dict = {"run_id": self.run_id, "code_version": CODE_VERSION, "manual": bool(args.manual),
+                              "day_run": bool(getattr(args, "day_end", None)),
                               "caps": caps, "stages": {}, "problems": [], "caps_hit": []}
         self.wal0 = wal_bytes(conn)
         self.render_bytes = 0   # what the site reads to re-render the pages the publisher fetches (set by publish)
@@ -229,9 +233,26 @@ def main() -> int:
     args.stages = [s.strip() for s in args.stages.split(",") if s.strip()]
     sched = load_schedule()
 
+    args.day_end = None
     if not args.manual and not in_window(sched):
-        log(f"outside the run window {sched['window_utc']}: not running (a stray start is refused)")
-        return 0
+        # A start outside the night window is refused unless a daytime pass was requested in the last 20 minutes
+        # (public.day_run_request, migration 0023; `ops/ri.py dayrun`). The request is consumed here, so one
+        # request is one pass, and a stray start still finds nothing and stops.
+        c0 = db.connect()
+        c0.autocommit = True
+        try:
+            req = c0.execute("delete from public.day_run_request where requested_at > now() - interval '20 minutes' "
+                             "returning stages, max_calls, end_by_utc").fetchone()
+            c0.execute("delete from public.day_run_request")   # an older request is never acted on later
+        finally:
+            c0.close()
+        if not req:
+            log(f"outside the run window {sched['window_utc']}: not running (a stray start is refused)")
+            return 0
+        args.manual, args.no_dm = True, True
+        args.stages = [x.strip() for x in req[0].split(",") if x.strip()]
+        args.max_calls, args.day_end = int(req[1]), req[2]
+        log(f"a daytime pass was requested: stages {args.stages}, {args.max_calls} Reddit calls, ends by {req[2]} UTC")
 
     conn = db.connect()
     conn.autocommit = True
