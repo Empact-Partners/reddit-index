@@ -474,6 +474,16 @@ def main() -> int:
     ran = all("skipped" not in run.receipt["stages"].get(s, {"skipped": 1}) for s in ("refresh", "score"))
     if status in ("ok", "capped") and ran:
         conn.execute("update site.meta set last_success_at = now(), last_run_id = %s", (run.run_id,))
+        # publish expired /freshness.json BEFORE this line, so the site re-read the previous run's time and every
+        # footer showed one run behind (seen 7 Oct). Expire it again now that the time is this run's. Only after a
+        # run that published: a pass without publish changed no served page.
+        pub = run.receipt["stages"].get("publish") or {}
+        if pub and "skipped" not in pub and not pub.get("failed"):
+            try:
+                import site_publish
+                site_publish.expire(sched["site_url"], ["/freshness.json"])
+            except Exception as e:  # noqa: BLE001 - the footer date is cosmetic; the data is already served
+                run.receipt["problems"].append(f"freshness date not refreshed: {str(e)[:120]}")
     run.record(status)
     log(f"run {run.run_id[:8]} {status}: {json.dumps({k: v for k, v in run.receipt.items() if k != 'stages'}, default=str)[:600]}")
     if not args.no_dm and status != "stopped":   # a stop is someone's decision; they know
