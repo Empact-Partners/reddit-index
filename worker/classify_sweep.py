@@ -395,7 +395,7 @@ def glm_peak_now() -> bool:
 
 # ---------------------------------------------------------------------------------------------- write
 def write(conn, items: list[dict], verdicts: list[tuple | None], mv: list[str],
-          tried: list[bool] | None = None) -> dict:
+          tried: list[bool] | None = None, jev_seen: list[bool] | None = None) -> dict:
     lab_rows, rej_rows = [], []
     for it, v, model in zip(items, verdicts, mv):
         if v is None:
@@ -433,14 +433,19 @@ def write(conn, items: list[dict], verdicts: list[tuple | None], mv: list[str],
         # Only what no judge answered is marked as tried (five tries, then it waits for a person). Marking every
         # row before judging it rewrote 2,000 queue rows a batch only to delete them a second later: write-ahead
         # log the egress counter bills (measured 2026-10-02).
+        # The same statement marks what Jev judged and could not settle (jev_checked_at), so a run with GLM off
+        # skips it; an item Jev itself failed on is not marked.
         tried = tried if tried is not None else [True] * len(items)
-        left = [(it["brand_id"], it["doc_id"], it["created_utc"])
-                for it, v, t in zip(items, verdicts, tried) if v is None and t]
+        seen = jev_seen if jev_seen is not None else [False] * len(items)
+        left = [(it["brand_id"], it["doc_id"], it["created_utc"], bool(t), bool(j))
+                for it, v, t, j in zip(items, verdicts, tried, seen) if v is None and (t or j)]
         if left:
-            conn.execute("update public.classify_queue q set attempts = attempts + 1 "
-                         "from unnest(%s::bigint[], %s::text[], %s::timestamptz[]) as k(b, d, c) "
-                         "where q.brand_id = k.b and q.doc_id = k.d and q.created_utc = k.c",
-                         ([x[0] for x in left], [x[1] for x in left], [x[2] for x in left]))
+            conn.execute("update public.classify_queue q set attempts = attempts + case when k.t then 1 else 0 end, "
+                         "jev_checked_at = case when k.j then now() else q.jev_checked_at end "
+                         "from unnest(%s::bigint[], %s::text[], %s::timestamptz[], %s::boolean[], %s::boolean[]) "
+                         "as k(b, d, c, t, j) where q.brand_id = k.b and q.doc_id = k.d and q.created_utc = k.c",
+                         ([x[0] for x in left], [x[1] for x in left], [x[2] for x in left],
+                          [x[3] for x in left], [x[4] for x in left]))
     return {"labelled": labelled, "rejected": rejected}
 
 
@@ -493,7 +498,6 @@ def known_glm_wall(conn) -> str | None:
 
 def _loop(conn, cfg, t, model, rec, last_batch, limit, deadline, should_stop, log) -> None:
     taken = 0
-    cursor = None   # with GLM off, Jev's residue stays queued: page past it instead of selecting it again
     while taken < limit:
         glm_on = cfg.get("glm", True) and not _walled(rec)
         if time.time() > deadline:
@@ -519,21 +523,16 @@ def _loop(conn, cfg, t, model, rec, last_batch, limit, deadline, should_stop, lo
         # scattered a batch across the indexes (8.7 KB of egress a mention, measured that morning); in brand order
         # the queue's and mention_sentiment_latest_idx's touches are adjacent.
         n = min(2000, limit - taken)
-        if not glm_on:
-            keys = conn.execute("select brand_id, doc_id, created_utc from public.classify_queue where attempts < 5 "
-                                "and (brand_id, doc_id, created_utc) > (%s, %s, %s) "
-                                "order by brand_id, doc_id, created_utc limit %s",
-                                (*(cursor or (-1, "", dt.datetime(1970, 1, 1, tzinfo=dt.timezone.utc))), n)).fetchall()
-            if keys:
-                cursor = tuple(keys[-1])
-        else:
-            keys = conn.execute("select brand_id, doc_id, created_utc from public.classify_queue "
-                                "where attempts < 5 and enqueued_at > now() - interval '26 hours' "
-                                "order by enqueued_at desc, created_utc desc limit %s", (n,)).fetchall()
-            if len(keys) < n:
-                keys += conn.execute("select brand_id, doc_id, created_utc from public.classify_queue "
-                                     "where attempts < 5 and enqueued_at <= now() - interval '26 hours' "
-                                     "order by brand_id, doc_id, created_utc limit %s", (n - len(keys),)).fetchall()
+        # GLM off (its allowance used up): what Jev already looked at and could not settle waits for GLM; skip it, or
+        # every run re-reads the same residue first and stalls on it (2026-10-07)
+        seen = " and jev_checked_at is null" if not glm_on else ""
+        keys = conn.execute("select brand_id, doc_id, created_utc from public.classify_queue "
+                            "where attempts < 5 and enqueued_at > now() - interval '26 hours'" + seen +
+                            " order by enqueued_at desc, created_utc desc limit %s", (n,)).fetchall()
+        if len(keys) < n:
+            keys += conn.execute("select brand_id, doc_id, created_utc from public.classify_queue "
+                                 "where attempts < 5 and enqueued_at <= now() - interval '26 hours'" + seen +
+                                 " order by brand_id, doc_id, created_utc limit %s", (n - len(keys),)).fetchall()
         keys.sort(key=lambda k: (k[0], k[1]))   # the batch's writes in brand order too
         if not keys:
             break
@@ -587,7 +586,7 @@ def _loop(conn, cfg, t, model, rec, last_batch, limit, deadline, should_stop, lo
                                          f"what it could across the queue, the rest stays queued with its tries")
                 log(f"    classify: GLM refused: its allowance is used up until {spend['walled_until']}; Jev only from here")
                 glm_down = glm_limited = False
-        w = write(conn, items, verdicts, [m or MV_JEV for m in models], tried)
+        w = write(conn, items, verdicts, [m or MV_JEV for m in models], tried, jev_seen=[x is not None for x in j])
         rec["labelled"] += w["labelled"]
         rec["rejected"] += w["rejected"]
         rec["not_checked"] += sum(v is None for v in verdicts)
