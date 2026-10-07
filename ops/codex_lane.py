@@ -9,11 +9,12 @@ is the ChatGPT subscription, which never goes on a server.
   * The prompt is GLM's, the calibrated rubric verbatim (worker/rubric.py), with the output asked as a JSON object per
     item (Codex's --output-schema). codex_job adds the no-search clause and checks the pilot's events for searches.
   * Every label carries its model, e.g. gpt-5.6-luna-absa-1, so it can be told apart and re-judged.
-  * Daytime only (05:30 to 23:40 UTC: the night belongs to the sweep), under the day's 2 GB egress line read on the
-    node counter (stops at 1.90 GB, the same mark as ops/day_passes.py), and under a Codex weekly ceiling.
+  * No Reddit calls, so any hour; the backlog older than 26 hours from the high end of the brand order (the sweep's
+    classify starts at the other end); the day's 2 GB egress line on the node counter (waits for the next UTC day at
+    1.90 GB, the same mark as ops/day_passes.py); the Codex weekly ceiling (stops); one receipt per UTC day.
 
   ops/codex_lane.py pilot --model gpt-5.6-luna            # 300 GLM labels + 100 GLM rejections, compared; writes nothing
-  ops/codex_lane.py run --model gpt-5.6-luna --ceiling 45 # label the residue (run it through ops/backfill_run.py)
+  ops/codex_lane.py run --model gpt-5.6-luna --ceiling 45 # Jev then Codex over the backlog, until --until (detached)
 """
 from __future__ import annotations
 
@@ -144,54 +145,129 @@ def used_today() -> float:
     return day_passes.used_today(None)
 
 
+def _receipt(c, run_id: str, status: str, notes: dict) -> None:
+    c.execute("insert into public.pipeline_runs (run_id, stage, code_version, started_at, finished_at, status, notes) "
+              "values (%s, 'repair', 'codex-lane', now(), case when %s = 'running' then null else now() end, %s, %s) "
+              "on conflict (run_id) do update set finished_at = excluded.finished_at, status = excluded.status, "
+              "notes = excluded.notes", (run_id, status, status, json.dumps(notes, default=str)))
+
+
+def _sleep(seconds: float, why: str) -> None:
+    end = time.time() + seconds
+    while time.time() < end:
+        time.sleep(min(300, max(1, end - time.time())))
+        log(f"waiting: {why}")
+
+
 def run(a) -> int:
+    """Jev first on what it has not seen, Codex on the rest, over the backlog older than 26 hours, from the HIGH end of
+    the brand order (the sweep's own classify takes the newest and walks up from the low end, so the two meet at most
+    once). No Reddit calls, so the night is allowed. One receipt per UTC day (stage 'repair'), the day's 2 GB line on
+    the node counter (waits for the next day at 1.90 GB), the Codex ceiling (stops)."""
+    import uuid
     import db
-    stop_at = dt.time(23, 40)
-    done = {"labelled": 0, "rejected": 0, "not_answered": 0, "batches": 0}
-    cursor = (-1, "", dt.datetime(1970, 1, 1, tzinfo=dt.timezone.utc))
-    with db.connect() as c:
-        c.autocommit = True
-        while True:
-            now = dt.datetime.now(dt.timezone.utc)
-            if now.time() >= stop_at or now.time() < dt.time(5, 30):
-                log("outside 05:30-23:40 UTC: the night belongs to the sweep; stopping")
-                break
+    until = dt.datetime.fromisoformat(a.until).replace(tzinfo=dt.timezone.utc) if a.until else None
+    rid, rday, tot = None, None, None
+    cursor, labelled_this_pass = None, 0
+    c = None
+    while True:
+        now = dt.datetime.now(dt.timezone.utc)
+        if until and now >= until:
+            log(f"past {until:%d %b %H:%M} UTC; stopping")
+            break
+        try:
+            if c is None or c.closed:
+                c = db.connect()
+                c.autocommit = True
+            if rid and rday != now.date():                    # a new UTC day: close yesterday's receipt
+                _receipt(c, rid, "ok", tot)
+                rid = None
             try:
                 u = used_today()
             except Exception as e:  # noqa: BLE001 - no reading, no run: the line is the rule
-                log(f"no egress reading ({e}); stopping")
-                break
-            if u >= LINE_GB:
-                log(f"the day's egress is {u:.2f} GB, at the {LINE_GB} GB mark; stopping")
-                break
-            keys = c.execute("select brand_id, doc_id, created_utc from public.classify_queue "
-                             "where attempts < 5 and jev_checked_at is not null "
-                             "and (brand_id, doc_id, created_utc) > (%s, %s, %s) "
-                             "order by brand_id, doc_id, created_utc limit %s", (*cursor, a.batch)).fetchall()
-            if not keys:
-                if not a.wait:
-                    log("no residue left")
-                    break
-                # the sweep's runs mark more as Jev looks at them: wait and start again from the top
-                log("no residue left for now; next look in 15 minutes")
-                for _ in range(3):
-                    time.sleep(300)
-                    log("waiting for residue")
-                cursor = (-1, "", dt.datetime(1970, 1, 1, tzinfo=dt.timezone.utc))
+                log(f"no egress reading yet ({str(e)[:80]}); trying again in 5 minutes")
+                time.sleep(300)
                 continue
-            cursor = tuple(keys[-1])            # this run never re-selects what it took; the next run retries misses
-            items = cs.fetch_items(c, keys)
-            v = judge(items, a.model, f"run-{a.model}", a.ceiling, width=a.width)
-            # what Codex did not answer keeps its tries (a failed job is not the item's fault) and waits for GLM
-            w = cs.write(c, items, v, [mv(a.model)] * len(items), tried=[False] * len(items))
-            missed = [it for it, x in zip(items, v) if x is None]
-            done["labelled"] += w["labelled"]
-            done["rejected"] += w["rejected"]
-            done["not_answered"] += len(missed)
-            done["batches"] += 1
-            log(f"batch {done['batches']}: {w['labelled']} labelled, {w['rejected']} not this product, "
-                f"{len(missed)} not answered; day {u:.2f} GB")
-    print(json.dumps(done))
+            if u >= LINE_GB:
+                if rid:
+                    tot["stopped"] = f"the day's egress reached {u:.2f} GB"
+                    _receipt(c, rid, "capped", tot)
+                    rid = None
+                nxt = dt.datetime.combine(now.date() + dt.timedelta(days=1), dt.time(0, 2), dt.timezone.utc)
+                log(f"the day's egress is {u:.2f} GB, at the {LINE_GB} GB mark; waiting for {nxt:%d %b %H:%M} UTC")
+                _sleep((nxt - now).total_seconds(), "the next UTC day")
+                continue
+            if rid is None:
+                rid, rday = str(uuid.uuid4()), now.date()
+                tot = {"what": "codex lane: Jev, then Codex on the rest (decision 0021)", "model": a.model,
+                       "jev_decided": 0, "codex_decided": 0, "labelled": 0, "rejected": 0, "not_answered": 0,
+                       "batches": 0, "jev_usd": 0.0}
+                _receipt(c, rid, "running", tot)
+            q = ("select brand_id, doc_id, created_utc, jev_checked_at is not null from public.classify_queue "
+                 "where attempts < 5 and enqueued_at <= now() - interval '26 hours' ")
+            if cursor:
+                rows = c.execute(q + "and (brand_id, doc_id, created_utc) < (%s, %s, %s) "
+                                 "order by brand_id desc, doc_id desc, created_utc desc limit %s", (*cursor, a.batch)).fetchall()
+            else:
+                rows = c.execute(q + "order by brand_id desc, doc_id desc, created_utc desc limit %s", (a.batch,)).fetchall()
+            if not rows:
+                if cursor and labelled_this_pass:
+                    cursor, labelled_this_pass = None, 0      # a full pass done: what is left gets another try
+                    continue
+                cursor, labelled_this_pass = None, 0
+                _sleep(900, "nothing older than 26 hours is queued (or nothing more settled this pass)")
+                continue
+            cursor = tuple(rows[-1][:3])
+            seen = {(r[0], r[1]): r[3] for r in rows}
+            items = cs.fetch_items(c, [r[:3] for r in rows])
+            fresh = [i for i, it in enumerate(items) if not seen.get((it["brand_id"], it["doc_id"]))]
+            verdicts: list = [None] * len(items)
+            models = [mv(a.model)] * len(items)
+            jev_seen = [False] * len(items)
+            if fresh:
+                j = cs.jev_judge([items[i] for i in fresh], log=lambda *x, **k: None)
+                tot["jev_usd"] = round(tot["jev_usd"] + cs.jev_judge.last_usd, 4)
+                th = json.load(open(cs.THRESHOLDS, encoding="utf-8"))
+                for i, x in zip(fresh, j):
+                    jev_seen[i] = x is not None
+                    d = cs.decide(x, th)
+                    if d is not None:
+                        verdicts[i], models[i] = d, cs.MV_JEV
+                        tot["jev_decided"] += 1
+            rest = [i for i, v in enumerate(verdicts) if v is None]
+            if rest:
+                cv = judge([items[i] for i in rest], a.model, f"run-{a.model}", a.ceiling, width=a.width)
+                for i, v in zip(rest, cv):
+                    if v is not None:
+                        verdicts[i] = v
+                        tot["codex_decided"] += 1
+            # what nobody answered keeps its tries (a failed job is not the item's fault)
+            w = cs.write(c, items, verdicts, models, tried=[False] * len(items), jev_seen=jev_seen)
+            miss = sum(v is None for v in verdicts)
+            labelled_this_pass += w["labelled"] + w["rejected"]
+            for k, n in (("labelled", w["labelled"]), ("rejected", w["rejected"]), ("not_answered", miss), ("batches", 1)):
+                tot[k] += n
+            _receipt(c, rid, "running", tot)
+            log(f"batch {tot['batches']}: Jev {sum(1 for m in models if m == cs.MV_JEV)} · Codex "
+                f"{len(rest) - miss} · not answered {miss} · {w['labelled']} labelled, {w['rejected']} not this product · "
+                f"day {u:.2f} GB")
+        except SystemExit as e:                               # the Codex ceiling (WaveRefused): stop, say so
+            log(f"stopped: {e}")
+            if rid and c is not None and not c.closed:
+                tot["stopped"] = str(e)[:200]
+                _receipt(c, rid, "capped", tot)
+            return 0
+        except Exception as e:  # noqa: BLE001 - a dropped connection or one bad batch costs a minute, not the lane
+            log(f"batch failed ({type(e).__name__}: {str(e)[:160]}); again in 60 s")
+            try:
+                if c is not None:
+                    c.close()
+            except Exception:  # noqa: BLE001
+                pass
+            c = None
+            time.sleep(60)
+    if rid and c is not None and not c.closed:
+        _receipt(c, rid, "ok", tot)
     return 0
 
 
@@ -200,7 +276,7 @@ def main() -> int:
     sub = ap.add_subparsers(dest="cmd", required=True)
     p = sub.add_parser("pilot"); p.add_argument("--model", default="gpt-5.6-luna"); p.add_argument("--width", type=int, default=4)
     r = sub.add_parser("run"); r.add_argument("--model", default="gpt-5.6-luna"); r.add_argument("--width", type=int, default=4)
-    r.add_argument("--wait", action="store_true", help="when the residue is empty, wait for more instead of stopping")
+    r.add_argument("--until", default="2026-10-11T00:00", help="UTC; GLM's allowance is back by then")
     r.add_argument("--batch", type=int, default=1200); r.add_argument("--ceiling", type=float, required=True,
                                                                        help="Codex weekly gauge % at which to stop")
     a = ap.parse_args()

@@ -15,10 +15,15 @@ migration 0029) with Codex `gpt-5.6-luna` at low effort, no web search, through 
 (`codex_job`: the no-search clause, the pilot's events checked, a weekly ceiling). The prompt is GLM's: the calibrated
 rubric verbatim. Labels carry their model (`gpt-5.6-luna-absa-1`).
 
-- Codex is the ChatGPT subscription and never goes on a server: the lane runs on the laptop, daytime only (05:30 to
-  23:40 UTC, the night belongs to the sweep), under the day's 2 GB egress line read on the node counter (it stops at
-  1.90 GB, like the daytime passes), and under a Codex weekly ceiling (45% of the allowance).
-- It runs inside a receipt (`ops/backfill_run.py`), so the schedule check sees its writes.
+- Codex is the ChatGPT subscription and never goes on a server: the lane runs on the laptop.
+- Amended the same day (Vlad: "use Codex instead of GLM, go for it"): the lane runs Jev itself on what Jev has not
+  seen, then Codex on the rest, over the backlog older than 26 hours from the HIGH end of the brand order (the sweep's
+  classify takes the newest and starts at the low end). It makes no Reddit calls, so it runs at any hour, under the
+  day's 2 GB egress line on the node counter (at 1.90 GB it waits for the next UTC day), and stops at a Codex weekly
+  ceiling of 45%. One receipt per UTC day (stage `repair`), so the schedule check sees its writes. It ends on
+  11 Oct 00:00 UTC, when GLM's allowance is back.
+- First batch (60 mentions from the alphabetical tail): Jev settled 24, Codex 35; 58 were not the product
+  ("user flow" is not Userflow, "what converts" is not WhatConverts).
 - When GLM's allowance returns, the lane stops being needed: GLM takes the residue again and the lane is not started.
 
 ## Evidence (pilot, 7 Oct, 400 mentions GLM had already judged: 300 labels, 100 rejections)
