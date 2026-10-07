@@ -56,18 +56,49 @@ def request(stages: str, max_calls: int, end_by: str, egress_gb: float) -> None:
           {"i": {"serviceInstanceId": si}})
 
 
-def wait_for(t0: dt.datetime) -> dict | None:
+def switch(on: bool, reason: str) -> None:
+    """The sweep's stop switch (public.sweep_control, read by a running pass before every stage and inside the long
+    ones). Turned off only by the meter guard below, and back on as soon as that pass has ended."""
     import watch_link as w
-    for _ in range(330):   # a pass is at most 5.5 hours
-        time.sleep(60)
-        try:
-            r = w.query(f"select run_id, status, finished_at, notes from public.pipeline_runs where stage = 'sweep' "
-                        f"and started_at > '{t0.isoformat()}' order by started_at desc limit 1")
-        except Exception:  # noqa: BLE001 - a missed poll is a missed poll
-            continue
-        if r and r[0]["finished_at"]:
-            return r[0]
-    return None
+    w.query("update public.sweep_control set enabled = " + ("true" if on else "false") + ", reason = '"
+            + reason.replace("'", "''") + "', updated_at = now()")
+
+
+def wait_for(t0: dt.datetime, start_bytes: float | None) -> dict | None:
+    """Wait for the pass's receipt. Every minute, the node counter: a pass caps itself on its OWN estimate, and on
+    7 Oct a backfill pass capped at 0.69 GB moved the counter by about 1.5 GB, taking the day to 2.42 GB. When the
+    day reaches the line, the switch goes off (the pass stops at its next check) and comes back on when it ends."""
+    import watch_link as w
+    tripped = False
+    try:
+        for _ in range(330):   # a pass is at most 5.5 hours
+            time.sleep(60)
+            if not tripped:
+                try:
+                    used = used_today(start_bytes)
+                except Exception:  # noqa: BLE001 - a missed reading is retried next minute
+                    used = None
+                if used is not None and used >= LINE_GB:
+                    switch(False, f"day pass guard: the day's egress reached {used:.2f} GB (node counter)")
+                    tripped = True
+                    log(f"the day reached {used:.2f} GB on the node counter: stop switch off until this pass ends")
+            try:
+                r = w.query(f"select run_id, status, finished_at, notes from public.pipeline_runs where stage = 'sweep' "
+                            f"and started_at > '{t0.isoformat()}' order by started_at desc limit 1")
+            except Exception:  # noqa: BLE001 - a missed poll is a missed poll
+                continue
+            if r and r[0]["finished_at"]:
+                return r[0]
+        return None
+    finally:
+        if tripped:   # never leave the switch off: the night's run must start
+            for _ in range(5):
+                try:
+                    switch(True, "started by hand (day pass guard released)")
+                    log("stop switch back on")
+                    break
+                except Exception:  # noqa: BLE001
+                    time.sleep(30)
 
 
 def main() -> int:
@@ -89,14 +120,14 @@ def main() -> int:
             break
         # the run's cap is its own ESTIMATE, which reads low: on 6 Oct a pass capped at 0.128 GB moved the node counter
         # by about 0.2 GB (day_egress.py uses the same x1.6 for the night). So the cap is the room divided by 1.6.
-        cap = min(0.7, (room - 0.03) / 1.6)
+        cap = min(0.7, (room - 0.03) / (2.4 if "backfill" in a.stages else 1.6))   # 7 Oct: a backfill pass ~2.2x
         t0 = dt.datetime.now(dt.timezone.utc)
         try:
             request(a.stages, a.max_calls, "21:30", cap)
         except Exception as e:  # noqa: BLE001
             log(f"could not start a pass: {e}"); time.sleep(120); continue
         log(f"pass requested: stages {a.stages}, egress cap {cap:.2f} GB (room {room:.2f})")
-        run = wait_for(t0)
+        run = wait_for(t0, start_bytes)
         if not run:
             log("no finished receipt in 5.5 hours; stopping"); break
         n = run["notes"] if isinstance(run["notes"], dict) else json.loads(run["notes"] or "{}")
@@ -106,7 +137,7 @@ def main() -> int:
             f"{bf.get('mentions')} mentions, {bf.get('reddit_calls')} calls, stopped: {bf.get('stopped')}; "
             f"classify labelled {cl.get('labelled')}, rejected {cl.get('rejected')}, left {cl.get('left_in_queue')}; "
             f"egress estimate {n.get('egress_estimate_gb')} GB; caps hit {n.get('caps_hit')}")
-        if run["status"] not in ("ok", "capped"):
+        if run["status"] not in ("ok", "capped") and "day pass guard" not in json.dumps(n):
             log("the pass failed; stopping"); break
         if bf.get("note") == "every declared subreddit is done" and cl.get("left_in_queue") == 0:
             log("backfill and labels done"); break
