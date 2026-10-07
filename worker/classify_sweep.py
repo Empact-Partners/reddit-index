@@ -256,8 +256,14 @@ def glm_wall_until(text: str) -> str | None:
     if not m:
         return None
     raw = m.group(1).replace("T", " ")
-    t = dt.datetime.strptime(raw[:16], "%Y-%m-%d %H:%M").replace(tzinfo=dt.timezone(dt.timedelta(hours=8)))
-    return t.astimezone(dt.timezone.utc).isoformat(timespec="minutes")
+    t = dt.datetime.strptime(raw, "%Y-%m-%d %H:%M:%S" if raw.count(":") == 2 else "%Y-%m-%d %H:%M")
+    return t.replace(tzinfo=dt.timezone(dt.timedelta(hours=8))).astimezone(dt.timezone.utc).isoformat(timespec="seconds")
+
+
+def _walled(rec: dict) -> bool:
+    """A wall is in force until its reset time; a run that outlasts it asks GLM again."""
+    w = rec.get("glm_walled_until")
+    return bool(w) and dt.datetime.fromisoformat(w) > dt.datetime.now(dt.timezone.utc)
 
 
 def glm_job(items: list[dict], model: str = "glm-5.3-flash", timeout: float = 900) -> tuple[dict | None, dict]:
@@ -489,7 +495,7 @@ def _loop(conn, cfg, t, model, rec, last_batch, limit, deadline, should_stop, lo
     taken = 0
     cursor = None   # with GLM off, Jev's residue stays queued: page past it instead of selecting it again
     while taken < limit:
-        glm_on = cfg.get("glm", True) and not rec.get("glm_walled_until")
+        glm_on = cfg.get("glm", True) and not _walled(rec)
         if time.time() > deadline:
             rec["allowance_used"] = "the time set aside for classification ended"
             break

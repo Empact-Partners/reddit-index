@@ -85,12 +85,12 @@ check("glm: another error is not retried and not called a rate limit",
 # the plan's weekly allowance used up (2026-10-07): no retries, the wall's reset time reported, not a rate limit
 _WALL = ("rate limit exceeded: Weekly/Monthly Limit Exhausted. Your limit will reset at 2026-10-10 21:12:22"
          "[20251204-quota]")
-check("glm: a wall error is read as UTC from Beijing time", cs.glm_wall_until(_WALL) == "2026-10-10T13:12+00:00")
+check("glm: a wall error is read as UTC from Beijing time", cs.glm_wall_until(_WALL) == "2026-10-10T13:12:22+00:00")
 check("glm: a plain rate limit is not a wall", cs.glm_wall_until("Rate limit reached for requests") is None)
 cs.glm_job = lambda chunk, model, timeout=900: (None, {"_error": _WALL})
 _out, _spend = cs.glm_judge(_items[:200], in_flight=2, model="glm-5.3", deadline=_time.time() + 3600)
 check("glm: a used-up allowance is not retried and not called a rate limit",
-      _spend.get("walled_until") == "2026-10-10T13:12+00:00" and _spend["retried_jobs"] == 0
+      _spend.get("walled_until") == "2026-10-10T13:12:22+00:00" and _spend["retried_jobs"] == 0
       and not _spend["rate_limited"] and not any(_spend["asked"]))
 
 
@@ -113,6 +113,8 @@ class _Conn:
 check("glm: a wall a receipt recorded holds until its time", cs.known_glm_wall(_Conn("2999-01-01T00:00+00:00")))
 check("glm: a past wall is forgotten", cs.known_glm_wall(_Conn("2020-01-01T00:00+00:00")) is None)
 check("glm: no recorded wall", cs.known_glm_wall(_Conn(None)) is None)
+check("glm: a wall whose time has passed lets GLM back in mid-run",
+      not cs._walled({"glm_walled_until": "2020-01-01T00:00:00+00:00"}) and cs._walled({"glm_walled_until": "2999-01-01T00:00:00+00:00"}))
 cs.glm_job, cs.time.sleep = _real_job, _real_sleep
 
 # ---- Jev's precedence as arithmetic ----------------------------------------------------------------------
