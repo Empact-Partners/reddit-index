@@ -30,6 +30,7 @@ sweep's egress estimate adds them to the write-ahead log it measures.
 """
 from __future__ import annotations
 
+import datetime as dt
 import json
 import os
 import re
@@ -242,6 +243,21 @@ def _glm_env() -> dict:
 
 
 RATE_LIMIT = re.compile(r"rate.?limit|too many requests|\b429\b|concurren", re.I)
+# The plan's weekly or monthly allowance is used up (2026-10-07: "Weekly/Monthly Limit Exhausted. Your limit will
+# reset at 2026-10-10 21:12:22"). Not a rate limit: no retry helps until the stated time, so the stage stops asking
+# GLM, lets Jev settle what it can across the whole queue, and leaves the rest queued with its tries.
+GLM_WALL = re.compile(r"(?:weekly|monthly)[^.]*limit[^.]*exhausted.*?reset at (\d{4}-\d\d-\d\d[ T]\d\d:\d\d(?::\d\d)?)", re.I | re.S)
+
+
+def glm_wall_until(text: str) -> str | None:
+    """The reset time a GLM wall error states, as UTC ISO. Z.ai does not say its zone; read as UTC+8 (Beijing), the
+    earliest it can mean, so a wrong guess costs one refused GLM job after which the wall is read again."""
+    m = GLM_WALL.search(text or "")
+    if not m:
+        return None
+    raw = m.group(1).replace("T", " ")
+    t = dt.datetime.strptime(raw[:16], "%Y-%m-%d %H:%M").replace(tzinfo=dt.timezone(dt.timedelta(hours=8)))
+    return t.astimezone(dt.timezone.utc).isoformat(timespec="minutes")
 
 
 def glm_job(items: list[dict], model: str = "glm-5.3-flash", timeout: float = 900) -> tuple[dict | None, dict]:
@@ -341,6 +357,11 @@ def glm_judge(items: list[dict], in_flight: int = 6, model: str = "glm-5.3-flash
                     v = _glm_answer(ans.get(f"i{j + 1}"))
                     if v is not None:
                         out[start + j] = v
+        walls = [glm_wall_until(last_err.get(c[0], "")) for c in again]
+        if any(walls):                                 # the allowance is used up: retrying cannot help
+            spend["walled_until"] = max(w for w in walls if w)
+            pending = again
+            break
         limited = [c for c in again if RATE_LIMIT.search(last_err.get(c[0], ""))]
         if not limited or len(limited) < len(again):   # retry only a batch the limit alone refused
             pending = again
@@ -350,7 +371,8 @@ def glm_judge(items: list[dict], in_flight: int = 6, model: str = "glm-5.3-flash
     for e in last_err.values():
         key = e[:100]
         spend["errors"][key] = spend["errors"].get(key, 0) + 1
-    spend["rate_limited"] = bool(last_err) and all(RATE_LIMIT.search(e) for e in last_err.values())
+    spend["rate_limited"] = (bool(last_err) and all(RATE_LIMIT.search(e) for e in last_err.values())
+                             and not spend.get("walled_until"))
     spend["asked"] = asked
     a, c, o = GLM_RATES[model]
     unc = spend["input_tokens"] - spend["cached_input_tokens"]
@@ -431,6 +453,10 @@ def run(conn, cfg: dict, deadline: float, should_stop=lambda: None, log=print) -
     read0 = READ_BYTES
     last_batch = {"glm": 0.0, "jev": 0.0}
     rec["queued"] = conn.execute("select count(*) from public.classify_queue").fetchone()[0]
+    wall = known_glm_wall(conn)
+    if wall:
+        rec["glm_walled_until"] = wall
+        log(f"    classify: GLM's allowance is used up until {wall} (a recent run's receipt); Jev only until then")
     limit = int(cfg.get("max_items", 60000))
     try:
         _loop(conn, cfg, t, model, rec, last_batch, limit, deadline, should_stop, log)
@@ -444,9 +470,26 @@ def run(conn, cfg: dict, deadline: float, should_stop=lambda: None, log=print) -
     return rec
 
 
+def known_glm_wall(conn) -> str | None:
+    """A GLM wall a run in the last 8 days recorded, if its reset time is still ahead."""
+    try:
+        row = conn.execute(
+            "select max(notes->'stages'->'classify'->>'glm_walled_until') from public.pipeline_runs "
+            "where stage = 'sweep' and started_at > now() - interval '8 days' "
+            "and notes->'stages'->'classify' ? 'glm_walled_until'").fetchone()
+    except Exception:  # noqa: BLE001 - no reading means GLM is tried; a refused job reads the wall again
+        return None
+    w = row[0] if row else None
+    if w and dt.datetime.fromisoformat(w) > dt.datetime.now(dt.timezone.utc):
+        return w
+    return None
+
+
 def _loop(conn, cfg, t, model, rec, last_batch, limit, deadline, should_stop, log) -> None:
     taken = 0
+    cursor = None   # with GLM off, Jev's residue stays queued: page past it instead of selecting it again
     while taken < limit:
+        glm_on = cfg.get("glm", True) and not rec.get("glm_walled_until")
         if time.time() > deadline:
             rec["allowance_used"] = "the time set aside for classification ended"
             break
@@ -454,7 +497,7 @@ def _loop(conn, cfg, t, model, rec, last_batch, limit, deadline, should_stop, lo
         if reason:
             rec["stopped"] = reason
             break
-        if cfg.get("glm", True) and glm_peak_now():
+        if glm_on and glm_peak_now():
             rec["allowance_used"] = "Z.ai peak hours (06:00-10:00 UTC): ended rather than leave GLM's share unjudged"
             break
         # the caps are checked BEFORE a batch is spent, on what the last batch cost
@@ -470,13 +513,21 @@ def _loop(conn, cfg, t, model, rec, last_batch, limit, deadline, should_stop, lo
         # scattered a batch across the indexes (8.7 KB of egress a mention, measured that morning); in brand order
         # the queue's and mention_sentiment_latest_idx's touches are adjacent.
         n = min(2000, limit - taken)
-        keys = conn.execute("select brand_id, doc_id, created_utc from public.classify_queue "
-                            "where attempts < 5 and enqueued_at > now() - interval '26 hours' "
-                            "order by enqueued_at desc, created_utc desc limit %s", (n,)).fetchall()
-        if len(keys) < n:
-            keys += conn.execute("select brand_id, doc_id, created_utc from public.classify_queue "
-                                 "where attempts < 5 and enqueued_at <= now() - interval '26 hours' "
-                                 "order by brand_id, doc_id, created_utc limit %s", (n - len(keys),)).fetchall()
+        if not glm_on:
+            keys = conn.execute("select brand_id, doc_id, created_utc from public.classify_queue where attempts < 5 "
+                                "and (brand_id, doc_id, created_utc) > (%s, %s, %s) "
+                                "order by brand_id, doc_id, created_utc limit %s",
+                                (*(cursor or (-1, "", dt.datetime(1970, 1, 1, tzinfo=dt.timezone.utc))), n)).fetchall()
+            if keys:
+                cursor = tuple(keys[-1])
+        else:
+            keys = conn.execute("select brand_id, doc_id, created_utc from public.classify_queue "
+                                "where attempts < 5 and enqueued_at > now() - interval '26 hours' "
+                                "order by enqueued_at desc, created_utc desc limit %s", (n,)).fetchall()
+            if len(keys) < n:
+                keys += conn.execute("select brand_id, doc_id, created_utc from public.classify_queue "
+                                     "where attempts < 5 and enqueued_at <= now() - interval '26 hours' "
+                                     "order by brand_id, doc_id, created_utc limit %s", (n - len(keys),)).fetchall()
         keys.sort(key=lambda k: (k[0], k[1]))   # the batch's writes in brand order too
         if not keys:
             break
@@ -504,9 +555,9 @@ def _loop(conn, cfg, t, model, rec, last_batch, limit, deadline, should_stop, lo
         residue = [i for i, v in enumerate(verdicts) if v is None]
         # an item counts a try only when a judge was asked and could not settle it: Jev's residue with GLM switched
         # off was never asked (the smoke test of 5 Oct took a try from 106 items that way)
-        tried = [True] * len(items) if cfg.get("glm", True) else [v is not None for v in verdicts]
+        tried = [True] * len(items) if glm_on else [v is not None for v in verdicts]
         glm_down = glm_limited = False
-        if residue and cfg.get("glm", True):
+        if residue and glm_on:
             g, spend = glm_judge([items[i] for i in residue], in_flight=int(cfg.get("glm_in_flight", 6)),
                                  model=model, log=log, deadline=deadline)
             rec["glm_credits"] += spend["credits"]
@@ -524,6 +575,12 @@ def _loop(conn, cfg, t, model, rec, last_batch, limit, deadline, should_stop, lo
             started = spend["jobs"] - spend["skipped_jobs"]   # jobs the deadline left unstarted are not failures
             glm_down = started > 0 and spend["failed_jobs"] == started
             glm_limited = glm_down and spend["rate_limited"]
+            if spend.get("walled_until"):   # the allowance is used up: Jev only from the next batch, no stop
+                rec["glm_walled_until"] = spend["walled_until"]
+                rec["allowance_used"] = (f"GLM's plan allowance is used up until {spend['walled_until']}: Jev settled "
+                                         f"what it could across the queue, the rest stays queued with its tries")
+                log(f"    classify: GLM refused: its allowance is used up until {spend['walled_until']}; Jev only from here")
+                glm_down = glm_limited = False
         w = write(conn, items, verdicts, [m or MV_JEV for m in models], tried)
         rec["labelled"] += w["labelled"]
         rec["rejected"] += w["rejected"]
