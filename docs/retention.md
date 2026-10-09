@@ -24,12 +24,12 @@ names, columns and results.
 
 ## The steps, in order
 
-| Step | What | Saves | When |
-|---|---|---|---|
-| 1 | Prune threads with no mention, older than 7 days (archive first) | 40 MB now, about 1 MB a day after | daily, from the sweep's refresh stage |
-| 2 | Remove mention rows judged "not this product" more than 30 days ago (archive first; the ledger row stays) | 225 MB from 2 November, then as it accrues | daily |
-| 3 | One copy of each comment's text: keep it on one row per comment, clear it on the others; readers take the text from that row; a trigger stops new duplicates | about 1.1 GB, and halves daily growth | once, in chunks of one monthly partition, inside a declared egress budget |
-| 4 | Drop `mention_rail_mv` | 231 MB | one week after go-live |
+| Step | What | Saves | When | State (9 Oct) |
+|---|---|---|---|---|
+| 1 | Prune threads with no mention, older than 7 days (archive first) | 40 MB now, about 1 MB a day after | nightly, the sweep's `retention` stage | ran by hand 4 Oct (177,292 threads); nightly from 10 Oct |
+| 2 | Remove mention rows judged "not this product" more than 30 days ago (archive first; the ledger row stays) | 225 MB from 2 November, then as it accrues | nightly, at most 20,000 rows a night | nothing qualifies before 2 Nov |
+| 3 | One copy of each comment's text: keep it on one row per comment, clear it on the others; readers take the text from that row; a trigger stops new duplicates | about 1.1 GB, and halves daily growth | once, in chunks of one monthly partition, inside a declared egress budget | the trigger is live since 0019; the clearing runs from 9 Oct |
+| 4 | Drop `mention_rail_mv` | 231 MB | after go-live | done 9 Oct (migration 0030): `published.mention_rail` reads `site.rail_card`; the database went from 3,774 to 3,554 MB |
 | 5 | Vacuum the touched partitions so new rows reuse the space | | after 2 and 3 |
 
 Why step 3 clears text in place rather than moving it to a new table: a new table would write 828 MB again (and

@@ -52,7 +52,7 @@ import db  # noqa: E402
 CODE_VERSION = "sweep-v1"
 LOCK_KEY = 0x52494458  # "RIDX": one sweep at a time, whatever starts it
 VLAD = "U016BPWFC7Q"
-STAGES = ["takedowns", "collect", "classify", "refresh", "score", "publish"]
+STAGES = ["takedowns", "collect", "classify", "refresh", "score", "publish", "retention"]
 # Only a daytime pass that names it runs this (decision 0018: the partner categories' 90-day history). Never the night.
 EXTRA_STAGES = ["backfill"]
 
@@ -466,6 +466,22 @@ def main() -> int:
         rec.pop("verified_brand_ids", None)
         return rec
     stage(run, "publish", publish_stage)
+
+    def retention_stage():
+        """docs/retention.md steps 1 and 2 and the archive's 14 days, every night (until 9 Oct they ran only by
+        hand, once). Each moves rows into `archive` in the statement that deletes them. Step 2 takes at most
+        20,000 rows a night; nothing qualifies before 2 November."""
+        if run.stop_reason():
+            return {"skipped": run.stop_reason()}
+        sys.path.insert(0, os.path.join(ROOT, "ops"))
+        import retention as ret
+        out = ret.threads(conn)
+        out.update(ret.rejected(conn, limit=sched.get("retention", {}).get("rejected_per_night", 20000)))
+        out["archive_expired"] = {t: conn.execute(f"delete from archive.{t} where archived_at < now() - interval "
+                                                  f"'14 days'").rowcount
+                                  for t in ("threads", "mentions", "mention_sentiment")}
+        return out
+    stage(run, "retention", retention_stage)
 
     # whatever ran tonight: a takedown older than 36 hours that is not proven on the site is a legal condition
     # (decision 0002) and fails the run, so Vlad hears of it (review 4 Oct: it was checked only inside publish)

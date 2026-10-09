@@ -61,11 +61,13 @@ def threads(conn) -> dict:
     return {"threads_archived_and_removed": n}
 
 
-def rejected(conn) -> dict:
+def rejected(conn, limit: int | None = None) -> dict:
     """Rows judged "not this product" more than 30 days ago. A row that holds the text other rows point at first
-    gives the text back to them."""
+    gives the text back to them. `limit` takes the oldest N rows (the nightly run's cap, so the first night after
+    2 November does not move 225 MB at once)."""
     old = ("select m.brand_id, m.doc_id, m.created_utc from public.mentions m join public.mention_rejections x "
-           "on x.doc_id = m.doc_id and x.brand_id = m.brand_id where x.rejected_at < now() - interval '30 days'")
+           "on x.doc_id = m.doc_id and x.brand_id = m.brand_id where x.rejected_at < now() - interval '30 days'"
+           + (f" order by x.rejected_at, m.doc_id, m.brand_id limit {int(limit)}" if limit else ""))
     with conn.transaction():
         rehomed = conn.execute(f"""
             update public.mentions s set body = h.body, body_from = null
