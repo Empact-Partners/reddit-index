@@ -40,3 +40,21 @@ and dearer. Luna's main difference: it calls 28 of GLM's 228 neutral mentions po
 
 About 590 input tokens a mention: 200,000 mentions is about 120M tokens, 8 to 12% of a Codex week. Egress is the
 reading of the 1,200-character windows and the label writes, inside the day's line.
+
+## Amendment, 9 Oct: Claude on the Max plan as a second engine
+
+Vlad, 9 Oct: "use my Claude Code max tokens for now". The Codex week stood at 59% (other sessions included) against
+the lane's 60% ceiling, and GLM was still walled. `ops/codex_lane.py` gains a Claude engine (`--model claude-…`):
+the same rubric verbatim and the same answer shape, through the locked-down `claude -p` helper
+(`~/.claude/api_helpers/claude_cli.py`: no tools, no user settings, no MCP), 40 mentions a call, 3 in flight,
+each batch's answer kept on disk. A usage-limit answer stops the lane, so it never eats into Vlad's own sessions.
+
+Pilot, the same 400 GLM-judged mentions (300 labels, 100 rejections):
+
+| Engine | Agreement with GLM | Rejections matched | Minutes | Where it disagrees |
+|---|---|---|---|---|
+| Codex gpt-5.6-luna, low (7 Oct) | 85.8% | 91/100 | | |
+| Claude Haiku 4.5 | 80.0% | 80/100 | 3.5 | calls neutral comments positive (26) or negative (19) |
+| **Claude Sonnet 5.5** | **85.0%** | **95/100** | **0.8** | toward neutral (neg→neu 18, pos→neu 11): the safe side of a lower-bound score |
+
+Sonnet 5.5 runs the lane (`claude-sonnet-5-5-absa-1`).

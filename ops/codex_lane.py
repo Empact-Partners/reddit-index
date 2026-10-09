@@ -69,8 +69,63 @@ def schema(n: int, d: Path) -> Path:
     return p
 
 
+CLAUDE_PER_CALL = 40
+
+
+def judge_claude(items: list[dict], model: str, stage: str, width: int = 3) -> list[tuple | None]:
+    """The same rubric and answer through `claude -p` on Vlad's Claude Max plan (9 Oct: "use my Claude Code Max
+    tokens"), through the locked-down helper (no tools, no settings, no MCP). Each batch's answer is kept on disk
+    under a key of its items, so a restart never pays twice. A usage-limit answer stops the lane (SystemExit), so
+    the lane never eats into Vlad's own sessions; any other failure leaves that batch's items queued."""
+    from concurrent.futures import ThreadPoolExecutor
+    sys.path.insert(0, os.path.expanduser("~/.claude/api_helpers"))
+    os.environ.setdefault("CLAUDE_CLI_CALLER", "reddit-index-claude-lane")
+    from claude_cli import claude_p, ClaudeCliError
+    d = STATE / stage
+    d.mkdir(parents=True, exist_ok=True)
+    spans = [(s, items[s:s + CLAUDE_PER_CALL]) for s in range(0, len(items), CLAUDE_PER_CALL)]
+    limit_hit: list[str] = []
+
+    def one(span):
+        s, chunk = span
+        key = "c" + hashlib.sha1("|".join(f"{i['brand_id']}:{i['doc_id']}:{i['created_utc']}" for i in chunk)
+                                 .encode()).hexdigest()[:16]
+        f = d / f"{key}.json"
+        if f.exists():
+            try:
+                return s, chunk, json.loads(f.read_text())
+            except ValueError:
+                pass
+        if limit_hit:
+            return s, chunk, None
+        try:
+            raw = claude_p(prompt(chunk), model=model, json_mode=True, timeout=900, retries=1)
+            ans = json.loads(raw[raw.index("{"): raw.rindex("}") + 1])
+        except ClaudeCliError as e:
+            if e.kind in ("usage_limit", "auth"):
+                limit_hit.append(f"{e.kind}: {str(e)[:120]}")
+            return s, chunk, None
+        except ValueError:
+            return s, chunk, None
+        f.write_text(json.dumps(ans))
+        return s, chunk, ans
+
+    verdicts: list[tuple | None] = [None] * len(items)
+    with ThreadPoolExecutor(max_workers=width) as ex:
+        for s, chunk, ans in ex.map(one, spans):
+            if not isinstance(ans, dict):
+                continue
+            for k in range(len(chunk)):
+                verdicts[s + k] = cs._glm_answer(ans.get(f"i{k + 1}"))
+    if limit_hit:
+        raise SystemExit(f"Claude lane stopped: {limit_hit[0]}")
+    return verdicts
+
+
 def judge(items: list[dict], model: str, stage: str, ceiling: float | None, width: int = 4) -> list[tuple | None]:
     """-> per item ("reject", conf) | (label, conf) | None (not answered: stays queued)."""
+    if model.startswith("claude-"):
+        return judge_claude(items, model, stage, width=min(width, 3))
     d = STATE / stage
     out = d                                  # job_usage reads the events next to the outputs, in the state dir
     out.mkdir(parents=True, exist_ok=True)
@@ -107,11 +162,11 @@ def pilot(a) -> int:
     with db.connect() as c:
         lab = c.execute("select m.brand_id, m.doc_id, m.created_utc, s.label from public.mention_sentiment s "
                         "join public.mentions m on m.doc_id = s.doc_id and m.brand_id = s.brand_id "
-                        "where s.model_version = 'glm-5.3-absa-1' and s.scored_at > now() - interval '4 days' "
+                        "where s.model_version = 'glm-5.3-absa-1' and s.scored_at > now() - interval '10 days' "
                         "order by md5(s.doc_id || s.brand_id) limit 300").fetchall()
         rej = c.execute("select m.brand_id, m.doc_id, m.created_utc from public.mention_rejections r "
                         "join public.mentions m on m.doc_id = r.doc_id and m.brand_id = r.brand_id "
-                        "where r.model_version = 'glm-5.3-absa-1' and r.rejected_at > now() - interval '4 days' "
+                        "where r.model_version = 'glm-5.3-absa-1' and r.rejected_at > now() - interval '10 days' "
                         "order by md5(r.doc_id || r.brand_id) limit 100").fetchall()
         truth = {(b, d): {0: "neu", 1: "pos", 2: "neg", 3: "abstain"}[l] for b, d, _, l in lab}
         truth.update({(b, d): "reject" for b, d, _ in rej})
@@ -128,7 +183,7 @@ def pilot(a) -> int:
         answered += x is not None
         agree += c_ == g
         conf_m[(g, c_)] += 1
-    use = job_usage(STATE / stage)
+    use = [] if a.model.startswith("claude-") else job_usage(STATE / stage)
     toks = sum(r.get("input", 0) for r in use)
     print(json.dumps({"model": a.model, "items": len(items), "answered": answered, "agree_with_glm": agree,
                       "agreement": round(agree / max(1, answered), 3), "minutes": round((time.time() - t0) / 60, 1),
@@ -242,7 +297,8 @@ def run(a) -> int:
                         tot["jev_decided"] += 1
             rest = [i for i, v in enumerate(verdicts) if v is None]
             if rest:
-                cv = judge([items[i] for i in rest], a.model, f"run-{a.model}", a.ceiling, width=a.width)
+                cv = judge([items[i] for i in rest], a.model, f"run-{a.model}",
+                           None if a.model.startswith("claude-") else a.ceiling, width=a.width)
                 for i, v in zip(rest, cv):
                     if v is not None:
                         verdicts[i] = v
