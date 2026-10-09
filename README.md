@@ -2,15 +2,15 @@
 
 **Live: [redditindex.com](https://redditindex.com)** (noindex while provisional).
 
-## STATUS (kept current; last edit 2026-10-06 11:40 UTC)
+## STATUS (kept current; last edit 2026-10-09 11:30 UTC)
 
 | | |
 |---|---|
-| **Live?** | **Yes, refreshing daily.** redditindex.com runs the read path since 2026-10-06 11:25 UTC (decision 0017); the latest data is shown on every page and in `/freshness.json`. Noindex while provisional. |
-| **How it updates** | One scheduled run a night at 00:00 UTC on Railway (`reddit-index-sweep`): takedowns, collection, classification, refresh, scores, then the changed pages proven on the site. Daytime passes on request (`ops/ri.py dayrun`). Nothing runs on a laptop. |
-| **Cost** | About 0.6 GB of database egress a night (node counter), under a 2 GB daily line for every job together; the site reads one small row per page. |
-| **Labels** | About 329,000 mentions still wait for a label; each night labels about 40,000 and daytime passes more. |
-| **Next** | The 15 Empact Reddit partners and their competitors join the index (decision 0018, branch `feat/partners-phase-b`). A dedicated Reddit API app for the index is the owner step that doubles collection. |
+| **Live?** | **Yes, refreshing daily.** redditindex.com runs the read path since 2026-10-06 11:25 UTC (decision 0017). Last run 9 Oct 04:31 UTC: the footer, `/freshness.json`, `/llms.txt` and the sitemap show it. Noindex while provisional. |
+| **How it updates** | One scheduled run a night at 00:00 UTC on Railway (`reddit-index-sweep`): takedowns, collection, classification, refresh, scores, then the changed pages proven on the site. Daytime passes (`ops/day_passes.py`) collect and backfill under the day's egress line. The three generated files refresh on their own timers (5 min, 1 h, 1 h; decision 0022), because an expiry never reached them. |
+| **Labels** | Queue empty on 9 Oct 11:23 UTC: 1,206,401 labels. GLM's allowance is used up until 10 Oct; until 11 Oct 00:00 UTC a laptop-only Codex lane labels what Jev cannot settle (decision 0021). |
+| **Cost** | About 0.6 GB of database egress a night (node counter), under a 2 GB daily line for every job together; the site reads one small row per page, and the three generated files under 20 MB a day. |
+| **Open** | 11 alias names held for a person (a brand's own name that is also a word: Things, Plan A, Zus...). A dedicated Reddit API app for the index is the owner step that doubles collection. |
 | **How to stop everything** | `python3 ops/ri.py stop "reason"` turns the sweep off and its database login off. |
 
 A public index of what Reddit actually says about software brands: one
