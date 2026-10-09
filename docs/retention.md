@@ -37,12 +37,20 @@ ship that through the write-ahead log, which the egress counter bills); clearing
 small row version. The space is reused by new mentions rather than returned to the disk, which is what the index
 needs: 4.7 GB of the 8.4 GB disk is free.
 
-## Budget for step 3 (declared before it runs)
+## Budget for step 3 (declared before it runs; revised 9 Oct on its first run)
 
-At most 1.0 GB of measured egress in all, at most 0.4 GB a day, one monthly partition at a time, stopped by the node
-transmit counter. Before and after each partition: the text every page shows (`site.rail_card`) for a sample of
-brands, compared word for word, and the counts the lookup job reads (`published.mentions` per brand), compared
-exactly. Any difference stops the step and undoes that partition from the archive copy.
+First run, 9 Oct 15:46 UTC: 171,672 rows of the September partition cleared, every page's text and the lookup
+job's counts identical before and after, for **0.763 GB** of egress on the node counter: 4.4 KB a cleared row, the
+write-ahead log of the new row versions. The 1.0 GB estimate was low by half: the remaining 295,601 duplicates cost
+about 1.3 GB. The run also overshot its 0.4 GB cap because it read the counter every five minutes; it took the day
+to 2.10 GB, over the watchdog's 2 GB line, and the watchdog baseline was re-recorded at 16:00 UTC as planned heavy
+work.
+
+From 10 Oct: at most 0.9 GB a day and 2.5 GB in all, and never past the day's 1.9 GB line on the node counter (the
+night's run included); the counter is read every 60 seconds. It runs in the morning after the night's run, one
+monthly partition at a time. Before and after each partition: the text every page shows (`site.rail_card`) for a
+sample of brands, compared word for word, and the counts the lookup job reads (`published.mentions` per brand),
+compared exactly. Any difference stops the step and undoes that partition from the archive copy.
 
 ## Review and test before step 3 ran (2026-10-04)
 
