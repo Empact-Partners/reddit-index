@@ -46,8 +46,8 @@ OLD_COLLECTOR = "ff501aef-926d-4e24-8ef8-476855cd41b9"     # parked; this script
 NAME = "reddit-index-sweep"
 REGION = "us-east4-eqdc4a"                                  # Virginia, next to the database (aws us-east-1)
 DATA = ["categories.csv", "category-subreddits.csv", "brands.csv", "brand-aliases.csv", "alias-blocklist.csv",
-        "english-words.txt"]
-OPS = ["schedule.json", "classify_thresholds.json"]
+        "alias-hostile.csv", "english-words.txt"]
+OPS = ["schedule.json", "classify_thresholds.json", "retention.py"]   # retention.py: the nightly retention stage
 
 TOKENS_SHIM = '''"""The one function the vendored Jev client needs, reading the container's environment."""
 import os
