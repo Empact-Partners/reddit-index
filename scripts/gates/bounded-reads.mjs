@@ -155,6 +155,12 @@ if (checkBuilt) {
     if (route in TIMED_ROUTES && typeof r === 'number' && r >= TIMED_ROUTES[route]) continue;
     problems.push(`${route}: built with a revalidate interval of ${r}`);
   }
+  for (const [route, floor] of Object.entries(TIMED_ROUTES)) {
+    const r = manifest.routes?.[route]?.initialRevalidateSeconds;
+    if (!(typeof r === 'number' && r >= floor)) {
+      problems.push(`${route}: built without its timer (${JSON.stringify(r)}) — it would never change between deploys`);
+    }
+  }
   for (const [route, info] of Object.entries(manifest.dynamicRoutes ?? {})) {
     if (route.startsWith('/api/')) continue;
     const r = info.fallbackRevalidate ?? info.initialRevalidateSeconds;
