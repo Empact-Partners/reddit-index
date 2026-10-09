@@ -39,6 +39,7 @@ import json
 import os
 import sys
 import time
+import urllib.request
 import traceback
 import uuid
 
@@ -474,16 +475,30 @@ def main() -> int:
     ran = all("skipped" not in run.receipt["stages"].get(s, {"skipped": 1}) for s in ("refresh", "score"))
     if status in ("ok", "capped") and ran:
         conn.execute("update site.meta set last_success_at = now(), last_run_id = %s", (run.run_id,))
-        # publish expired /freshness.json BEFORE this line, so the site re-read the previous run's time and every
-        # footer showed one run behind (seen 7 Oct). Expire it again now that the time is this run's. Only after a
-        # run that published: a pass without publish changed no served page.
+        # The footer date comes from /freshness.json, which refreshes itself at most every five minutes (decision
+        # 0022; an expiry never reached it). Read it back until it says this run, so a stale date is a receipt line,
+        # not something Vlad notices. Only after a run that published: a pass without publish changed no page.
         pub = run.receipt["stages"].get("publish") or {}
         if pub and "skipped" not in pub and not pub.get("failed"):
             try:
                 import site_publish
-                site_publish.expire(sched["site_url"], ["/freshness.json"])
+                want = conn.execute("select to_char(last_success_at at time zone 'utc', "
+                                    "'YYYY-MM-DD\"T\"HH24:MI:SS') from site.meta").fetchone()[0]
+                served, t_end = None, time.time() + 480
+                while True:
+                    req = urllib.request.Request(sched["site_url"].rstrip("/") + "/freshness.json",
+                                                 headers=site_publish._headers(sched["site_url"]))
+                    with urllib.request.urlopen(req, timeout=30) as r:
+                        served = json.loads(r.read()).get("refreshedAt")
+                    if (served or "")[:19] == want or time.time() > t_end:
+                        break
+                    time.sleep(30)
+                run.receipt["freshness_served"] = served
+                if (served or "")[:19] != want:
+                    run.receipt["problems"].append(f"the site's freshness date reads {served} eight minutes after "
+                                                   f"the run, not this run's {want}")
             except Exception as e:  # noqa: BLE001 - the footer date is cosmetic; the data is already served
-                run.receipt["problems"].append(f"freshness date not refreshed: {str(e)[:120]}")
+                run.receipt["problems"].append(f"freshness date not read back: {str(e)[:120]}")
     run.record(status)
     log(f"run {run.run_id[:8]} {status}: {json.dumps({k: v for k, v in run.receipt.items() if k != 'stages'}, default=str)[:600]}")
     if not args.no_dm and status != "stopped":   # a stop is someone's decision; they know

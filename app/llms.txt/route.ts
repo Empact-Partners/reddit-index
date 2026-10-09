@@ -6,6 +6,9 @@ import { SITE_URL } from "@/lib/env";
 import { CATEGORY_BY_SLUG, type CategorySlug } from "@/lib/generated/categories";
 
 export const dynamic = "force-static";
+// Rebuilt at most once an hour (decision 0022): an expiry from the sweep never reached it, so it showed the last
+// deploy's numbers (9 Oct: 1,279,919 mentions served, 1,200,406 held). One read of the index rows an hour.
+export const revalidate = 3600;
 
 /**
  * /llms.txt — the llmstxt.org convention: one plain-text file that tells an

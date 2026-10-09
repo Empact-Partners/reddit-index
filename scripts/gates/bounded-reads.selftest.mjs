@@ -31,6 +31,9 @@ const CASES = [
   ['an unqualified relation', (d) => edit(d, 'lib/data/site-db.ts', (s) => s.replace('from site.meta`', 'from mentions`'))],
   ['the old corpus-reading connection string', (d) => edit(d, 'lib/data/site-db.ts', (s) => s.replaceAll('DATABASE_URL_SITE', 'DATABASE_URL_READONLY'))],
   ['a second cache', (d) => edit(d, 'app/page.tsx', (s) => s + '\nimport { unstable_cache } from "next/cache";\nexport const x = unstable_cache;\n')],
+  ['a timer on a generated file that is not one of the three', (d) => fs.writeFileSync(path.join(d, 'app', 'robots.ts'), 'export const dynamic = "force-static";\nexport const revalidate = 3600;\nexport default function robots() { return { rules: [] }; }\n')],
+  ['a named file refreshing faster than its floor', (d) => edit(d, 'app/llms.txt/route.ts', (s) => s.replace('export const revalidate = 3600;', 'export const revalidate = 60;'))],
+  ['a named file with its timer removed', (d) => edit(d, 'app/freshness.json/route.ts', (s) => s.replace('export const revalidate = 300;', ''))],
   ['the publish endpoint reading data', (d) => edit(d, 'app/api/revalidate/route.ts', (s) => 'import { getMeta } from "@/lib/data/site-db";\n' + s)],
 ];
 

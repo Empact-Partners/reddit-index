@@ -207,8 +207,9 @@ def run(conn, base: str, dry_run: bool = False, verify_n: int = 100, max_expire:
         return receipt
 
     index_paths = ["/"] + [f"/{s}/" for s in sorted(category_slugs())] if boards_changed else []
-    file_paths = ["/freshness.json"] + (["/llms.txt"] if boards_changed or slugs_changed else []) \
-        + (["/sitemap.xml"] if slugs_changed else [])
+    # /freshness.json, /llms.txt and /sitemap.xml are not expired: revalidatePath does not reach a route handler's
+    # built response (9 Oct, decision 0022). They refresh on their own timers (5 min, 1 h, 1 h).
+    file_paths: list[str] = []
 
     # 2. expire, and remember which hash each path was expired at
     for i in range(0, len(todo), BATCH):
