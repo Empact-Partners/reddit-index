@@ -203,8 +203,14 @@ def run(a) -> int:
                        "jev_decided": 0, "codex_decided": 0, "labelled": 0, "rejected": 0, "not_answered": 0,
                        "batches": 0, "jev_usd": 0.0}
                 _receipt(c, rid, "running", tot)
+            # While GLM is walled the sweep skips what Jev has looked at (classify_sweep: "jev_checked_at is null"),
+            # so that residue is the lane's alone and is taken at once (9 Oct: 8,392 waited a day for the 26-hour
+            # line). What Jev has not seen keeps the line, so the lane never races the sweep's own Jev pass. Once
+            # the recorded wall has passed, the sweep asks GLM for the residue again and the line applies to all.
+            walled = cs.known_glm_wall(c) is not None
             q = ("select brand_id, doc_id, created_utc, jev_checked_at is not null from public.classify_queue "
-                 "where attempts < 5 and enqueued_at <= now() - interval '26 hours' ")
+                 "where attempts < 5 and (enqueued_at <= now() - interval '26 hours'"
+                 + (" or jev_checked_at is not null) " if walled else ") "))
             if cursor:
                 rows = c.execute(q + "and (brand_id, doc_id, created_utc) < (%s, %s, %s) "
                                  "order by brand_id desc, doc_id desc, created_utc desc limit %s", (*cursor, a.batch)).fetchall()
@@ -215,7 +221,7 @@ def run(a) -> int:
                     cursor, labelled_this_pass = None, 0      # a full pass done: what is left gets another try
                     continue
                 cursor, labelled_this_pass = None, 0
-                _sleep(900, "nothing older than 26 hours is queued (or nothing more settled this pass)")
+                _sleep(900, "nothing the lane may take is queued (or nothing more settled this pass)")
                 continue
             cursor = tuple(rows[-1][:3])
             seen = {(r[0], r[1]): r[3] for r in rows}
