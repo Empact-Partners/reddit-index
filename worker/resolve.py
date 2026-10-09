@@ -343,6 +343,27 @@ def load_blocklist():
 _BLOCKED = load_blocklist()
 
 
+def load_hostile():
+    """(alias, brand) pairs where the alias is the brand's OWN name and the entity gate rejects at least 90% of
+    its matches ('things' -> Things, 'zus' -> Zus, 'plan a' -> Plan A). Never blocked: a brand must not vanish
+    because its name is also a word. Instead a match needs two corroborating signals, as HOSTILE forms do (its
+    domain, another confirmed brand nearby, ...). Written by ops/alias_blocklist.py --write (2026-10-09).
+    data/alias-hostile.csv ships with the code like the blocklist; a missing file is a different matcher."""
+    fp = os.path.join(REPO, "data", "alias-hostile.csv")
+    if not os.path.exists(fp):
+        raise RuntimeError(f"alias hostile list missing at {fp}: own names the entity gate rejects would resolve "
+                           "on one weak signal again. Ship the file with the code.")
+    out = set()
+    for r in csv.DictReader(open(fp)):
+        a, b = (r.get("alias") or "").strip().lower(), (r.get("brand_slug") or "").strip()
+        if a and b:
+            out.add((a, b))
+    return out
+
+
+_HOSTILE = load_hostile()
+
+
 def build_automaton(aliases):
     """One Aho-Corasick automaton over all surface forms. Linear in text length.
 
@@ -356,7 +377,9 @@ def build_automaton(aliases):
             continue
         if (alias.strip().lower(), brand_slug) in _BLOCKED:
             continue
-        if cls == "SAFE" and _is_plain_english(alias):
+        if (alias.strip().lower(), brand_slug) in _HOSTILE:
+            cls, min_c = "HOSTILE", max(int(min_c or 0), 2)
+        elif cls == "SAFE" and _is_plain_english(alias):
             # an ordinary English word is never self-evidently a brand
             cls, min_c = "AMBIGUOUS", max(int(min_c or 0), 1)
         existing = A.get(alias, [])

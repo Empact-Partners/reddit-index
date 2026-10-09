@@ -8,8 +8,11 @@ matching the pair.
 
 A pair is added when, over every judged mention of that brand under that exact form:
   rejected >= MIN_REJECTED  and  rejected / (rejected + labelled) >= SHARE
-Never added: the brand's own name (a partner must never vanish because its name is also a word); those are printed
-for a person instead. Existing rows are kept as they are.
+Never added: the brand's own name (a brand must never vanish because its name is also a word). With --write, an own
+name that crosses the same line goes to data/alias-hostile.csv instead (worker/resolve.py makes it HOSTILE): it still matches, but a match
+counts only with two corroborating signals (its domain, another confirmed brand nearby, ...), so the brand keeps
+its real mentions and loses the word (9 Oct: Vlad, "don't worry about these things", on the held list). The Empact
+partners (decision 0018) are never touched either way. Existing rows are kept as they are.
 
   ops/alias_blocklist.py            # print what would be added
   ops/alias_blocklist.py --write    # add it to data/alias-blocklist.csv
@@ -25,6 +28,10 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path[:0] = [os.path.join(ROOT, d) for d in ("ops", "scripts", "worker")]
 FILE = os.path.join(ROOT, "data", "alias-blocklist.csv")
 MIN_REJECTED, SHARE = 30, 0.90
+HOSTILE = os.path.join(ROOT, "data", "alias-hostile.csv")
+PARTNERS = {"systemone", "slasify", "logmanager", "lative", "devrev", "clementine-aba", "alliance-risk",
+            "specialty-insurance", "metaview", "lingo-app", "wecantrack", "1000xstocks", "framer", "expensify",
+            "contabo"}   # decision 0018
 
 SQL = """
 with rej as (select m.brand_id, lower(m.matched_form) f, count(*) n from public.mention_rejections r
@@ -53,7 +60,7 @@ def main() -> int:
     add, held = [], []
     for r in rows:
         pair = (r["form"], r["slug"])
-        if pair in have:
+        if pair in have or r["slug"] in PARTNERS:
             continue
         own = r["form"] in (r["name"], r["slug"].replace("-", " "), r["slug"])
         pct = round(100 * r["rejected"] / (r["rejected"] + r["labelled"]))
@@ -63,7 +70,7 @@ def main() -> int:
     for x in add:
         print(f"add   {x['alias']!r:32} -> {x['brand_slug']:40} {x['rejected_pct']}% rejected ({x['reason']})")
     for x in held:
-        print(f"HOLD  {x['alias']!r:32} -> {x['brand_slug']:40} {x['rejected_pct']}% rejected: the brand's own name, a person decides")
+        print(f"HOLD  {x['alias']!r:32} -> {x['brand_slug']:40} {x['rejected_pct']}% rejected: the brand's own name: HOSTILE, two corroborating signals")
     print(f"{len(add)} to add, {len(held)} held for a person, {len(existing)} already listed")
     if a.write and add:
         with open(FILE, "a", newline="") as f:
@@ -71,6 +78,21 @@ def main() -> int:
             for x in add:
                 wr.writerow(x)
         print(f"written to {FILE}")
+    if a.write and held:
+        have_h = set()
+        if os.path.exists(HOSTILE):
+            with open(HOSTILE, newline="") as f:
+                have_h = {((r.get("alias") or "").strip().lower(), (r.get("brand_slug") or "").strip())
+                          for r in csv.DictReader(f)}
+        new_h = [x for x in held if (x["alias"], x["brand_slug"]) not in have_h]
+        exists = os.path.exists(HOSTILE)
+        with open(HOSTILE, "a", newline="") as f:
+            wr = csv.DictWriter(f, fieldnames=["alias", "brand_slug", "reason", "rejected_pct"])
+            if not exists:
+                wr.writeheader()
+            for x in new_h:
+                wr.writerow({**x, "reason": x["reason"].replace("judges_reject", "own_name_judges_reject")})
+        print(f"{len(new_h)} own names made HOSTILE (two corroborating signals) in {HOSTILE}")
     return 0
 
 
