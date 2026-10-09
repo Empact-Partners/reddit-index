@@ -103,7 +103,7 @@ def wait_for(t0: dt.datetime, start_bytes: float | None) -> dict | None:
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--stages", default="backfill,classify,refresh,score")
+    ap.add_argument("--stages", default="collect,classify,refresh,score")   # backfill finished on 9 Oct
     ap.add_argument("--until", default="21:00", help="start no pass after this UTC time; each pass ends by 21:30")
     ap.add_argument("--max-calls", type=int, default=15000)
     ap.add_argument("--day-start-gb", type=float, default=None, help="the node counter at the day's start, in bytes/1e9")
@@ -132,17 +132,21 @@ def main() -> int:
             log("no finished receipt in 5.5 hours; stopping"); break
         n = run["notes"] if isinstance(run["notes"], dict) else json.loads(run["notes"] or "{}")
         st = n.get("stages") or {}
-        bf, cl = st.get("backfill") or {}, st.get("classify") or {}
+        bf, cl, co = st.get("backfill") or {}, st.get("classify") or {}, st.get("collect") or {}
+        if co:
+            log(f"  collect: {co.get('subs_visited')} subreddits visited, {co.get('mentions_new')} new mentions, "
+                f"{co.get('reddit_calls')} calls, {co.get('allowance_used') or co.get('stopped')}")
         log(f"pass {run['status']}: backfill done {len(bf.get('done') or [])} subs, left {bf.get('left')}, "
             f"{bf.get('mentions')} mentions, {bf.get('reddit_calls')} calls, stopped: {bf.get('stopped')}; "
             f"classify labelled {cl.get('labelled')}, rejected {cl.get('rejected')}, left {cl.get('left_in_queue')}; "
             f"egress estimate {n.get('egress_estimate_gb')} GB; caps hit {n.get('caps_hit')}")
         if run["status"] not in ("ok", "capped") and "day pass guard" not in json.dumps(n):
             log("the pass failed; stopping"); break
-        if bf.get("note") == "every declared subreddit is done" and cl.get("left_in_queue") == 0:
+        if "backfill" in a.stages and bf.get("note") == "every declared subreddit is done" and cl.get("left_in_queue") == 0:
             log("backfill and labels done"); break
         rf = st.get("refresh") or {}
-        work = sum(int(x or 0) for x in (bf.get("reddit_calls"), bf.get("trees"), len(bf.get("done") or []),
+        work = sum(int(x or 0) for x in (co.get("reddit_calls"), co.get("mentions_new"),
+                                         bf.get("reddit_calls"), bf.get("trees"), len(bf.get("done") or []),
                                          cl.get("labelled"), cl.get("rejected"), rf.get("brands_refreshed")))
         if work == 0:   # 9 Oct: 150 passes in a row did nothing, one a minute; an empty pass means wait, not retry
             log("the pass did nothing; next request in 30 minutes")
