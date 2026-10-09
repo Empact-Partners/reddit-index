@@ -209,6 +209,14 @@ def backfill(run: "Run", cfg: dict, log) -> dict:
             # three subreddits whose last threads kept failing read "not finished" forever while every pass made
             # 0 calls on them, and the day runner re-requested an empty pass every minute (9 Oct: 150 of them).
             finished = sweep.sub_complete(real, ctx["mode"], int(cfg.get("tree_cap", 150)))
+            if not finished and trees == 0 and not sweep.load_state(real, ctx["mode"]).get("listings_done"):
+                # the listing failed. A container's disk is new every pass, so the sweep's own retry count never
+                # passes 1 and it never gives up: ask Reddit whether the subreddit exists at all (9 Oct:
+                # bookingagent, salesmanagement and autismparenting answer 404, and 150 passes retried them).
+                about = rc.get(f"/r/{real}/about", {"raw_json": 1}, bucket="misc", use_cache=False)
+                if isinstance(about, dict) and about.get("_err") in (403, 404):
+                    out.setdefault("unreachable", []).append({"sub": sub, "http": about["_err"]})
+                    finished = True   # recorded in `done`: no later pass takes it again
             (out["done"] if finished else out["unfinished"]).append(sub)
             log(f"  backfill {sub}: {trees} trees, {m} mentions, {'done' if sub in out['done'] else 'not finished'}")
     finally:
