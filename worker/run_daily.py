@@ -341,6 +341,11 @@ def main() -> int:
         args.max_calls, args.day_end = int(req[1]), req[2]
         args.max_egress_gb = float(req[3]) if req[3] is not None else None   # the day's room, measured by the requester
         log(f"a daytime pass was requested: stages {args.stages}, {args.max_calls} Reddit calls, ends by {req[2]} UTC")
+        # by day the Reddit app is shared with the partner mentions tracker (at most 30 calls a minute) and the
+        # reddit MCP; the index takes at most 45 a minute so the app stays under its ~100 (night: the app is ours)
+        import reddit_client as rc
+        rc.SLEEP = max(rc.SLEEP, 60 / 45)
+        rc._adaptive[0] = max(rc._adaptive[0], rc.SLEEP)
 
     conn = db.connect()
     conn.autocommit = True
