@@ -2,7 +2,7 @@
 
 **Live: [redditindex.com](https://redditindex.com)** (noindex while provisional).
 
-## STATUS (kept current; last edit 2026-10-09 11:30 UTC)
+## STATUS (kept current; last edit 2026-10-09 16:20 UTC)
 
 | | |
 |---|---|
@@ -10,7 +10,8 @@
 | **How it updates** | One scheduled run a night at 00:00 UTC on Railway (`reddit-index-sweep`): takedowns, collection, classification, refresh, scores, then the changed pages proven on the site. Daytime passes (`ops/day_passes.py`) collect and backfill under the day's egress line. The three generated files refresh on their own timers (5 min, 1 h, 1 h; decision 0022), because an expiry never reached them. |
 | **Labels** | Queue empty on 9 Oct 11:23 UTC: 1,206,401 labels. GLM's allowance is used up until 10 Oct; until 11 Oct 00:00 UTC a laptop-only Codex lane labels what Jev cannot settle (decision 0021). |
 | **Cost** | About 0.6 GB of database egress a night (node counter), under a 2 GB daily line for every job together; the site reads one small row per page, and the three generated files under 20 MB a day. |
-| **Open** | 11 alias names held for a person (a brand's own name that is also a word: Things, Plan A, Zus...). A dedicated Reddit API app for the index is the owner step that doubles collection. |
+| **Storage** | 9 Oct: the old site's rail view dropped (3,774 to 3,554 MB), retention steps 1 and 2 run every night, step 3 (one copy of each comment's text, about 1.1 GB) running within its egress budget. The old collector's Railway service is deleted. |
+| **Open** | A dedicated Reddit API app for the index is the owner step that doubles collection. |
 | **How to stop everything** | `python3 ops/ri.py stop "reason"` turns the sweep off and its database login off. |
 
 A public index of what Reddit actually says about software brands: one
@@ -20,151 +21,84 @@ one of them stored, classified, and linkable back to its source. Built by
 [Empact Partners](https://empact.partners).
 
 ```
-              ┌──────────────────────────────────────────────────────────┐
-              │ A HUMAN runs worker/update.sh — that is the only trigger │
-              │ (decisions/0010 · 2026-08-18 · no scheduled jobs at all) │
-              └────────────────────────┬─────────────────────────────────┘
-                                       ▼
-Reddit API ──►┌──────────────────────────────────────────────────────────┐
- /new         │ 1· collect — worker/daily.py --core-only (Mac-side)      │
- /comments    │ the 527 core subreddits first, then the rest of 2,029    │
-              │ fetch → qualify → resolve (rules only) → Supabase        │
-              │ watermark-bounded · 24 trees/sub · stops clean on budget │
-              └────────────────────────┬─────────────────────────────────┘
-                                       ▼ threads · verbatim mentions · watermarks
-                            ┌──────────────────────┐
-                            │       Supabase       │ ◄── the single source of truth
-                            └──────────┬───────────┘
-                                       ▼
-              ┌──────────────────────────────────────────────────────────┐
-              │ 2· classify — classify_api.py, 16 DeepSeek API workers   │
-              │ (deepseek-v4-flash · ~1,100 items/min · ~$0.18/1K items  │
-              │  · --allow-metered passed explicitly · Haiku = fallback) │
-              │ 3· score_db.py → 4· delete_sync.py → 5· publish          │
-              │ 6· healthcheck.py — the chain's own exit verdict         │
-              │ NOT `set -e`; every stage reports and the chain goes on  │
-              └────────────────────────┬─────────────────────────────────┘
-                                       ▼ Vercel forced rebuild (fallback: empty-commit push)
-                            ┌──────────────────────┐
-                            │    Vercel rebuild    │ ──► redditindex.com (static)
-                            └──────────────────────┘
+ 00:00 UTC, Railway service reddit-index-sweep (ops/schedule.json; hard stop 05:30)
+   │  worker/run_daily.py, one receipt in public.pipeline_runs, stop switch public.sweep_control
+   ▼
+ 1 takedowns   worker/takedown.py      every card on the site re-probed; deleted or edited comments purged
+ 2 collect     worker/collect.py       the core subreddits first; caps 15,000 Reddit calls, 40,000 mentions
+ 3 classify    worker/classify_sweep.py  Jev first, GLM-5.3 on what Jev cannot settle (decision 0017)
+ 4 refresh     site.refresh_brand()    one row per company page in schema `site`, recomputed in Postgres
+ 5 score       worker/site_score.py    scores and ranks stored, so a board and a page cannot disagree
+ 6 publish     worker/site_publish.py  changed pages expired, fetched, and their hash proven on the site
+ 7 retention   ops/retention.py        steps 1 and 2 of docs/retention.md, archive first
+   │
+   ▼
+ redditindex.com (Next.js on Vercel): every page reads one row of schema `site` and changes only when step 6
+ names it; /freshness.json, /llms.txt and /sitemap.xml refresh on 5-minute and hourly timers (decision 0022);
+ a build happens only on a code change (scripts/vercel-ignore.sh)
 ```
 
-**Everything is on-demand** ([SOP.md](SOP.md), [decisions/0010](decisions/0010-manual-on-demand.md)):
-no launchd lanes, no Railway cron (service Offline; retired plists archived in
-`worker/launchd/retired-2026-08-18/`). Run at least weekly — collection is the
-one stage that loses data to waiting (`/new` reach, the 72h revisit window).
+The whole index shares one daily line: **2 GB of database egress**, measured on the node transmit counter (the
+number the Supabase watchdog and the bill follow). A normal night is about 0.6 GB. One command stops everything:
+`python3 ops/ri.py stop "reason"`.
 
-Two things in that picture are there because of what happened without them.
-
-The fetch walks the core subreddits first: a pass can carry a time budget and
-stops cleanly when it expires, so what gets dropped is the tail, never the 527
-subreddits that carry the categories. One pass has to cover the gap since the
-last run, so the listing budget is 8 pages — 800 posts, past anything in this
-set — and a subreddit busier than that holds its watermark instead of skipping
-the overflow.
-
-The verify stage exists because between 2026-08-16 and 2026-08-17 the daily
-fetch collected **zero rows and every signal stayed green** — the cron ran, the
-container exited 0, and `ingest_state` gained a fresh row with `status='ok'`.
-(`ingest_state.watermark` is a TEXT column; `daily.py` read it back with
-`float()`, which raised on every subreddit from the second run onward. Fixed in
-`daily.py::as_epoch`, pinned by `tests/collect.test.mjs`.) A cron that runs,
-exits 0 and collects nothing is invisible to every other signal, so the check
-asks whether the index MOVED, not whether it ran.
+What runs on the laptop, and only there: migrations (`ops/migrate.py`), deploys (`ops/deploy_sweep.py`),
+retention step 3 (`ops/retention.py one-copy`), and until 11 Oct 2026 the Codex lane that labels what Jev cannot
+settle while GLM's allowance is used up (`ops/codex_lane.py`, decision 0021). Daytime passes
+(`ops/day_passes.py`) ran the 90-day backfill of the partner categories; it finished on 9 Oct.
 
 ## What's here
 
 | Path | What |
 |---|---|
-| `app/`, `components/`, `lib/` | The Next.js site (static, direct SQL to a read-only role, no anon key) |
-| `worker/` | The pipeline. Live: `daily.py` (the Railway fetch), `classify_api.py`, `score_db.py`, `delete_sync.py`, `healthcheck.py`, `backfill_posts.py`, `sweep.py`, `qa_audit.py`. `harvest.py` is no longer a driver — it survives as the shared document builders (`post_doc`, `tree_docs`) that `daily.py`, `sweep.py` and `backfill_posts.py` import between them. Several files are dead; see [Superseded](#superseded-do-not-run-these) |
-| `data/` | The taxonomy (151 categories), brand gazetteer (10,510 brands), subreddit mapping, and their generators |
-| `supabase/migrations/` | The schema: partitioned mentions, sentiment, scores, RLS + published views |
-| `scripts/` | Build gates (`gates/` — seven of them: category constraints, icons, contrast, fonts, trade dress, slugs, CSS law; each proven by `pnpm gates:selftest` to fail when violated), plus `qa-sweep.mjs` (reads every built page) and `device-shot.mjs` (real device-metric screenshots) |
-| `tests/` | `pnpm test`: vitest for the board and company components, `node:test` for the resolver and for the two collection defects fixed on 2026-08-17 |
-| `docs/` | How it works (below) |
-| `00-16*.md`, `decisions/` | The original design record (historical; `HANDOFF.md` tracks drift) |
+| `app/`, `components/`, `lib/` | The site. One file opens a database connection (`lib/data/site-db.ts`), as a role that can read schema `site` only; `scripts/gates/bounded-reads.mjs` fails the build otherwise |
+| `worker/` | The sweep: `run_daily.py` and what it imports (`takedown`, `collect`, `daily`, `harvest`, `sweep`, `resolve`, `classify_sweep`, `rubric`, `site_score`, `numerics`, `site_publish`, `reddit_client`, `db`). Everything else in the folder is the old pipeline; see below |
+| `ops/` | Running it: `schedule.json` (the one schedule), `deploy_sweep.py`, `migrate.py`, `ri.py` (stop/start), `day_passes.py`, `retention.py`, `codex_lane.py`, `alias_blocklist.py`, `go_live.py` |
+| `data/` | The taxonomy, the brand gazetteer, the subreddit map, the alias blocklist |
+| `supabase/migrations/` | The schema, applied by `ops/migrate.py` (ledger: `public.schema_migrations`) |
+| `scripts/` | Build gates (`gates/`, each proven to fail by its self-test) and the investigation script |
+| `decisions/` | Every ruling; 0017 (the daily sweep) to 0022 (the generated files on timers) describe today's system |
 
 ## Docs
 
+- [how-the-index-updates.md](docs/how-the-index-updates.md) — the nightly run, stage by stage
+- [retention.md](docs/retention.md) — what the index keeps, for how long, and the state of each step
+- [investigation-2026-10.md](docs/investigation-2026-10.md) — why the index was frozen and what was fixed
 - [methodology.md](docs/methodology.md) — how the score is computed, tiers, floors
-- [methodology-review.md](docs/methodology-review.md) — the score interrogated: what's sound, what's weak, what changed
-- [taxonomy.md](docs/taxonomy.md) — all categories and their scoring subreddits (generated, never hand-edited)
+- [taxonomy.md](docs/taxonomy.md) — all categories and their scoring subreddits (generated)
 - [entity-resolution.md](docs/entity-resolution.md) — how a word becomes a brand mention (and when it refuses)
-- [sentiment.md](docs/sentiment.md) — the four-way verdict and the engines that produce it
-- [worker.md](docs/worker.md) — the daily loop: fetch algorithm, watermarks, failure matrix, deployment
-- [how-the-index-updates.md](docs/how-the-index-updates.md) — cadence, the no-history rule, why publish = rebuild
-- [qa-platform.md](docs/qa-platform.md) — the full site sweep: every built page, the design gates, responsive, SEO
-- [qa-audit.md](docs/qa-audit.md) — the corpus audit: invariants, recall, precision, entity resolution
-- [depth-execution-plan.md](docs/depth-execution-plan.md) — **the collection spec.** Stage 3
-  (90 days, category by category) plus "What ACTUALLY ran": the 150-tree-per-subreddit cap the
-  shipped index was built with. **Read this before changing how collection runs**
-- [post-mortem-2026-08-24.md](docs/post-mortem-2026-08-24.md) — the 51-category expansion: 21
-  incidents, ~19h of measurable loss, what caused each, and the 13 that still have no
-  regression test
+- [sentiment.md](docs/sentiment.md) — the four-way verdict
+- [worker.md](docs/worker.md) — collection: fetch algorithm, watermarks, failure matrix
+- [go-live/RUNBOOK.md](docs/go-live/RUNBOOK.md) — how the read path went live on 6 Oct 2026
 
 ## Operating it
 
 ```bash
-pnpm build                       # site + all gates (prebuild + postbuild)
-pnpm gates:selftest              # prove each gate fails when violated (after a build)
-pnpm test                        # vitest + the node:test resolver/collection suites
-node scripts/qa-sweep.mjs        # read every built page (after a build)
+python3 ops/ri.py stop "reason"         # the one-step stop (sweep off, its database login off)
+python3 ops/deploy_sweep.py             # deploy the sweep; never while a pass runs (check pipeline_runs)
+python3 ops/migrate.py --status         # what is applied; --apply 0030 applies one file in one transaction
+python3 ops/retention.py status         # sizes and what each retention step would remove
+python3 scripts/schedule_check.py       # every write since the last check matches a receipt
 
-worker/update.sh                 # THE update — collect → … → verify (SOP.md)
-worker/update.sh --rehearse      # bounded end-to-end rehearsal, ~15 min
-
-# individual stages, by hand
-python3 worker/daily.py --dry-run --only sysadmin   # fetch + resolve, write NOTHING
-python3 worker/daily.py --core-only                 # the 527 core subreddits only
-python3 worker/daily.py --max-minutes 60            # bounded pass
-python3 worker/classify_api.py --deepseek 16 --haiku 0 --allow-metered  # the ruled lane
-python3 worker/classify_api.py                      # FALLBACK: 16 Haiku CLI (Claude quota!)
-python3 worker/score_db.py                               # re-score from Supabase + prune
-python3 worker/delete_sync.py --dry-run                  # what Reddit has removed
-python3 worker/backfill_posts.py --limit 2000            # re-read stored threads AS POSTS
-
-python3 worker/healthcheck.py                  # 14 assertions, exit 1 on failure
-python3 worker/healthcheck.py --json           # the same, machine-readable
-python3 worker/qa_audit.py --only invariants   # the 6 SQL invariants, free
+pnpm build                              # site + every gate
+pnpm test                               # vitest, the resolver and collection suites, the sweep units
 ```
 
-Classification is `worker/classify_api.py` on the **DeepSeek API**
-(`deepseek-v4-flash`, 16 HTTP workers — ruled 2026-08-18,
-[decisions/0010](decisions/0010-manual-on-demand.md), superseding the
-free-Haiku ruling of 2026-08-17: "free" Haiku drew the shared Claude Max-plan
-quota, and its bare `claude -p` calls spent ~95% of their tokens booting
-context). It drains the backlog and exits: ~1,100 items/min, ~$0.18 per 1,000
-items, measured on the 153,748-item/$27.22 production run. `--allow-metered`
-stays as a gate so spend is always explicit at the call site — `update.sh`
-passes it. The Haiku CLI pool remains a fallback for a DeepSeek outage. The
-corpus carries labels from three engines (`claude-cli-absa-1`,
-`deepseek-v4-flash-absa-1`, `haiku-4.5-absa-1`) with 85% pairwise agreement.
+### The old pipeline: do not run these
 
-`worker/backfill_posts.py` is a repair, not a daily job: until 2026-08-17 the
-post document was built from `selftext` alone, so a brand named only in a post
-title resolved to nothing and a link post produced no document at all. The
-collectors are fixed; this re-reads every stored thread through `/api/info` to
-recover the historical ones. Resumable, idempotent, re-running is free.
-
-### Superseded: do not run these
-
-| Path | Why not |
-|---|---|
-| `worker/classify_codex.py`, `classify_daily.py`, `classify_daemon.py` | The Codex fleet classification lane, retired in `071de98`. `codex exec` is an agent session, not an API call: >600s on a 40-item batch against 108s for free `claude -p` Haiku. Do not delete two of them — `classify_api.py` imports `SYSTEM` from `classify_codex.py` and `Backlog`/`pg_text` from `classify_daemon.py` |
-| `worker/depth_run.py`, `collector.py`, `publisher.py`, `watchdog.py`, `lanes.sh` | The continuous lanes built for the one-off 90-day depth sweep. That sweep is complete (527/527 core subreddits) and none of these is loaded any more |
-| `worker/backfill_100.sh` | Runs superseded discovery (`data/discover.py`) and the retired Codex classifier |
-| `worker/finalize.sh`, `pipeline.py`, `run_scoring.py` | The file-cache era (`resolve → classify → assemble → score → load`). Supabase is the corpus now and `score_db.py` replaced the whole chain |
+`worker/update.sh` and the files `run_daily.py` does not reach (`classify_api.py`, `classify_codex.py`,
+`classify_daily.py`, `classify_daemon.py`, `score_db.py`, `delete_sync.py`, `healthcheck.py`, `publish.py`,
+`publisher.py`, `leases.py`, `collector.py`, `depth_run.py`, `pipeline.py`, `run_scoring.py`, `watchdog.py` and the
+rest) are the manual, laptop-run pipeline of August 2026 (decisions 0010 and 0016, superseded by 0017). They
+read and write the same database without the sweep's caps, receipts or stop switch.
 
 ## Two facts about what the site shows
 
-**The display floor is not a constant.** `lib/data/boards.ts` gives each
-category its own bar: the **median** opinionated-mention count across the
-brands tracked in that category, clamped to `[3, 30]`. A company must carry at
-least as much evidence as the typical brand it is being ranked against. The
-pooled "All Categories" board demands that bar AND `n_op ≥ 10`, because ranking
-across the whole index is a bigger claim than ranking inside one category.
+**Who is on a board.** Every brand with a score is ranked on its primary category's board; score, rank and board
+size are computed by the sweep (`worker/site_score.py`) and stored, so a board and a company page cannot disagree.
+The pooled "All Categories" board also demands at least 10 opinionated mentions (`lib/data/boards.ts`), because
+ranking across the whole index is a bigger claim than ranking inside one category. The live methodology page
+(redditindex.com/methodology) is the authority on gates and floors.
 
 **A company page shows a window of its mentions, and says so.** The rails are
 the 80 newest comments and the 40 newest posts per brand — two rails, one per
@@ -176,5 +110,5 @@ Everything verbatim lives in Supabase at all times: mention bodies, authors,
 permalinks, labels, scores. The site is a rendering of that database, and every
 mention it renders links back to the Reddit comment or post that produced it.
 
-Start at [HANDOFF.md](HANDOFF.md) for the build history and every recorded
-deviation from the original design documents.
+The build history and every recorded deviation from the original design documents: [HANDOFF.md](HANDOFF.md)
+(to August 2026) and `decisions/` (since).
