@@ -13,7 +13,8 @@ another row of the same comment, and records which row (`body_from`); it proves 
 every row's readable text before and after, and restores the partition exactly if the two differ.
 
 Step 3 meters itself on the database's node transmit counter (the number the egress watchdog and the bill
-follow) and stops at the budget declared in docs/retention.md: 0.4 GB a day, 1.0 GB in all. It holds the sweep's
+follow) and stops at the budget declared in docs/retention.md: 0.9 GB a day, 2.5 GB in all, and never past
+the day's 1.9 GB line on that counter. It holds the sweep's
 lock, so it never runs beside the sweep or the backlog classifier.
 """
 from __future__ import annotations
@@ -30,7 +31,8 @@ sys.path.insert(0, os.path.join(ROOT, "worker"))
 sys.path.insert(0, os.path.join(ROOT, "scripts"))
 
 LOCK_KEY = 0x52494458
-BUDGET = {"one_copy_gb_day": 0.4, "one_copy_gb_total": 1.0}
+BUDGET = {"one_copy_gb_day": 0.9, "one_copy_gb_total": 2.5}   # measured 9 Oct: 4.4 KB of egress a cleared row
+LINE_GB = 1.90   # the day's line on the node counter, every index job together (ops/day_passes.py)
 CHUNKS = 32   # a partition is cleared in 32 slices by comment id, so no statement holds a long transaction
 
 READABLE = ("coalesce(m.body, (select k.body from {holders} k where k.doc_id = m.doc_id "
@@ -209,16 +211,18 @@ def main() -> int:
             last = {"v": start, "at": time.time()}
 
             def meter() -> float:
-                if time.time() - last["at"] > 300:
+                if time.time() - last["at"] > 60:   # 300 s let 9 Oct's first run spend 0.763 GB against a 0.4 cap
                     last["v"], last["at"] = inv._metrics()["transmit_bytes"], time.time()
                 return last["v"] - start
             spent = conn.execute("select coalesce(sum((notes->>'egress_gb')::numeric), 0), coalesce(sum((notes->>'egress_gb')::numeric) "
                                  "filter (where started_at::date = now()::date), 0) from public.pipeline_runs "
                                  "where stage = 'retention' and notes->>'step' = 'one-copy'").fetchone()
             sys.path.insert(0, os.path.join(ROOT, "ops"))
-            import day_egress   # one day total for every index job together
+            import day_passes   # the node counter since the UTC day began (day_egress's figure is an estimate)
             room = min(BUDGET["one_copy_gb_day"] - float(spent[1]), BUDGET["one_copy_gb_total"] - float(spent[0]),
-                       day_egress.used_today(conn)["room_gb"]) * 1e9
+                       LINE_GB - 0.1 - day_passes.used_today(None)) * 1e9
+            if room <= 0:
+                notes["stopped"] = "no room today under the line on the node counter"
             parts = [r[0] for r in conn.execute(
                 "select c.relname from pg_inherits i join pg_class c on c.oid = i.inhrelid "
                 "where i.inhparent = 'public.mentions'::regclass order by pg_total_relation_size(c.oid) desc")]
