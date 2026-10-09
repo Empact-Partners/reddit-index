@@ -13,6 +13,10 @@
  *
  *   SOURCE
  *     1. No numeric `revalidate` anywhere. A page changes when /api/revalidate names it, never on a timer.
+ *        Three generated files are the exception, named below with the shortest interval each may carry
+ *        (decision 0022): revalidatePath does not reach a route handler's built response, so an expiry left
+ *        them as the last deploy wrote them. Each reads a few hundred kilobytes at most, at most once per
+ *        interval, whatever the traffic: under 20 MB a day for all three, against the 3.80 billion rows.
  *     2. Every page and route handler declares `dynamic = "force-static"` (the publish endpoint excepted),
  *        and every page pins `revalidate = false`.
  *     3. ONE file opens a database connection: lib/data/site-db.ts. Nothing else imports the driver or
@@ -23,7 +27,8 @@
  *        how a page keeps serving a comment that was taken down.
  *     6. The publish endpoint reaches no data.
  *   OUTPUT (--built)
- *     7. Nothing in the prerender manifest carries a revalidate interval.
+ *     7. Nothing in the prerender manifest carries a revalidate interval, except those three, at or above
+ *        their floor.
  *
  * Run: node scripts/gates/bounded-reads.mjs            (source only, no build needed)
  *      node scripts/gates/bounded-reads.mjs --built    (source + the prerender manifest)
@@ -38,6 +43,13 @@ const problems = [];
 
 const DB_MODULE = 'lib/data/site-db.ts';
 const DYNAMIC_ALLOWED = new Set(['app/api/revalidate/route.ts']);
+/** The only files that may carry a timer, the path each serves, and the shortest interval allowed (seconds). */
+const TIMED = {
+  'app/freshness.json/route.ts': { route: '/freshness.json', floor: 300 },  // one row of site.meta
+  'app/llms.txt/route.ts': { route: '/llms.txt', floor: 3600 },             // the index rows, under 0.5 MB
+  'app/sitemap.ts': { route: '/sitemap.xml', floor: 3600 },                 // the slug list
+};
+const TIMED_ROUTES = Object.fromEntries(Object.values(TIMED).map((t) => [t.route, t.floor]));
 
 const rel = (p) => path.relative(root, p).split(path.sep).join('/');
 // Comments are not code: a note about the old `revalidate = 86400` must not fail the gate that forbids it.
@@ -54,7 +66,14 @@ for (const file of routeFiles) {
   const name = rel(file);
   const src = stripComments(fs.readFileSync(file, 'utf8'));
   const numeric = src.match(/export\s+const\s+revalidate\s*=\s*([0-9][0-9_]*)/);
-  if (numeric) problems.push(`${name}: export const revalidate = ${numeric[1]} — a number here regenerates the page on a timer, which is what cost 3.80 billion rows`);
+  const timed = TIMED[name];
+  if (timed) {
+    const n = numeric ? Number(numeric[1].replaceAll('_', '')) : null;
+    if (n === null) problems.push(`${name}: carries no timer — an expiry does not reach a route handler, so without one it never changes between deploys`);
+    else if (n < timed.floor) problems.push(`${name}: export const revalidate = ${n} — this file may refresh at most once every ${timed.floor} s`);
+  } else if (numeric) {
+    problems.push(`${name}: export const revalidate = ${numeric[1]} — a number here regenerates the page on a timer, which is what cost 3.80 billion rows`);
+  }
   if (DYNAMIC_ALLOWED.has(name)) continue;
   if (!/export\s+const\s+dynamic\s*=\s*["']force-static["']/.test(src)) {
     problems.push(`${name}: no \`export const dynamic = "force-static"\``);
@@ -132,7 +151,15 @@ if (checkBuilt) {
   if (routes.length === 0) fail('bounded reads', 'the build prerendered no routes at all');
   for (const [route, info] of routes) {
     const r = info.initialRevalidateSeconds;
-    if (r !== false && r !== undefined) problems.push(`${route}: built with a revalidate interval of ${r}`);
+    if (r === false || r === undefined) continue;
+    if (route in TIMED_ROUTES && typeof r === 'number' && r >= TIMED_ROUTES[route]) continue;
+    problems.push(`${route}: built with a revalidate interval of ${r}`);
+  }
+  for (const [route, floor] of Object.entries(TIMED_ROUTES)) {
+    const r = manifest.routes?.[route]?.initialRevalidateSeconds;
+    if (!(typeof r === 'number' && r >= floor)) {
+      problems.push(`${route}: built without its timer (${JSON.stringify(r)}) — it would never change between deploys`);
+    }
   }
   for (const [route, info] of Object.entries(manifest.dynamicRoutes ?? {})) {
     if (route.startsWith('/api/')) continue;
@@ -141,7 +168,7 @@ if (checkBuilt) {
       problems.push(`${route}: pages rendered on request carry a revalidate interval of ${JSON.stringify(r)}`);
     }
   }
-  if (!problems.length) pass('bounded reads (output)', `${routes.length} prerendered routes, none on a timer`);
+  if (!problems.length) pass('bounded reads (output)', `${routes.length} prerendered routes, none on a timer but the three named files`);
 }
 
 if (problems.length) {

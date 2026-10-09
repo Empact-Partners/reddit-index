@@ -3,10 +3,11 @@ import { getRegistry } from "@/lib/routing";
 import { getMeta } from "@/lib/data/site-db";
 import { SITE_URL } from "@/lib/env";
 
-// Emitted once and cached; the daily sweep expires it only when the SET of pages changes. Without the pin
-// the sitemap is rendered by a function on every cache expiry, and /sitemap.xml is the single most-probed
-// path on any live domain. It reads the slug list (short rows), never the corpus.
+// Cached and rebuilt at most once an hour (decision 0022), never per request: /sitemap.xml is the single most-probed
+// path on any live domain. It reads the slug list (short rows), never the corpus. The sweep's expiry never reached
+// it, so until 9 Oct it listed the page set of the last deploy (6,441 URLs for 6,065 company pages).
 export const dynamic = "force-static";
+export const revalidate = 3600;
 
 /**
  * Built from the SAME registry that mints the routes, so the sitemap can never list a page that 404s or
