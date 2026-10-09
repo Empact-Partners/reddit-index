@@ -205,9 +205,10 @@ def backfill(run: "Run", cfg: dict, log) -> dict:
             trees, m = sweep.run_subs([real], ctx, int(cfg.get("tree_cap", 150)))
             out["trees"] += trees
             out["mentions"] += m
-            st = sweep.load_state(real, ctx["mode"])
-            finished = st.get("listings_done") and len(set(st.get("swept", []))) >= min(len(st.get("post_ids", [])),
-                                                                                       int(cfg.get("tree_cap", 150)))
+            # the sweep's own test: a thread it gave up on (three failed fetches) counts as handled. Without that,
+            # three subreddits whose last threads kept failing read "not finished" forever while every pass made
+            # 0 calls on them, and the day runner re-requested an empty pass every minute (9 Oct: 150 of them).
+            finished = sweep.sub_complete(real, ctx["mode"], int(cfg.get("tree_cap", 150)))
             (out["done"] if finished else out["unfinished"]).append(sub)
             log(f"  backfill {sub}: {trees} trees, {m} mentions, {'done' if sub in out['done'] else 'not finished'}")
     finally:
