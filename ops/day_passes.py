@@ -141,6 +141,12 @@ def main() -> int:
             log("the pass failed; stopping"); break
         if bf.get("note") == "every declared subreddit is done" and cl.get("left_in_queue") == 0:
             log("backfill and labels done"); break
+        rf = st.get("refresh") or {}
+        work = sum(int(x or 0) for x in (bf.get("reddit_calls"), bf.get("trees"), len(bf.get("done") or []),
+                                         cl.get("labelled"), cl.get("rejected"), rf.get("brands_refreshed")))
+        if work == 0:   # 9 Oct: 150 passes in a row did nothing, one a minute; an empty pass means wait, not retry
+            log("the pass did nothing; next request in 30 minutes")
+            time.sleep(1800)
     log("passes ended")
     return 0
 
