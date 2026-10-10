@@ -45,6 +45,10 @@ def log(*a):
 
 
 def record(conn, run_id: str, t0: float, status: str, notes: dict) -> None:
+    if conn.closed:   # 10 Oct: the pooler dropped the connection and the receipt stayed "running" all morning
+        import db
+        conn = db.connect()
+        conn.autocommit = True
     conn.execute(
         "insert into public.pipeline_runs (run_id, stage, code_version, started_at, finished_at, status, notes) "
         "values (%s, 'retention', 'retention-v1', to_timestamp(%s), case when %s = 'running' then null else now() end, %s, %s) "
