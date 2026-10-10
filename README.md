@@ -2,15 +2,15 @@
 
 **Live: [redditindex.com](https://redditindex.com)** (noindex while provisional).
 
-## STATUS (kept current; last edit 2026-10-09 16:20 UTC)
+## STATUS (kept current; last edit 2026-10-10 22:55 UTC)
 
 | | |
 |---|---|
-| **Live?** | **Yes, refreshing daily.** redditindex.com runs the read path since 2026-10-06 11:25 UTC (decision 0017). Last run 9 Oct 04:31 UTC: the footer, `/freshness.json`, `/llms.txt` and the sitemap show it. Noindex while provisional. |
+| **Live?** | **Yes, refreshing daily.** redditindex.com runs the read path since 2026-10-06 11:25 UTC (decision 0017). Last successful night run 10 Oct 04:20 UTC: the footer, `/freshness.json`, `/llms.txt` and the sitemap show it. Noindex while provisional. |
 | **How it updates** | One scheduled run a night at 00:00 UTC on Railway (`reddit-index-sweep`): takedowns, collection, classification, refresh, scores, then the changed pages proven on the site. Daytime passes (`ops/day_passes.py`) collect and backfill under the day's egress line. The three generated files refresh on their own timers (5 min, 1 h, 1 h; decision 0022), because an expiry never reached them. |
-| **Labels** | Queue empty on 9 Oct 11:23 UTC: 1,206,401 labels. GLM's allowance is used up until 10 Oct; until 14 Oct a laptop-only lane labels what Jev cannot settle, on Claude Sonnet 5.5 (85.0% agreement with GLM; decision 0021). |
-| **Cost** | About 0.6 GB of database egress a night (node counter), under a 2 GB daily line for every job together; the site reads one small row per page, and the three generated files under 20 MB a day. |
-| **Storage** | 9 Oct: the old site's rail view dropped (3,774 to 3,554 MB), retention steps 1 and 2 run every night, step 3 (one copy of each comment's text, about 1.1 GB) running within its egress budget. The old collector's Railway service is deleted. |
+| **Labels** | Queue empty on 10 Oct 22:45 UTC: 1,212,699 labels. Jev settles what it can, GLM-5.3 the rest again since 10 Oct 16:00 UTC (the Claude Max lane ran 9-10 Oct while GLM's allowance was used up; decision 0021). |
+| **Cost** | Under a 2 GB daily line of database egress for every job together (the laptop guard stops at 1.9 GB); 10 Oct used 1.68 GB, with daytime passes collecting 962 subreddits and 17,079 mentions on top of the night. Checkpoints every 30 minutes instead of 5 since 10 Oct 22:40 UTC, to cut full-page log writes (decision 0023, judged over three nights). |
+| **Storage** | 9 Oct: the old site's rail view dropped (3,774 to 3,554 MB), retention steps 1 and 2 run every night, step 3 (one copy of each comment's text, about 1.1 GB) running within its egress budget. 10 Oct: retention runs as a stage of the night sweep, and an index nothing read was dropped (migration 0031). The old collector's Railway service is deleted. |
 | **Open** | A dedicated Reddit API app for the index is the owner step that doubles collection. |
 | **How to stop everything** | `python3 ops/ri.py stop "reason"` turns the sweep off and its database login off. |
 
@@ -60,7 +60,7 @@ categories finished on 9 Oct.
 | `data/` | The taxonomy, the brand gazetteer, the subreddit map, the alias blocklist |
 | `supabase/migrations/` | The schema, applied by `ops/migrate.py` (ledger: `public.schema_migrations`) |
 | `scripts/` | Build gates (`gates/`, each proven to fail by its self-test) and the investigation script |
-| `decisions/` | Every ruling; 0017 (the daily sweep) to 0022 (the generated files on timers) describe today's system |
+| `decisions/` | Every ruling; 0017 (the daily sweep) to 0023 (checkpoints every 30 minutes) describe today's system |
 
 ## Docs
 
