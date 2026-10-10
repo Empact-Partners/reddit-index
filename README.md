@@ -8,7 +8,7 @@
 |---|---|
 | **Live?** | **Yes, refreshing daily.** redditindex.com runs the read path since 2026-10-06 11:25 UTC (decision 0017). Last run 9 Oct 04:31 UTC: the footer, `/freshness.json`, `/llms.txt` and the sitemap show it. Noindex while provisional. |
 | **How it updates** | One scheduled run a night at 00:00 UTC on Railway (`reddit-index-sweep`): takedowns, collection, classification, refresh, scores, then the changed pages proven on the site. Daytime passes (`ops/day_passes.py`) collect and backfill under the day's egress line. The three generated files refresh on their own timers (5 min, 1 h, 1 h; decision 0022), because an expiry never reached them. |
-| **Labels** | Queue empty on 9 Oct 11:23 UTC: 1,206,401 labels. GLM's allowance is used up until 10 Oct; until 11 Oct 00:00 UTC a laptop-only Codex lane labels what Jev cannot settle (decision 0021). |
+| **Labels** | Queue empty on 9 Oct 11:23 UTC: 1,206,401 labels. GLM's allowance is used up until 10 Oct; until 14 Oct a laptop-only lane labels what Jev cannot settle, on Claude Sonnet 5.5 (85.0% agreement with GLM; decision 0021). |
 | **Cost** | About 0.6 GB of database egress a night (node counter), under a 2 GB daily line for every job together; the site reads one small row per page, and the three generated files under 20 MB a day. |
 | **Storage** | 9 Oct: the old site's rail view dropped (3,774 to 3,554 MB), retention steps 1 and 2 run every night, step 3 (one copy of each comment's text, about 1.1 GB) running within its egress budget. The old collector's Railway service is deleted. |
 | **Open** | A dedicated Reddit API app for the index is the owner step that doubles collection. |
@@ -43,8 +43,8 @@ number the Supabase watchdog and the bill follow). A normal night is about 0.6 G
 `python3 ops/ri.py stop "reason"`.
 
 What runs on the laptop, and only there: migrations (`ops/migrate.py`), deploys (`ops/deploy_sweep.py`),
-retention step 3 (`ops/retention.py one-copy`), and until 11 Oct 2026 the Codex lane that labels what Jev cannot
-settle while GLM's allowance is used up (`ops/codex_lane.py`, decision 0021). Daytime passes
+retention step 3 (`ops/retention.py one-copy`), and until 14 Oct 2026 the labelling lane for what Jev cannot settle,
+now on Claude Sonnet 5.5 through Vlad's Max plan (`ops/codex_lane.py --model claude-sonnet-5-5`, decision 0021). Daytime passes
 (`ops/day_passes.py`, requested from the laptop, run on Railway) collect from 06:15 to 21:00 UTC at most 45 Reddit
 calls a minute and label what they collect (the night refreshes, scores and publishes it): the night reaches
 only 300-400 of the 5,568 subreddits it plans, and collection is most overdue first, so the day reaches the rest. They stop at 1.90 GB on the node counter. The 90-day backfill of the partner
