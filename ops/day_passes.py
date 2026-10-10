@@ -103,7 +103,10 @@ def wait_for(t0: dt.datetime, start_bytes: float | None) -> dict | None:
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--stages", default="collect,classify,refresh,score")   # backfill finished on 9 Oct
+    # collect and label only: a page changes only when the night publishes it, and the night refreshes and scores
+    # every brand the day dirtied, so a daytime refresh rewrites the same rows twice (9 Oct: 33 minutes, 1,887
+    # brands, write-ahead log the egress line pays for) for nothing the site shows. Backfill finished on 9 Oct.
+    ap.add_argument("--stages", default="collect,classify")
     ap.add_argument("--until", default="21:00", help="start no pass after this UTC time; each pass ends by 21:30")
     ap.add_argument("--max-calls", type=int, default=15000)
     ap.add_argument("--day-start-gb", type=float, default=None, help="the node counter at the day's start, in bytes/1e9")
