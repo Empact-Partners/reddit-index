@@ -228,7 +228,22 @@ def run(conn, base: str, dry_run: bool = False, verify_n: int = 100, max_expire:
     # 3. fetch and read back
     def verify(jobs: list[tuple[str, str | None, int]]) -> list[dict]:
         with ThreadPoolExecutor(FETCHERS) as ex:
-            return list(ex.map(lambda j: fetch(base, j[0], j[1], j[2]), jobs))
+            res = list(ex.map(lambda j: fetch(base, j[0], j[1], j[2]), jobs))
+        # A page that answers but at another fingerprint is expired and fetched once more before it counts as
+        # failed (10 Oct: /crypto-trading/ held an older boards hash after the night's expiry, and that one page
+        # failed the whole night; expired again by hand it served the current hash at once).
+        stale = [k for k, (j, v) in enumerate(zip(jobs, res)) if not v["ok"] and j[1] is not None and v["status"] == j[2]]
+        if stale:
+            for i in range(0, len(stale), 400):
+                expire(base, [jobs[k][0] for k in stale[i:i + 400]])
+            time.sleep(3)
+            with ThreadPoolExecutor(FETCHERS) as ex:
+                again = list(ex.map(lambda k: fetch(base, jobs[k][0], jobs[k][1], jobs[k][2]), stale))
+            for k, v in zip(stale, again):
+                v["bytes"] = v.get("bytes", 0) + res[k].get("bytes", 0)
+                res[k] = v
+            receipt["refetched_stale"] = receipt.get("refetched_stale", 0) + len(stale)
+        return res
 
     ok_ids = []
     for i in range(0, len(to_verify), 200):
