@@ -247,6 +247,7 @@ def stage(run: Run, name: str, fn) -> None:
         log(f"{name}: skipped, {reason}")
         return
     t = time.time()
+    w0 = wal_bytes(run.conn) if not run.conn.closed else None
     log(f"{name}: start")
     try:
         out = fn() or {}
@@ -258,6 +259,11 @@ def stage(run: Run, name: str, fn) -> None:
     if out.get("error") and not any(x.startswith(f"{name} failed") for x in run.receipt["problems"]):
         run.receipt["problems"].append(f"{name} failed: {out['error']}")   # a stage that caught its own error
     out["minutes"] = round((time.time() - t) / 60, 1)
+    # the write-ahead log the stage's minutes produced (cluster-wide: the laptop lanes' writes land in it too).
+    # Backup storage receives every byte and the egress line counts it, so this is what each stage costs the line.
+    w1 = wal_bytes(run.conn) if not run.conn.closed else None
+    if w0 is not None and w1 is not None:
+        out["wal_mb"] = round((w1 - w0) / 1e6, 1)
     run.receipt["stages"][name] = out
     if out.get("stopped"):
         run.receipt["caps_hit"].append(f"{name}: {out['stopped']}")
