@@ -408,9 +408,12 @@ def main() -> int:
         import reddit_client as rc
         left = run.caps["reddit_calls"] - rc.stats()["calls"]
         # Collection ends an hour before the run's deadline: classification, refresh, score and publish need
-        # that hour, and a collection that used the whole window would leave the day's mentions unlabelled.
+        # that hour, and a collection that used the whole window would leave the day's mentions unlabelled. A daytime
+        # pass (no publish) only labels after collecting: 30 minutes, then 5 for the end (10 Oct: ~12 min for 7,545).
         return collect.run(conn, {"reddit_calls": max(0, left), "mentions": run.caps["mentions"]},
-                           run.deadline - sched.get("reserve_minutes_after_collect", 95) * 60, run.stop_reason, log,
+                           run.deadline - (sched.get("reserve_minutes_after_collect", 95) if "publish" in args.stages
+                                           else sched.get("reserve_minutes_after_collect_day", 30)) * 60,
+                           run.stop_reason, log,
                            run_id=run.run_id)
     stage(run, "collect", collect_stage)
 
@@ -427,7 +430,8 @@ def main() -> int:
             cfg["max_items"] = args.classify_items
         # and classification leaves time for refresh, score and publish (measured 4 Oct: refresh 15 minutes for
         # 3,262 brands, publish about 3 minutes per 1,000 pages)
-        return classify_sweep.run(conn, cfg, run.deadline - sched.get("reserve_minutes_after_classify", 35) * 60,
+        return classify_sweep.run(conn, cfg, run.deadline - (sched.get("reserve_minutes_after_classify", 35) if "publish" in args.stages
+                                                             else sched.get("reserve_minutes_after_classify_day", 5)) * 60,
                                   run.stop_reason, log)
     stage(run, "classify", classify_stage)
 
