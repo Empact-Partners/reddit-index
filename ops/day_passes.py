@@ -109,6 +109,7 @@ def main() -> int:
     ap.add_argument("--stages", default="collect,classify")
     ap.add_argument("--until", default="21:00", help="start no pass after this UTC time; each pass ends by 21:30")
     ap.add_argument("--max-calls", type=int, default=15000)
+    ap.add_argument("--end-by", default="23:15", help="UTC: a pass ends by then (45 minutes before the night's run)")
     ap.add_argument("--day-start-gb", type=float, default=None, help="the node counter at the day's start, in bytes/1e9")
     a = ap.parse_args()
     until = dt.datetime.strptime(a.until, "%H:%M").time()
@@ -126,7 +127,7 @@ def main() -> int:
         cap = min(0.7, (room - 0.03) / (2.4 if "backfill" in a.stages else 1.6))   # 7 Oct: a backfill pass ~2.2x
         t0 = dt.datetime.now(dt.timezone.utc)
         try:
-            request(a.stages, a.max_calls, "21:30", cap)
+            request(a.stages, a.max_calls, a.end_by, cap)
         except Exception as e:  # noqa: BLE001
             log(f"could not start a pass: {e}"); time.sleep(120); continue
         log(f"pass requested: stages {a.stages}, egress cap {cap:.2f} GB (room {room:.2f})")
