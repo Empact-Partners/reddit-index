@@ -310,7 +310,8 @@ def run(a) -> int:
             for k, n in (("labelled", w["labelled"]), ("rejected", w["rejected"]), ("not_answered", miss), ("batches", 1)):
                 tot[k] += n
             _receipt(c, rid, "running", tot)
-            log(f"batch {tot['batches']}: Jev {sum(1 for m in models if m == cs.MV_JEV)} · Codex "
+            log(f"batch {tot['batches']}: Jev {sum(1 for m in models if m == cs.MV_JEV)} · "
+                f"{'Claude' if a.model.startswith('claude-') else 'Codex'} "
                 f"{len(rest) - miss} · not answered {miss} · {w['labelled']} labelled, {w['rejected']} not this product · "
                 f"day {u:.2f} GB")
         except SystemExit as e:                               # the Codex ceiling (WaveRefused): stop, say so
