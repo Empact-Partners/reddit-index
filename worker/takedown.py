@@ -202,8 +202,12 @@ def run(conn, max_calls: int = 2000, dry_run: bool = False, max_gone_share: floa
         if gone_watch:   # decision 0020: ledgered, the card deleted and its text dropped, in one transaction
             receipt["watch_purged"] = receipt.get("watch_purged", 0) + conn.execute(
                 "select site.purge_watch(%s::text[], %s::text[])", (gone_watch, [verdicts[d] for d in gone_watch])).fetchone()[0]
-        # the stamp that moves the slow lap forward, for the survivors (a purge removed the others' rows)
-        alive = [d for d in part if verdicts[d] == "alive"]
+        # the stamp that moves the slow lap forward, for the survivors (a purge removed the others' rows). A
+        # document on a page is checked first every night whatever its stamp, and the slow lap leaves it out, so
+        # stamping it only wrote ~140,000 scattered rows a night into the write-ahead log the egress line pays
+        # for (10 Oct). It keeps its last slow-lap stamp; if it leaves the pages, that older stamp brings it round
+        # sooner, which is the right order.
+        alive = [d for d in part if verdicts[d] == "alive" and d not in on_set]
         conn.execute("insert into public.doc_probe (doc_id, checked_at) select d, now() from unnest(%s::text[]) d "
                      "on conflict (doc_id) do update set checked_at = excluded.checked_at", (alive,))
     log(f"  purged {receipt['mentions_purged']} mention rows")
