@@ -262,7 +262,9 @@ def run(a) -> int:
             # so that residue is the lane's alone and is taken at once (9 Oct: 8,392 waited a day for the 26-hour
             # line). What Jev has not seen keeps the line, so the lane never races the sweep's own Jev pass. Once
             # the recorded wall has passed, the sweep asks GLM for the residue again and the line applies to all.
-            walled = cs.known_glm_wall(c) is not None
+            # --take-residue: Vlad's lane hours (10 Oct: "use my Claude Max tokens until 1 pm Chile, then GLM")
+            # take Jev's residue at once whatever the wall says; after --until the sweep's GLM has it again
+            walled = a.take_residue or cs.known_glm_wall(c) is not None
             q = ("select brand_id, doc_id, created_utc, jev_checked_at is not null from public.classify_queue "
                  "where attempts < 5 and (enqueued_at <= now() - interval '26 hours'"
                  + (" or jev_checked_at is not null) " if walled else ") "))
@@ -340,6 +342,8 @@ def main() -> int:
     p = sub.add_parser("pilot"); p.add_argument("--model", default="gpt-5.6-luna"); p.add_argument("--width", type=int, default=4)
     r = sub.add_parser("run"); r.add_argument("--model", default="gpt-5.6-luna"); r.add_argument("--width", type=int, default=4)
     r.add_argument("--until", default="2026-10-11T00:00", help="UTC; GLM's allowance is back by then")
+    r.add_argument("--take-residue", action="store_true",
+                   help="take what Jev looked at without the 26-hour line, wall or not (until --until)")
     r.add_argument("--batch", type=int, default=1200); r.add_argument("--ceiling", type=float, required=True,
                                                                        help="Codex weekly gauge % at which to stop")
     a = ap.parse_args()
