@@ -46,8 +46,8 @@ What runs on the laptop, and only there: migrations (`ops/migrate.py`), deploys 
 retention step 3 (`ops/retention.py one-copy`), and until 11 Oct 2026 the Codex lane that labels what Jev cannot
 settle while GLM's allowance is used up (`ops/codex_lane.py`, decision 0021). Daytime passes
 (`ops/day_passes.py`, requested from the laptop, run on Railway) collect from 06:15 to 21:00 UTC at most 45 Reddit
-calls a minute: the night reaches only 300-400 of the 5,568 subreddits it plans, and collection is most overdue
-first, so the day reaches the rest. They stop at 1.90 GB on the node counter. The 90-day backfill of the partner
+calls a minute and label what they collect (the night refreshes, scores and publishes it): the night reaches
+only 300-400 of the 5,568 subreddits it plans, and collection is most overdue first, so the day reaches the rest. They stop at 1.90 GB on the node counter. The 90-day backfill of the partner
 categories finished on 9 Oct.
 
 ## What's here
