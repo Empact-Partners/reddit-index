@@ -25,6 +25,7 @@ from __future__ import annotations
 
 import collections
 import concurrent.futures
+import contextlib
 import datetime as dt
 import time
 
@@ -72,7 +73,9 @@ def fetch_trees(pool, revisit, before_each, waited: list):
     takes one to two) and the matching and writing after it no longer add to every period. 10 Oct, one at a time:
     27 calls a minute by day against a declared 45, 32 by night against 50.
     `before_each` is called before every request is started and may raise (a cap, the deadline). `waited[0]` grows
-    by the seconds the caller stood waiting for Reddit."""
+    by the seconds the caller stood waiting for Reddit. However the caller leaves (the end, an error in a tree, an
+    error of its own: close the generator), requests not yet started are cancelled, so one subreddit's failure
+    leaves nothing queued behind the next one's requests."""
     if pool is None:
         for tid, title in revisit:
             before_each()
@@ -91,14 +94,18 @@ def fetch_trees(pool, revisit, before_each, waited: list):
                 return
             before_each()
             ahead.append((nxt[0], nxt[1], pool.submit(d.tree_fresh, nxt[0].replace("t3_", ""))))
-    top_up()
-    while ahead:
-        tid, title, fut = ahead.popleft()
-        t = time.time()
-        tree = fut.result()
-        waited[0] += time.time() - t
-        top_up()   # before the caller starts matching this tree, so the pool stays full while it works
-        yield tid, title, tree
+    try:
+        top_up()
+        while ahead:
+            tid, title, fut = ahead.popleft()
+            t = time.time()
+            tree = fut.result()
+            waited[0] += time.time() - t
+            top_up()   # before the caller starts matching this tree, so the pool stays full while it works
+            yield tid, title, tree
+    finally:
+        for _tid, _title, fut in ahead:
+            fut.cancel()
 
 
 def merge_case(mapping: dict, core: set, last_visit: dict) -> tuple[dict, set, int]:
@@ -277,21 +284,23 @@ def run(conn, caps: dict, deadline: float, should_stop=lambda: None, log=print, 
                                           h["conf"], h["alias"], h["rule_fired"], run_id, h["brand_slug"]))
                     matching[0] += time.time() - t_m
                     fetched = []
-                    for tid, title, tree in fetch_trees(pool, revisit, lambda: check(f"inside r/{sub}"), waited):
-                        if not isinstance(tree, list) or (isinstance(tree, dict) and "_err" in tree):
-                            rec["trees_failed"] += 1      # asked again on the next pass
-                            continue
-                        t_m = time.time()
-                        docs, _ = tree_docs(tree)
-                        fetched.append(tid)
-                        for doc in docs:
-                            body = doc.get("body") or ""
-                            for h in resolver.resolve(body, sub, title):
-                                mrows.append((doc["id"], doc.get("doc_type", 1), tid, sid, doc.get("author") or "",
-                                              doc.get("created_utc") or 0, doc.get("permalink") or "",
-                                              doc.get("score") or 0, body, h["conf"], h["alias"],
-                                              h["rule_fired"], run_id, h["brand_slug"]))
-                        matching[0] += time.time() - t_m
+                    with contextlib.closing(fetch_trees(pool, revisit, lambda: check(f"inside r/{sub}"),
+                                                        waited)) as trees:
+                        for tid, title, tree in trees:
+                            if not isinstance(tree, list) or (isinstance(tree, dict) and "_err" in tree):
+                                rec["trees_failed"] += 1      # asked again on the next pass
+                                continue
+                            t_m = time.time()
+                            docs, _ = tree_docs(tree)
+                            fetched.append(tid)
+                            for doc in docs:
+                                body = doc.get("body") or ""
+                                for h in resolver.resolve(body, sub, title):
+                                    mrows.append((doc["id"], doc.get("doc_type", 1), tid, sid, doc.get("author") or "",
+                                                  doc.get("created_utc") or 0, doc.get("permalink") or "",
+                                                  doc.get("score") or 0, body, h["conf"], h["alias"],
+                                                  h["rule_fired"], run_id, h["brand_slug"]))
+                            matching[0] += time.time() - t_m
                     ins = rej = 0
                     if mrows:
                         ins, rej = d.insert_mentions(cur, mrows)

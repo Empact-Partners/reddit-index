@@ -272,6 +272,34 @@ try:
         pass
     check("trees three at a time: a cap raised before a request stops the fetch, nothing later is started",
           _n[0] == 6 and len(_got) <= 5, (_n[0], _got))
+    _started = []
+
+    def _counting_tree(post_id):
+        _started.append(post_id)
+        _time.sleep(0.1)
+        return [post_id]
+    collect.d.tree_fresh = _counting_tree
+    _gen = collect.fetch_trees(_pool, _revisit, lambda: None, [0.0])
+    next(_gen)
+    _gen.close()               # the caller left after one tree (an error of its own)
+    _time.sleep(0.5)
+    check("trees three at a time: when the caller leaves, nothing more is started than was already in flight",
+          len(_started) <= 1 + 3, _started)
+
+    def _failing_tree(post_id):
+        if post_id == "2":
+            raise OSError("one tree failed")
+        _time.sleep(0.05)
+        return [post_id]
+    collect.d.tree_fresh = _failing_tree
+    _seen, _err = [], None
+    try:
+        for _x in collect.fetch_trees(_pool, _revisit, lambda: None, [0.0]):
+            _seen.append(_x[0])
+    except OSError as e:
+        _err = e
+    check("trees three at a time: a tree that raised is raised to the caller, in its place in the order",
+          _err is not None and _seen == ["t3_0", "t3_1"], (_err, _seen))
     _pool.shutdown(wait=True)
 finally:
     collect.d.tree_fresh = _real_tree_fresh
@@ -350,6 +378,13 @@ _bad.close()
 check("day passes: the width file's number is the next pass's width", _dp.tree_workers(_wf.name) == 3)
 check("day passes: no file, or a number outside 1 to 4, leaves the sweep's own setting",
       _dp.tree_workers("/nonexistent/tree-workers") is None and _dp.tree_workers(_bad.name) is None)
+_refused = 0
+for _stages, _end in (("collect'); select 1; --", "23:15"), ("collect,classify", "23:15'; --"), ("", "23:15")):
+    try:
+        _dp.request(_stages, 100, _end, 0.1)
+    except ValueError:
+        _refused += 1
+check("day passes: a stage list or an end time of any other shape is refused before anything is sent", _refused == 3)
 
 print(f"\ntest_sweep_units: {len(FAILS)} failure(s)" + (": " + "; ".join(FAILS) if FAILS else ""))
 sys.exit(bool(FAILS))

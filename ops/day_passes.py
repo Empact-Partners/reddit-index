@@ -57,8 +57,12 @@ def tree_workers(path: str = TREE_WORKERS_FILE) -> int | None:
 
 
 def request(stages: str, max_calls: int, end_by: str, egress_gb: float, workers: int | None = None) -> None:
+    import re
     import watch_link as w
     import deploy_sweep as d
+    # the values go into the statement as text (the query endpoint takes no parameters): only these shapes pass
+    if not re.fullmatch(r"[a-z]+(,[a-z]+)*", stages) or not re.fullmatch(r"\d\d:\d\d", end_by):
+        raise ValueError(f"not a stage list or an HH:MM time: {stages!r}, {end_by!r}")
     cols, vals = "stages, max_calls, end_by_utc, max_egress_gb", f"'{stages}', {int(max_calls)}, '{end_by}'::time, {egress_gb:.3f}"
     if workers:   # the column exists since migration 0032; without a width the insert is what it always was
         cols, vals = cols + ", options", vals + f""", '{{"tree_workers": {int(workers)}}}'::jsonb"""

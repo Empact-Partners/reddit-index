@@ -75,6 +75,7 @@ _stats = {"calls": 0, "cached": 0, "errors": 0, "started": time.time(),
 # get() may be called from a few threads at once (collect's comment trees, 11 Oct). The app must still see ONE request
 # start per period, so the pace is held under a lock; a 429 answered to one thread holds every thread's next start.
 _pace_lock = threading.Lock()
+_state_lock = threading.Lock()   # _adaptive and _hold_until are read, compared and written: never by two threads at once
 _stats_lock = threading.Lock()
 _token_lock = threading.Lock()
 _hold_until = [0.0]
@@ -86,6 +87,11 @@ def _add(key: str, v: float = 1) -> None:
 
 
 def _read_ratelimit(headers):
+    with _state_lock:
+        _read_ratelimit_locked(headers)
+
+
+def _read_ratelimit_locked(headers):
     try:
         rem = headers.get("x-ratelimit-remaining")
         if rem is None:
@@ -305,7 +311,8 @@ def get(path, params=None, bucket="misc", tries=3, use_cache=True):
                     print(f"  Reddit answered {e.code}: waiting {wait:.0f}s before retrying (not a hang)", flush=True)
                 if e.code == 429:
                     _add("limit_wait_s", wait)
-                    _hold_until[0] = max(_hold_until[0], time.time() + wait)
+                    with _state_lock:   # the longest wait any thread was told wins
+                        _hold_until[0] = max(_hold_until[0], time.time() + wait)
                 time.sleep(wait)
                 continue
             _add("errors")
