@@ -16,7 +16,12 @@ person ran update.sh (last time: 25 August 2026) and had three faults this one d
 What is checked, each run:
   1. every document on a page (site.rail_key, and the closer watch's cards in site.watch_card, decision 0020),
      every time: about 140,000 documents, 1,400 calls;
-  2. then, with the calls that are left, the documents longest unchecked (public.doc_probe).
+  2. then, with the calls that are left, every document never checked yet (stored since the last run: a comment
+     is likeliest to be deleted in its first days), stamped once when it is;
+  3. then the next documents of the slow lap: every other stored document in document-id order, from where the
+     last run stopped, round and round (the position is one row in public.ingest_state). Until 11 Oct each
+     checked document was stamped again instead: 85,000 scattered row updates a night, shipped in the
+     write-ahead log and again in the daily backup, to remember an order a position holds.
 
 What counts as gone: Reddit does not return it; its body is [deleted] or [removed]; its author is
 [deleted]; removed_by_category is set. What counts as edited: `edited` is later than the moment we stored
@@ -42,6 +47,52 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 
 BATCH = 100  # /api/info takes 100 fullnames a call
+LAP = ("_takedown", "daily", "slow_lap", "takedown-v1")   # the slow lap's position: scope, ym, stage, code_version
+OFF_PAGE = ("and not exists (select 1 from site.rail_key k where k.doc_id = p.doc_id) "
+            "and not exists (select 1 from site.watch_card w where w.doc_id = p.doc_id) ")
+NEVER_SQL = ("select p.doc_id from public.doc_probe p where p.checked_at is null " + OFF_PAGE +
+             "order by p.doc_id limit %s")
+LAP_SQL = ("select p.doc_id from public.doc_probe p where p.checked_at is not null and p.doc_id > %s {upper} " +
+           OFF_PAGE + "order by p.doc_id limit %s")
+
+
+def lap_position(conn) -> str:
+    """The document id the slow lap last reached ('' at the very start)."""
+    row = conn.execute("select watermark from public.ingest_state where scope = %s and ym = %s and stage = %s "
+                       "and code_version = %s", LAP).fetchone()
+    return (row[0] or "") if row else ""
+
+
+def lap_next(conn, position: str, room: int) -> tuple[list[str], bool]:
+    """The next `room` documents after `position` that are on no page, in document-id order. At the end of the
+    list the lap starts again from the beginning, up to the position (a document is never taken twice in one run).
+    Returns (document ids in the order to check, whether the lap wrapped)."""
+    if room <= 0:
+        return [], False
+    ids = [r[0] for r in conn.execute(LAP_SQL.format(upper=""), (position, room))]
+    if len(ids) >= room or not position:
+        return ids, False
+    more = [r[0] for r in conn.execute(LAP_SQL.format(upper="and p.doc_id <= %s"), ("", position, room - len(ids)))]
+    return ids + more, True
+
+
+def lap_reached(rest: list[str], answered: set[str]) -> str | None:
+    """How far the lap really got: the last document of the unbroken run of answered documents from the start of
+    `rest`. A batch Reddit did not answer stops the position there, so its documents are asked again next run
+    instead of waiting a whole lap. None when not even the first was answered."""
+    last = None
+    for d in rest:
+        if d not in answered:
+            break
+        last = d
+    return last
+
+
+def save_lap_position(conn, doc_id: str, documents: int) -> None:
+    conn.execute("insert into public.ingest_state (scope, ym, stage, code_version, watermark, rows, status, finished_at) "
+                 "values (%s, %s, %s, %s, %s, %s, 'ok', now()) on conflict (scope, ym, stage, code_version) do update "
+                 "set watermark = excluded.watermark, rows = excluded.rows, status = 'ok', finished_at = now()",
+                 (*LAP, doc_id, documents))
 
 
 def judge(children: list[dict], asked: list[str], stored_at: dict[str, float]) -> dict[str, str]:
@@ -130,16 +181,19 @@ def run(conn, max_calls: int = 2000, dry_run: bool = False, max_gone_share: floa
     watch_stored = {d: float(t) for d, t in conn.execute(
         "select doc_id, extract(epoch from min(stored_at)) from site.watch_card group by 1").fetchall()}
     room = max(0, max_calls * BATCH - len(on_pages))
-    rest = [r[0] for r in conn.execute(
-        "select p.doc_id from public.doc_probe p where not exists "
-        "(select 1 from site.rail_key k where k.doc_id = p.doc_id) "
-        "and not exists (select 1 from site.watch_card w where w.doc_id = p.doc_id) "
-        "order by p.checked_at nulls first, p.doc_id limit %s", (room,))] if room else []
+    never = [r[0] for r in conn.execute(NEVER_SQL, (room,))] if room else []
+    position = lap_position(conn)
+    lap, wrapped = lap_next(conn, position, room - len(never))
+    rest = never + lap
+    receipt["never_checked_before"] = len(never)
+    receipt["slow_lap"] = {"from": position, "documents": len(lap), "wrapped": wrapped}
     queue = (on_pages + rest)[: max_calls * BATCH]
     on_set = set(on_pages)
-    log(f"  {len(on_pages)} documents on pages, {len(rest)} more from the slow lap, {max_calls} calls allowed")
+    log(f"  {len(on_pages)} documents on pages, {len(never)} never checked before, {len(lap)} more from the slow "
+        f"lap, {max_calls} calls allowed")
 
     verdicts: dict[str, str] = {}
+    answered: set[str] = set()   # every document of a batch Reddit answered, whatever became of it
     calls0 = rc.stats()["calls"]
     for i in range(0, len(queue), BATCH):
         if deadline and time.time() > deadline:
@@ -158,6 +212,7 @@ def run(conn, max_calls: int = 2000, dry_run: bool = False, max_gone_share: floa
             # A failure is residue, never a verdict.
             receipt["docs_not_checked"] += len(chunk)
             continue
+        answered.update(chunk)
         stored = dict(conn.execute(
             "select doc_id, extract(epoch from min(loaded_at)) from public.mentions "
             "where doc_id = any (%s) group by 1", (chunk,)).fetchall())
@@ -202,15 +257,20 @@ def run(conn, max_calls: int = 2000, dry_run: bool = False, max_gone_share: floa
         if gone_watch:   # decision 0020: ledgered, the card deleted and its text dropped, in one transaction
             receipt["watch_purged"] = receipt.get("watch_purged", 0) + conn.execute(
                 "select site.purge_watch(%s::text[], %s::text[])", (gone_watch, [verdicts[d] for d in gone_watch])).fetchone()[0]
-        # the stamp that moves the slow lap forward, for the survivors (a purge removed the others' rows). A
-        # document on a page is checked first every night whatever its stamp, and the slow lap leaves it out, so
-        # stamping it only wrote ~140,000 scattered rows a night into the write-ahead log the egress line pays
-        # for (10 Oct). It keeps its last slow-lap stamp; if it leaves the pages, that older stamp brings it round
-        # sooner, which is the right order.
-        alive = [d for d in part if verdicts[d] == "alive" and d not in on_set]
-        conn.execute("insert into public.doc_probe (doc_id, checked_at) select d, now() from unnest(%s::text[]) d "
-                     "on conflict (doc_id) do update set checked_at = excluded.checked_at", (alive,))
-    log(f"  purged {receipt['mentions_purged']} mention rows")
+    # A document checked for the first time is stamped, once: it leaves the never-checked list and joins the lap.
+    first = [d for d in never if verdicts.get(d) == "alive"]   # a purge removed the others' rows
+    for i in range(0, len(first), 5000):
+        conn.execute("update public.doc_probe set checked_at = now() where doc_id = any (%s) and checked_at is null",
+                     (first[i:i + 5000],))
+    receipt["first_checks_stamped"] = len(first)
+    # The slow lap moves forward only now, after the purge: a run that dies before this asks the same documents
+    # again. Its documents are not stamped (see the top of this file): the position is the memory.
+    reached = lap_reached(lap, answered)
+    if reached is not None:
+        save_lap_position(conn, reached, len(lap))
+        receipt["slow_lap"]["to"] = reached
+    log(f"  purged {receipt['mentions_purged']} mention rows; the slow lap is at {reached or position or 'its start'}"
+        f"{' (it wrapped round to the start)' if wrapped else ''}")
     return receipt
 
 
