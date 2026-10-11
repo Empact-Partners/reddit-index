@@ -2,17 +2,17 @@
 
 **Live: [redditindex.com](https://redditindex.com)** (noindex while provisional).
 
-## STATUS (kept current; last edit 2026-10-11 13:10 UTC)
+## STATUS (kept current; last edit 2026-10-11 23:25 UTC)
 
 | | |
 |---|---|
 | **Live?** | **Yes, refreshing daily.** redditindex.com runs the read path since 2026-10-06 11:25 UTC (decision 0017). Last successful night run 11 Oct 04:46 UTC: the footer, `/freshness.json`, `/llms.txt` and the sitemap show it. Noindex while provisional. |
 | **How it updates** | Nothing of it runs on a laptop. One scheduled run a night at 00:00 UTC on Railway (`reddit-index-sweep`): takedowns, collection, classification, refresh, scores, then the changed pages proven on the site. Daytime passes (service `reddit-index-day`, a tick every 30 minutes) collect and label while the last 24 hours stay under the egress line. The three generated files refresh on their own timers (5 min, 1 h, 1 h; decision 0022), because an expiry never reached them. |
-| **Labels** | Queue empty on 10 Oct 22:45 UTC: 1,212,699 labels. Jev settles what it can, GLM-5.3 the rest again since 10 Oct 16:00 UTC (the Claude Max lane ran 9-10 Oct while GLM's allowance was used up; decision 0021). |
+| **Labels** | 1,223,000 labels on 11 Oct; 1,435 mentions wait for the night. Jev settles what it can, GLM-5.3 the rest (decision 0017; the Claude Max lane of 9-10 Oct is over, decision 0021). |
 | **Cost** | A 2 GB daily line of database egress for every job together; passes stop at 1.9 GB in any 24 hours. **11 Oct went over: 2.42 GB by midday** (the last de-duplication run, 0.8 GB, was shipped a second time by the 11:15 backup, and the guard was on a sleeping laptop); the watchdog posted at 07:04 UTC. Daytime collection is stopped until the 24 hours clear. Since then the pass guards the line itself (decision 0025), the meter is read compressed, and checkpoints are hourly (6.4 KB of log a new mention against 10.0). |
 | **Pages** | Until 11 Oct the publisher sent 1,000 changed pages a night of about 5,700, so the median page was 3.1 days behind its data. A page costs about 20 KB of database egress, not the 0.2 MB the cap assumed (measured 11 Oct), so from the night of 12 Oct every changed page goes out every night (decision 0024). |
-| **Storage** | 9 Oct: the old site's rail view dropped (3,774 to 3,554 MB), retention steps 1 and 2 run every night, step 3 (one copy of each comment's text) finished on 11 Oct, every partition verified. The database is 3,644 MB on an 8.4 GB disk; the freed space stays inside the tables (handing it back would cost about 1.5 GB of egress for disk nobody is short of). 10 Oct: retention runs as a stage of the night sweep, and an index nothing read was dropped (migration 0031). The old collector's Railway service is deleted. |
-| **Open** | A dedicated Reddit API app for the index is the owner step that doubles collection. |
+| **Storage** | 3,495 MB on an 8.4 GB disk (11 Oct). The old site's rail view is gone, each comment's text is kept once (retention step 3, finished 11 Oct), three indexes nothing read are dropped (migration 0035) and the queue's bloated index rebuilt. The freed space stays inside the tables: handing it back would cost about 1.5 GB of egress for disk nobody is short of. |
+| **Open** | **For Vlad:** a dedicated Reddit API app for the index (the shared app's limit took about 35% of a five-hour pass on 11 Oct); whether a vendor-named subreddit excludes every mention found in it (today's rule: 316 subreddits) or only the vendor's own. **Next deploy of the night service** carries decisions 0027 (the collector does no work that cannot yield) and 0028 (the takedown check's slow lap by position, with migration 0037), after the first daytime pass on 0027 has been read (12 Oct). **To judge on 12 Oct:** every changed page published (0024), a normal day's 11:15 UTC backup on the counter (0025), the first pass requested on Railway (0026). |
 | **How to stop everything** | `python3 ops/ri.py stop "reason"` turns the sweep off and its database login off. |
 
 A public index of what Reddit actually says about software brands: one
