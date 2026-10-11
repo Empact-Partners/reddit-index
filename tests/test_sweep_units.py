@@ -215,6 +215,55 @@ _csv.close()
 check("backfill: core subreddits, category by category in the given order, each once, lower case",
       _rd.backfill_subs(["a", "b"], _csv.name) == ["alpha", "beta", "zeta"], _rd.backfill_subs(["a", "b"], _csv.name))
 
+# ---- work that cannot yield anything is not done (worker/collect.py: worth_storing, choose_trees) ---------------
+_t0 = 1_760_000_000.0
+check("collect: a post that names a brand is stored whatever its age or comments",
+      collect.worth_storing({"num_comments": 0, "created_utc": _t0 - 30 * 86400}, True, _t0))
+check("collect: a post with a comment is stored (its tree can be read)",
+      collect.worth_storing({"num_comments": 1, "created_utc": _t0 - 30 * 86400}, False, _t0))
+check("collect: a young post with no comment yet is stored (it can still get one)",
+      collect.worth_storing({"num_comments": 0, "created_utc": _t0 - 47 * 3600}, False, _t0))
+check("collect: a post with no brand and no comment after 48 hours is not stored",
+      not collect.worth_storing({"num_comments": 0, "created_utc": _t0 - 49 * 3600}, False, _t0)
+      and not collect.worth_storing({"num_comments": None, "created_utc": _t0 - 400 * 3600}, False, _t0))
+_cands = [("t3_a", "A", 0, None, None),      # never read, no comment stored, none now
+          ("t3_b", "B", 5, None, None),      # never read, 5 stored, 9 now
+          ("t3_c", "C", 0, None, None),      # never read, none stored, 3 now (it got comments since)
+          ("t3_d", "D", 7, _now, 7),         # read at 7, still 7
+          ("t3_e", "E", 7, _now, 7),         # read at 7, now 20
+          ("t3_f", "F", 2, _now, None),      # read before the count was kept, 4 now
+          ("t3_g", "G", 9, _now, 9),         # read, not known now
+          ("t3_h", "H", 4, None, None)]      # never read, not known now: the stored 4 stands
+_pick, _skip = collect.choose_trees(_cands, {"t3_a": 0, "t3_b": 9, "t3_c": 3, "t3_d": 7, "t3_e": 20, "t3_f": 4}, 24)
+check("collect: threads never read come first, most comments first; then threads that grew, most growth first",
+      [x[0] for x in _pick] == ["t3_b", "t3_h", "t3_c", "t3_e", "t3_f"], _pick)
+check("collect: a thread with no comment, and a read thread that has not grown or is not known, are not read",
+      _skip == {"no_comments": 1, "unchanged": 2}, _skip)
+check("collect: the limit cuts from the end of that order",
+      [x[0] for x in collect.choose_trees(_cands, {"t3_b": 9, "t3_c": 3, "t3_e": 20}, 2)[0]] == ["t3_b", "t3_h"])
+check("collect: the titles travel with the ids", dict(_pick)["t3_e"] == "E")
+_real_get = collect.rc.get
+collect.rc.get = lambda path, params=None, bucket="misc", tries=3, use_cache=True: (
+    {"data": {"children": [{"kind": "t3", "data": {"name": "t3_x", "num_comments": 12}},
+                           {"kind": "t3", "data": {"name": "t3_y", "num_comments": None}},
+                           {"kind": "t1", "data": {"name": "t1_z"}}]}} if path == "/api/info" else {"_err": 500})
+try:
+    check("collect: one /api/info call gives the comment counts now", collect.info_counts(["t3_x", "t3_y"]) == {"t3_x": 12, "t3_y": 0})
+    collect.rc.get = lambda *a, **k: {"_err": 503}
+    check("collect: a failed /api/info call is 'not known' for every thread", collect.info_counts(["t3_x"]) == {})
+    _pages = [{"data": {"after": None, "children": [
+        {"kind": "t3", "data": {"id": "n1", "created_utc": 200.0, "num_comments": 4}},
+        {"kind": "t3", "data": {"id": "o1", "created_utc": 50.0, "num_comments": 31}}]}}]
+    collect.rc.get = lambda *a, **k: _pages[0]
+    _seen = {}
+    _posts, _ok, _capped = collect.d.fetch_new("x", 100.0, seen=_seen)
+    check("listing: posts newer than the watermark are returned; every post on the page is counted in `seen`",
+          [p["id"] for p in _posts] == ["n1"] and _ok and not _capped and _seen == {"t3_n1": 4, "t3_o1": 31}, (_posts, _seen))
+finally:
+    collect.rc.get = _real_get
+check("collect: the comment count on a tree's own post is read; a failed tree has none",
+      collect.tree_count([{"data": {"children": [{"data": {"num_comments": 17}}]}}, {}]) == 17 and collect.tree_count({"_err": 404}) is None)
+
 # ---- comment trees in flight side by side (worker/collect.py fetch_trees, worker/reddit_client.py) -------------
 import concurrent.futures as _cf  # noqa: E402
 import threading as _th  # noqa: E402
