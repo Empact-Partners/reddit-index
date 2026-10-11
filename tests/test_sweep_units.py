@@ -155,6 +155,22 @@ check("collect: a due partner-priority subreddit goes before a more overdue ordi
       collect.rank(1.2, True, False) < collect.rank(5.0, False, True))
 check("collect: a partner-priority subreddit not yet due waits behind a due one",
       collect.rank(0.4, True, False) > collect.rank(1.1, False, False))
+check("collect: a vendor-named subreddit is never visited, whatever its case",
+      collect.without_vendor(["AZURE", "sysadmin", "ClaudeAI", "devops"], {"azure", "claudeai"}) == (["sysadmin", "devops"], 2))
+check("collect: with no vendor-named subreddit the list is unchanged",
+      collect.without_vendor(["sysadmin", "devops"], set()) == (["sysadmin", "devops"], 0))
+_m, _c, _f = collect.merge_case({"Accounting": ["accounting", "erp"], "accounting": ["erp", "tax"], "devops": ["ci"]},
+                               {"accounting"}, {"accounting": _now, "Accounting": _now - _dt.timedelta(days=2)})
+check("collect: two spellings of one subreddit are one visit, under the spelling visited last",
+      sorted(_m) == ["accounting", "devops"] and _f == 1)
+check("collect: the merged subreddit carries both spellings' categories, each once",
+      _m["accounting"] == ["accounting", "erp", "tax"])
+check("collect: the merged subreddit is core if either spelling was", _c == {"accounting"})
+_m2, _c2, _f2 = collect.merge_case({"Big4": ["a"], "big4": ["b"]}, {"Big4"}, {})
+check("collect: never visited under either spelling, the first in sort order is kept",
+      list(_m2) == ["Big4"] and _m2["Big4"] == ["a", "b"] and _c2 == {"Big4"} and _f2 == 1)
+_m3, _, _f3 = collect.merge_case({"Big4": ["a"], "big4": ["b"]}, set(), {"big4": _now})
+check("collect: a spelling with a visit beats one without", list(_m3) == ["big4"] and _f3 == 1)
 
 # ---- the takedown judge (worker/takedown.py) -------------------------------------------------------------
 import takedown as td  # noqa: E402

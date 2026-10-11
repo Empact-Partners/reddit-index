@@ -68,7 +68,10 @@ MAX_PER_MIN = 80      # run under the ~100 budget, never at it
 _adaptive = [SLEEP]
 
 _token = {"v": None, "t": 0.0}
-_stats = {"calls": 0, "cached": 0, "errors": 0, "started": time.time()}
+# net_s: seconds inside a request (connect to last byte); paced_s: seconds slept to hold the declared pace;
+# limit_wait_s: seconds slept because the app's window was used up (a 429, or under 30 calls left)
+_stats = {"calls": 0, "cached": 0, "errors": 0, "started": time.time(),
+          "net_s": 0.0, "paced_s": 0.0, "limit_wait_s": 0.0}
 
 
 def _read_ratelimit(headers):
@@ -222,6 +225,7 @@ def get(path, params=None, bucket="misc", tries=3, use_cache=True):
     while attempt < tries:
         gap = time.time() - _last_call[0]
         if gap < _adaptive[0]:
+            _stats["limit_wait_s" if _adaptive[0] >= 30 else "paced_s"] += _adaptive[0] - gap
             time.sleep(_adaptive[0] - gap)
         url = "https://oauth.reddit.com" + path
         if params:
@@ -242,10 +246,14 @@ def get(path, params=None, bucket="misc", tries=3, use_cache=True):
             req = urllib.request.Request(
                 url, headers={"User-Agent": USER_AGENT,
                               "Authorization": "Bearer " + _access_token()})
-            with urllib.request.urlopen(req, timeout=40) as f:
-                _stats["calls"] += 1
-                _read_ratelimit(f.headers)
-                data = json.loads(_read_body(f, _last_call[0]))
+            t_net = time.time()
+            try:
+                with urllib.request.urlopen(req, timeout=40) as f:
+                    _stats["calls"] += 1
+                    _read_ratelimit(f.headers)
+                    data = json.loads(_read_body(f, _last_call[0]))
+            finally:
+                _stats["net_s"] += time.time() - t_net
             # use_cache=False means DO NOT CACHE — it used to skip only the
             # READ, so the streaming lanes (daily /new pages, fresh comment
             # trees) wrote a file per call that nothing would ever read back.
@@ -273,6 +281,8 @@ def get(path, params=None, bucket="misc", tries=3, use_cache=True):
                 wait = max(reset if e.code == 429 else 0.0, 3 * attempt)
                 if wait >= 30:   # SAY SO (as the pacing above does): a long wait is not a hang, and a stall watchdog reads output
                     print(f"  Reddit answered {e.code}: waiting {wait:.0f}s before retrying (not a hang)", flush=True)
+                if e.code == 429:
+                    _stats["limit_wait_s"] += wait
                 time.sleep(wait)
                 continue
             _stats["errors"] += 1

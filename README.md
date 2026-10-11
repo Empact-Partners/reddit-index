@@ -44,10 +44,13 @@ number the Supabase watchdog and the bill follow). A normal night is about 0.6 G
 
 What runs on the laptop, and only there: migrations (`ops/migrate.py`), deploys (`ops/deploy_sweep.py`),
 retention step 3 (`ops/retention.py one-copy`), and until 14 Oct 2026 the labelling lane for what Jev cannot settle,
-now on Claude Sonnet 5.5 through Vlad's Max plan (`ops/codex_lane.py --model claude-sonnet-5-5`, decision 0021). Daytime passes
-(`ops/day_passes.py`, requested from the laptop, run on Railway) collect from 06:15 to 21:00 UTC at most 45 Reddit
+on Claude Sonnet 5.5 through Vlad's Max plan while GLM's allowance was used up (`ops/codex_lane.py --model claude-sonnet-5-5`, decision 0021; GLM is back since 10 Oct). Daytime passes
+(`ops/day_passes.py`, requested from the laptop, run on Railway) collect from 06:15 to 23:15 UTC at most 45 Reddit
 calls a minute and label what they collect (the night refreshes, scores and publishes it): the night reaches
-only 300-400 of the 5,568 subreddits it plans, and collection is most overdue first, so the day reaches the rest. They stop at 1.90 GB on the node counter. The 90-day backfill of the partner
+only 300-400 of the subreddits it plans, and collection is most overdue first, so the day reaches the rest. The map
+names 5,568 subreddits; 4,991 are distinct (576 appear under two spellings and are one visit since 11 Oct), and the
+vendor-named ones, whose mentions the database refuses, are not visited. The collect receipt says where its time
+went (`seconds`: Reddit network, pacing, rate-limit waits, matching, the rest). They stop at 1.90 GB on the node counter. The 90-day backfill of the partner
 categories finished on 9 Oct.
 
 ## What's here
