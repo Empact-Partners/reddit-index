@@ -411,6 +411,9 @@ node_network_receive_bytes_total{supabase_project_ref="x",service_type="db",devi
 check("meter: the counter is the transmit total of every interface but loopback",
       _mt.parse(_metrics_text) == 1463055024361.0, _mt.parse(_metrics_text))
 check("meter: no transmit series is 'not known', never zero", _mt.parse("node_memory_MemTotal_bytes 1e9") is None)
+check("meter: a counter that is not a finite number is 'not known'",
+      _mt.parse('node_network_transmit_bytes_total{device="ens5"} NaN') is None
+      and _mt.parse('node_network_transmit_bytes_total{device="ens5"} +Inf') is None)
 _old_env = (os.environ.pop("SUPABASE_METRICS_KEY", None), os.environ.get("SUPABASE_PROJECT_REF"))
 check("meter: without a key in the environment nothing is read", _mt.read() is None)
 

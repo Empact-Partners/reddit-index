@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import base64
 import gzip
+import math
 import os
 import urllib.request
 
@@ -28,11 +29,14 @@ def parse(text: str) -> float | None:
     for line in text.splitlines():
         if line.startswith("node_network_transmit_bytes_total") and 'device="lo"' not in line and " " in line:
             try:
-                total += float(line.rsplit(" ", 1)[1])
-                seen = True
+                v = float(line.rsplit(" ", 1)[1])
             except ValueError:
                 continue
-    return total if seen else None
+            if not math.isfinite(v):   # "NaN" and "+Inf" are valid in the format and are not a reading
+                return None
+            total += v
+            seen = True
+    return total if (seen and total > 0) else None
 
 
 def read(timeout: float = 30.0) -> float | None:

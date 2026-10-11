@@ -114,7 +114,7 @@ class Run:
                                       dt.datetime.strptime(sched["window_utc"][1], "%H:%M").time(), dt.timezone.utc)
             self.deadline = min(self.deadline, end.timestamp())   # a start after the end leaves no time at all
         self.receipt: dict = {"run_id": self.run_id, "code_version": CODE_VERSION, "manual": bool(args.manual),
-                              "day_run": bool(getattr(args, "day_end", None)),
+                              "day_run": getattr(args, "day_end", None) is not None,
                               "caps": caps, "stages": {}, "problems": [], "caps_hit": []}
         self.wal0 = wal_bytes(conn)
         self.render_bytes = 0   # what the site reads to re-render the pages the publisher fetches (set by publish)
@@ -296,13 +296,12 @@ def stage(run: Run, name: str, fn) -> None:
     # Stopped by the switch: nothing more runs, refresh and publish included (review, 2026-10-03: a stop used to
     # be followed by a publish and an "ok" receipt). At the egress cap: the in-database refresh and scoring still
     # run (they write little and keep the tables consistent); everything that reads or calls out does not.
+    if is_egress_stop(reason) and reason not in run.receipt["caps_hit"]:
+        run.receipt["caps_hit"].append(reason)   # whichever stage first sees it, also one that still runs
     if reason and (not is_egress_stop(reason)
                    or name in ("takedowns", "collect", "classify", "publish")):
         run.receipt["stages"][name] = {"skipped": reason}
-        if is_egress_stop(reason):
-            if reason not in run.receipt["caps_hit"]:
-                run.receipt["caps_hit"].append(reason)
-        else:
+        if not is_egress_stop(reason):
             run.receipt["stopped"] = reason
         log(f"{name}: skipped, {reason}")
         return
