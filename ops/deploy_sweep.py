@@ -100,6 +100,9 @@ def variables() -> dict:
         "TYPESAFE_API_KEY": tokens.typesafe_key(), "ZAI_API_KEY": zai,
         "SLACK_BOT_TOKEN": tokens.slack_bot_token("empact"),
         "REVALIDATE_SECRET": c["revalidate_secret"],
+        # the node's metrics endpoint: the sweep reads its own egress on the counter the watchdog follows (decision
+        # 0025). The endpoint takes only the service key on this project (a dedicated secret key answered 401).
+        "SUPABASE_METRICS_KEY": c["metrics_key"],
         "VERCEL_BYPASS": c["vercel_bypass"],      # only used against *.vercel.app (the trial runs' preview)
         # 1.2 s between Reddit calls = 50 a minute, the declared pace (the shared app drew 429s above ~54)
         "RI_SLEEP": str(json.load(open(os.path.join(ROOT, "ops", "schedule.json")))["reddit_pace_seconds"]),

@@ -2,14 +2,14 @@
 
 **Live: [redditindex.com](https://redditindex.com)** (noindex while provisional).
 
-## STATUS (kept current; last edit 2026-10-11 07:20 UTC)
+## STATUS (kept current; last edit 2026-10-11 13:10 UTC)
 
 | | |
 |---|---|
 | **Live?** | **Yes, refreshing daily.** redditindex.com runs the read path since 2026-10-06 11:25 UTC (decision 0017). Last successful night run 11 Oct 04:46 UTC: the footer, `/freshness.json`, `/llms.txt` and the sitemap show it. Noindex while provisional. |
 | **How it updates** | One scheduled run a night at 00:00 UTC on Railway (`reddit-index-sweep`): takedowns, collection, classification, refresh, scores, then the changed pages proven on the site. Daytime passes (`ops/day_passes.py`) collect and backfill under the day's egress line. The three generated files refresh on their own timers (5 min, 1 h, 1 h; decision 0022), because an expiry never reached them. |
 | **Labels** | Queue empty on 10 Oct 22:45 UTC: 1,212,699 labels. Jev settles what it can, GLM-5.3 the rest again since 10 Oct 16:00 UTC (the Claude Max lane ran 9-10 Oct while GLM's allowance was used up; decision 0021). |
-| **Cost** | Under a 2 GB daily line of database egress for every job together (the laptop guard stops at 1.9 GB); 10 Oct used 1.68 GB, with daytime passes collecting 962 subreddits and 17,079 mentions on top of the night. Checkpoints every 30 minutes instead of 5 since 10 Oct 22:40 UTC, to cut full-page log writes (decision 0023, judged over three nights). |
+| **Cost** | A 2 GB daily line of database egress for every job together; passes stop at 1.9 GB in any 24 hours. **11 Oct went over: 2.42 GB by midday** (the last de-duplication run, 0.8 GB, was shipped a second time by the 11:15 backup, and the guard was on a sleeping laptop); the watchdog posted at 07:04 UTC. Daytime collection is stopped until the 24 hours clear. Since then the pass guards the line itself (decision 0025), the meter is read compressed, and checkpoints are hourly (6.4 KB of log a new mention against 10.0). |
 | **Pages** | Until 11 Oct the publisher sent 1,000 changed pages a night of about 5,700, so the median page was 3.1 days behind its data. A page costs about 20 KB of database egress, not the 0.2 MB the cap assumed (measured 11 Oct), so from the night of 12 Oct every changed page goes out every night (decision 0024). |
 | **Storage** | 9 Oct: the old site's rail view dropped (3,774 to 3,554 MB), retention steps 1 and 2 run every night, step 3 (one copy of each comment's text) finished on 11 Oct, every partition verified. The database is 3,644 MB on an 8.4 GB disk; the freed space stays inside the tables (handing it back would cost about 1.5 GB of egress for disk nobody is short of). 10 Oct: retention runs as a stage of the night sweep, and an index nothing read was dropped (migration 0031). The old collector's Railway service is deleted. |
 | **Open** | A dedicated Reddit API app for the index is the owner step that doubles collection. |
@@ -54,7 +54,7 @@ vendor-named ones, whose mentions the database refuses, are not visited. The col
 went (`seconds`: waiting for Reddit, matching, the database and the rest, and what the requests themselves spent).
 Comment trees can be fetched a few at a time (`collect.tree_workers` in `ops/schedule.json`, 1 to 4; Reddit still
 sees one request start per pacing period). It is 1 until measured: a daytime pass takes its width from the number in
-`~/Library/Logs/reddit-index/tree-workers` when that file exists, so two passes of one day can be compared. They stop at 1.90 GB on the node counter. The 90-day backfill of the partner
+`~/Library/Logs/reddit-index/tree-workers` when that file exists, so two passes of one day can be compared. A pass stops itself when the database has sent 1.90 GB in the 24 hours to now, read by the pass on the node counter every three minutes (decision 0025; until 11 Oct only the laptop held that guard, and it slept). A physical backup at about 11:15 UTC every day ships the pages changed since the last one: a bulk rewrite is paid again there. The 90-day backfill of the partner
 categories finished on 9 Oct.
 
 ## What's here
@@ -67,7 +67,7 @@ categories finished on 9 Oct.
 | `data/` | The taxonomy, the brand gazetteer, the subreddit map, the alias blocklist |
 | `supabase/migrations/` | The schema, applied by `ops/migrate.py` (ledger: `public.schema_migrations`) |
 | `scripts/` | Build gates (`gates/`, each proven to fail by its self-test) and the investigation script |
-| `decisions/` | Every ruling; 0017 (the daily sweep) to 0024 (every changed page every night) describe today's system |
+| `decisions/` | Every ruling; 0017 (the daily sweep) to 0025 (the pass guards the egress line itself) describe today's system |
 
 ## Docs
 

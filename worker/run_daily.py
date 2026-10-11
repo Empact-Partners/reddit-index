@@ -48,8 +48,17 @@ ROOT = os.path.dirname(HERE)
 sys.path.insert(0, HERE)
 
 import db  # noqa: E402
+import meter  # noqa: E402
 
 CODE_VERSION = "sweep-v1"
+METER_EVERY_S = 180   # a daytime pass reads the node counter at most this often (one read is 18 KB of egress)
+EGRESS_STOPS = ("estimated database egress cap", "the day's egress line")
+
+
+def is_egress_stop(reason: str | None) -> bool:
+    """A stop for egress (the run's own estimate, or the node counter's 24 hours): nothing more reads or calls out,
+    the in-database stages still run, and the receipt reads capped, not stopped."""
+    return bool(reason) and reason.startswith(EGRESS_STOPS)
 LOCK_KEY = 0x52494458  # "RIDX": one sweep at a time, whatever starts it
 VLAD = "U016BPWFC7Q"
 STAGES = ["takedowns", "collect", "classify", "refresh", "score", "publish", "retention"]
@@ -105,10 +114,17 @@ class Run:
                                       dt.datetime.strptime(sched["window_utc"][1], "%H:%M").time(), dt.timezone.utc)
             self.deadline = min(self.deadline, end.timestamp())   # a start after the end leaves no time at all
         self.receipt: dict = {"run_id": self.run_id, "code_version": CODE_VERSION, "manual": bool(args.manual),
-                              "day_run": bool(getattr(args, "day_end", None)),
+                              "day_run": getattr(args, "day_end", None) is not None,
                               "caps": caps, "stages": {}, "problems": [], "caps_hit": []}
         self.wal0 = wal_bytes(conn)
         self.render_bytes = 0   # what the site reads to re-render the pages the publisher fetches (set by publish)
+        # the node counter, read by the run itself (worker/meter.py, decision 0025): what the run really sent
+        self.meter: dict = {"readings": 0}
+        self._meter_at = time.time()
+        self._line_reason: str | None = None
+        b = self.meter_read("sweep start")
+        if b is not None and self.receipt["day_run"]:
+            self._judge_line(b)   # a pass requested with the line already reached stops before it collects
 
     # -- the switch, read before every stage and inside the long ones
     def stop_reason(self) -> str | None:
@@ -120,7 +136,41 @@ class Run:
             return f"stopped by the switch: {reason or 'no reason given'}"
         if self.egress_estimate() > self.caps["egress_gb"] * 1e9:
             return f"estimated database egress cap ({self.caps['egress_gb']} GB) reached"
-        return None
+        return self.day_line_reason()
+
+    def meter_read(self, source: str) -> float | None:
+        b = meter.record(self.conn, source)
+        if b is None:
+            self.meter["unread"] = self.meter.get("unread", 0) + 1
+            return None
+        self.meter["readings"] += 1
+        self.meter.setdefault("first_bytes", b)
+        self.meter["last_bytes"] = b
+        return b
+
+    def day_line_reason(self) -> str | None:
+        """A daytime pass stops itself when the database node has sent the day's line in the 24 hours to now, read
+        on the node counter (decision 0025). The night's run is never stopped by it: takedowns are a duty. The
+        pass used to rely on its requester for this, a laptop that sleeps: 11 Oct, 2.42 GB by midday."""
+        if not self.receipt["day_run"]:
+            return None
+        if self._line_reason or time.time() - self._meter_at < METER_EVERY_S:
+            return self._line_reason
+        self._meter_at = time.time()
+        b = self.meter_read("day pass")
+        if b is not None:
+            self._judge_line(b)
+        return self._line_reason
+
+    def _judge_line(self, now_bytes: float) -> None:
+        used, since = meter.used_24h(self.conn, now_bytes)
+        if used is None:   # no reading old enough yet, or the node restarted: not known, so nothing is stopped
+            return
+        line = float(self.sched.get("day_line_gb", 1.9))
+        self.meter["last_24h_gb"], self.meter["since"] = round(used / 1e9, 3), since
+        if used >= line * 1e9:
+            self._line_reason = (f"the day's egress line: the database sent {used / 1e9:.2f} GB in the 24 hours "
+                                 f"to now (line {line} GB, node counter, since {since})")
 
     def egress_estimate(self) -> int:
         """Write-ahead log produced since the run started. Every byte of it is shipped to backup storage,
@@ -138,6 +188,11 @@ class Run:
         self.receipt["status"] = status
         self.receipt["minutes"] = round((time.time() - self.started) / 60, 1)
         self.receipt["egress_estimate_gb"] = round(self.egress_estimate() / 1e9, 3)
+        if status != "running":
+            self.meter_read("sweep end")
+        if "first_bytes" in self.meter:   # what the node really sent while the run ran, everything on it included
+            self.receipt["egress_measured_gb"] = round((self.meter["last_bytes"] - self.meter["first_bytes"]) / 1e9, 3)
+        self.receipt["meter"] = {k: v for k, v in self.meter.items() if not k.endswith("_bytes")}
         self.conn.execute(
             "insert into public.pipeline_runs (run_id, stage, code_version, started_at, finished_at, status, notes) "
             "values (%s, 'sweep', %s, to_timestamp(%s), case when %s = 'running' then null else now() end, %s, %s) "
@@ -241,18 +296,18 @@ def stage(run: Run, name: str, fn) -> None:
     # Stopped by the switch: nothing more runs, refresh and publish included (review, 2026-10-03: a stop used to
     # be followed by a publish and an "ok" receipt). At the egress cap: the in-database refresh and scoring still
     # run (they write little and keep the tables consistent); everything that reads or calls out does not.
-    if reason and (not reason.startswith("estimated database egress cap")
+    if is_egress_stop(reason) and reason not in run.receipt["caps_hit"]:
+        run.receipt["caps_hit"].append(reason)   # whichever stage first sees it, also one that still runs
+    if reason and (not is_egress_stop(reason)
                    or name in ("takedowns", "collect", "classify", "publish")):
         run.receipt["stages"][name] = {"skipped": reason}
-        if reason.startswith("estimated database egress cap"):
-            if reason not in run.receipt["caps_hit"]:
-                run.receipt["caps_hit"].append(reason)
-        else:
+        if not is_egress_stop(reason):
             run.receipt["stopped"] = reason
         log(f"{name}: skipped, {reason}")
         return
     t = time.time()
     w0 = wal_bytes(run.conn) if not run.conn.closed else None
+    b0 = run.meter_read(f"{name} start") if not run.conn.closed else None
     log(f"{name}: start")
     try:
         out = fn() or {}
@@ -269,6 +324,11 @@ def stage(run: Run, name: str, fn) -> None:
     w1 = wal_bytes(run.conn) if not run.conn.closed else None
     if w0 is not None and w1 is not None:
         out["wal_mb"] = round((w1 - w0) / 1e6, 1)
+    # and what the node really sent in those minutes (the counter moves about once a minute, and anything else on
+    # the node is in it: the 11:15 UTC backup, another session's queries)
+    b1 = run.meter_read(f"{name} end") if not run.conn.closed else None
+    if b0 is not None and b1 is not None and b1 >= b0:
+        out["sent_mb"] = round((b1 - b0) / 1e6, 1)
     run.receipt["stages"][name] = out
     if out.get("stopped"):
         run.receipt["caps_hit"].append(f"{name}: {out['stopped']}")
@@ -389,7 +449,7 @@ def main() -> int:
                 log(f"could not send the DM: {e}")
         return 0
     reason = run.stop_reason()
-    if reason and not reason.startswith("estimated"):
+    if reason and not is_egress_stop(reason):
         log(reason)
         run.receipt["skipped"] = reason
         run.record("skipped")
@@ -506,6 +566,11 @@ def main() -> int:
         import retention as ret
         out = ret.threads(conn)
         out.update(ret.rejected(conn, limit=sched.get("retention", {}).get("rejected_per_night", 20000)))
+        try:   # the counter's readings (migration 0033): 45 days is enough to read any day back
+            out["meter_readings_expired"] = conn.execute(
+                "delete from public.egress_counter where at < now() - interval '45 days'").rowcount
+        except Exception:  # noqa: BLE001
+            pass
         out["archive_expired"] = {t: conn.execute(f"delete from archive.{t} where archived_at < now() - interval "
                                                   f"'14 days'").rowcount
                                   for t in ("threads", "mentions", "mention_sentiment")}

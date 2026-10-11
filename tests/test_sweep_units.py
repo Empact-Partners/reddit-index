@@ -401,6 +401,88 @@ check("publish: fewer own-data pages than their slots: the rest of the slots go 
       [r[0] for r in _sp.pick(_few, 10)] == [0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
 check("publish: no slots, nothing goes out", _sp.pick(_rows, 0) == [])
 
+# ---- the node counter read by the sweep (worker/meter.py) and the day's line (run_daily.Run.day_line_reason) -------
+import meter as _mt  # noqa: E402
+_metrics_text = """# HELP node_network_transmit_bytes_total Network device statistic transmit_bytes.
+node_network_transmit_bytes_total{supabase_project_ref="x",service_type="db",device="ens5"} 1.463055024361e+12
+node_network_transmit_bytes_total{supabase_project_ref="x",service_type="db",device="lo"} 9.9e+12
+node_network_receive_bytes_total{supabase_project_ref="x",service_type="db",device="ens5"} 2.3e+10
+"""
+check("meter: the counter is the transmit total of every interface but loopback",
+      _mt.parse(_metrics_text) == 1463055024361.0, _mt.parse(_metrics_text))
+check("meter: no transmit series is 'not known', never zero", _mt.parse("node_memory_MemTotal_bytes 1e9") is None)
+check("meter: a counter that is not a finite number is 'not known'",
+      _mt.parse('node_network_transmit_bytes_total{device="ens5"} NaN') is None
+      and _mt.parse('node_network_transmit_bytes_total{device="ens5"} +Inf') is None)
+_old_env = (os.environ.pop("SUPABASE_METRICS_KEY", None), os.environ.get("SUPABASE_PROJECT_REF"))
+check("meter: without a key in the environment nothing is read", _mt.read() is None)
+
+
+class _MeterConn:
+    def __init__(self, older):
+        self.older, self.kept, self.closed = older, [], False
+
+    def execute(self, sql, params=None):
+        if sql.startswith("insert into public.egress_counter"):
+            self.kept.append(params)
+        rows = [self.older] if ("egress_counter where at <=" in sql and self.older) else []
+        return type("R", (), {"fetchone": lambda s: rows[0] if rows else None, "rowcount": 0})()
+
+    def rollback(self):
+        pass
+
+
+_then = _now - _dt.timedelta(hours=25)
+check("meter: the 24 hours are the reading now less the newest reading at least 24 hours old",
+      _mt.used_24h(_MeterConn((1_000_000_000_000, _then)), 1_001_500_000_000)[0] == 1_500_000_000)
+check("meter: no reading old enough, or a counter that went backwards, is 'not known'",
+      _mt.used_24h(_MeterConn(None), 5)[0] is None and _mt.used_24h(_MeterConn((10, _then)), 5)[0] is None)
+
+_real_read = _mt.read
+_reads = [1_001_000_000_000.0]
+_mt.read = lambda timeout=30.0: _reads[0]
+try:
+    class _A:
+        manual, max_calls, takedown_calls, max_mentions, max_egress_gb, day_end, options, stages = True, None, None, None, None, None, {}, []
+    _sched = {"caps": {"reddit_calls": 1, "takedown_calls": 1, "mentions": 1, "minutes": 10, "egress_gb": 0.7}, "day_line_gb": 1.9}
+    _wal = _rd.wal_bytes
+    _rd.wal_bytes = lambda conn: 0
+    _c = _MeterConn((1_000_000_000_000, _then))
+    _night = _rd.Run(_c, _sched, _A())
+    _night._meter_at = 0
+    _reads[0] = 1_009_000_000_000.0
+    check("day line: the night's run is never stopped by it, whatever the counter says", _night.day_line_reason() is None)
+    _A.day_end = _dt.time(23, 15)
+    _reads[0] = 1_001_200_000_000.0
+    _day = _rd.Run(_MeterConn((1_000_000_000_000, _then)), _sched, _A())
+    check("day line: a daytime pass under the line goes on (and a reading younger than three minutes is not repeated)",
+          _day.day_line_reason() is None and _day.meter["readings"] == 1 and _day.meter["last_24h_gb"] == 1.2)
+    _reads[0] = 1_002_500_000_000.0
+    _late = _rd.Run(_MeterConn((1_000_000_000_000, _then)), _sched, _A())
+    check("day line: a pass that starts with the line already reached stops before its first stage",
+          _rd.is_egress_stop(_late.day_line_reason()) and "2.50 GB" in _late.day_line_reason(), _late.day_line_reason())
+    _reads[0] = 1_001_300_000_000.0
+    _day._meter_at = 0
+    check("day line: under the line after a fresh reading, the pass goes on and the receipt carries the figure",
+          _day.day_line_reason() is None and _day.meter["last_24h_gb"] == 1.3 and _day.meter["readings"] == 2)
+    _day._meter_at = 0
+    _reads[0] = 1_001_950_000_000.0
+    _why = _day.day_line_reason()
+    check("day line: at 1.9 GB in 24 hours the pass stops itself, as an egress stop (capped, not failed)",
+          bool(_why) and _rd.is_egress_stop(_why) and "1.95 GB" in _why, _why)
+    _reads[0] = None
+    _day2 = _rd.Run(_MeterConn((1_000_000_000_000, _then)), _sched, _A())
+    _day2._meter_at = 0
+    check("day line: a counter that cannot be read stops nothing and is counted as unread",
+          _day2.day_line_reason() is None and _day2.meter.get("unread", 0) >= 1)
+    check("day line: the run's own estimate cap is an egress stop too; the switch is not",
+          _rd.is_egress_stop("estimated database egress cap (0.7 GB) reached") and not _rd.is_egress_stop("stopped by the switch: x"))
+finally:
+    _mt.read = _real_read
+    _rd.wal_bytes = _wal
+    if _old_env[0] is not None:
+        os.environ["SUPABASE_METRICS_KEY"] = _old_env[0]
+
 print(f"\ntest_sweep_units: {len(FAILS)} failure(s)" + (": " + "; ".join(FAILS) if FAILS else ""))
 sys.exit(bool(FAILS))
 

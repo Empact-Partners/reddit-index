@@ -44,3 +44,19 @@ Over the next three nights and their daytime passes, from the receipts (`wal_mb`
 
 If none of the three moves, the setting goes back to 300 s (`PUT` with `"checkpoint_timeout": "300"`) and this record
 says so. If they move, the saving goes into more daytime collection under the same line.
+
+## Judged, 11 Oct
+
+The night's aggregate did not move (12.6% of log records full-page images against 12.2%): retention step 3 ran in
+the same hours and rewrites pages once each, which no checkpoint interval changes. Per statement
+(`extensions.pg_stat_statements`, the sweep's role), the first daytime pass after the change:
+
+| Statement | Before (3 to 10 Oct) | After (11 Oct, 07:15 to 12:15 UTC) |
+|---|---|---|
+| mention insert, main form | 10.05 KB of log and 3.32 full-page images a row (131,994 rows) | 6.36 KB and 1.72 (6,793 rows) |
+| mention insert, second form | 13.11 KB and 4.55 (45,853 rows) | 10.04 KB and 3.30 (5,740 rows) |
+| thread insert | 2.06 KB and 0.68 | 1.85 KB and 0.54 |
+| comment-tree stamp on a thread | 1.38 KB and 0.34 | 1.21 KB and 0.23 |
+
+The setting stays, and goes to 3,600 s on 11 Oct 12:40 UTC (decision 0025): the same pages are touched again within
+the hour, so each pays its full-page image once an hour instead of twice.

@@ -33,13 +33,28 @@ def log(*a):
 
 
 def used_today(start_bytes: float | None) -> float:
+    """GB the database node sent: the larger of the calendar day so far and the 24 hours to now. The watchdog judges
+    07:00 to 07:00 UTC, so the calendar day alone let a heavy afternoon and a heavy next morning add up (11 Oct:
+    2.24 GB at 07:04 with neither calendar day over the line). The 24 hours come from the readings kept in
+    public.egress_counter (migration 0033); this reading joins them."""
     import investigation_2026_10 as inv
     now = inv._metrics()["transmit_bytes"]
     day = dt.datetime.now(dt.timezone.utc).date()
     if start_bytes is None:
         g = json.load(open(os.path.join(ROOT, "docs", "go-live", f"egress-{day}.json")))
         start_bytes = float(g["counter_before"]["bytes"])
-    return (now - start_bytes) / 1e9
+    used = (now - start_bytes) / 1e9
+    try:
+        import watch_link as w
+        w.query(f"insert into public.egress_counter (bytes, source) values ({now:.0f}, 'day passes (laptop)') "
+                f"on conflict (at) do nothing")
+        r = w.query("select bytes::text b from public.egress_counter where at <= now() - interval '24 hours' "
+                    "order by at desc limit 1")
+        if r and now >= float(r[0]["b"]):
+            used = max(used, (now - float(r[0]["b"])) / 1e9)
+    except Exception:  # noqa: BLE001 - the table or the link is unavailable: the calendar day stands
+        pass
+    return used
 
 
 TREE_WORKERS_FILE = os.path.expanduser("~/Library/Logs/reddit-index/tree-workers")
