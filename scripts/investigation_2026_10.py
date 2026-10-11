@@ -21,6 +21,7 @@ import argparse
 import base64
 import csv
 import datetime as dt
+import gzip
 import json
 import os
 import subprocess
@@ -403,10 +404,16 @@ def _metrics() -> dict[str, float]:
     text = None
     for secret in [c for c in cands if c]:
         auth = base64.b64encode(("service_role:" + secret).encode()).decode()
+        # gzip: the answer leaves the database node and is counted on the very counter it reports. Plain it is
+        # 165 KB, compressed 18 KB (measured 11 Oct); the guards read it once a minute for as long as a pass runs,
+        # which was about 0.16 GB of a day's 1.9.
         req = urllib.request.Request(f"https://{REF}.supabase.co/customer/v1/privileged/metrics",
-                                     headers={"Authorization": "Basic " + auth, "User-Agent": UA})
+                                     headers={"Authorization": "Basic " + auth, "User-Agent": UA,
+                                              "Accept-Encoding": "gzip"})
         try:
-            text = urllib.request.urlopen(req, timeout=90).read().decode()
+            with urllib.request.urlopen(req, timeout=90) as r:
+                raw = r.read()
+                text = (gzip.decompress(raw) if r.headers.get("Content-Encoding") == "gzip" else raw).decode()
             break
         except urllib.error.HTTPError:
             continue
