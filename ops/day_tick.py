@@ -82,10 +82,14 @@ def main() -> int:
         if not go or a.dry_run:
             return 0
         options = {"tree_workers": int(sched.get("collect", {}).get("tree_workers", 1))}
-        conn.execute("delete from public.day_run_request")   # a request nobody consumed is never acted on later
-        conn.execute("insert into public.day_run_request (stages, max_calls, end_by_utc, max_egress_gb, options) "
-                     "values (%s, %s, %s::time, %s, %s::jsonb)",
-                     (cfg["stages"], int(cfg["max_calls"]), cfg["end_by_utc"], cap, json.dumps(options)))
+        try:
+            conn.execute("delete from public.day_run_request")   # a request nobody consumed is never acted on later
+            conn.execute("insert into public.day_run_request (stages, max_calls, end_by_utc, max_egress_gb, options) "
+                         "values (%s, %s, %s::time, %s, %s::jsonb)",
+                         (cfg["stages"], int(cfg["max_calls"]), cfg["end_by_utc"], cap, json.dumps(options)))
+        except Exception as e:  # noqa: BLE001 - said plainly in the log; the next tick tries again
+            log(f"the request could not be written, so no pass starts: {type(e).__name__}: {str(e)[:200]}")
+            return 1
     finally:
         conn.close()
     sys.stdout.flush()
