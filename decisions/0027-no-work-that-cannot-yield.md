@@ -51,6 +51,14 @@ By hand from the laptop on 11 Oct 20:30 UTC, 60 calls (run `97432c73`): 24 trees
 12 skipped as unchanged, two `/api/info` calls, 22 dead posts not stored, every thread read carries its count, no
 error.
 
+## Review
+
+An independent read by GLM-5.3 (clean clone, read-only) found no fault in the collector's new rules and one in their
+migration: `threads.tree_comments` had been applied to the database for the pilot, and the night's retention stage
+archived threads by position (`insert into archive.threads select moved.*, now()`), so that night's run would have
+failed with one value too many. The archive copies now name their columns (PR #60, on the night service since
+11 Oct 20:48 UTC, before any night ran on the new schema).
+
 ## How it is judged
 
 The first daytime pass on the new code (12 Oct, the day service; the night's run keeps the code before this until
