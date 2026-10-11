@@ -52,20 +52,62 @@ class Allowance(Stop):
     mentions, the stop switch) raises Stop and is."""
 
 
-def plan(conn, today: dt.datetime) -> tuple[list[str], dict, set, int]:
+def without_vendor(names, vendor: set[str]) -> tuple[list[str], int]:
+    """Drop the vendor-named subreddits (lower-case names in `vendor`); returns what is left and how many went."""
+    kept = [n for n in names if n.lower() not in vendor]
+    return kept, len(names) - len(kept)
+
+
+def merge_case(mapping: dict, core: set, last_visit: dict) -> tuple[dict, set, int]:
+    """One entry per subreddit, whatever the letter case of its rows in the map.
+
+    The map names 576 subreddits twice ("Accounting" and "accounting", from two discovery runs). Reddit and the
+    subreddits table treat them as one; the watermark is kept per spelling, so each was listed twice and its comment
+    trees fetched twice in every rotation. The spelling visited most recently is kept (its watermark goes on), with
+    the categories of both and core if either is. `last_visit`: exact spelling -> time of its last listing.
+    Returns the merged map, the merged core set, and how many second spellings were folded in."""
+    groups: dict[str, list[str]] = {}
+    for name in mapping:
+        groups.setdefault(name.lower(), []).append(name)
+    out, out_core, folded = {}, set(), 0
+    for names in groups.values():
+        names = sorted(names)
+        keep = max(names, key=lambda n: (last_visit.get(n) is not None, last_visit.get(n) or 0))
+        cats: list[str] = []
+        for n in names:
+            cats += [c for c in mapping[n] if c not in cats]
+        out[keep] = cats
+        if any(n in core for n in names):
+            out_core.add(keep)
+        folded += len(names) - 1
+    return out, out_core, folded
+
+
+def plan(conn, today: dt.datetime) -> tuple[list[str], dict, set, int, dict]:
     mapping = d.load_scoring_map()
     core = set(d.load_scoring_map(core_only=True))
+    # A vendor-named subreddit (r/AZURE, r/ClaudeAI, r/hetzner) can never hold a mention: the database refuses the
+    # row (reject_vendor_sub_mention, 13-algorithm.md section 2). 133 of them carry is_scoring in some category of
+    # the map, so they were visited: a listing and up to 24 comment trees each, every mention then refused one row
+    # at a time (10 Oct: 65 of the 962 subreddits visited by day). They are not visited.
+    vendor = {r[0].lower() for r in conn.execute("SELECT name FROM subreddits WHERE is_vendor_sub").fetchall()}
     rows = conn.execute(
         "SELECT scope, finished_at, rows FROM ingest_state WHERE ym='daily' AND stage='new_listing' "
         "AND code_version=%s AND scope NOT LIKE '\\_%%'", (d.CODE_VERSION,)).fetchall()
-    seen = {r[0].lower(): (r[1], r[2]) for r in rows}
+    seen: dict = {}   # lower-case name -> (time, qualifying posts) of the latest listing under any spelling
+    for scope, fin, n in rows:
+        k = scope.lower()
+        if k not in seen or (fin is not None and (seen[k][0] is None or fin > seen[k][0])):
+            seen[k] = (fin, n)
+    mapping, core, n_case = merge_case(mapping, core, {r[0]: r[1] for r in rows})
+    candidates, n_vendor = without_vendor(list(mapping), vendor)
     # a subreddit with a thread still inside the comment-revisit window is never quiet: skipping it would leave
     # those threads' later comments unread until they aged out of the window (review, 2026-10-04)
     active = {r[0].lower() for r in conn.execute(
         "SELECT DISTINCT s.name FROM threads t JOIN subreddits s ON s.id = t.subreddit_id "
         "WHERE t.first_seen_at > now() - make_interval(hours => %s)", (d.REVISIT_HOURS,)).fetchall()}
     subs, quiet = [], 0
-    for s in mapping:
+    for s in candidates:
         fin, n = seen.get(s.lower(), (None, None))
         if fin is not None and n == 0 and fin > today - dt.timedelta(days=QUIET_DAYS) and s.lower() not in active:
             quiet += 1
@@ -76,7 +118,7 @@ def plan(conn, today: dt.datetime) -> tuple[list[str], dict, set, int]:
     # decision 0018: a due partner-priority subreddit (where an Empact partner is AI-cited, posted or named) goes
     # before every other due subreddit; then the most overdue, core before the rest
     subs.sort(key=lambda x: rank(ov[x], x.lower() in prio, x in core))
-    return subs, mapping, core, quiet
+    return subs, mapping, core, quiet, {"vendor": n_vendor, "second_spelling": n_case}
 
 
 def rank(overdue_by: float, priority: bool, is_core: bool) -> tuple:
@@ -108,8 +150,12 @@ def run(conn, caps: dict, deadline: float, should_stop=lambda: None, log=print, 
     t0 = time.time()
     calls0 = rc.stats()["calls"]
     now = dt.datetime.now(dt.timezone.utc)
-    subs, mapping, core, quiet = plan(conn, now)
-    rec = {"subs_planned": len(subs) + quiet, "subs_skipped_quiet": quiet, "subs_visited": 0, "posts_qualified": 0,
+    net0 = rc.stats()
+    subs, mapping, core, quiet, never = plan(conn, now)
+    matching = [0.0]   # seconds spent finding brand names in text; see rec["seconds"] at the end
+    rec = {"subs_planned": len(subs) + quiet, "subs_skipped_quiet": quiet, "subs_skipped_vendor": never["vendor"],
+           "subs_second_spelling_merged": never["second_spelling"],
+           "subs_visited": 0, "posts_qualified": 0,
            "mentions_new": 0, "mentions_rejected": 0, "trees_fetched": 0, "trees_failed": 0,
            "capped_listings": 0, "listings_failed": 0, "errors": 0, "reddit_calls": 0, "stopped": None,
            "allowance_used": None}
@@ -130,8 +176,8 @@ def run(conn, caps: dict, deadline: float, should_stop=lambda: None, log=print, 
             raise Allowance(f"the time set aside for collection ended {where}")
 
     failed_subs: set[str] = set()   # one entry per subreddit, however many ways it failed
-    log(f"  collect: {len(subs)} subreddits to visit ({quiet} quiet ones skipped today), "
-        f"{len(core & set(subs))} core")
+    log(f"  collect: {len(subs)} subreddits to visit ({quiet} quiet ones skipped today; {never['vendor']} "
+        f"vendor-named and {never['second_spelling']} second spellings never visited), {len(core & set(subs))} core")
     try:
         for si, sub in enumerate(subs, 1):
             check(f"before r/{sub} ({si}/{len(subs)})")
@@ -152,7 +198,9 @@ def run(conn, caps: dict, deadline: float, should_stop=lambda: None, log=print, 
                     if not listing_ok:
                         rec["listings_failed"] += 1
                         failed_subs.add(sub)
+                    t_m = time.time()
                     qual = [p for p in posts if d.content_qualify(p, mapping.get(sub, []), alias_re)]
+                    matching[0] += time.time() - t_m
                     newest = max([p.get("created_utc") or 0 for p in posts], default=wm or 0)
                     if qual:
                         cur.executemany(THREADS_UPSERT, [
@@ -168,6 +216,7 @@ def run(conn, caps: dict, deadline: float, should_stop=lambda: None, log=print, 
                     revisit = cur.fetchall()
 
                     mrows = []
+                    t_m = time.time()
                     for p in qual:
                         doc = post_doc(p)
                         if not doc:
@@ -176,6 +225,7 @@ def run(conn, caps: dict, deadline: float, should_stop=lambda: None, log=print, 
                             mrows.append((doc["id"], 2, doc["id"], sid, doc["author"], doc.get("created_utc") or 0,
                                           doc.get("permalink") or "", doc.get("score") or 0, doc["body"],
                                           h["conf"], h["alias"], h["rule_fired"], run_id, h["brand_slug"]))
+                    matching[0] += time.time() - t_m
                     fetched = []
                     for tid, title in revisit:
                         check(f"inside r/{sub}")
@@ -183,6 +233,7 @@ def run(conn, caps: dict, deadline: float, should_stop=lambda: None, log=print, 
                         if not isinstance(tree, list) or (isinstance(tree, dict) and "_err" in tree):
                             rec["trees_failed"] += 1      # asked again on the next pass
                             continue
+                        t_m = time.time()
                         docs, _ = tree_docs(tree)
                         fetched.append(tid)
                         for doc in docs:
@@ -192,6 +243,7 @@ def run(conn, caps: dict, deadline: float, should_stop=lambda: None, log=print, 
                                               doc.get("created_utc") or 0, doc.get("permalink") or "",
                                               doc.get("score") or 0, body, h["conf"], h["alias"],
                                               h["rule_fired"], run_id, h["brand_slug"]))
+                        matching[0] += time.time() - t_m
                     ins = rej = 0
                     if mrows:
                         ins, rej = d.insert_mentions(cur, mrows)
@@ -237,4 +289,13 @@ def run(conn, caps: dict, deadline: float, should_stop=lambda: None, log=print, 
     rec["threads_new"] = conn.execute("select count(*) from public.threads where first_seen_at >= to_timestamp(%s)",
                                       (t0,)).fetchone()[0]
     rec["minutes"] = round((time.time() - t0) / 60, 1)
+    # Where the stage's time went, in seconds (10 Oct: 27 calls a minute by day against a declared 45, and nothing
+    # on the receipt said why). reddit_network: inside requests; pacing_sleep: held back to the declared pace;
+    # rate_limit_waits: the shared app's window was used up; matching: finding brand names in the text; the rest is
+    # the database and everything else.
+    net1 = rc.stats()
+    sec = {"reddit_network": net1["net_s"] - net0["net_s"], "pacing_sleep": net1["paced_s"] - net0["paced_s"],
+           "rate_limit_waits": net1["limit_wait_s"] - net0["limit_wait_s"], "matching": matching[0]}
+    sec["database_and_rest"] = max(0.0, time.time() - t0 - sum(sec.values()))
+    rec["seconds"] = {k: round(v) for k, v in sec.items()}
     return rec
