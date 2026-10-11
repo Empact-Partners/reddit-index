@@ -32,6 +32,10 @@
  },
  "reserve_minutes_after_collect": 95,
  "reddit_pace_seconds": 1.2,
+ "collect": {
+  "tree_workers": 1,
+  "why": "Comment trees in flight at once in the collect stage (1 to 4). The pace does not change: one request starts per reddit_pace_seconds whichever thread asks. 1 until a daytime pass has measured a wider setting against it (a pass's request can carry its own width: ops/day_passes.py reads ~/Library/Logs/reddit-index/tree-workers)."
+ },
  "egress_note": "The run stops at 0.7 GB estimated (write-ahead log + text the classifier reads) before the publisher, which adds at most 1,000 page renders of about 0.2 MB each: at most about 0.9 GB a night. The estimate now counts the renders. Measured 2026-10-04: the first scheduled run's whole day read 0.89 GB on the node counter (the supabase watchdog's daily reading).",
  "max_expire_note": "The publisher expires at most 1,000 changed pages a night (takedown pages always first) and fetches every one it expires, so the site re-renders them inside the measured run and a visitor afterwards costs the database nothing until the page next changes. Pages beyond the cap wait, longest-waiting first, and each shows its own data date. Was 2,000 expired with 100 fetched (2026-10-03): the other 1,900 would have re-rendered on the first visit, outside any measurement.",
  "reserve_minutes_after_classify": 35,

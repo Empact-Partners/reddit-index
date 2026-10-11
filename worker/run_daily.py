@@ -327,6 +327,7 @@ def main() -> int:
 
     args.day_end = None
     args.max_egress_gb = None
+    args.options = {}
     if not args.manual and not in_window(sched):
         # A start outside the night window is refused unless a daytime pass was requested in the last 20 minutes
         # (public.day_run_request, migration 0023; `ops/ri.py dayrun`). The request is consumed here, so one
@@ -334,8 +335,10 @@ def main() -> int:
         c0 = db.connect()
         c0.autocommit = True
         try:
+            # to_jsonb(row)->'options' and not the column: it reads null where migration 0032 has not been applied
             req = c0.execute("delete from public.day_run_request where requested_at > now() - interval '20 minutes' "
-                             "returning stages, max_calls, end_by_utc, max_egress_gb").fetchone()
+                             "returning stages, max_calls, end_by_utc, max_egress_gb, "
+                             "to_jsonb(day_run_request)->'options'").fetchone()
             c0.execute("delete from public.day_run_request")   # an older request is never acted on later
         finally:
             c0.close()
@@ -346,7 +349,9 @@ def main() -> int:
         args.stages = [x.strip() for x in req[0].split(",") if x.strip()]
         args.max_calls, args.day_end = int(req[1]), req[2]
         args.max_egress_gb = float(req[3]) if req[3] is not None else None   # the day's room, measured by the requester
-        log(f"a daytime pass was requested: stages {args.stages}, {args.max_calls} Reddit calls, ends by {req[2]} UTC")
+        args.options = req[4] if isinstance(req[4], dict) else {}
+        log(f"a daytime pass was requested: stages {args.stages}, {args.max_calls} Reddit calls, ends by {req[2]} UTC"
+            + (f", options {args.options}" if args.options else ""))
         # by day the Reddit app is shared with the partner mentions tracker (at most 30 calls a minute) and the
         # reddit MCP; the index takes at most 45 a minute so the app stays under its ~100 (night: the app is ours)
         import reddit_client as rc
@@ -410,7 +415,10 @@ def main() -> int:
         # Collection ends an hour before the run's deadline: classification, refresh, score and publish need
         # that hour, and a collection that used the whole window would leave the day's mentions unlabelled. A daytime
         # pass (no publish) only labels after collecting: 30 minutes, then 5 for the end (10 Oct: ~12 min for 7,545).
-        return collect.run(conn, {"reddit_calls": max(0, left), "mentions": run.caps["mentions"]},
+        # comment trees in flight at once: a daytime pass's request may say (ops/day_passes.py), else the schedule
+        workers = (getattr(args, "options", None) or {}).get("tree_workers") or sched.get("collect", {}).get("tree_workers", 1)
+        return collect.run(conn, {"reddit_calls": max(0, left), "mentions": run.caps["mentions"],
+                                  "tree_workers": workers},
                            run.deadline - (sched.get("reserve_minutes_after_collect", 95) if "publish" in args.stages
                                            else sched.get("reserve_minutes_after_collect_day", 30)) * 60,
                            run.stop_reason, log,
