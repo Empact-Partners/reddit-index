@@ -215,6 +215,177 @@ _csv.close()
 check("backfill: core subreddits, category by category in the given order, each once, lower case",
       _rd.backfill_subs(["a", "b"], _csv.name) == ["alpha", "beta", "zeta"], _rd.backfill_subs(["a", "b"], _csv.name))
 
+# ---- comment trees in flight side by side (worker/collect.py fetch_trees, worker/reddit_client.py) -------------
+import concurrent.futures as _cf  # noqa: E402
+import threading as _th  # noqa: E402
+import time as _time  # noqa: E402
+
+_revisit = [(f"t3_{i}", f"title {i}") for i in range(9)]
+_real_tree_fresh = collect.d.tree_fresh
+_in_flight, _peak, _lk = [0], [0], _th.Lock()
+
+
+def _slow_tree(post_id):
+    with _lk:
+        _in_flight[0] += 1
+        _peak[0] = max(_peak[0], _in_flight[0])
+    _time.sleep(0.08)
+    with _lk:
+        _in_flight[0] -= 1
+    return [post_id]
+
+
+collect.d.tree_fresh = _slow_tree
+try:
+    _asked, _w = [], [0.0]
+    _t = _time.time()
+    _serial = list(collect.fetch_trees(None, _revisit, lambda: _asked.append(1), _w))
+    _serial_s = _time.time() - _t
+    check("trees one at a time: every thread, in order, asked before each",
+          [x[0] for x in _serial] == [r[0] for r in _revisit] and [x[2] for x in _serial] == [[str(i)] for i in range(9)]
+          and len(_asked) == 9 and _peak[0] == 1, (_peak[0], len(_asked)))
+    check("trees one at a time: the waiting is counted", 0.6 < _w[0] <= _serial_s + 0.01, _w[0])
+    _peak[0] = 0
+    _pool = _cf.ThreadPoolExecutor(max_workers=3)
+    _asked2, _w2 = [], [0.0]
+    _t = _time.time()
+    _par = list(collect.fetch_trees(_pool, _revisit, lambda: _asked2.append(1), _w2))
+    _par_s = _time.time() - _t
+    check("trees three at a time: the same threads in the same order",
+          [(x[0], x[1], x[2]) for x in _par] == [(x[0], x[1], x[2]) for x in _serial] and len(_asked2) == 9)
+    check("trees three at a time: never more than three in flight, and more than one", 1 < _peak[0] <= 3, _peak[0])
+    check("trees three at a time: faster than one at a time", _par_s < _serial_s * 0.6, (_par_s, _serial_s))
+
+    class _Cap(Exception):
+        pass
+    _n = [0]
+
+    def _cap_at_5():
+        _n[0] += 1
+        if _n[0] > 5:
+            raise _Cap("the cap")
+    _got = []
+    try:
+        for _x in collect.fetch_trees(_pool, _revisit, _cap_at_5, [0.0]):
+            _got.append(_x[0])
+    except _Cap:
+        pass
+    check("trees three at a time: a cap raised before a request stops the fetch, nothing later is started",
+          _n[0] == 6 and len(_got) <= 5, (_n[0], _got))
+    _started = []
+
+    def _counting_tree(post_id):
+        _started.append(post_id)
+        _time.sleep(0.1)
+        return [post_id]
+    collect.d.tree_fresh = _counting_tree
+    _gen = collect.fetch_trees(_pool, _revisit, lambda: None, [0.0])
+    next(_gen)
+    _gen.close()               # the caller left after one tree (an error of its own)
+    _time.sleep(0.5)
+    check("trees three at a time: when the caller leaves, nothing more is started than was already in flight",
+          len(_started) <= 1 + 3, _started)
+
+    def _failing_tree(post_id):
+        if post_id == "2":
+            raise OSError("one tree failed")
+        _time.sleep(0.05)
+        return [post_id]
+    collect.d.tree_fresh = _failing_tree
+    _seen, _err = [], None
+    try:
+        for _x in collect.fetch_trees(_pool, _revisit, lambda: None, [0.0]):
+            _seen.append(_x[0])
+    except OSError as e:
+        _err = e
+    check("trees three at a time: a tree that raised is raised to the caller, in its place in the order",
+          _err is not None and _seen == ["t3_0", "t3_1"], (_err, _seen))
+    _pool.shutdown(wait=True)
+finally:
+    collect.d.tree_fresh = _real_tree_fresh
+
+import io as _io  # noqa: E402
+import json as _json  # noqa: E402
+import urllib.error as _ue  # noqa: E402
+import email.message as _em  # noqa: E402
+import reddit_client as _rc  # noqa: E402
+
+
+class _Resp(_io.BytesIO):
+    def __init__(self, body):
+        super().__init__(body)
+        self.headers = {"x-ratelimit-remaining": "500", "x-ratelimit-reset": "300"}
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *a):
+        return False
+
+
+_starts, _n429 = [], [0]
+
+
+def _fake_urlopen(req, timeout=40):
+    with _lk:
+        _starts.append(_time.time())
+        k = len(_starts)
+    _time.sleep(0.25)   # the request's own time, longer than the period
+    if k == 4 and not _n429[0]:
+        _n429[0] = 1
+        h = _em.Message()
+        h["x-ratelimit-reset"] = "1"
+        raise _ue.HTTPError(req.full_url, 429, "Too Many Requests", h, _io.BytesIO(b""))
+    return _Resp(_json.dumps({"n": k}).encode())
+
+
+_saved = (_rc.urllib.request.urlopen, _rc._access_token, _rc.SLEEP, _rc._adaptive[0])
+_rc.urllib.request.urlopen, _rc._access_token = _fake_urlopen, (lambda tries=6: "token")
+_rc.SLEEP = _rc._adaptive[0] = 0.1
+try:
+    _c0 = _rc.stats()["calls"]
+    _t = _time.time()
+    with _cf.ThreadPoolExecutor(max_workers=3) as _p:
+        _out = list(_p.map(lambda i: _rc.get(f"/t{i}", None, use_cache=False), range(3)))
+    _three_s = _time.time() - _t
+    _gaps = [b - a for a, b in zip(sorted(_starts), sorted(_starts)[1:])]
+    check("client, three threads: one request starts per period, never two together",
+          len(_starts) == 3 and min(_gaps) >= 0.095, _gaps)
+    check("client, three threads: the requests overlap (three 0.25 s requests in well under 0.75 s)",
+          _three_s < 0.6 and all(isinstance(o, dict) and "n" in o for o in _out), _three_s)
+    _starts.clear()
+    _starts.extend([0.0] * 3)   # the next request is the fourth: it answers 429, wait 1 s
+    _t = _time.time()
+    with _cf.ThreadPoolExecutor(max_workers=3) as _p:
+        _out = list(_p.map(lambda i: _rc.get(f"/u{i}", None, use_cache=False), range(3)))
+    _real = sorted(x for x in _starts if x)
+    _after_429 = [x for x in _real[1:] if x - _real[0] > 0.3]   # the starts that came after the 429 was answered
+    check("client, three threads: after a 429 nobody starts before the wait it named has passed",
+          all(isinstance(o, dict) and "n" in o for o in _out) and len(_real) == 4
+          and min(_after_429) - _real[0] >= 0.25 + 1.0 - 0.05, [round(x - _real[0], 2) for x in _real])
+    check("client: every answer is counted once", _rc.stats()["calls"] - _c0 == 6, _rc.stats()["calls"] - _c0)
+finally:
+    _rc.urllib.request.urlopen, _rc._access_token, _rc.SLEEP, _rc._adaptive[0] = _saved
+    _rc._hold_until[0] = 0.0
+
+import day_passes as _dp  # noqa: E402
+_wf = _tf.NamedTemporaryFile("w", suffix=".txt", delete=False)
+_wf.write("3\n")
+_wf.close()
+_bad = _tf.NamedTemporaryFile("w", suffix=".txt", delete=False)
+_bad.write("12")
+_bad.close()
+check("day passes: the width file's number is the next pass's width", _dp.tree_workers(_wf.name) == 3)
+check("day passes: no file, or a number outside 1 to 4, leaves the sweep's own setting",
+      _dp.tree_workers("/nonexistent/tree-workers") is None and _dp.tree_workers(_bad.name) is None)
+_refused = 0
+for _stages, _end in (("collect'); select 1; --", "23:15"), ("collect,classify", "23:15'; --"), ("", "23:15")):
+    try:
+        _dp.request(_stages, 100, _end, 0.1)
+    except ValueError:
+        _refused += 1
+check("day passes: a stage list or an end time of any other shape is refused before anything is sent", _refused == 3)
+
 print(f"\ntest_sweep_units: {len(FAILS)} failure(s)" + (": " + "; ".join(FAILS) if FAILS else ""))
 sys.exit(bool(FAILS))
 

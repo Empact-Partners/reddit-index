@@ -42,11 +42,31 @@ def used_today(start_bytes: float | None) -> float:
     return (now - start_bytes) / 1e9
 
 
-def request(stages: str, max_calls: int, end_by: str, egress_gb: float) -> None:
+TREE_WORKERS_FILE = os.path.expanduser("~/Library/Logs/reddit-index/tree-workers")
+
+
+def tree_workers(path: str = TREE_WORKERS_FILE) -> int | None:
+    """Comment trees in flight at once for the next pass: the number in the file (1 to 4), or None to leave the
+    sweep's own setting (ops/schedule.json collect.tree_workers). A file on the laptop so the width can be changed
+    between two passes of one day, to compare them; a width that is kept goes into the schedule."""
+    try:
+        n = int(open(path).read().strip())
+    except (OSError, ValueError):
+        return None
+    return n if 1 <= n <= 4 else None
+
+
+def request(stages: str, max_calls: int, end_by: str, egress_gb: float, workers: int | None = None) -> None:
+    import re
     import watch_link as w
     import deploy_sweep as d
-    w.query(f"insert into public.day_run_request (stages, max_calls, end_by_utc, max_egress_gb) values "
-            f"('{stages}', {int(max_calls)}, '{end_by}'::time, {egress_gb:.3f})")
+    # the values go into the statement as text (the query endpoint takes no parameters): only these shapes pass
+    if not re.fullmatch(r"[a-z]+(,[a-z]+)*", stages) or not re.fullmatch(r"\d\d:\d\d", end_by):
+        raise ValueError(f"not a stage list or an HH:MM time: {stages!r}, {end_by!r}")
+    cols, vals = "stages, max_calls, end_by_utc, max_egress_gb", f"'{stages}', {int(max_calls)}, '{end_by}'::time, {egress_gb:.3f}"
+    if workers:   # the column exists since migration 0032; without a width the insert is what it always was
+        cols, vals = cols + ", options", vals + f""", '{{"tree_workers": {int(workers)}}}'::jsonb"""
+    w.query(f"insert into public.day_run_request ({cols}) values ({vals})")
     svcs = d.gql("query($p:String!){ project(id:$p){ services { edges { node { id name } } } } }",
                  {"p": d.PROJECT})["project"]["services"]["edges"]
     sid = [e["node"]["id"] for e in svcs if e["node"]["name"] == d.NAME][0]
@@ -126,11 +146,13 @@ def main() -> int:
         # by about 0.2 GB (day_egress.py uses the same x1.6 for the night). So the cap is the room divided by 1.6.
         cap = min(0.7, (room - 0.03) / (2.4 if "backfill" in a.stages else 1.6))   # 7 Oct: a backfill pass ~2.2x
         t0 = dt.datetime.now(dt.timezone.utc)
+        width = tree_workers()
         try:
-            request(a.stages, a.max_calls, a.end_by, cap)
+            request(a.stages, a.max_calls, a.end_by, cap, width)
         except Exception as e:  # noqa: BLE001
             log(f"could not start a pass: {e}"); time.sleep(120); continue
-        log(f"pass requested: stages {a.stages}, egress cap {cap:.2f} GB (room {room:.2f})")
+        log(f"pass requested: stages {a.stages}, egress cap {cap:.2f} GB (room {room:.2f})"
+            + (f", comment trees {width} at a time" if width else ""))
         run = wait_for(t0, start_bytes)
         if not run:
             log("no finished receipt in 5.5 hours; stopping"); break
@@ -138,8 +160,12 @@ def main() -> int:
         st = n.get("stages") or {}
         bf, cl, co = st.get("backfill") or {}, st.get("classify") or {}, st.get("collect") or {}
         if co:
+            per_min = (f", {co['reddit_calls'] / co['minutes']:.0f} calls a minute"
+                       if co.get("minutes") and co.get("reddit_calls") else "")
             log(f"  collect: {co.get('subs_visited')} subreddits visited, {co.get('mentions_new')} new mentions, "
-                f"{co.get('reddit_calls')} calls, {co.get('allowance_used') or co.get('stopped')}")
+                f"{co.get('reddit_calls')} calls{per_min}, {co.get('allowance_used') or co.get('stopped')}")
+            if co.get("seconds"):
+                log(f"  collect time: trees {co.get('tree_workers', 1)} at a time; seconds {json.dumps(co['seconds'])}")
         log(f"pass {run['status']}: backfill done {len(bf.get('done') or [])} subs, left {bf.get('left')}, "
             f"{bf.get('mentions')} mentions, {bf.get('reddit_calls')} calls, stopped: {bf.get('stopped')}; "
             f"classify labelled {cl.get('labelled')}, rejected {cl.get('rejected')}, left {cl.get('left_in_queue')}; "

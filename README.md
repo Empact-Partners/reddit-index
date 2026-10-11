@@ -50,7 +50,10 @@ calls a minute and label what they collect (the night refreshes, scores and publ
 only 300-400 of the subreddits it plans, and collection is most overdue first, so the day reaches the rest. The map
 names 5,568 subreddits; 4,991 are distinct (576 appear under two spellings and are one visit since 11 Oct), and the
 vendor-named ones, whose mentions the database refuses, are not visited. The collect receipt says where its time
-went (`seconds`: Reddit network, pacing, rate-limit waits, matching, the rest). They stop at 1.90 GB on the node counter. The 90-day backfill of the partner
+went (`seconds`: waiting for Reddit, matching, the database and the rest, and what the requests themselves spent).
+Comment trees can be fetched a few at a time (`collect.tree_workers` in `ops/schedule.json`, 1 to 4; Reddit still
+sees one request start per pacing period). It is 1 until measured: a daytime pass takes its width from the number in
+`~/Library/Logs/reddit-index/tree-workers` when that file exists, so two passes of one day can be compared. They stop at 1.90 GB on the node counter. The 90-day backfill of the partner
 categories finished on 9 Oct.
 
 ## What's here

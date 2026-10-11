@@ -23,6 +23,9 @@ with 553 core ones waiting, so under that order the other 1,354 would never have
 """
 from __future__ import annotations
 
+import collections
+import concurrent.futures
+import contextlib
 import datetime as dt
 import time
 
@@ -56,6 +59,53 @@ def without_vendor(names, vendor: set[str]) -> tuple[list[str], int]:
     """Drop the vendor-named subreddits (lower-case names in `vendor`); returns what is left and how many went."""
     kept = [n for n in names if n.lower() not in vendor]
     return kept, len(names) - len(kept)
+
+
+MAX_TREE_WORKERS = 4
+
+
+def fetch_trees(pool, revisit, before_each, waited: list):
+    """(thread id, title, comment tree) for each thread of `revisit`, in its order.
+
+    `pool` None: one request at a time, as collection always ran. With a pool, up to its width are in flight while
+    the caller matches the trees that have arrived. Reddit sees the same rate either way: reddit_client lets one
+    request START per period whichever thread asks. What changes is that a request's own seconds (a 500-comment tree
+    takes one to two) and the matching and writing after it no longer add to every period. 10 Oct, one at a time:
+    27 calls a minute by day against a declared 45, 32 by night against 50.
+    `before_each` is called before every request is started and may raise (a cap, the deadline). `waited[0]` grows
+    by the seconds the caller stood waiting for Reddit. However the caller leaves (the end, an error in a tree, an
+    error of its own: close the generator), requests not yet started are cancelled, so one subreddit's failure
+    leaves nothing queued behind the next one's requests."""
+    if pool is None:
+        for tid, title in revisit:
+            before_each()
+            t = time.time()
+            tree = d.tree_fresh(tid.replace("t3_", ""))
+            waited[0] += time.time() - t
+            yield tid, title, tree
+        return
+    ahead: collections.deque = collections.deque()
+    it = iter(revisit)
+
+    def top_up() -> None:
+        while len(ahead) < pool._max_workers:
+            nxt = next(it, None)
+            if nxt is None:
+                return
+            before_each()
+            ahead.append((nxt[0], nxt[1], pool.submit(d.tree_fresh, nxt[0].replace("t3_", ""))))
+    try:
+        top_up()
+        while ahead:
+            tid, title, fut = ahead.popleft()
+            t = time.time()
+            tree = fut.result()
+            waited[0] += time.time() - t
+            top_up()   # before the caller starts matching this tree, so the pool stays full while it works
+            yield tid, title, tree
+    finally:
+        for _tid, _title, fut in ahead:
+            fut.cancel()
 
 
 def merge_case(mapping: dict, core: set, last_visit: dict) -> tuple[dict, set, int]:
@@ -144,7 +194,8 @@ def overdue(last_visit: dt.datetime | None, is_core: bool, today: dt.datetime) -
 
 
 def run(conn, caps: dict, deadline: float, should_stop=lambda: None, log=print, run_id: str | None = None) -> dict:
-    """caps: reddit_calls, mentions. should_stop(): returns a reason string to stop, or None. run_id: the sweep's
+    """caps: reddit_calls, mentions, and optionally tree_workers (comment trees in flight at once, 1 to 4; default
+    1). should_stop(): returns a reason string to stop, or None. run_id: the sweep's
     receipt id, stamped on every mention this stage writes, so a mention can be traced to the run that wrote it
     (scripts/schedule_check.py matches them to receipts by it)."""
     t0 = time.time()
@@ -153,6 +204,10 @@ def run(conn, caps: dict, deadline: float, should_stop=lambda: None, log=print, 
     net0 = rc.stats()
     subs, mapping, core, quiet, never = plan(conn, now)
     matching = [0.0]   # seconds spent finding brand names in text; see rec["seconds"] at the end
+    waited = [0.0]     # seconds the stage stood waiting for Reddit (a listing or a comment tree)
+    workers = max(1, min(int(caps.get("tree_workers") or 1), MAX_TREE_WORKERS))
+    pool = (concurrent.futures.ThreadPoolExecutor(max_workers=workers, thread_name_prefix="tree")
+            if workers > 1 else None)
     rec = {"subs_planned": len(subs) + quiet, "subs_skipped_quiet": quiet, "subs_skipped_vendor": never["vendor"],
            "subs_second_spelling_merged": never["second_spelling"],
            "subs_visited": 0, "posts_qualified": 0,
@@ -194,7 +249,9 @@ def run(conn, caps: dict, deadline: float, should_stop=lambda: None, log=print, 
                 with conn.transaction():
                     cur = conn.cursor()
                     wm = d.get_watermark(cur, sub)
+                    t_r = time.time()
                     posts, listing_ok, capped = d.fetch_new(sub, wm)
+                    waited[0] += time.time() - t_r
                     if not listing_ok:
                         rec["listings_failed"] += 1
                         failed_subs.add(sub)
@@ -227,23 +284,23 @@ def run(conn, caps: dict, deadline: float, should_stop=lambda: None, log=print, 
                                           h["conf"], h["alias"], h["rule_fired"], run_id, h["brand_slug"]))
                     matching[0] += time.time() - t_m
                     fetched = []
-                    for tid, title in revisit:
-                        check(f"inside r/{sub}")
-                        tree = d.tree_fresh(tid.replace("t3_", ""))
-                        if not isinstance(tree, list) or (isinstance(tree, dict) and "_err" in tree):
-                            rec["trees_failed"] += 1      # asked again on the next pass
-                            continue
-                        t_m = time.time()
-                        docs, _ = tree_docs(tree)
-                        fetched.append(tid)
-                        for doc in docs:
-                            body = doc.get("body") or ""
-                            for h in resolver.resolve(body, sub, title):
-                                mrows.append((doc["id"], doc.get("doc_type", 1), tid, sid, doc.get("author") or "",
-                                              doc.get("created_utc") or 0, doc.get("permalink") or "",
-                                              doc.get("score") or 0, body, h["conf"], h["alias"],
-                                              h["rule_fired"], run_id, h["brand_slug"]))
-                        matching[0] += time.time() - t_m
+                    with contextlib.closing(fetch_trees(pool, revisit, lambda: check(f"inside r/{sub}"),
+                                                        waited)) as trees:
+                        for tid, title, tree in trees:
+                            if not isinstance(tree, list) or (isinstance(tree, dict) and "_err" in tree):
+                                rec["trees_failed"] += 1      # asked again on the next pass
+                                continue
+                            t_m = time.time()
+                            docs, _ = tree_docs(tree)
+                            fetched.append(tid)
+                            for doc in docs:
+                                body = doc.get("body") or ""
+                                for h in resolver.resolve(body, sub, title):
+                                    mrows.append((doc["id"], doc.get("doc_type", 1), tid, sid, doc.get("author") or "",
+                                                  doc.get("created_utc") or 0, doc.get("permalink") or "",
+                                                  doc.get("score") or 0, body, h["conf"], h["alias"],
+                                                  h["rule_fired"], run_id, h["brand_slug"]))
+                            matching[0] += time.time() - t_m
                     ins = rej = 0
                     if mrows:
                         ins, rej = d.insert_mentions(cur, mrows)
@@ -276,6 +333,9 @@ def run(conn, caps: dict, deadline: float, should_stop=lambda: None, log=print, 
     except Stop as s:
         rec["stopped"] = str(s)
         log(f"  collect stopped: {s}")
+    finally:
+        if pool is not None:   # requests still in flight finish (a few seconds); none is started after this
+            pool.shutdown(wait=True, cancel_futures=True)
     rec["reddit_calls"] = rc.stats()["calls"] - calls0
     # Reddit failing most requests is not a quiet night: it is a failure the owner must hear of (review 4 Oct)
     tried = rec["subs_visited"] + rec["errors"]
@@ -290,12 +350,17 @@ def run(conn, caps: dict, deadline: float, should_stop=lambda: None, log=print, 
                                       (t0,)).fetchone()[0]
     rec["minutes"] = round((time.time() - t0) / 60, 1)
     # Where the stage's time went, in seconds (10 Oct: 27 calls a minute by day against a declared 45, and nothing
-    # on the receipt said why). reddit_network: inside requests; pacing_sleep: held back to the declared pace;
-    # rate_limit_waits: the shared app's window was used up; matching: finding brand names in the text; the rest is
-    # the database and everything else.
+    # on the receipt said why). The first three add up to the stage: waiting_for_reddit (the stage stood waiting for
+    # a listing or a comment tree), matching (finding brand names in the text), database_and_rest. `of_reddit` says
+    # what the requests themselves spent, summed over every request (so with trees in flight side by side it can
+    # exceed the waiting): network, pacing_sleep (held back to the declared pace), rate_limit_waits (the app's
+    # window was used up).
     net1 = rc.stats()
-    sec = {"reddit_network": net1["net_s"] - net0["net_s"], "pacing_sleep": net1["paced_s"] - net0["paced_s"],
-           "rate_limit_waits": net1["limit_wait_s"] - net0["limit_wait_s"], "matching": matching[0]}
-    sec["database_and_rest"] = max(0.0, time.time() - t0 - sum(sec.values()))
-    rec["seconds"] = {k: round(v) for k, v in sec.items()}
+    rec["tree_workers"] = workers
+    rec["seconds"] = {
+        "waiting_for_reddit": round(waited[0]), "matching": round(matching[0]),
+        "database_and_rest": round(max(0.0, time.time() - t0 - waited[0] - matching[0])),
+        "of_reddit": {"network": round(net1["net_s"] - net0["net_s"]),
+                      "pacing_sleep": round(net1["paced_s"] - net0["paced_s"]),
+                      "rate_limit_waits": round(net1["limit_wait_s"] - net0["limit_wait_s"])}}
     return rec

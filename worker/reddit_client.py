@@ -9,7 +9,7 @@ run resumes without re-spending a single call and a parser bug never costs a
 re-harvest. Write to `path.tmp`, then `os.replace` — the atomic form, so a kill
 mid-write leaves the previous file rather than half a file.
 """
-import base64, hashlib, http.client, json, os, socket, ssl, time
+import base64, hashlib, http.client, json, os, socket, ssl, threading, time
 import urllib.error, urllib.parse, urllib.request
 
 # How long a single call will ride out a network outage before giving up and
@@ -72,9 +72,26 @@ _token = {"v": None, "t": 0.0}
 # limit_wait_s: seconds slept because the app's window was used up (a 429, or under 30 calls left)
 _stats = {"calls": 0, "cached": 0, "errors": 0, "started": time.time(),
           "net_s": 0.0, "paced_s": 0.0, "limit_wait_s": 0.0}
+# get() may be called from a few threads at once (collect's comment trees, 11 Oct). The app must still see ONE request
+# start per period, so the pace is held under a lock; a 429 answered to one thread holds every thread's next start.
+_pace_lock = threading.Lock()
+_state_lock = threading.Lock()   # _adaptive and _hold_until are read, compared and written: never by two threads at once
+_stats_lock = threading.Lock()
+_token_lock = threading.Lock()
+_hold_until = [0.0]
+
+
+def _add(key: str, v: float = 1) -> None:
+    with _stats_lock:
+        _stats[key] += v
 
 
 def _read_ratelimit(headers):
+    with _state_lock:
+        _read_ratelimit_locked(headers)
+
+
+def _read_ratelimit_locked(headers):
     try:
         rem = headers.get("x-ratelimit-remaining")
         if rem is None:
@@ -122,6 +139,13 @@ def _access_token(tries=6):
     which `_is_network_error` accepts — so a token failure waits like any other outage.
     """
     if _token["v"] and time.time() - _token["t"] < 3000:
+        return _token["v"]
+    with _token_lock:   # one refresh, however many threads found the token old
+        return _refresh_token(tries)
+
+
+def _refresh_token(tries):
+    if _token["v"] and time.time() - _token["t"] < 3000:   # another thread refreshed it while this one waited
         return _token["v"]
     basic = base64.b64encode(f"{CLIENT_ID}:{CLIENT_SECRET}".encode()).decode()
     last = None
@@ -214,7 +238,7 @@ def get(path, params=None, bucket="misc", tries=3, use_cache=True):
     fp = _cache_path(path, params, bucket)
     if use_cache and os.path.exists(fp):
         try:
-            _stats["cached"] += 1
+            _add("cached")
             return json.load(open(fp))
         except Exception:
             pass
@@ -223,17 +247,21 @@ def get(path, params=None, bucket="misc", tries=3, use_cache=True):
     net_attempt = 0
     net_deadline = None
     while attempt < tries:
-        gap = time.time() - _last_call[0]
-        if gap < _adaptive[0]:
-            _stats["limit_wait_s" if _adaptive[0] >= 30 else "paced_s"] += _adaptive[0] - gap
-            time.sleep(_adaptive[0] - gap)
         url = "https://oauth.reddit.com" + path
         if params:
             url += "?" + urllib.parse.urlencode(params)
-        # Pace start-to-start, not end-to-start: request latency (~0.6s from
-        # Chile) used to stack on top of the floor, so a 0.75s floor produced
-        # ~44 req/min against a ~100 QPM budget. The floor is a PERIOD.
-        _last_call[0] = time.time()
+        with _pace_lock:   # the sleeps are inside the lock on purpose: starts queue here, one per period
+            hold = _hold_until[0] - time.time()
+            if hold > 0:   # a 429 told another thread to wait this long: nobody starts before then
+                time.sleep(hold)
+            gap = time.time() - _last_call[0]
+            if gap < _adaptive[0]:
+                _add("limit_wait_s" if _adaptive[0] >= 30 else "paced_s", _adaptive[0] - gap)
+                time.sleep(_adaptive[0] - gap)
+            # Pace start-to-start, not end-to-start: request latency (~0.6s from
+            # Chile) used to stack on top of the floor, so a 0.75s floor produced
+            # ~44 req/min against a ~100 QPM budget. The floor is a PERIOD.
+            _last_call[0] = started = time.time()
         try:
             # INSIDE the try, deliberately. _access_token has its own retry, but when that
             # finally gives up it raises RuntimeError — which is not a network error, so
@@ -249,11 +277,11 @@ def get(path, params=None, bucket="misc", tries=3, use_cache=True):
                     url, headers={"User-Agent": USER_AGENT,
                                   "Authorization": "Bearer " + _access_token()})
                 with urllib.request.urlopen(req, timeout=40) as f:
-                    _stats["calls"] += 1
+                    _add("calls")
                     _read_ratelimit(f.headers)
-                    data = json.loads(_read_body(f, _last_call[0]))
+                    data = json.loads(_read_body(f, started))
             finally:
-                _stats["net_s"] += time.time() - t_net
+                _add("net_s", time.time() - t_net)
             # use_cache=False means DO NOT CACHE — it used to skip only the
             # READ, so the streaming lanes (daily /new pages, fresh comment
             # trees) wrote a file per call that nothing would ever read back.
@@ -282,10 +310,12 @@ def get(path, params=None, bucket="misc", tries=3, use_cache=True):
                 if wait >= 30:   # SAY SO (as the pacing above does): a long wait is not a hang, and a stall watchdog reads output
                     print(f"  Reddit answered {e.code}: waiting {wait:.0f}s before retrying (not a hang)", flush=True)
                 if e.code == 429:
-                    _stats["limit_wait_s"] += wait
+                    _add("limit_wait_s", wait)
+                    with _state_lock:   # the longest wait any thread was told wins
+                        _hold_until[0] = max(_hold_until[0], time.time() + wait)
                 time.sleep(wait)
                 continue
-            _stats["errors"] += 1
+            _add("errors")
             return {"_err": e.code}
         except Exception as e:
             _last_call[0] = time.time()
@@ -297,7 +327,7 @@ def get(path, params=None, bucket="misc", tries=3, use_cache=True):
             if net_deadline is None:
                 net_deadline = time.time() + NET_MAX_WAIT
             if time.time() >= net_deadline:
-                _stats["errors"] += 1
+                _add("errors")
                 print(f"  network down > {NET_MAX_WAIT / 60:.0f} min, giving up on "
                       f"{path} (state is on disk; a re-run resumes)", flush=True)
                 return {"_err": "network"}
@@ -307,7 +337,7 @@ def get(path, params=None, bucket="misc", tries=3, use_cache=True):
                 print(f"  network unreachable ({type(e).__name__}) — waiting {wait}s, "
                       f"attempt {net_attempt}", flush=True)
             time.sleep(wait)
-    _stats["errors"] += 1
+    _add("errors")
     return {"_err": "fail"}
 
 
