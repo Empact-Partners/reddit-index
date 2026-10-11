@@ -18,6 +18,8 @@
   "minutes": 330,
   "egress_gb": 0.7
  },
+ "day_line_gb": 1.9,
+ "day_line_note": "A daytime pass stops itself when the database node has sent this much in the 24 hours to now, read on the node counter by the pass every 3 minutes (worker/meter.py, decision 0025). The watchdog speaks at 2 GB a day. The night's run is never stopped by it.",
  "takedown_brake_share": 0.15,
  "verify_pages": 7000,
  "max_expire_pages": 7000,
