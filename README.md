@@ -67,7 +67,7 @@ categories finished on 9 Oct.
 | `data/` | The taxonomy, the brand gazetteer, the subreddit map, the alias blocklist |
 | `supabase/migrations/` | The schema, applied by `ops/migrate.py` (ledger: `public.schema_migrations`) |
 | `scripts/` | Build gates (`gates/`, each proven to fail by its self-test) and the investigation script |
-| `decisions/` | Every ruling; 0017 (the daily sweep) to 0026 (daytime passes requested on Railway) describe today's system |
+| `decisions/` | Every ruling; 0017 (the daily sweep) to 0028 (the takedown check's slow lap by position) describe today's system |
 
 ## Docs
 
