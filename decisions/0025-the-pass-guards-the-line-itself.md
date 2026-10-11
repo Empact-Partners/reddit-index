@@ -61,6 +61,8 @@ The 2 GB line, the 1.9 GB guard, what a pass collects, takedowns.
 
 ## How it is judged
 
-A daytime pass requested with the line already reached ends at once as capped, with the figure on its receipt
-(tested on Railway on 11 Oct, below). From 12 Oct: no day over 2 GB on the watchdog's reading; the size of a normal
+A daytime pass requested with the line already reached ends at once as capped, with the figure on its receipt.
+Tested on Railway on 11 Oct at 12:45 UTC, by hand: run `042b1a90` read the counter at its start, found 3.51 GB
+since the newest reading at least 24 hours old (10 Oct 04:51, a 32-hour window: the readings before this day were
+few, and a longer window only reads high), skipped collection and ended capped in one second. From 12 Oct: no day over 2 GB on the watchdog's reading; the size of a normal
 day's 11:15 backup read from the readings either side of it.

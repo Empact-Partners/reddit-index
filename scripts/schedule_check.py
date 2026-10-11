@@ -66,10 +66,23 @@ def railway(sched: dict) -> list[str]:
                            f"{sched['railway']['cron']!r}")
             if region != [d.REGION]:
                 out.append(f"the sweep runs in {region}, not {d.REGION}")
+        elif name == sched.get("day", {}).get("service_name"):
+            # the daytime passes' requester (ops/day_tick.py, decision 0026): its own cron and start command
+            if cron != sched["day"]["cron"]:
+                out.append(f"the day service's newest deployment carries cron {cron!r}, ops/schedule.json says "
+                           f"{sched['day']['cron']!r}")
+            start = (sm.get("deploy") or {}).get("startCommand") or ""
+            if "day_tick.py" not in start:
+                out.append(f"the day service does not start ops/day_tick.py (start command {start!r}): it would "
+                           f"run the sweep itself every half hour")
+            if region != [d.REGION]:
+                out.append(f"the day service runs in {region}, not {d.REGION}")
         else:
             out.append(f"an undeclared service is in the project: {name} (cron {cron!r})")
     if d.NAME not in seen:
         out.append("the sweep service does not exist")
+    if sched.get("day", {}).get("service_name") and sched["day"]["service_name"] not in seen:
+        out.append("the day service does not exist: no daytime pass is being requested")
     return out
 
 
