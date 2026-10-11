@@ -56,14 +56,25 @@ def record(conn, run_id: str, t0: float, status: str, notes: dict) -> None:
         (run_id, t0, status, status, json.dumps(notes, default=str)))
 
 
+# The archive copies name their columns. They were `insert into archive.x select moved.*, now()`: by position, so
+# the first column added to a live table (threads.tree_comments, 11 Oct) would have failed the night's retention
+# with one value too many. A column added to a live table later is simply not archived until it is named here.
+THREAD_COLS = ("id, subreddit_id, link_title, permalink, created_utc, num_comments, archived, score, first_seen_at, "
+               "tree_fetched_at")
+SENTIMENT_COLS = ("doc_id, brand_id, model_version, label, intensity, conf, stage, is_comparative, "
+                  "is_recommendation, is_category_gripe, evidence_span, scored_at")
+MENTION_COLS = ("brand_id, doc_id, created_utc, doc_type, thread_id, subreddit_id, author, permalink, score, body, "
+                "match_conf, matched_form, rule_fired, run_id, loaded_at, delete_checked_at, body_from")
+
+
 def threads(conn) -> dict:
-    n = conn.execute("""
+    n = conn.execute(f"""
         with moved as (
           delete from public.threads t
            where t.first_seen_at < now() - interval '7 days'
              and not exists (select 1 from public.mentions m where m.thread_id = t.id)
-          returning t.*)
-        insert into archive.threads select moved.*, now() from moved""").rowcount
+          returning {THREAD_COLS})
+        insert into archive.threads ({THREAD_COLS}, archived_at) select {THREAD_COLS}, now() from moved""").rowcount
     return {"threads_archived_and_removed": n}
 
 
@@ -85,14 +96,16 @@ def rejected(conn, limit: int | None = None) -> dict:
             with moved as (
               delete from public.mention_sentiment s using ({old}) d
                where s.doc_id = d.doc_id and s.brand_id = d.brand_id
-              returning s.*)
-            insert into archive.mention_sentiment select moved.*, now() from moved""").rowcount
+              returning {", ".join("s." + c.strip() for c in SENTIMENT_COLS.split(","))})
+            insert into archive.mention_sentiment ({SENTIMENT_COLS}, archived_at)
+            select {SENTIMENT_COLS}, now() from moved""").rowcount
         n = conn.execute(f"""
             with moved as (
               delete from public.mentions m using ({old}) d
                where m.brand_id = d.brand_id and m.doc_id = d.doc_id and m.created_utc = d.created_utc
-              returning m.*)
-            insert into archive.mentions select moved.*, now() from moved""").rowcount
+              returning {", ".join("m." + c.strip() for c in MENTION_COLS.split(","))})
+            insert into archive.mentions ({MENTION_COLS}, archived_at)
+            select {MENTION_COLS}, now() from moved""").rowcount
         # bookkeeping that pointed at the removed rows (review, 2026-10-03): a probe row for a document with no
         # mention left would wedge the takedown slow lap; a queue row would be re-selected forever
         conn.execute("delete from public.classify_queue q where not exists (select 1 from public.mentions m "
