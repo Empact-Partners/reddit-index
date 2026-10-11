@@ -167,6 +167,7 @@ def run(conn, max_calls: int = 2000, dry_run: bool = False, max_gone_share: floa
     import reddit_client as rc
     receipt = {"docs_checked": 0, "docs_not_checked": 0, "docs_gone": 0, "docs_edited": 0, "mentions_purged": 0,
                "ledgered_repurged": 0, "reddit_calls": 0, "on_pages_checked": 0, "probe_rows_without_a_document": 0,
+               "never_checked_before": 0, "first_checks_stamped": 0,
                "brake": False, "stopped": None}
     conn.execute("set statement_timeout = '15min'")
 
