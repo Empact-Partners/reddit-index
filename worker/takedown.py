@@ -76,13 +76,14 @@ def lap_next(conn, position: str, room: int) -> tuple[list[str], bool]:
     return ids + more, True
 
 
-def lap_reached(rest: list[str], answered: set[str]) -> str | None:
-    """How far the lap really got: the last document of the unbroken run of answered documents from the start of
-    `rest`. A batch Reddit did not answer stops the position there, so its documents are asked again next run
-    instead of waiting a whole lap. None when not even the first was answered."""
+def lap_reached(lap: list[str], asked: set[str]) -> str | None:
+    """How far the lap got: the last document of the unbroken run of documents Reddit was ASKED about, from the
+    start of `lap`. Documents the run never reached (its time ended, it was stopped) are not passed. A document
+    asked about but not answered is passed, and goes back to the never-checked list (see run()), so one batch that
+    never answers cannot hold the lap where it is for good. None when not even the first was asked."""
     last = None
-    for d in rest:
-        if d not in answered:
+    for d in lap:
+        if d not in asked:
             break
         last = d
     return last
@@ -193,6 +194,7 @@ def run(conn, max_calls: int = 2000, dry_run: bool = False, max_gone_share: floa
         f"lap, {max_calls} calls allowed")
 
     verdicts: dict[str, str] = {}
+    asked: set[str] = set()      # every document of a batch that was sent to Reddit
     answered: set[str] = set()   # every document of a batch Reddit answered, whatever became of it
     calls0 = rc.stats()["calls"]
     for i in range(0, len(queue), BATCH):
@@ -206,6 +208,7 @@ def run(conn, max_calls: int = 2000, dry_run: bool = False, max_gone_share: floa
                 log(f"  stopped: {reason}")
                 break
         chunk = queue[i:i + BATCH]
+        asked.update(chunk)
         resp = rc.info(chunk)
         children = (resp.get("data") or {}).get("children") if isinstance(resp, dict) else None
         if not isinstance(resp, dict) or "_err" in resp or children is None:
@@ -265,8 +268,14 @@ def run(conn, max_calls: int = 2000, dry_run: bool = False, max_gone_share: floa
     receipt["first_checks_stamped"] = len(first)
     # The slow lap moves forward only now, after the purge: a run that dies before this asks the same documents
     # again. Its documents are not stamped (see the top of this file): the position is the memory.
-    reached = lap_reached(lap, answered)
+    reached = lap_reached(lap, asked)
     if reached is not None:
+        # asked about and not answered: back to the never-checked list, so the next run asks them first instead
+        # of a lap later (a failure is residue, never a verdict)
+        again = [d for d in lap if d in asked and d not in answered]
+        for i in range(0, len(again), 5000):
+            conn.execute("update public.doc_probe set checked_at = null where doc_id = any (%s)", (again[i:i + 5000],))
+        receipt["slow_lap"]["asked_again_first"] = len(again)
         save_lap_position(conn, reached, len(lap))
         receipt["slow_lap"]["to"] = reached
     log(f"  purged {receipt['mentions_purged']} mention rows; the slow lap is at {reached or position or 'its start'}"

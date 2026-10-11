@@ -539,9 +539,10 @@ check("slow lap: a position past the last document starts again from the first",
       _td.lap_next(_LapConn(_docs), "t1_zzz", 2) == (["t1_a", "t1_b"], True))
 check("slow lap: no room, nothing taken", _td.lap_next(_LapConn(_docs), "t1_c", 0) == ([], False))
 _rest = ["t1_d", "t1_e", "t1_f", "t1_g"]
-check("slow lap: the position moves to the last document of the unbroken answered run",
+check("slow lap: the position moves to the last document Reddit was asked about, in an unbroken run from the start",
       _td.lap_reached(_rest, {"t1_d", "t1_e", "t1_f", "t1_g"}) == "t1_g" and _td.lap_reached(_rest, {"t1_d", "t1_e", "t1_g"}) == "t1_e")
-check("slow lap: nothing answered, the position does not move", _td.lap_reached(_rest, set()) is None and _td.lap_reached([], {"x"}) is None)
+check("slow lap: nothing asked (the run's time ended first), the position does not move",
+      _td.lap_reached(_rest, set()) is None and _td.lap_reached([], {"x"}) is None)
 
 print(f"\ntest_sweep_units: {len(FAILS)} failure(s)" + (": " + "; ".join(FAILS) if FAILS else ""))
 sys.exit(bool(FAILS))

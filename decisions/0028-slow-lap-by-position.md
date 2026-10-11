@@ -19,8 +19,9 @@ backup ships again (decision 0025).
    first check.
 3. **The slow lap**: the documents already checked at least once, in document-id order from a saved position, round
    and round. Nothing is stamped; the position is one row (`public.ingest_state`, scope `_takedown`) and moves
-   only after the night's purge, to the last document of the unbroken run Reddit answered. A batch Reddit did not
-   answer stops the position there, so its documents are asked again the next night, not a lap later.
+   only after the night's purge, to the last document Reddit was asked about. A document asked about and not
+   answered goes back to the never-checked list, so it is asked first the next night and one batch that never
+   answers cannot hold the lap. Documents the run never reached (its time ended) are not passed.
 
 Migration 0037 drops the index on the stamp and adds a small partial index over the never-checked documents.
 
