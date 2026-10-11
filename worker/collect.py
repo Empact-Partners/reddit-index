@@ -35,6 +35,14 @@ import reddit_client as rc
 from harvest import post_doc, tree_docs
 
 QUIET_DAYS = 3
+# Work that cannot yield anything is not done (11 Oct, measured on one daytime pass of 541 subreddits: a listing call
+# brought 12.9 mentions, a comment-tree call 0.61; 1,311 of 7,898 tree calls were for threads with no comment; 84% of
+# the repeat reads of a thread found nothing; 69% of the 10,786 threads stored never held a mention, and each is a
+# row written, stamped, and a week later archived and deleted; 1,609 of them were posts more than 400 days old).
+HARVEST_DAYS = 400       # a post older than this when listed is not stored and its comments are not read: the
+                         # score counts the trailing 365 days (docs/methodology.md), the labels 400
+DEAD_AFTER_HOURS = 48    # a post that names no brand and has no comment at this age is not stored
+CANDIDATES = 200         # threads of one subreddit weighed for a comment-tree read on one visit
 ROTATE_DAYS = 3   # a non-core subreddit is due every third day, a core one every day
 
 THREADS_UPSERT = (
@@ -106,6 +114,60 @@ def fetch_trees(pool, revisit, before_each, waited: list):
     finally:
         for _tid, _title, fut in ahead:
             fut.cancel()
+
+
+def worth_storing(post: dict, names_a_brand: bool, now_ts: float) -> bool:
+    """A qualifying post is stored as a thread when it names a brand, has a comment to read, or is young enough to
+    get one. Otherwise it is a row nobody will ever read, deleted a week later."""
+    return (names_a_brand or int(post.get("num_comments") or 0) > 0
+            or now_ts - float(post.get("created_utc") or 0) < DEAD_AFTER_HOURS * 3600)
+
+
+def choose_trees(cands: list, current: dict, limit: int) -> tuple[list, dict]:
+    """Which comment trees to read on this visit.
+
+    cands: (thread id, title, comments stored at first sight, tree_fetched_at, comments when the tree was last read)
+    current: thread id -> the comments Reddit shows now, where known (the listing just read, or /api/info).
+    A thread never read is read when it has a comment (the count now, else the stored one). A thread already read
+    is read again only when its count has grown since. Most comments first, then most growth.
+    Returns ([(thread id, title)], {"no_comments": skipped, "unchanged": skipped})."""
+    unread, grown, skipped = [], [], {"no_comments": 0, "unchanged": 0}
+    for tid, title, stored, fetched_at, at_fetch in cands:
+        now_n = current.get(tid)
+        if fetched_at is None:
+            n = now_n if now_n is not None else int(stored or 0)
+            if n > 0:
+                unread.append((n, tid, title))
+            else:
+                skipped["no_comments"] += 1
+        elif now_n is not None and now_n > int(at_fetch or 0):
+            grown.append((now_n - int(at_fetch or 0), tid, title))
+        else:
+            skipped["unchanged"] += 1
+    unread.sort(key=lambda x: -x[0])
+    grown.sort(key=lambda x: -x[0])
+    return [(tid, title) for _n, tid, title in (unread + grown)[:limit]], skipped
+
+
+def info_counts(ids: list) -> dict:
+    """thread id -> the comment count Reddit shows now, for up to 100 threads in one call. {} when it fails."""
+    r = rc.get("/api/info", {"id": ",".join(ids[:100]), "raw_json": 1}, bucket="stream", use_cache=False)
+    if not isinstance(r, dict) or "_err" in r:
+        return {}
+    out = {}
+    for k in r.get("data", {}).get("children", []):
+        dd = k.get("data") or {}
+        if k.get("kind") == "t3" and dd.get("name"):
+            out[dd["name"]] = int(dd.get("num_comments") or 0)
+    return out
+
+
+def tree_count(tree) -> int | None:
+    """The comment count on the post of a /comments response, or None."""
+    try:
+        return int(tree[0]["data"]["children"][0]["data"].get("num_comments") or 0)
+    except Exception:  # noqa: BLE001
+        return None
 
 
 def merge_case(mapping: dict, core: set, last_visit: dict) -> tuple[dict, set, int]:
@@ -212,6 +274,8 @@ def run(conn, caps: dict, deadline: float, should_stop=lambda: None, log=print, 
            "subs_second_spelling_merged": never["second_spelling"],
            "subs_visited": 0, "posts_qualified": 0,
            "mentions_new": 0, "mentions_rejected": 0, "trees_fetched": 0, "trees_failed": 0,
+           "trees_skipped_no_comments": 0, "trees_skipped_unchanged": 0, "info_calls": 0,
+           "posts_older_than_window": 0, "posts_dead_not_stored": 0,
            "capped_listings": 0, "listings_failed": 0, "errors": 0, "reddit_calls": 0, "stopped": None,
            "allowance_used": None}
 
@@ -249,40 +313,61 @@ def run(conn, caps: dict, deadline: float, should_stop=lambda: None, log=print, 
                 with conn.transaction():
                     cur = conn.cursor()
                     wm = d.get_watermark(cur, sub)
+                    seen: dict = {}   # thread id -> comments Reddit shows now, for every post on the pages read
                     t_r = time.time()
-                    posts, listing_ok, capped = d.fetch_new(sub, wm)
+                    posts, listing_ok, capped = d.fetch_new(sub, wm, seen=seen)
                     waited[0] += time.time() - t_r
                     if not listing_ok:
                         rec["listings_failed"] += 1
                         failed_subs.add(sub)
+                    now_ts = time.time()
+                    cutoff = now_ts - HARVEST_DAYS * 86400
+                    fresh = [p for p in posts if (p.get("created_utc") or 0) >= cutoff]
+                    rec["posts_older_than_window"] += len(posts) - len(fresh)
                     t_m = time.time()
-                    qual = [p for p in posts if d.content_qualify(p, mapping.get(sub, []), alias_re)]
-                    matching[0] += time.time() - t_m
+                    qual = [p for p in fresh if d.content_qualify(p, mapping.get(sub, []), alias_re)]
+                    # the watermark passes every post listed, the old ones too: they are not listed again
                     newest = max([p.get("created_utc") or 0 for p in posts], default=wm or 0)
-                    if qual:
-                        cur.executemany(THREADS_UPSERT, [
-                            (f"t3_{p['id']}", sid, (p.get("title") or "")[:500],
-                             "https://www.reddit.com" + (p.get("permalink") or ""), p.get("created_utc") or 0,
-                             p.get("num_comments") or 0, bool(p.get("archived")), p.get("score") or 0)
-                            for p in qual])
-                    cur.execute(
-                        "SELECT id, link_title FROM threads WHERE subreddit_id=%s "
-                        "AND first_seen_at > now() - make_interval(hours => %s) "
-                        "ORDER BY tree_fetched_at NULLS FIRST, num_comments DESC LIMIT %s",
-                        (sid, d.REVISIT_HOURS, d.TREES_PER_SUB))
-                    revisit = cur.fetchall()
-
-                    mrows = []
-                    t_m = time.time()
+                    # the posts themselves first: a post that names a brand is kept whatever its comments
+                    mrows, named = [], set()
                     for p in qual:
                         doc = post_doc(p)
                         if not doc:
                             continue
                         for h in resolver.resolve(doc["body"], sub, p.get("title") or ""):
+                            named.add(p.get("id"))
                             mrows.append((doc["id"], 2, doc["id"], sid, doc["author"], doc.get("created_utc") or 0,
                                           doc.get("permalink") or "", doc.get("score") or 0, doc["body"],
                                           h["conf"], h["alias"], h["rule_fired"], run_id, h["brand_slug"]))
                     matching[0] += time.time() - t_m
+                    keep = [p for p in qual if worth_storing(p, p.get("id") in named, now_ts)]
+                    rec["posts_dead_not_stored"] += len(qual) - len(keep)
+                    if keep:
+                        cur.executemany(THREADS_UPSERT, [
+                            (f"t3_{p['id']}", sid, (p.get("title") or "")[:500],
+                             "https://www.reddit.com" + (p.get("permalink") or ""), p.get("created_utc") or 0,
+                             p.get("num_comments") or 0, bool(p.get("archived")), p.get("score") or 0)
+                            for p in keep])
+                    cur.execute(
+                        "SELECT id, link_title, num_comments, tree_fetched_at, tree_comments FROM threads "
+                        "WHERE subreddit_id=%s AND first_seen_at > now() - make_interval(hours => %s) "
+                        "AND created_utc > to_timestamp(%s) "
+                        "ORDER BY tree_fetched_at NULLS FIRST, num_comments DESC LIMIT %s",
+                        (sid, d.REVISIT_HOURS, cutoff, CANDIDATES))
+                    cands = cur.fetchall()
+                    current = {c[0]: seen[c[0]] for c in cands if c[0] in seen}
+                    # not on the pages just read: a thread already read (has it grown?) or one stored with no
+                    # comment (has it got one?) is asked about in ONE call for up to 100 of them
+                    unknown = [c[0] for c in cands if c[0] not in current and (c[3] is not None or not (c[2] or 0))]
+                    if unknown:
+                        check(f"inside r/{sub}")
+                        t_r = time.time()
+                        current.update(info_counts(unknown))
+                        waited[0] += time.time() - t_r
+                        rec["info_calls"] += 1
+                    revisit, skipped = choose_trees(cands, current, d.TREES_PER_SUB)
+                    rec["trees_skipped_no_comments"] += skipped["no_comments"]
+                    rec["trees_skipped_unchanged"] += skipped["unchanged"]
                     fetched = []
                     with contextlib.closing(fetch_trees(pool, revisit, lambda: check(f"inside r/{sub}"),
                                                         waited)) as trees:
@@ -292,7 +377,8 @@ def run(conn, caps: dict, deadline: float, should_stop=lambda: None, log=print, 
                                 continue
                             t_m = time.time()
                             docs, _ = tree_docs(tree)
-                            fetched.append(tid)
+                            n_now = tree_count(tree)
+                            fetched.append((tid, n_now if n_now is not None else int(current.get(tid) or 0)))
                             for doc in docs:
                                 body = doc.get("body") or ""
                                 for h in resolver.resolve(body, sub, title):
@@ -304,8 +390,10 @@ def run(conn, caps: dict, deadline: float, should_stop=lambda: None, log=print, 
                     ins = rej = 0
                     if mrows:
                         ins, rej = d.insert_mentions(cur, mrows)
-                    if fetched:
-                        cur.execute("UPDATE threads SET tree_fetched_at = now() WHERE id = ANY(%s)", (fetched,))
+                    if fetched:   # read now, and how many comments it had: the next visit reads it again only if more
+                        cur.execute("UPDATE threads t SET tree_fetched_at = now(), tree_comments = v.n "
+                                    "FROM unnest(%s::text[], %s::int[]) AS v(id, n) WHERE t.id = v.id",
+                                    ([f[0] for f in fetched], [f[1] for f in fetched]))
                     # the watermark moves only after a COMPLETE listing (daily.py's rule)
                     if newest and listing_ok and not capped:
                         d.set_watermark(cur, sub, dt.datetime.fromtimestamp(newest, dt.timezone.utc), len(qual))

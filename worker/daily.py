@@ -156,10 +156,12 @@ def set_watermark(cur, sub, wm, n_threads, status="ok"):
         (sub, CODE_VERSION, wm, n_threads, status))
 
 
-def fetch_new(sub, watermark_ts):
+def fetch_new(sub, watermark_ts, seen=None):
     """Newest posts, watermark-bounded. 100/page, at most MAX_PAGES pages.
 
-    Returns (posts, ok, capped).
+    Returns (posts, ok, capped). `seen`, when given, receives "t3_<id>" -> the comment count Reddit shows now for
+    EVERY post on the pages read, the ones at or under the watermark included: the sweep's collect stage uses it to
+    know whether a thread it already read has grown, without a call.
 
     ok=False when any page failed: an error response used to collapse into an
     empty page, indistinguishable from a clean end of listing, and the caller
@@ -190,6 +192,9 @@ def fetch_new(sub, watermark_ts):
         if not kids:
             break
         page = [k["data"] for k in kids if k.get("kind") == "t3"]
+        if seen is not None:
+            for p in page:
+                seen[f"t3_{p.get('id')}"] = int(p.get("num_comments") or 0)
         posts.extend(page)
         oldest = min((p.get("created_utc") or 0) for p in page)
         after = r.get("data", {}).get("after")
