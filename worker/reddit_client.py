@@ -243,11 +243,11 @@ def get(path, params=None, bucket="misc", tries=3, use_cache=True):
             # dropped: "could not obtain a Reddit token after 7 attempts". The function's
             # own docstring already named this failure; the earlier fix hardened the token
             # retry but left the call site unprotected.
-            req = urllib.request.Request(
-                url, headers={"User-Agent": USER_AGENT,
-                              "Authorization": "Bearer " + _access_token()})
-            t_net = time.time()
+            t_net = time.time()   # the token request counts as Reddit network time too
             try:
+                req = urllib.request.Request(
+                    url, headers={"User-Agent": USER_AGENT,
+                                  "Authorization": "Bearer " + _access_token()})
                 with urllib.request.urlopen(req, timeout=40) as f:
                     _stats["calls"] += 1
                     _read_ratelimit(f.headers)
