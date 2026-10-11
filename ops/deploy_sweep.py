@@ -44,10 +44,13 @@ PROJECT = "90cd4c29-797c-4552-90d9-81c3b9914ffa"
 ENV = "f3a7784c-7cd9-4cb8-a9ea-05efe657a7ff"
 OLD_COLLECTOR = "ff501aef-926d-4e24-8ef8-476855cd41b9"     # parked; this script must never deploy to it
 NAME = "reddit-index-sweep"
+DAY_NAME = "reddit-index-day"                               # the daytime passes' requester (ops/day_tick.py)
+DAY_START = "python3 -u /app/ops/day_tick.py"
 REGION = "us-east4-eqdc4a"                                  # Virginia, next to the database (aws us-east-1)
 DATA = ["categories.csv", "category-subreddits.csv", "brands.csv", "brand-aliases.csv", "alias-blocklist.csv",
         "alias-hostile.csv", "english-words.txt"]
-OPS = ["schedule.json", "classify_thresholds.json", "retention.py"]   # retention.py: the nightly retention stage
+OPS = ["schedule.json", "classify_thresholds.json", "retention.py",   # retention.py: the nightly retention stage
+       "day_tick.py"]                                                  # the day service's start command
 
 TOKENS_SHIM = '''"""The one function the vendored Jev client needs, reading the container's environment."""
 import os
@@ -74,15 +77,15 @@ def gql(query: str, variables: dict) -> dict:
     return out["data"]
 
 
-def service_id(create: bool) -> str | None:
+def service_id(create: bool, name: str = NAME) -> str | None:
     d = gql("query($p:String!){ project(id:$p){ services { edges { node { id name } } } } }", {"p": PROJECT})
     for e in d["project"]["services"]["edges"]:
-        if e["node"]["name"] == NAME:
+        if e["node"]["name"] == name:
             return e["node"]["id"]
     if not create:
         return None
     return gql("mutation($i:ServiceCreateInput!){ serviceCreate(input:$i){ id } }",
-               {"i": {"projectId": PROJECT, "name": NAME}})["serviceCreate"]["id"]
+               {"i": {"projectId": PROJECT, "name": name}})["serviceCreate"]["id"]
 
 
 def variables() -> dict:
@@ -113,7 +116,9 @@ def variables() -> dict:
     return v
 
 
-def assemble(dest: str) -> None:
+def assemble(dest: str, cron: str | None = None, start: str | None = None) -> None:
+    """The build folder. `cron` and `start`: the service's own schedule and start command (default: the sweep's
+    cron and the image's CMD, worker/run_daily.py)."""
     sched = json.load(open(os.path.join(ROOT, "ops", "schedule.json")))
     shutil.copy(os.path.join(ROOT, "deploy", "sweep", "Dockerfile"), dest)
     shutil.copytree(os.path.join(ROOT, "worker"), os.path.join(dest, "worker"),
@@ -136,48 +141,66 @@ def assemble(dest: str) -> None:
     shutil.copy(os.path.expanduser("~/.codex-zai/models.json"), os.path.join(dest, "codex-zai", "models.json"))
     rj = {"$schema": "https://railway.com/railway.schema.json",
           "build": {"builder": "DOCKERFILE", "dockerfilePath": "Dockerfile"},
-          "deploy": {"cronSchedule": sched["railway"]["cron"], "restartPolicyType": "NEVER",
+          "deploy": {"cronSchedule": cron or sched["railway"]["cron"], "restartPolicyType": "NEVER",
                      "multiRegionConfig": {REGION: {"numReplicas": 1}}}}
+    if start:
+        rj["deploy"]["startCommand"] = start
     json.dump(rj, open(os.path.join(dest, "railway.json"), "w"), indent=1)
 
 
-def main() -> int:
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--dry-run", action="store_true")
-    ap.add_argument("--vars-only", action="store_true")
-    a = ap.parse_args()
-    v = variables()
+def deploy_one(name: str, cron: str, start: str | None, v: dict, dry_run: bool, vars_only: bool) -> int:
     with tempfile.TemporaryDirectory(prefix="ri-sweep-") as dest:
-        assemble(dest)
+        assemble(dest, cron, start)
         size = sum(os.path.getsize(os.path.join(p, f)) for p, _, fs in os.walk(dest) for f in fs)
-        print(f"build folder: {size / 1e6:.1f} MB; variables: {sorted(v)}")
-        if a.dry_run:
+        print(f"{name}: build folder {size / 1e6:.1f} MB; variables: {sorted(v)}")
+        if dry_run:
             print(open(os.path.join(dest, "railway.json")).read())
             return 0
-        svc = service_id(create=True)
+        svc = service_id(create=True, name=name)
         if svc == OLD_COLLECTOR:
             raise SystemExit("refusing: that is the parked collector service")
         gql("mutation($i:VariableCollectionUpsertInput!){ variableCollectionUpsert(input:$i) }",
             {"i": {"projectId": PROJECT, "environmentId": ENV, "serviceId": svc, "variables": v,
                    "skipDeploys": True}})
-        print(f"service {NAME} ({svc[:8]}): {len(v)} variables set")
+        print(f"service {name} ({svc[:8]}): {len(v)} variables set")
         # Railway read this folder's railway.json (2026-10-02) and still deployed with no cron in Europe: the
         # cron, region and restart policy are service settings, copied into each deployment's manifest. Set
         # them on the service first (one field per call: a combined update was refused), so the deployment
         # below carries them.
-        sched = json.load(open(os.path.join(ROOT, "ops", "schedule.json")))
-        for field in ({"cronSchedule": sched["railway"]["cron"]}, {"restartPolicyType": "NEVER"},
-                      {"multiRegionConfig": {REGION: {"numReplicas": 1}}}):
+        fields = [{"cronSchedule": cron}, {"restartPolicyType": "NEVER"},
+                  {"multiRegionConfig": {REGION: {"numReplicas": 1}}}]
+        if start:
+            fields.append({"startCommand": start})
+        for field in fields:
             gql("mutation($s:String!,$e:String!,$i:ServiceInstanceUpdateInput!){ "
                 "serviceInstanceUpdate(serviceId:$s, environmentId:$e, input:$i) }", {"s": svc, "e": ENV, "i": field})
-        print(f"service settings: cron {sched['railway']['cron']} UTC, region {REGION}, never restarted")
-        if a.vars_only:
+        print(f"service settings: cron {cron} UTC, region {REGION}, never restarted"
+              + (f", start command {start}" if start else ""))
+        if vars_only:
             return 0
         p = subprocess.run(["railway", "up", "-p", PROJECT, "-e", ENV, "-s", svc, "--ci"],
                            cwd=dest, capture_output=True, text=True, timeout=1800)
         tail = (p.stdout + p.stderr).strip().splitlines()[-15:]
         print("\n".join(tail))
         return p.returncode
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--dry-run", action="store_true")
+    ap.add_argument("--vars-only", action="store_true")
+    ap.add_argument("--only", choices=["sweep", "day"], help="deploy one of the two services (default: both)")
+    a = ap.parse_args()
+    v = variables()
+    sched = json.load(open(os.path.join(ROOT, "ops", "schedule.json")))
+    # the same image, two services: the night's run on its cron, and the daytime passes' tick (decision 0026)
+    services = [("sweep", NAME, sched["railway"]["cron"], None), ("day", DAY_NAME, sched["day"]["cron"], DAY_START)]
+    rc = 0
+    for key, name, cron, start in services:
+        if a.only and a.only != key:
+            continue
+        rc = deploy_one(name, cron, start, v, a.dry_run, a.vars_only) or rc
+    return rc
 
 
 if __name__ == "__main__":

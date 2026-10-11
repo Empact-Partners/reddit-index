@@ -7,7 +7,7 @@
 | | |
 |---|---|
 | **Live?** | **Yes, refreshing daily.** redditindex.com runs the read path since 2026-10-06 11:25 UTC (decision 0017). Last successful night run 11 Oct 04:46 UTC: the footer, `/freshness.json`, `/llms.txt` and the sitemap show it. Noindex while provisional. |
-| **How it updates** | One scheduled run a night at 00:00 UTC on Railway (`reddit-index-sweep`): takedowns, collection, classification, refresh, scores, then the changed pages proven on the site. Daytime passes (`ops/day_passes.py`) collect and backfill under the day's egress line. The three generated files refresh on their own timers (5 min, 1 h, 1 h; decision 0022), because an expiry never reached them. |
+| **How it updates** | Nothing of it runs on a laptop. One scheduled run a night at 00:00 UTC on Railway (`reddit-index-sweep`): takedowns, collection, classification, refresh, scores, then the changed pages proven on the site. Daytime passes (service `reddit-index-day`, a tick every 30 minutes) collect and label while the last 24 hours stay under the egress line. The three generated files refresh on their own timers (5 min, 1 h, 1 h; decision 0022), because an expiry never reached them. |
 | **Labels** | Queue empty on 10 Oct 22:45 UTC: 1,212,699 labels. Jev settles what it can, GLM-5.3 the rest again since 10 Oct 16:00 UTC (the Claude Max lane ran 9-10 Oct while GLM's allowance was used up; decision 0021). |
 | **Cost** | A 2 GB daily line of database egress for every job together; passes stop at 1.9 GB in any 24 hours. **11 Oct went over: 2.42 GB by midday** (the last de-duplication run, 0.8 GB, was shipped a second time by the 11:15 backup, and the guard was on a sleeping laptop); the watchdog posted at 07:04 UTC. Daytime collection is stopped until the 24 hours clear. Since then the pass guards the line itself (decision 0025), the meter is read compressed, and checkpoints are hourly (6.4 KB of log a new mention against 10.0). |
 | **Pages** | Until 11 Oct the publisher sent 1,000 changed pages a night of about 5,700, so the median page was 3.1 days behind its data. A page costs about 20 KB of database egress, not the 0.2 MB the cap assumed (measured 11 Oct), so from the night of 12 Oct every changed page goes out every night (decision 0024). |
@@ -46,7 +46,7 @@ number the Supabase watchdog and the bill follow). A normal night is about 0.6 G
 What runs on the laptop, and only there: migrations (`ops/migrate.py`), deploys (`ops/deploy_sweep.py`),
 retention step 3 (`ops/retention.py one-copy`), and until 14 Oct 2026 the labelling lane for what Jev cannot settle,
 on Claude Sonnet 5.5 through Vlad's Max plan while GLM's allowance was used up (`ops/codex_lane.py --model claude-sonnet-5-5`, decision 0021; GLM is back since 10 Oct). Daytime passes
-(`ops/day_passes.py`, requested from the laptop, run on Railway) collect from 06:15 to 23:15 UTC at most 45 Reddit
+are requested on Railway by the index's second service (`reddit-index-day`, `ops/day_tick.py`, every 30 minutes, decision 0026; `ops/day_passes.py` requests one by hand) and collect from 06:15 to 23:15 UTC at most 45 Reddit
 calls a minute and label what they collect (the night refreshes, scores and publishes it): the night reaches
 only 300-400 of the subreddits it plans, and collection is most overdue first, so the day reaches the rest. The map
 names 5,568 subreddits; 4,991 are distinct (576 appear under two spellings and are one visit since 11 Oct), and the
@@ -67,7 +67,7 @@ categories finished on 9 Oct.
 | `data/` | The taxonomy, the brand gazetteer, the subreddit map, the alias blocklist |
 | `supabase/migrations/` | The schema, applied by `ops/migrate.py` (ledger: `public.schema_migrations`) |
 | `scripts/` | Build gates (`gates/`, each proven to fail by its self-test) and the investigation script |
-| `decisions/` | Every ruling; 0017 (the daily sweep) to 0025 (the pass guards the egress line itself) describe today's system |
+| `decisions/` | Every ruling; 0017 (the daily sweep) to 0026 (daytime passes requested on Railway) describe today's system |
 
 ## Docs
 

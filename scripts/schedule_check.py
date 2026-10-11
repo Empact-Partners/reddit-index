@@ -66,10 +66,26 @@ def railway(sched: dict) -> list[str]:
                            f"{sched['railway']['cron']!r}")
             if region != [d.REGION]:
                 out.append(f"the sweep runs in {region}, not {d.REGION}")
+            if (sm.get("deploy") or {}).get("startCommand"):
+                out.append(f"the sweep carries a start command ({(sm.get('deploy') or {}).get('startCommand')!r}): "
+                           f"it must run the image's own, worker/run_daily.py")
+        elif name == sched.get("day", {}).get("service_name"):
+            # the daytime passes' requester (ops/day_tick.py, decision 0026): its own cron and start command
+            if cron != sched["day"]["cron"]:
+                out.append(f"the day service's newest deployment carries cron {cron!r}, ops/schedule.json says "
+                           f"{sched['day']['cron']!r}")
+            start = (sm.get("deploy") or {}).get("startCommand") or ""
+            if "day_tick.py" not in start:
+                out.append(f"the day service does not start ops/day_tick.py (start command {start!r}): it would "
+                           f"run the sweep itself every half hour")
+            if region != [d.REGION]:
+                out.append(f"the day service runs in {region}, not {d.REGION}")
         else:
             out.append(f"an undeclared service is in the project: {name} (cron {cron!r})")
     if d.NAME not in seen:
         out.append("the sweep service does not exist")
+    if sched.get("day", {}).get("service_name") and sched["day"]["service_name"] not in seen:
+        out.append("the day service does not exist: no daytime pass is being requested")
     return out
 
 
@@ -103,13 +119,16 @@ def database(sched: dict, since: str) -> tuple[list[str], dict]:
                            f"UTC outside every sweep's receipt")
         on, since_on = conn.execute("select enabled, updated_at from public.sweep_control").fetchone()
         facts["sweep switched on"] = bool(on)
-        rows = conn.execute("select started_at, status, notes->>'skipped' from public.pipeline_runs "
+        rows = conn.execute("select started_at, status, notes->>'skipped', "
+                            "coalesce((notes->>'manual')::boolean, false) from public.pipeline_runs "
                             "where stage = 'sweep' and started_at > now() - interval '8 days' "
                             "order by started_at").fetchall()
         facts["sweep receipts, last 8 days"] = [f"{r[0]:%d %b %H:%M} {r[1]}" for r in rows]
         if on:
             # a night counts only if a run did work: a "skipped" receipt (switch off, lock held) is a lost night
-            nights = {r[0].date() for r in rows if r[1] in ("ok", "capped", "failed")}
+            # and only the scheduled run: a daytime pass (manual on its receipt) on the same date is not the night
+            # (until 11 Oct any receipt of the date counted, so a lost night would have hidden behind a day pass)
+            nights = {r[0].date() for r in rows if r[1] in ("ok", "capped", "failed") and not r[3]}
             day = max(since_on.date(), (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=7)).date())
             today = dt.datetime.now(dt.timezone.utc)
             while day <= today.date():

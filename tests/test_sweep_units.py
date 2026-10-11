@@ -483,6 +483,31 @@ finally:
     if _old_env[0] is not None:
         os.environ["SUPABASE_METRICS_KEY"] = _old_env[0]
 
+# ---- the daytime passes' tick on Railway (ops/day_tick.py decide) ----------------------------------------------
+import day_tick as _dtk  # noqa: E402
+_daycfg = {"window_utc": ["06:15", "21:30"], "min_room_gb": 0.15, "estimate_factor": 1.25}
+
+
+def _at(h, m):
+    return _dt.datetime(2026, 10, 12, h, m, tzinfo=_dt.timezone.utc)
+
+
+check("day tick: before 06:15 and after 21:30 UTC no pass starts, whatever the room",
+      not _dtk.decide(_at(6, 0), 0, 0.2, _daycfg, 1.9)[0] and not _dtk.decide(_at(21, 31), 0, 0.2, _daycfg, 1.9)[0]
+      and not _dtk.decide(_at(2, 0), 0, 0.2, _daycfg, 1.9)[0])
+check("day tick: nothing starts beside a run or a retention step", not _dtk.decide(_at(9, 0), 1, 0.2, _daycfg, 1.9)[0])
+check("day tick: a counter that is not known starts nothing", not _dtk.decide(_at(9, 0), 0, None, _daycfg, 1.9)[0])
+check("day tick: under 0.15 GB of room no pass starts",
+      not _dtk.decide(_at(9, 0), 0, 1.80, _daycfg, 1.9)[0] and not _dtk.decide(_at(9, 0), 0, 2.4, _daycfg, 1.9)[0])
+_go = _dtk.decide(_at(9, 0), 0, 1.10, _daycfg, 1.9)
+check("day tick: with room a pass starts, capped at (room - 0.05) / 1.25 on its own estimate",
+      _go[0] and _go[2] == 0.6, _go)
+check("day tick: the cap never passes 0.7 GB (the request table refuses more) and never falls under 0.05",
+      _dtk.decide(_at(9, 0), 0, 0.1, _daycfg, 1.9)[2] == 0.7 and _dtk.decide(_at(9, 0), 0, 1.74, _daycfg, 1.9)[2] == 0.088,
+      (_dtk.decide(_at(9, 0), 0, 0.1, _daycfg, 1.9), _dtk.decide(_at(9, 0), 0, 1.74, _daycfg, 1.9)))
+check("day tick: the first and the last minute of the window are inside it",
+      _dtk.decide(_at(6, 15), 0, 0.5, _daycfg, 1.9)[0] and _dtk.decide(_at(21, 30), 0, 0.5, _daycfg, 1.9)[0])
+
 print(f"\ntest_sweep_units: {len(FAILS)} failure(s)" + (": " + "; ".join(FAILS) if FAILS else ""))
 sys.exit(bool(FAILS))
 

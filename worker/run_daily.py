@@ -38,6 +38,7 @@ import datetime as dt
 import json
 import os
 import sys
+import threading
 import time
 import urllib.request
 import traceback
@@ -461,6 +462,17 @@ def main() -> int:
         return 0
     run.record("running")
     log(f"run {run.run_id[:8]} caps {run.caps}")
+
+    # A run that hangs (a query waiting on a lock, a call that never answers) must not hold the sweep's lock into
+    # the next run: a daytime pass stuck past 23:15 would make the night stand aside. Every stage ends by the
+    # deadline or a few minutes after it; 20 minutes past it the process ends itself, which closes the session
+    # and frees the lock. The receipt stays 'running' and stops being believed after 6 hours (ops/day_tick.py).
+    def _hard_exit() -> None:
+        log("the run is 20 minutes past its deadline and still alive: ending the process so the lock is freed")
+        os._exit(3)
+    _t = threading.Timer(max(60.0, run.deadline + 20 * 60 - time.time()), _hard_exit)
+    _t.daemon = True
+    _t.start()
 
     import site_score
     import site_publish
