@@ -24,18 +24,18 @@ names, columns and results.
 
 ## The steps, in order
 
-| Step | What | Saves | When | State (9 Oct) |
+| Step | What | Saves | When | State (11 Oct) |
 |---|---|---|---|---|
 | 1 | Prune threads with no mention, older than 7 days (archive first) | 40 MB now, about 1 MB a day after | nightly, the sweep's `retention` stage | ran by hand 4 Oct (177,292 threads); nightly from 10 Oct |
 | 2 | Remove mention rows judged "not this product" more than 30 days ago (archive first; the ledger row stays) | 225 MB from 2 November, then as it accrues | nightly, at most 20,000 rows a night | nothing qualifies before 2 Nov |
-| 3 | One copy of each comment's text: keep it on one row per comment, clear it on the others; readers take the text from that row; a trigger stops new duplicates | about 1.1 GB, and halves daily growth | once, in chunks of one monthly partition, inside a declared egress budget | the trigger is live since 0019; the clearing runs from 9 Oct |
+| 3 | One copy of each comment's text: keep it on one row per comment, clear it on the others; readers take the text from that row; a trigger stops new duplicates | about 1.1 GB, and halves daily growth | once, in chunks of one monthly partition, inside a declared egress budget | **done 11 Oct**: two runs cleared it (9 Oct: 0.763 GB, rows taking their text from another row 48,941 to 220,613; 11 Oct: 0.797 GB, 220,499 to 508,281, every partition covered and its checksum equal before and after); the 10 Oct run lost its connection and cleared nothing. 1.56 GB of egress in all, inside the 2.5 GB declared |
 | 4 | Drop `mention_rail_mv` | 231 MB | after go-live | done 9 Oct (migration 0030): `published.mention_rail` reads `site.rail_card`; the database went from 3,774 to 3,554 MB |
-| 5 | Vacuum the touched partitions so new rows reuse the space | | after 2 and 3 |
+| 5 | Vacuum the touched partitions so new rows reuse the space | | after 2 and 3 | autovacuum did it as each partition was cleared (August to May partitions on 11 Oct 06:00-06:10 UTC, September on 9 Oct); nothing to run by hand |
 
 Why step 3 clears text in place rather than moving it to a new table: a new table would write 828 MB again (and
 ship that through the write-ahead log, which the egress counter bills); clearing a column writes only the new,
 small row version. The space is reused by new mentions rather than returned to the disk, which is what the index
-needs: 4.7 GB of the 8.4 GB disk is free.
+needs: 4.7 GB of the 8.4 GB disk is free. On 11 Oct, with step 3 finished, the database is 3,644 MB. Rewriting the old months' partitions to hand their free space back to the disk would ship each one through the write-ahead log again (about 1.5 GB of egress for about 1 GB of disk nobody is short of): not done.
 
 ## Budget for step 3 (declared before it runs; revised 9 Oct on its first run)
 
