@@ -19,8 +19,8 @@
   "egress_gb": 0.7
  },
  "takedown_brake_share": 0.15,
- "verify_pages": 1000,
- "max_expire_pages": 1000,
+ "verify_pages": 7000,
+ "max_expire_pages": 7000,
  "classify": {
   "enabled": true,
   "glm_model": "glm-5.3",
@@ -30,16 +30,16 @@
   "glm_in_flight": 6,
   "why_caps": "2026-10-06, Vlad: 'move ahead at full speed'. 280,000 mentions wait for a label; a run's egress cap (0.7 GB, and a daytime pass's room) is what bounds it, not the model allowance. GLM Max plan: 28,000 credits per 5 h"
  },
- "reserve_minutes_after_collect": 95,
+ "reserve_minutes_after_collect": 105,
  "reddit_pace_seconds": 1.2,
  "collect": {
   "tree_workers": 1,
   "why": "Comment trees in flight at once in the collect stage (1 to 4). The pace does not change: one request starts per reddit_pace_seconds whichever thread asks. 1 until a daytime pass has measured a wider setting against it (a pass's request can carry its own width: ops/day_passes.py reads ~/Library/Logs/reddit-index/tree-workers)."
  },
- "egress_note": "The run stops at 0.7 GB estimated (write-ahead log + text the classifier reads) before the publisher, which adds at most 1,000 page renders of about 0.2 MB each: at most about 0.9 GB a night. The estimate now counts the renders. Measured 2026-10-04: the first scheduled run's whole day read 0.89 GB on the node counter (the supabase watchdog's daily reading).",
- "max_expire_note": "The publisher expires at most 1,000 changed pages a night (takedown pages always first) and fetches every one it expires, so the site re-renders them inside the measured run and a visitor afterwards costs the database nothing until the page next changes. Pages beyond the cap wait, longest-waiting first, and each shows its own data date. Was 2,000 expired with 100 fetched (2026-10-03): the other 1,900 would have re-rendered on the first visit, outside any measurement.",
- "reserve_minutes_after_classify": 35,
- "reserve_note": "Collection ends 95 minutes before the run's end, classification 35 minutes before it, so refresh (15 minutes for 3,262 brands on 4 Oct), score and publish (about 3 minutes per 1,000 pages) finish inside the window. Classification gets about an hour: the nightly GLM allowance of 3,000 credits is about 50,000 mentions.",
+ "egress_note": "The run stops at 0.7 GB estimated (write-ahead log + text the classifier reads) before the publisher. The publisher's renders are estimated from the HTML it fetched (1.5 bytes read from the database per byte of compressed HTML, measured 11 Oct: 800 pages moved the node counter by 18.9 MB). Every changed page a night is about 5,700 pages, about 0.2 GB. Measured nights on the node counter: 0.61 GB on 10 Oct, 0.49 GB on 11 Oct, each with 1,000 pages published.",
+ "max_expire_note": "Every changed page goes out every night (decision 0024). The cap of 1,000 rested on 0.2 MB of database egress a page, measured on the pilot's fifty largest; a typical page is about 20 KB. With 1,000 a night and about 5,700 changed, the median page was 3.1 days behind on 11 Oct. 7,000 is above the 6,098 pages that exist: a bound, not a quota. If a night ever has fewer slots than pages, takedown pages go first, then pages whose own data changed, with a fifth of the slots kept for the longest-waiting (worker/site_publish.py pick). The publisher fetches every page it expires, so the site re-renders them inside the measured run.",
+ "reserve_minutes_after_classify": 45,
+ "reserve_note": "Collection ends 105 minutes before the run's end, classification 45 minutes before it, so refresh (18 minutes for 1,904 brands on 11 Oct), score and publish (about 11 minutes for 5,700 pages at 8 fetches at once, measured 11 Oct: 9 pages a second) finish inside the window. Each was 10 minutes shorter until 11 Oct, when the publisher's share grew from 1,000 pages to every changed page.",
  "classify_note": "GLM jobs at most 6 at once (was 8): the Z.ai plan is shared with other sessions, and on 2026-10-05 at 04:25 UTC the plan's request-rate limit refused both this run and another session's jobs. A refused batch is retried after 1, 2 and 4 minutes at half the width; a limit that holds ends classification for the night as a planned limit, never a fault.",
  "backfill": {
   "days": 90,

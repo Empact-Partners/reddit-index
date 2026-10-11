@@ -386,6 +386,21 @@ for _stages, _end in (("collect'); select 1; --", "23:15"), ("collect,classify",
         _refused += 1
 check("day passes: a stage list or an end time of any other shape is refused before anything is sent", _refused == 3)
 
+# ---- which changed pages go out first (worker/site_publish.py pick) -------------------------------------------
+import site_publish as _sp  # noqa: E402
+_rows = [(i, f"s{i}", "h", False, True, i % 3 == 0) for i in range(30)]   # in waiting order; every third: own data changed
+_p10 = _sp.pick(_rows, 10)
+check("publish: with fewer slots than pages, pages whose own data changed go first, longest-waiting first",
+      [r[0] for r in _p10[:8]] == [0, 3, 6, 9, 12, 15, 18, 21], [r[0] for r in _p10])
+check("publish: a fifth of the slots goes to the longest-waiting pages whatever changed on them",
+      [r[0] for r in _p10[8:]] == [1, 2] and len(_p10) == 10, [r[0] for r in _p10])
+check("publish: with slots for every page, every page goes out in waiting order",
+      [r[0] for r in _sp.pick(_rows, 30)] == list(range(30)) and len(_sp.pick(_rows, 99)) == 30)
+_few = [(i, f"s{i}", "h", False, True, i == 0) for i in range(30)]
+check("publish: fewer own-data pages than their slots: the rest of the slots go to the longest-waiting",
+      [r[0] for r in _sp.pick(_few, 10)] == [0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
+check("publish: no slots, nothing goes out", _sp.pick(_rows, 0) == [])
+
 print(f"\ntest_sweep_units: {len(FAILS)} failure(s)" + (": " + "; ".join(FAILS) if FAILS else ""))
 sys.exit(bool(FAILS))
 
