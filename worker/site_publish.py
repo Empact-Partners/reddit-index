@@ -51,7 +51,8 @@ sys.path.insert(0, HERE)
 UA = "reddit-index-publisher/1.0 (+https://redditindex.com/methodology/)"
 HASH_RE = re.compile(r'<meta\s+name="ri-hash"\s+content="([0-9a-f]{0,64})"', re.I)
 BATCH = 400          # the endpoint takes at most 500 paths a call
-FETCHERS = 4         # concurrent page fetches; each one makes the site read one company's rows
+FETCHERS = 8         # concurrent page fetches; each one makes the site read one company's rows
+                     # (was 4; 11 Oct at 8: 600 pages in 67 s, every one proven, none fetched twice)
 
 # The flat namespace (decisions/0007). A company slug that equals one of these would be shadowed.
 FRAMEWORK_PATHS = {"_next", "api", "sitemap", "sitemap.xml", "robots.txt", "favicon.ico", "llms.txt", "icon",
@@ -154,6 +155,25 @@ def fetch(base: str, path: str, want_hash: str | None, want_status: int = 200, t
     return out
 
 
+def pick(others: list, slots: int, longest_share: float = 0.2) -> list:
+    """Which changed pages go out when there are more than the night's slots. `others` is in waiting order, longest
+    first; item [5] says the brand's own data changed since its page was last seen.
+
+    Until 11 Oct the order was waiting time alone: 4,723 pages waited, 507 of them with a mention newer than the
+    page showed, queued behind pages whose rank had moved one place. Now the pages whose own data changed go first,
+    longest-waiting first; a fifth of the slots is kept for the longest-waiting pages whatever changed on them, so
+    a page that only ever moves in rank still comes round. With slots for every changed page the order only decides
+    what is fetched first."""
+    if slots >= len(others):
+        return list(others)
+    own = [r for r in others if r[5]]
+    rest = [r for r in others if not r[5]]
+    kept_for_longest = min(len(rest), int(slots * longest_share))
+    chosen_own = own[:slots - kept_for_longest]
+    chosen_rest = rest[:slots - len(chosen_own)]
+    return chosen_own + chosen_rest
+
+
 def run(conn, base: str, dry_run: bool = False, verify_n: int = 100, max_expire: int = 7000, deadline: float | None = None,
         stamp: bool = True, log=print) -> dict:
     base = base.rstrip("/")
@@ -176,7 +196,10 @@ def run(conn, base: str, dry_run: bool = False, verify_n: int = 100, max_expire:
         select s.brand_id, s.slug, s.page_hash,
                exists (select 1 from public.removals r
                         where r.revalidated_at is null and s.brand_id = any (r.brand_ids)) as takedown,
-               s.expired_hash is distinct from s.page_hash as needs_expiry
+               s.expired_hash is distinct from s.page_hash as needs_expiry,
+               -- the brand's own numbers or cards were recomputed since its page was last seen (a new mention, a
+               -- label, a removal); false: only its rank, score or board size moved because other brands did
+               s.refreshed_at > coalesce(s.served_at, '-infinity'::timestamptz) as own_data_changed
           from site.brand_stats s
          where s.expired_hash is distinct from s.page_hash
             -- a page expired but never seen at its fingerprint (a fetch that failed, a run that ended first, or
@@ -193,7 +216,9 @@ def run(conn, base: str, dry_run: bool = False, verify_n: int = 100, max_expire:
 
     takedown = [r for r in rows if r[3]]
     others = [r for r in rows if not r[3]]
-    expired_others = others[:max(0, max_expire - len(takedown))]
+    expired_others = pick(others, max(0, max_expire - len(takedown)))
+    receipt["own_data_changed"] = sum(1 for r in others if r[5])
+    receipt["own_data_changed_deferred"] = receipt["own_data_changed"] - sum(1 for r in expired_others if r[5])
     todo = takedown + expired_others
     # the sample is drawn from the pages expired THIS run: a changed page left for a later run (over the cap) still
     # serves its old fingerprint, and fetching it proves nothing (3 Oct: 100 such pages read as "failed")

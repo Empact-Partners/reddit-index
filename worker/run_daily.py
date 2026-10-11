@@ -73,7 +73,12 @@ def wal_bytes(conn) -> int | None:
         return None
 
 
-RENDER_BYTES_PER_PAGE = 200_000
+# What the site reads from the database to re-render the pages the publisher fetches, estimated from the compressed
+# HTML the publisher received. Measured 11 Oct on the node counter: 800 waiting pages, 18.9 MB (20.5 KB a page after
+# the background rate) for 11.7 MB of HTML as fetched (14.6 KB a page): 1.4 times, taken as 1.5. The constant this
+# replaces, 0.2 MB a page, was the pilot's fifty largest pages and read about ten times high on a typical one.
+RENDER_BYTES_PER_HTML_BYTE = 1.5
+RENDER_BYTES_FLOOR_PER_PAGE = 8_000
 
 
 class Run:
@@ -478,11 +483,12 @@ def main() -> int:
                -- the purge is not on its page yet, so nothing is proven (review, 2026-10-04)
                and not exists (select 1 from unnest(r.brand_ids) b join site.dirty_brand d on d.brand_id = b)""").rowcount
         rec["takedown_receipts_stamped"] = stamped
-        # Every page the publisher fetched was re-rendered by the site from the database: about 0.2 MB a company
-        # page (measured on the pilot), counted here so the receipt's estimate covers the whole night (2026-10-04:
-        # the first scheduled run's estimate left them out and read 0.555 GB where the meter's day read 0.89).
+        # Every page the publisher fetched was re-rendered by the site from the database, counted here so the
+        # receipt's estimate covers the whole night (2026-10-04: the first scheduled run's estimate left them out
+        # and read 0.555 GB where the meter's day read 0.89). The size: see RENDER_BYTES_PER_HTML_BYTE.
         pages = int(rec.get("pages_fetched") or 0)   # every fetch the site answered rendered, proven or not
-        run.render_bytes = pages * RENDER_BYTES_PER_PAGE
+        run.render_bytes = max(pages * RENDER_BYTES_FLOOR_PER_PAGE,
+                               int(RENDER_BYTES_PER_HTML_BYTE * int(rec.get("site_bytes_fetched") or 0)))
         rec["render_estimate_gb"] = round(run.render_bytes / 1e9, 3)
         if rec.get("failed"):
             run.receipt["problems"].append(f"{len(rec['failed'])} pages failed verification")
