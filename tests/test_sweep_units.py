@@ -557,6 +557,17 @@ check("day tick: the cap never passes 0.7 GB (the request table refuses more) an
 check("day tick: the first and the last minute of the window are inside it",
       _dtk.decide(_at(6, 15), 0, 0.5, _daycfg, 1.9)[0] and _dtk.decide(_at(21, 30), 0, 0.5, _daycfg, 1.9)[0])
 
+# ---- the archive copies name their columns (ops/retention.py) -----------------------------------------------------
+import re as _re  # noqa: E402
+_ret_src = open(os.path.join(ROOT, "ops", "retention.py")).read()
+_code = "\n".join(ln for ln in _ret_src.splitlines() if not ln.lstrip().startswith("#"))
+check("retention: no archive copy is by position (`select moved.*` or `returning t.*`): a column added to a live "
+      "table must not fail the night", not _re.search(r"moved\.\*|returning\s+\w+\.\*", _code), "found a positional copy")
+import retention as _ret  # noqa: E402
+check("retention: the archived thread columns are the ten the archive table has",
+      [c.strip() for c in _ret.THREAD_COLS.split(",")] == ["id", "subreddit_id", "link_title", "permalink", "created_utc",
+                                                           "num_comments", "archived", "score", "first_seen_at", "tree_fetched_at"])
+
 print(f"\ntest_sweep_units: {len(FAILS)} failure(s)" + (": " + "; ".join(FAILS) if FAILS else ""))
 sys.exit(bool(FAILS))
 
