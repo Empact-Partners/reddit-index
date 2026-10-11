@@ -567,6 +567,41 @@ import retention as _ret  # noqa: E402
 check("retention: the archived thread columns are the ten the archive table has",
       [c.strip() for c in _ret.THREAD_COLS.split(",")] == ["id", "subreddit_id", "link_title", "permalink", "created_utc",
                                                            "num_comments", "archived", "score", "first_seen_at", "tree_fetched_at"])
+# ---- the takedown check's slow lap by position (worker/takedown.py lap_next, lap_reached) -------------------------
+import takedown as _td  # noqa: E402
+
+
+class _LapConn:
+    """doc_probe as a sorted list of ids; the two queries lap_next sends."""
+    def __init__(self, ids):
+        self.ids = sorted(ids)
+
+    def execute(self, sql, params=None):
+        assert "checked_at is not null" in sql, "the lap is over documents already checked once"
+        if "doc_id <= %s" in sql:
+            lo, hi, lim = params
+            rows = [(d,) for d in self.ids if lo < d <= hi][:lim]
+        else:
+            lo, lim = params
+            rows = [(d,) for d in self.ids if d > lo][:lim]
+        return rows
+
+
+_docs = [f"t1_{c}" for c in "abcdefghij"]
+check("slow lap: from the start, the first documents in id order", _td.lap_next(_LapConn(_docs), "", 3) == (["t1_a", "t1_b", "t1_c"], False))
+check("slow lap: from a position, the documents after it", _td.lap_next(_LapConn(_docs), "t1_c", 3) == (["t1_d", "t1_e", "t1_f"], False))
+check("slow lap: at the end it wraps to the start, and stops at its own position",
+      _td.lap_next(_LapConn(_docs), "t1_h", 5) == (["t1_i", "t1_j", "t1_a", "t1_b", "t1_c"], True))
+check("slow lap: with room for everything, each document is taken once, never twice",
+      sorted(_td.lap_next(_LapConn(_docs), "t1_e", 99)[0]) == _docs and len(_td.lap_next(_LapConn(_docs), "t1_e", 99)[0]) == 10)
+check("slow lap: a position past the last document starts again from the first",
+      _td.lap_next(_LapConn(_docs), "t1_zzz", 2) == (["t1_a", "t1_b"], True))
+check("slow lap: no room, nothing taken", _td.lap_next(_LapConn(_docs), "t1_c", 0) == ([], False))
+_rest = ["t1_d", "t1_e", "t1_f", "t1_g"]
+check("slow lap: the position moves to the last document Reddit was asked about, in an unbroken run from the start",
+      _td.lap_reached(_rest, {"t1_d", "t1_e", "t1_f", "t1_g"}) == "t1_g" and _td.lap_reached(_rest, {"t1_d", "t1_e", "t1_g"}) == "t1_e")
+check("slow lap: nothing asked (the run's time ended first), the position does not move",
+      _td.lap_reached(_rest, set()) is None and _td.lap_reached([], {"x"}) is None)
 
 print(f"\ntest_sweep_units: {len(FAILS)} failure(s)" + (": " + "; ".join(FAILS) if FAILS else ""))
 sys.exit(bool(FAILS))
