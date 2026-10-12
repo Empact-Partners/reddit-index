@@ -603,6 +603,26 @@ check("slow lap: the position moves to the last document Reddit was asked about,
 check("slow lap: nothing asked (the run's time ended first), the position does not move",
       _td.lap_reached(_rest, set()) is None and _td.lap_reached([], {"x"}) is None)
 
+# ---- a deploy never stops a run (ops/deploy_sweep.py safe_to_deploy) ---------------------------------------------
+import deploy_sweep as _ds  # noqa: E402
+
+
+def _t(h, m):
+    return _dt.datetime(2026, 10, 12, h, m, tzinfo=_dt.timezone.utc)
+
+
+check("deploy: the day service is not deployed in the six minutes before a tick, nor in the tick's minute",
+      not _ds.safe_to_deploy("day", _t(18, 26))[0] and not _ds.safe_to_deploy("day", _t(18, 29))[0]
+      and not _ds.safe_to_deploy("day", _t(18, 30))[0] and not _ds.safe_to_deploy("day", _t(17, 57))[0]
+      and not _ds.safe_to_deploy("day", _t(6, 0))[0] and not _ds.safe_to_deploy("day", _t(21, 28))[0])
+check("deploy: the day service can be deployed between ticks and outside its hours",
+      _ds.safe_to_deploy("day", _t(18, 1))[0] and _ds.safe_to_deploy("day", _t(18, 24))[0]
+      and _ds.safe_to_deploy("day", _t(18, 31))[0] and _ds.safe_to_deploy("day", _t(22, 59))[0]
+      and _ds.safe_to_deploy("day", _t(3, 28))[0])
+check("deploy: the night service is not deployed from 23:54 to 00:00 UTC, and is otherwise",
+      not _ds.safe_to_deploy("sweep", _t(23, 55))[0] and not _ds.safe_to_deploy("sweep", _t(0, 0))[0]
+      and _ds.safe_to_deploy("sweep", _t(23, 53))[0] and _ds.safe_to_deploy("sweep", _t(18, 29))[0])
+
 print(f"\ntest_sweep_units: {len(FAILS)} failure(s)" + (": " + "; ".join(FAILS) if FAILS else ""))
 sys.exit(bool(FAILS))
 
