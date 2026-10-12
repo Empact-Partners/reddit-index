@@ -19,17 +19,18 @@ first 70 subreddits of the order at 23:50 UTC on 12 Oct returned 20 answers of 4
 listings. The pilot of decision 0029 (run `5e93d998`, 300 calls) spent 205 of its 300 calls on these before it reached
 anything else.
 
-The capped rule held the watermark so that "the next pass starts from the same floor and the pages are re-walked
-rather than skipped" (`worker/daily.py`). The listing is read newest first, so a held watermark never brought the
-posts below the last page within reach: each visit read the same newest 800 posts again (their mentions already
-stored) and the posts beyond them stayed out of reach exactly as if the watermark had moved.
+The capped rule held the watermark so that the posts below the last page stay reachable: raising `RI_MAX_PAGES`
+(the remedy `docs/worker.md` names) lets a later visit page back to it. That part was right. What was missing was the
+record of the visit: with no row, the subreddit counted as never visited and was read again, 8 calls of the same
+newest posts, at the front of every pass.
 
 ## Decision
 
 In the collect stage (`worker/collect.py`), every visit writes its row:
 
-1. **A capped listing moves the watermark to the newest post listed**, with status `capped`. The receipt names the
-   subreddits (`capped_subs`). The posts between the last page and the old watermark were not reachable by re-reading.
+1. **A capped listing holds its watermark and records the visit**, with status `capped` and what it found, so the
+   subreddit comes round at its interval (core daily, the others every third day) instead of first on every pass.
+   The receipt names the subreddits (`capped_subs`).
 2. **An empty first listing is a visit** that found nothing: a row with no watermark and nothing found, so the
    subreddit is quiet for three days like any other that found nothing.
 3. **A subreddit Reddit answers 403, 404 or 451 for is a visit** that found nothing, status `gone`, its watermark
@@ -41,8 +42,17 @@ A listing that failed for any other reason (a 5xx, the network) still leaves no 
 
 ## What is given up
 
-Nothing that was being collected: the posts beyond a capped listing's last page were already out of reach. A
-subreddit that comes back from private or banned is seen up to three days later.
+A capped subreddit is read at its interval rather than at the front of every pass; each read still starts from the
+newest post, so what it misses between reads is what it missed before. A subreddit that comes back from private or
+banned is seen up to three days later.
+
+## Review
+
+An independent read by GLM-5.3 (clean clone, read-only) found the first version wrong on the capped case: it moved
+the watermark to the newest post listed, which would have buried for good the posts a larger page budget can still
+reach (and pages shorter than 100 posts can cap a listing whose backlog is reachable). The watermark is now held, and
+a test shows a larger budget reaching every post above it. Also taken: the receipt's counts and the per-run ceiling on
+`gone` visits change only after the visit's transaction has committed.
 
 ## How it is judged
 

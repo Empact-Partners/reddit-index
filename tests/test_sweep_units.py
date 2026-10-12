@@ -994,9 +994,9 @@ try:
     _iso = lambda t: __import__("datetime").datetime.fromtimestamp(t, __import__("datetime").timezone.utc).isoformat()
     check("visits: an empty first listing is recorded (no watermark yet, nothing found)",
           _v.get("empty") == ("empty", "new_listing", None, 0, "ok") and _rec["empty_first_listings"] == 1, _v.get("empty"))
-    check("visits: a listing whose pages ran out before the watermark moves it to the newest post listed, marked capped",
-          _v.get("capped") == ("capped", "new_listing", _iso(_n - 600), 0, "capped") and _rec["capped_listings"] == 1
-          and _rec["capped_subs"] == ["capped"], _v.get("capped"))
+    check("visits: a listing whose pages ran out before the watermark holds it and records the visit, marked capped",
+          _v.get("capped") == ("capped", "new_listing", "2026-10-01T00:00:00+00:00", 0, "capped")
+          and _rec["capped_listings"] == 1 and _rec["capped_subs"] == ["capped"], _v.get("capped"))
     check("visits: a subreddit Reddit no longer serves (404, 403) is recorded as gone, its watermark kept",
           _v.get("gone") == ("gone", "new_listing", "2026-09-01T00:00:00+00:00", 0, "gone")
           and _v.get("gone2") == ("gone2", "new_listing", None, 0, "gone")
@@ -1016,6 +1016,23 @@ try:
     _r = _saved[1]("x", None, err=_e)
     collect.rc.get = _real_get2
     check("listing: a failed page says what Reddit answered", _r == ([], False, False) and _e == {"code": 404}, (_r, _e))
+    # a held watermark is reachable by a larger page budget (the remedy docs/worker.md names): pages of 2 posts, newest
+    # first, the watermark at t=10
+    _pg = [{"data": {"after": f"p{i + 1}" if i < 4 else None, "children": [
+        {"kind": "t3", "data": {"id": f"{i}a", "created_utc": 100 - 20 * i}},
+        {"kind": "t3", "data": {"id": f"{i}b", "created_utc": 90 - 20 * i}}]}} for i in range(5)]
+    collect.rc.get = lambda path, params=None, **k: _pg[0 if not (params or {}).get("after") else int(params["after"][1:])]
+    _mp = collect.d.MAX_PAGES
+    try:
+        collect.d.MAX_PAGES = 2
+        _a = _saved[1]("x", 10.0)
+        collect.d.MAX_PAGES = 8
+        _b = _saved[1]("x", 10.0)
+    finally:
+        collect.d.MAX_PAGES = _mp
+        collect.rc.get = _real_get2
+    check("listing: two pages do not reach the watermark (capped); eight do, and return every post above it",
+          _a[2] is True and len(_a[0]) == 4 and _b[2] is False and _b[1] and len(_b[0]) == 9, (_a[1:], len(_a[0]), _b[1:], len(_b[0])))
 finally:
     (collect.plan, collect.d.fetch_new, collect.d.insert_mentions, collect.d.load_brands, collect.d.build_alias_re,
      collect.d.Resolver, collect.d.content_qualify, collect.GONE_STAMPS) = _saved
