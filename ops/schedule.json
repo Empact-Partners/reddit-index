@@ -51,7 +51,7 @@
  "collect": {
   "tree_workers": 1,
   "why": "Comment trees in flight at once in the collect stage (1 to 4). The pace does not change: one request starts per reddit_pace_seconds whichever thread asks. 1 until a daytime pass has measured a wider setting against it (a pass's request can carry its own width: ops/day_passes.py reads ~/Library/Logs/reddit-index/tree-workers).",
-  "mode_day": "trees",
+  "mode_day": "stream",
   "mode_night": "trees",
   "stream_pages": 10,
   "first_visit_pages": 3,

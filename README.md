@@ -2,7 +2,7 @@
 
 **Live: [redditindex.com](https://redditindex.com)** (noindex while provisional).
 
-## STATUS (kept current; last edit 2026-10-12 06:20 UTC)
+## STATUS (kept current; last edit 2026-10-12 21:00 UTC)
 
 | | |
 |---|---|
@@ -12,6 +12,7 @@
 | **Cost** | A 2 GB daily line of database egress for every job together; passes stop at 1.9 GB in any 24 hours. **11 Oct went over: 2.42 GB by midday** (the last de-duplication run, 0.8 GB, was shipped a second time by the 11:15 backup, and the guard was on a sleeping laptop); the watchdog posted at 07:04 UTC. Daytime collection is stopped until the 24 hours clear. Since then the pass guards the line itself (decision 0025), the meter is read compressed, and checkpoints are hourly (6.4 KB of log a new mention against 10.0). |
 | **Pages** | **Every changed page is published every night** since 12 Oct (decision 0024): 4,929 pages that night, all proven at their fingerprint in 10.5 minutes, none deferred; 1 of 6,131 waited afterwards. Before, 1,000 a night of about 5,700 went out and the median page was 3.1 days behind its data. |
 | **Storage** | 3,495 MB on an 8.4 GB disk (11 Oct). The old site's rail view is gone, each comment's text is kept once (retention step 3, finished 11 Oct), three indexes nothing read are dropped (migration 0035) and the queue's bloated index rebuilt. The freed space stays inside the tables: handing it back would cost about 1.5 GB of egress for disk nobody is short of. |
+| **Collection** | Changing on 12-13 Oct (decision 0029). Until now comments were read one thread at a time: 1.7 mention rows a Reddit call, about half of the brand-naming comments in a visited subreddit never seen, and 1,209 of 4,863 subreddits not visited for over a week. Daytime passes now read each subreddit's comment listing, 100 comments a call whatever their thread (10.5 mention rows a call on a 130-subreddit sample); a pass ends when its egress room for new mentions is used. The night's run stays on comment trees until a daytime pass has been judged. |
 | **Open** | **For Vlad:** a dedicated Reddit API app for the index (the shared app's limit took about 35% of a five-hour pass on 11 Oct); whether a vendor-named subreddit excludes every mention found in it (today's rule: 316 subreddits) or only the vendor's own. **Next deploy of the night service** carries decisions 0027 (the collector does no work that cannot yield) and 0028 (the takedown check's slow lap by position, with migration 0037), after the first daytime pass on 0027 has been read (12 Oct). **To judge on 12 Oct:** every changed page published (0024), a normal day's 11:15 UTC backup on the counter (0025), the first pass requested on Railway (0026). |
 | **How to stop everything** | `python3 ops/ri.py stop "reason"` turns the sweep off and its database login off. |
 
