@@ -671,6 +671,12 @@ try:
     check("stream: the listing is read back to the newest comment already read, and no further",
           [x["id"] for x in _g["docs"]] == ["t1_a", "t1_b", "t1_c"] and _g["reached"] and _g["ok"] and _g["calls"] == 2
           and _g["newest"] == 900.0 and _g["comments"] == 4, _g)
+    _g = collect.fetch_comments("x", 700.0, 0.0, 10)
+    check("stream: a comment in the watermark's own second is read again (another may share that second)",
+          [x["id"] for x in _g["docs"]] == ["t1_a", "t1_b", "t1_c"] and _g["reached"] and _g["calls"] == 2, _g)
+    _g = collect.fetch_comments("x", 600.0, 0.0, 10)
+    check("stream: a page that ends exactly on the watermark's second reads one page more",
+          [x["id"] for x in _g["docs"]] == ["t1_a", "t1_b", "t1_c", "t1_d"] and _g["reached"] and _g["calls"] == 3, _g)
     _f, _calls = _listing([[_c("a", 900.0)], [_c("b", 800.0)], [_c("c", 700.0)], [_c("d", 600.0)]])
     collect.rc.subreddit_comments = _f
     _g = collect.fetch_comments("x", None, 0.0, 3)
@@ -782,7 +788,8 @@ try:
           "not the stored one, not a post that names nothing",
           sorted(_cur.inserted) == ["t3_asked", "t3_listed", "t3_post1"], _cur.inserted)
     check("stream visit: one /api/info call for the threads not on the listing, and its counts",
-          _info == ["t3_asked,t3_gone"] and _sv["info_calls"] == 1 and _sv["from_info"] == 1 and _sv["from_listing"] == 1, (_info, _sv))
+          _info == ["t3_asked,t3_gone"] and _sv["info_calls"] == 1 and _sv["from_info"] == 1 and _sv["from_listing"] == 1
+          and _sv["from_posts"] == 1, (_info, _sv))
     check("stream visit: a comment whose thread Reddit no longer returns is counted, not stored",
           _sv["without_thread"] == 1 and _sv["rows"] == 3, _sv)
     check("stream visit: the comment watermark moves to the newest comment listed",
@@ -807,6 +814,11 @@ try:
     _sv = collect.stream_visit(_cur, "x", 7, [], set(), {}, _mrows, _Res(), "run-1", _m, _w, 0.0, 3, 2)
     check("stream visit: the pages ending before the watermark is a gap, and the watermark still moves on",
           _sv["gap"] == 1 and _sv["calls"] == 2 and len(_cur.set_wm) == 1, _sv)
+    _cur = _SCur({"t3_L1"}, "1970-01-01T00:16:40+00:00")     # 1,000 s: the comment that set it was deleted since
+    _mrows = []
+    _sv = collect.stream_visit(_cur, "x", 7, [], set(), {}, _mrows, _Res(), "run-1", _m, _w, 0.0, 3, 10)
+    check("stream visit: the watermark never moves back (its own comment was deleted, the newest listed is older)",
+          _cur.set_wm == [] and _mrows == [] and _sv["failed"] == 0 and _sv["gap"] == 0 and _sv["calls"] == 1, (_cur.set_wm, _sv))
 finally:
     collect.rc.subreddit_comments, collect.rc.get = _real_sc, _real_get
 
@@ -875,7 +887,7 @@ try:
     check("stream stage: the receipt says the mode and what the listing gave; no comment tree is read",
           _rec["mode"] == "stream" and _rec["stream_calls"] == 2 and _rec["comments_listed"] == 6
           and _rec["stream_first_visits"] == 2 and _rec["trees_fetched"] == 0 and _rec["stream_gaps"] == 0
-          and _rec["threads_from_listing"] == 0 and _rec["info_calls"] == 0, _rec)
+          and _rec["threads_from_posts"] == 2 and _rec["threads_from_listing"] == 0 and _rec["info_calls"] == 0, _rec)
     check("stream stage: one thread a subreddit (the post that names a brand), both watermarks set",
           sorted(_conn.cur.inserted) == ["t3_alphap", "t3_betap"]
           and sorted(x[0] for x in _conn.cur.set_wm) == ["comment_stream", "comment_stream", "new_listing", "new_listing"]

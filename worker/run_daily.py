@@ -498,7 +498,11 @@ def main() -> int:
         # comment trees in flight at once: a daytime pass's request may say (ops/day_passes.py), else the schedule
         opts, cfg = (getattr(args, "options", None) or {}), sched.get("collect", {})
         workers = opts.get("tree_workers") or cfg.get("tree_workers", 1)
-        night = "publish" in args.stages
+        # A daytime pass is one requested as such (it carries its own end and its own egress room). Anything else,
+        # the scheduled night and a run by hand whatever stages it names, is treated as the night: the night's mode
+        # and the night's set number of mentions (review, 12 Oct: a hand run of takedowns,collect,classify was
+        # taken for a day pass and given 36,000 mentions of room).
+        night = not run.receipt["day_run"]
         # where comments come from (decision 0029): a pass's request or --collect-mode may say, else the schedule,
         # separately for the night's run and for a daytime pass
         mode = (getattr(args, "collect_mode", None) or opts.get("mode")

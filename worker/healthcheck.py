@@ -122,11 +122,12 @@ def checks(conn):
                          "ORDER BY finished_at DESC LIMIT 1")
         out.append(("fetch_status", status == "ok", f"last pass status={status!r}"))
 
-        touched = q1(cur, "SELECT count(*) FROM ingest_state WHERE ym='daily' "
+        # stage 'new_listing' only: under the comment listing (decision 0029) a subreddit has a second row
+        touched = q1(cur, "SELECT count(*) FROM ingest_state WHERE ym='daily' AND stage='new_listing' "
                           "AND scope NOT LIKE '\\_%%' "
                           "AND finished_at > now() - make_interval(hours => %s)",
                      (WINDOW_H,))
-        total = q1(cur, "SELECT count(*) FROM ingest_state WHERE ym='daily' "
+        total = q1(cur, "SELECT count(*) FROM ingest_state WHERE ym='daily' AND stage='new_listing' "
                         "AND scope NOT LIKE '\\_%%'")
         share = (touched or 0) / max(total or 1, 1)
         out.append(("sub_coverage", share >= MIN_SUB_COVERAGE,

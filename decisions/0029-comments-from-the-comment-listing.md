@@ -74,9 +74,35 @@ More mentions a day means more labelling: about 58 GLM credits and 2 cents of Je
 ceilings of `ops/schedule.json` `classify` (ruling of 6 Oct: the egress cap bounds labelling, not the model allowance).
 The egress line bounds the day as before; a pass stops itself at it.
 
-## Pilot, review, judgement
+## Rehearsal
 
-Recorded below as each happens: a pilot by hand between two runs (about 150 calls), an independent read by GLM-5.3 on
-a clean clone, then the first daytime pass on `mode_day: "stream"`, judged on mention rows a call against 3.05,
-subreddits visited a pass against 755, bytes sent a new mention against 11 KB, the share of new mentions the
-classifier rejects as not the product against the trees' share, and gaps.
+12 Oct 20:37 UTC, the stage in this mode against Reddit and the database inside one transaction, then rolled back
+(the sweep's lock was held by a daytime pass, so nothing could be kept): five subreddits that pass had visited
+between 20 minutes and 3 hours earlier (saasbuild, aiagents, audioengineering, Substack, Rag), each a first visit.
+25 calls (5 post listings, 15 comment pages, 5 `/api/info`), 1,500 comments listed, **139 new mention rows**: 130
+from 106 comments in 76 threads, 9 from 2 posts. Every row had its thread (33 rows offered: 2 posts, 11 from the post
+listing, 20 from `/api/info`), all 139 were queued for labelling by the table's own trigger, both watermarks were
+written, and nothing was left after the rollback. The oldest thread stored was from August 2023: a new comment under
+an old post, which a comment tree never reached.
+
+## Review
+
+An independent read by GLM-5.3 (clean clone of `69d24fa`, read-only): the default mode is unchanged statement by
+statement; no loss on the failure paths (a failed page, a failed `/api/info`, a cap reached inside a visit: both
+watermarks and the rows sit in one transaction); the comment reads the same from either lane. Five minor findings,
+all taken:
+
+1. A comment written in the watermark's own second and listed after the read was dropped for ever: the read now
+   includes that second (the mentions key refuses the one already stored).
+2. The comment watermark could move back when the comment that set it was deleted: it only moves forward.
+3. A run by hand that names its stages without `publish` was taken for a daytime pass (the day's mode, 36,000
+   mentions of room): only a requested daytime pass is one; anything else keeps the night's mode and number.
+4. The retired collector's health check counted rows, and a subreddit now has two: it counts the post listing's.
+5. The receipt did not count the threads stored for posts that name a brand: `threads_from_posts`.
+
+## Pilot and judgement
+
+Recorded below as each happens: a pilot by hand between two runs (about 150 calls, kept), then the first daytime pass
+on `mode_day: "stream"`, judged on mention rows a call against 3.05, subreddits visited a pass against 755, bytes
+sent a new mention against 11 KB, the share of new mentions the classifier rejects as not the product against the
+trees' share, and gaps.

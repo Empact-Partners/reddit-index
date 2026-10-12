@@ -238,9 +238,11 @@ def fetch_comments(sub: str, watermark_ts: float | None, floor_ts: float, pages:
             break
         out["comments"] += len(times)
         out["newest"] = max(out["newest"], max(times))
-        out["docs"].extend(x for x in stream_docs(r) if float(x.get("created_utc") or 0) > stop_at)
+        # at the watermark's own second included: a second comment written in that second may have been listed
+        # after the last read, and the one already stored is refused by the mentions key at no cost
+        out["docs"].extend(x for x in stream_docs(r) if float(x.get("created_utc") or 0) >= stop_at)
         after = r.get("data", {}).get("after")
-        if min(times) <= stop_at or not after:
+        if min(times) < stop_at or not after:
             out["reached"] = True
             break
     return out
@@ -256,7 +258,7 @@ def stream_visit(cur, sub: str, sid: int, qual: list, named: set, listed: dict, 
     every comment mention: from the post listing just read when it is on those pages, else from /api/info, 100 a
     call) and moves the comment watermark when every call answered.
     Returns the visit's counts; the caller adds them to the receipt once the transaction is committed."""
-    sv = {"rows": 0, "calls": 0, "comments": 0, "first": 0, "gap": 0, "failed": 0, "from_listing": 0,
+    sv = {"rows": 0, "calls": 0, "comments": 0, "first": 0, "gap": 0, "failed": 0, "from_posts": 0, "from_listing": 0,
           "from_info": 0, "info_calls": 0, "without_thread": 0}
     cwm = d.get_watermark(cur, sub, stage="comment_stream")
     t_r = time.time()
@@ -281,6 +283,7 @@ def stream_visit(cur, sub: str, sid: int, qual: list, named: set, listed: dict, 
             r = thread_row(p, sid)
             if r:
                 rows[r[0]] = r
+                sv["from_posts"] += 1
     need = {r[2] for r in crows} - set(rows)
     if need:
         cur.execute("SELECT id FROM threads WHERE id = ANY(%s)", (sorted(need),))
@@ -316,7 +319,9 @@ def stream_visit(cur, sub: str, sid: int, qual: list, named: set, listed: dict, 
         cur.executemany(THREADS_STREAM_INSERT, list(rows.values()))
     mrows.extend(crows)
     sv["rows"], sv["failed"] = len(crows), int(not ok)
-    if ok and got["newest"]:
+    # only forward: when the comment that set it was deleted since, the newest one listed is older, and a watermark
+    # moved back would be re-walked on every visit
+    if ok and got["newest"] and (cwm is None or got["newest"] > cwm):
         d.set_watermark(cur, sub, dt.datetime.fromtimestamp(got["newest"], dt.timezone.utc), got["comments"],
                         stage="comment_stream")
     return sv
@@ -444,9 +449,12 @@ def run(conn, caps: dict, deadline: float, should_stop=lambda: None, log=print, 
            "capped_listings": 0, "listings_failed": 0, "errors": 0, "reddit_calls": 0, "stopped": None,
            "allowance_used": None, "mode": "stream" if stream else "trees"}
     if stream:
+        # threads_from_*: rows offered to the threads table by where the post came from (a post that names a brand;
+        # the post listing just read; /api/info). A thread already stored is offered and left as it is, so
+        # threads_new, read back from the table, can be lower than their sum.
         rec.update({"stream_calls": 0, "comments_listed": 0, "stream_first_visits": 0, "stream_gaps": 0,
-                    "stream_gap_subs": [], "stream_failed": 0, "threads_from_listing": 0, "threads_from_info": 0,
-                    "mentions_without_thread": 0, "mentions_room": room})
+                    "stream_gap_subs": [], "stream_failed": 0, "threads_from_posts": 0, "threads_from_listing": 0,
+                    "threads_from_info": 0, "mentions_without_thread": 0, "mentions_room": room})
 
     brands = d.load_brands()
     alias_re = d.build_alias_re([b for bs in brands.values() for b in bs])
@@ -593,6 +601,7 @@ def run(conn, caps: dict, deadline: float, should_stop=lambda: None, log=print, 
                     rec["comments_listed"] += sv["comments"]
                     rec["stream_first_visits"] += sv["first"]
                     rec["stream_failed"] += sv["failed"]
+                    rec["threads_from_posts"] += sv["from_posts"]
                     rec["threads_from_listing"] += sv["from_listing"]
                     rec["threads_from_info"] += sv["from_info"]
                     rec["info_calls"] += sv["info_calls"]
