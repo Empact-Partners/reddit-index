@@ -60,3 +60,11 @@ the same hours and rewrites pages once each, which no checkpoint interval change
 
 The setting stays, and goes to 3,600 s on 11 Oct 12:40 UTC (decision 0025): the same pages are touched again within
 the hour, so each pays its full-page image once an hour instead of twice.
+
+## At 3,600 s, the night of 12 Oct
+
+Six checkpoints in 6.3 hours. With the three unread indexes gone as well (migration 0035), the collect stage wrote
+143.9 MB of log for 13,723 new mentions: **10.5 KB a mention**, against 17.7 KB the night before and 16.7 KB in the
+daytime pass of 11 Oct. By statement: the mention insert 7.1 and 7.4 KB a row (2.2 full-page images), the thread
+insert 1.3 to 1.8 KB, the comment-tree stamp 0.94 KB. The whole night wrote 368 MB of log (414 MB the night before,
+with half as many new mentions and a fifth of the pages published).

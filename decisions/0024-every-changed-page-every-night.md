@@ -56,3 +56,22 @@ fingerprint the database holds. Pages change only when the sweep names them.
 The night of 12 Oct: `pages_deferred` 0 and nothing failed; the publish stage's minutes; the night on the node
 counter against 0.49 and 0.61 GB for the two nights before. If the night's egress rises by more than 0.3 GB, the cap
 comes back down to what the counter supports and this record says so.
+
+## Judged, 12 Oct
+
+The night of 12 Oct (run `e375f287`, 00:04 to 04:53 UTC), the first on this decision:
+
+| | |
+|---|---|
+| pages changed | 4,929 |
+| expired, fetched and proven at their fingerprint | 4,929, none failed, none deferred |
+| pages still waiting after the run | 1 of 6,131 |
+| the publish stage | 10.5 minutes |
+| what the node sent during the publish stage | 257 MB for 153 MB of HTML as fetched (1.68 bytes a byte; the estimate's 1.5 becomes 1.7) |
+| the whole night on the node counter | 0.595 GB (0.49 and 0.61 the two nights before, with 1,000 pages each), with 13,723 new mentions, twice the night before |
+
+52 KB a page, not 20: the night's set held the 537 takedown pages and the largest brands, whose pages carry the
+most cards. Every changed page a night costs about 0.26 GB, 0.16 more than the 1,000 heaviest did. The decision
+stands. About half the pages republished had changed only in rank, score or board size (all three are whole
+numbers a visitor sees); each still re-reads its cards. Serving unchanged cards from a cache on the site would save
+about 0.1 GB a night and is not built: it changes how a published page is proven.
