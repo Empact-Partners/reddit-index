@@ -157,14 +157,16 @@ def set_watermark(cur, sub, wm, n_threads, status="ok", stage="new_listing"):
         (sub, stage, CODE_VERSION, wm, n_threads, status))
 
 
-def fetch_new(sub, watermark_ts, seen=None, listed=None):
+def fetch_new(sub, watermark_ts, seen=None, listed=None, err=None):
     """Newest posts, watermark-bounded. 100/page, at most MAX_PAGES pages.
 
     Returns (posts, ok, capped). `seen`, when given, receives "t3_<id>" -> the comment count Reddit shows now for
     EVERY post on the pages read, the ones at or under the watermark included: the sweep's collect stage uses it to
     know whether a thread it already read has grown, without a call. `listed`, when given, receives "t3_<id>" ->
     the post itself for the same posts: a comment found in the comment listing needs its thread's row, and a
-    thread on these pages costs no call (decision 0029).
+    thread on these pages costs no call (decision 0029). `err`, when given, receives "code": what Reddit answered
+    when a page failed (an HTTP status, or "network"/"fail"), so a subreddit Reddit no longer serves can be told
+    from a failure (decision 0030).
 
     ok=False when any page failed: an error response used to collapse into an
     empty page, indistinguishable from a clean end of listing, and the caller
@@ -190,6 +192,8 @@ def fetch_new(sub, watermark_ts, seen=None, listed=None):
                    bucket="stream", use_cache=False)
         if "_err" in r:
             ok = False
+            if err is not None:
+                err["code"] = r["_err"]
             break
         kids = r.get("data", {}).get("children", [])
         if not kids:

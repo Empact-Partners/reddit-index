@@ -16,6 +16,9 @@ that can be stopped and bounded:
   * the brand list and subreddit lists are the repository's, read at start: the old collector ran a
     19 August image for six weeks and never saw 4,471 brands added after it.
 
+Every visit is recorded (decision 0030): a capped listing moves the watermark to the newest post listed, an empty
+first listing and a subreddit Reddit no longer serves (403, 404, 451) are visits that found nothing.
+
 Two modes (decision 0029). "trees": comments come from the comment trees of stored threads, one thread a call.
 "stream": comments come from the subreddit's comment listing, 100 a call whatever their thread, back to the newest
 comment already read; a thread is stored only when it holds a mention, and the stage ends when the run's room for
@@ -48,6 +51,11 @@ HARVEST_DAYS = 400       # a post older than this when listed is not stored and 
                          # score counts the trailing 365 days (docs/methodology.md), the labels 400
 DEAD_AFTER_HOURS = 48    # a post that names no brand and has no comment at this age is not stored
 CANDIDATES = 200         # threads of one subreddit weighed for a comment-tree read on one visit
+# Decision 0030: every visit is recorded. A subreddit whose visit left no record stayed "never visited" and was
+# visited first on every pass: on 12 Oct the 23 whose post listing ran out of pages before the watermark (8 calls
+# each, the same posts every time), the 21 Reddit no longer serves, and those whose first listing was empty.
+GONE_CODES = (403, 404, 451)   # private, banned or deleted: Reddit's answer for the subreddit, not a failure
+GONE_STAMPS = 40         # at most this many a run: an app-wide refusal must not mark the whole map visited
 ROTATE_DAYS = 3   # a non-core subreddit is due every third day, a core one every day
 
 THREADS_UPSERT = (
@@ -447,7 +455,8 @@ def run(conn, caps: dict, deadline: float, should_stop=lambda: None, log=print, 
            "trees_skipped_no_comments": 0, "trees_skipped_unchanged": 0, "info_calls": 0,
            "posts_older_than_window": 0, "posts_dead_not_stored": 0,
            "capped_listings": 0, "listings_failed": 0, "errors": 0, "reddit_calls": 0, "stopped": None,
-           "allowance_used": None, "mode": "stream" if stream else "trees"}
+           "allowance_used": None, "mode": "stream" if stream else "trees",
+           "capped_subs": [], "subs_gone": 0, "subs_gone_names": [], "empty_first_listings": 0}
     if stream:
         # threads_from_*: rows offered to the threads table by where the post came from (a post that names a brand;
         # the post listing just read; /api/info). A thread already stored is offered and left as it is, so
@@ -495,8 +504,10 @@ def run(conn, caps: dict, deadline: float, should_stop=lambda: None, log=print, 
                     wm = d.get_watermark(cur, sub)
                     seen: dict = {}   # thread id -> comments Reddit shows now, for every post on the pages read
                     listed: dict = {}  # thread id -> the post, for the same posts (the comment listing's threads)
+                    lerr: dict = {}    # what Reddit answered when the listing failed
                     t_r = time.time()
-                    posts, listing_ok, capped = d.fetch_new(sub, wm, seen=seen, listed=listed if stream else None)
+                    posts, listing_ok, capped = d.fetch_new(sub, wm, seen=seen, listed=listed if stream else None,
+                                                            err=lerr)
                     waited[0] += time.time() - t_r
                     if not listing_ok:
                         rec["listings_failed"] += 1
@@ -586,14 +597,36 @@ def run(conn, caps: dict, deadline: float, should_stop=lambda: None, log=print, 
                         cur.execute("UPDATE threads t SET tree_fetched_at = now(), tree_comments = v.n "
                                     "FROM unnest(%s::text[], %s::int[]) AS v(id, n) WHERE t.id = v.id",
                                     ([f[0] for f in fetched], [f[1] for f in fetched]))
-                    # the watermark moves only after a COMPLETE listing (daily.py's rule)
-                    if newest and listing_ok and not capped:
-                        # quiet (plan) means nothing at all on the last visit: no qualifying post, and under the
-                        # comment listing no comment mention either
-                        d.set_watermark(cur, sub, dt.datetime.fromtimestamp(newest, dt.timezone.utc),
-                                        len(qual) + n_comment_rows)
+                    # Every visit is recorded (decision 0030); the watermark moves to the newest post listed.
+                    # quiet (plan) means nothing at all on the last visit: no qualifying post, and under the
+                    # comment listing no comment mention either.
+                    found = len(qual) + n_comment_rows
+                    if listing_ok and not capped:
+                        # an empty first listing is a visit too (watermark still none): it used to leave no row,
+                        # so the subreddit stayed "never visited" and came first on every pass
+                        if not newest:
+                            rec["empty_first_listings"] += 1
+                        d.set_watermark(cur, sub, dt.datetime.fromtimestamp(newest, dt.timezone.utc)
+                                        if newest else None, found)
                     elif capped:
+                        # The pages ran out before the watermark. The listing is read newest first, so holding the
+                        # watermark never brought the posts below the last page back within reach: each visit read
+                        # the same pages again (8 calls) and, never recorded, came first on every pass. The
+                        # watermark moves to the newest post listed; the posts between are not reachable.
                         rec["capped_listings"] += 1
+                        if len(rec["capped_subs"]) < 30:
+                            rec["capped_subs"].append(sub)
+                        if newest:
+                            d.set_watermark(cur, sub, dt.datetime.fromtimestamp(newest, dt.timezone.utc), found,
+                                            status="capped")
+                    elif lerr.get("code") in GONE_CODES and rec["subs_gone"] < GONE_STAMPS:
+                        # Reddit no longer serves it (private, banned, deleted): recorded as a visit that found
+                        # nothing, so it comes round like a quiet subreddit, not first on every pass
+                        rec["subs_gone"] += 1
+                        if len(rec["subs_gone_names"]) < 30:
+                            rec["subs_gone_names"].append(f"{sub} ({lerr['code']})")
+                        d.set_watermark(cur, sub, dt.datetime.fromtimestamp(wm, dt.timezone.utc) if wm else None,
+                                        0, status="gone")
                 rec["subs_visited"] += 1
                 rec["posts_qualified"] += len(qual)
                 rec["mentions_new"] += ins
