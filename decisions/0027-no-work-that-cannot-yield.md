@@ -64,3 +64,30 @@ failed with one value too many. The archive copies now name their columns (PR #6
 The first daytime pass on the new code (12 Oct, the day service; the night's run keeps the code before this until
 that pass has been read): mentions per call against 1.50, tree calls per subreddit against 14.6, threads stored per
 mention against 0.84.
+
+## Judged, 12 Oct
+
+The first daytime pass on it (run `3cdf67d3`, 12:34 to 17:59 UTC, the day service's first, by itself), against the
+first pass of 11 Oct on the code before it. Both five hours of collection on the shared Reddit app, one comment tree
+at a time:
+
+| | 11 Oct | 12 Oct |
+|---|---|---|
+| subreddits visited | 541 | 755 |
+| Reddit calls | 8,519 | 9,483 |
+| new mentions | 12,806 | **28,948** |
+| mentions a call | 1.50 | **3.05** |
+| comment trees read a subreddit | 14.6 | 11.3 |
+| threads stored a new mention | 0.84 | 0.50 |
+| posts more than 400 days old, not stored | | 8,996 |
+| trees not read: no comment / not grown | | 3,127 / 286 |
+| dead posts not stored | | 1,293 |
+| `/api/info` calls for comment counts | | 97 |
+| sent by the node during the pass (counter) | | 0.321 GB, 11 KB a new mention |
+
+The rate-limit waits on the shared app were 2,377 s of the 300 minutes, and calls ran at 32 a minute: the app, not
+the collector, still sets the pace. The night service runs this code from the night of 13 Oct.
+
+Labelling did not keep up inside the pass: 18,177 of 28,948 were settled in its 25 minutes, 10,771 wait (no try is
+counted when time runs out). Daytime collection now ends 45 minutes before a pass's end instead of 30
+(`reserve_minutes_after_collect_day`).
