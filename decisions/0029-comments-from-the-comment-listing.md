@@ -1,8 +1,8 @@
 # 0029 — Comments are read from each subreddit's comment listing
 
-Date: 2026-10-12. Status: accepted for a pilot and for daytime passes once the pilot is read; the night's run stays on
-comment trees until a daytime pass has been judged (the commission: full speed under the egress line and the shared
-Reddit app).
+Date: 2026-10-12. Status: accepted; daytime passes use it (`collect.mode_day: "stream"`) from the day service's
+next deploy; the night's run stays on comment trees until a daytime pass has been judged (the commission: full speed
+under the egress line and the shared Reddit app).
 
 ## Context
 
