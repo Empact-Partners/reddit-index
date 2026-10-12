@@ -522,7 +522,10 @@ def run(conn, caps: dict, deadline: float, should_stop=lambda: None, log=print, 
                                           h["conf"], h["alias"], h["rule_fired"], run_id, h["brand_slug"]))
                     matching[0] += time.time() - t_m
                     n_comment_rows, fetched = 0, []
-                    if stream:
+                    if stream and not listing_ok:
+                        pass   # a subreddit whose post listing failed (private, banned, gone: about 15 lead every
+                        #        pass) is not asked for its comments: the same refusal, a second call
+                    elif stream:
                         # comments from the subreddit's comment listing; a thread is stored when it holds a mention
                         sv = stream_visit(cur, sub, sid, qual, named, listed, mrows, resolver, run_id, matching,
                                           waited, cutoff, first_pages, stream_pages,

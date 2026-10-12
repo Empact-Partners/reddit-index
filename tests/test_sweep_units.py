@@ -892,6 +892,22 @@ try:
           sorted(_conn.cur.inserted) == ["t3_alphap", "t3_betap"]
           and sorted(x[0] for x in _conn.cur.set_wm) == ["comment_stream", "comment_stream", "new_listing", "new_listing"]
           and all(x[2] == 3 for x in _conn.cur.set_wm), (_conn.cur.inserted, _conn.cur.set_wm))
+    _asked = []
+    _ok_fn = collect.d.fetch_new
+    collect.d.fetch_new = lambda sub, wm, seen=None, listed=None: ([], False, False) if sub == "alpha" else _ok_fn(sub, wm, seen, listed)
+    _sc = collect.rc.subreddit_comments
+
+    def _sc2(subs, limit=100, before=None, after=None):
+        _asked.append(subs)
+        return _sc(subs, limit, before, after)
+    collect.rc.subreddit_comments = _sc2
+    _conn = _RConn()
+    _rec = collect.run(_conn, {"reddit_calls": 100, "mentions": 1000, "mode": "stream"}, _now_ts + 60,
+                       log=lambda *a, **k: None, run_id="run-4")
+    check("stream stage: a subreddit whose post listing failed is not asked for its comments",
+          _asked == ["beta", "gamma"] and _rec["listings_failed"] == 1 and _rec["stream_failed"] == 0
+          and _rec["subs_visited"] == 3 and _rec["mentions_new"] == 6, (_asked, _rec))
+    collect.d.fetch_new, collect.rc.subreddit_comments = _ok_fn, _sc
     _conn = _RConn()
     _conn.cur.executemany = lambda sql, rows: None      # the comment-tree path's own upsert
     _rec = collect.run(_conn, {"reddit_calls": 100, "mentions": 1000}, _now_ts + 60, log=lambda *a, **k: None, run_id="run-3")
