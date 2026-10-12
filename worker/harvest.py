@@ -262,6 +262,41 @@ def post_doc(d):
     }
 
 
+def stream_docs(listing):
+    """Every scorable comment on one page of /r/{sub}/comments, each with the thread it sits in.
+
+    The comment fields are tree_docs's, byte for byte (the same id, body and absolute permalink, the same comments
+    left out: deleted, removed, automated): the mentions key is (brand, document, time) and the stored body is what
+    the site shows, so a comment must read the same whichever lane brought it. Added for the listing: `link_id`,
+    `link_title`, and the comment count Reddit shows for the thread.
+    """
+    docs = []
+    if not isinstance(listing, dict):
+        return docs
+    for child in listing.get("data", {}).get("children", []):
+        if child.get("kind") != "t1":
+            continue
+        d = child.get("data") or {}
+        body = d.get("body") or ""
+        author = d.get("author") or ""
+        if body in ("[deleted]", "[removed]") or author in ("[deleted]",):
+            continue
+        if is_bot_doc(author, body) or not d.get("id") or not d.get("link_id"):
+            continue
+        docs.append({
+            "id": "t1_" + d["id"], "doc_type": 1,
+            "author": author,
+            "body": body,
+            "created_utc": d.get("created_utc"),
+            "permalink": _abs(d.get("permalink")),
+            "score": d.get("score"),
+            "link_id": d["link_id"],
+            "link_title": d.get("link_title") or "",
+            "num_comments": d.get("num_comments"),
+        })
+    return docs
+
+
 def tree_docs(tree):
     """Every scorable document in a /comments/{id} response, as (docs, title).
 

@@ -372,18 +372,25 @@ def comment_tree(post_id):
                bucket="tree")
 
 
-def subreddit_comments(subs, limit=100, before=None):
+def subreddit_comments(subs, limit=100, before=None, after=None):
     """Lane B. A `+`-joined multireddit returns ONE merged feed.
 
     Verified to at least 40 subreddits in a single call. Merging does not reduce
     the number of comments to retrieve — the merged rate is the sum of the
     members' — it removes per-call overhead on quiet subreddits. So buckets are
     packed by RATE, never by category.
+
+    `after` (the listing's own cursor) pages back from the newest comment; the
+    listing ends near 1,000 comments. `before` walks forward from a comment that
+    still exists, and returns nothing when that comment was deleted: the sweep
+    pages back with `after` and stops on the comments' times (decision 0029).
     """
     joined = "+".join(subs) if isinstance(subs, (list, tuple)) else subs
     p = {"limit": limit, "raw_json": 1}
     if before:
         p["before"] = before
+    if after:
+        p["after"] = after
     return get(f"/r/{joined}/comments", p, bucket="stream", use_cache=False)
 
 

@@ -623,6 +623,284 @@ check("deploy: the night service is not deployed from 23:54 to 00:00 UTC, and is
       not _ds.safe_to_deploy("sweep", _t(23, 55))[0] and not _ds.safe_to_deploy("sweep", _t(0, 0))[0]
       and _ds.safe_to_deploy("sweep", _t(23, 53))[0] and _ds.safe_to_deploy("sweep", _t(18, 29))[0])
 
+# ---- comments from the subreddit's comment listing (decision 0029: harvest.stream_docs, collect.fetch_comments,
+# ---- collect.stream_visit, collect.mentions_room) ----------------------------------------------------------------
+import harvest as _hv  # noqa: E402
+
+
+def _c(cid, ts, body="We moved from HubSpot to Salesforce.", author="ann", link="t3_L1", title="CRM thread"):
+    return {"kind": "t1", "data": {"id": cid, "author": author, "body": body, "created_utc": ts, "score": 3,
+                                   "permalink": f"/r/x/comments/{link[3:]}/_/{cid}/", "link_id": link,
+                                   "link_title": title, "num_comments": 9, "replies": ""}}
+
+
+_page = {"data": {"after": "t1_c2", "children": [
+    _c("c1", 500.0), _c("c2", 400.0, body="[removed]"), _c("c3", 390.0, author="[deleted]"),
+    _c("c4", 380.0, author="AutoModerator"), _c("c5", 370.0, body="thanks! I am a bot, beep boop"),
+    {"kind": "more", "data": {"count": 3}}, {"kind": "t1", "data": {"id": "c6", "author": "bob", "body": "no link"}}]}}
+_sd = _hv.stream_docs(_page)
+_td2 = _hv.tree_docs([{"data": {"children": []}}, {"data": {"children": [_c("c1", 500.0)]}}])[0]
+check("stream: deleted, removed and automated comments are left out, like the comment tree's",
+      [x["id"] for x in _sd] == ["t1_c1"], _sd)
+check("stream: a comment reads the same from the listing as from its tree (id, body, author, time, address, score)",
+      len(_td2) == 1 and all(_sd[0][k] == _td2[0][k] for k in ("id", "doc_type", "author", "body", "created_utc",
+                                                                 "permalink", "score")), (_sd, _td2))
+check("stream: each comment carries its thread", _sd[0]["link_id"] == "t3_L1" and _sd[0]["link_title"] == "CRM thread"
+      and _sd[0]["num_comments"] == 9)
+check("stream: an answer that is not a listing gives nothing", _hv.stream_docs({"_err": 503}) == [] and _hv.stream_docs(None) == [])
+
+
+def _listing(pages):
+    """A fake comment listing: `pages` is a list of pages (each a list of comments), served by cursor."""
+    calls = []
+
+    def fake(subs, limit=100, before=None, after=None):
+        calls.append(after)
+        i = 0 if after is None else int(after[1:])
+        if i >= len(pages) or pages[i] is None:
+            return {"_err": 503} if i < len(pages) else {"data": {"children": [], "after": None}}
+        return {"data": {"children": pages[i], "after": f"p{i + 1}" if i + 1 < len(pages) else None}}
+    return fake, calls
+
+
+_real_sc = collect.rc.subreddit_comments
+try:
+    _f, _calls = _listing([[_c("a", 900.0), _c("b", 800.0)], [_c("c", 700.0), _c("d", 600.0)], [_c("e", 500.0)]])
+    collect.rc.subreddit_comments = _f
+    _g = collect.fetch_comments("x", 650.0, 0.0, 10)
+    check("stream: the listing is read back to the newest comment already read, and no further",
+          [x["id"] for x in _g["docs"]] == ["t1_a", "t1_b", "t1_c"] and _g["reached"] and _g["ok"] and _g["calls"] == 2
+          and _g["newest"] == 900.0 and _g["comments"] == 4, _g)
+    _g = collect.fetch_comments("x", 700.0, 0.0, 10)
+    check("stream: a comment in the watermark's own second is read again (another may share that second)",
+          [x["id"] for x in _g["docs"]] == ["t1_a", "t1_b", "t1_c"] and _g["reached"] and _g["calls"] == 2, _g)
+    _g = collect.fetch_comments("x", 600.0, 0.0, 10)
+    check("stream: a page that ends exactly on the watermark's second reads one page more",
+          [x["id"] for x in _g["docs"]] == ["t1_a", "t1_b", "t1_c", "t1_d"] and _g["reached"] and _g["calls"] == 3, _g)
+    _f, _calls = _listing([[_c("a", 900.0)], [_c("b", 800.0)], [_c("c", 700.0)], [_c("d", 600.0)]])
+    collect.rc.subreddit_comments = _f
+    _g = collect.fetch_comments("x", None, 0.0, 3)
+    check("stream: a first visit reads its pages and stops (not a gap: nothing was read before)",
+          [x["id"] for x in _g["docs"]] == ["t1_a", "t1_b", "t1_c"] and _g["calls"] == 3 and not _g["reached"] and _g["ok"], _g)
+    _g = collect.fetch_comments("x", 100.0, 0.0, 2)
+    check("stream: the pages ran out before the watermark: not reached (the caller records the gap)",
+          _g["calls"] == 2 and not _g["reached"] and _g["ok"] and len(_g["docs"]) == 2, _g)
+    _g = collect.fetch_comments("x", 100.0, 0.0, 10)
+    check("stream: the listing's own end counts as reached", _g["reached"] and _g["calls"] == 4 and len(_g["docs"]) == 4, _g)
+    _g = collect.fetch_comments("x", 100.0, 750.0, 10)
+    check("stream: nothing older than the 400-day floor is kept, and the read stops there",
+          [x["id"] for x in _g["docs"]] == ["t1_a", "t1_b"] and _g["calls"] == 3 and _g["reached"], _g)
+    _f, _calls = _listing([[_c("a", 900.0)], None, [_c("c", 700.0)]])
+    collect.rc.subreddit_comments = _f
+    _g = collect.fetch_comments("x", 100.0, 0.0, 10)
+    check("stream: a failed page ends the read as not ok, keeping what was read",
+          not _g["ok"] and not _g["reached"] and [x["id"] for x in _g["docs"]] == ["t1_a"] and _g["calls"] == 2, _g)
+    _f, _calls = _listing([])
+    collect.rc.subreddit_comments = _f
+    _g = collect.fetch_comments("x", 100.0, 0.0, 10)
+    check("stream: an empty listing is a complete read of nothing", _g["ok"] and _g["reached"] and _g["docs"] == [] and _g["newest"] == 0, _g)
+    _stops = []
+
+    def _before():
+        _stops.append(1)
+        if len(_stops) > 1:
+            raise collect.Allowance("calls used")
+    _f, _calls = _listing([[_c("a", 900.0)], [_c("b", 800.0)]])
+    collect.rc.subreddit_comments = _f
+    try:
+        collect.fetch_comments("x", 100.0, 0.0, 10, _before)
+        check("stream: the caps are checked before every call", False)
+    except collect.Allowance:
+        check("stream: the caps are checked before every call", len(_calls) == 1, _calls)
+finally:
+    collect.rc.subreddit_comments = _real_sc
+
+check("stream: a thread's row comes from its post, stamped with the comment count it had",
+      collect.thread_row({"id": "L1", "title": "T" * 600, "permalink": "/r/x/comments/L1/t/", "created_utc": 123.0,
+                          "num_comments": 7, "archived": False, "score": 5}, 44)
+      == ("t3_L1", 44, "T" * 500, "https://www.reddit.com/r/x/comments/L1/t/", 123.0, 7, False, 5, 7))
+check("stream: a post without an id, an address or a time gives no row",
+      collect.thread_row({"id": "L1", "permalink": "/r/x/", "created_utc": None}, 1) is None
+      and collect.thread_row({"title": "t", "permalink": "/r/x/", "created_utc": 1.0}, 1) is None
+      and collect.thread_row({"id": "L1", "created_utc": 1.0}, 1) is None)
+check("stream: the room for new mentions is the run's egress cap, less a margin, over one mention's bytes",
+      collect.mentions_room(0.434, 13000) == 30046 and collect.mentions_room(0.0, 13000) == 0
+      and collect.mentions_room(0.7, 13000, share=1.0) == 53846)
+
+
+class _SCur:
+    """The few statements stream_visit sends, against dicts."""
+    def __init__(self, threads, wm):
+        self.threads, self.wm, self.inserted, self.set_wm, self.rows = set(threads), wm, [], [], []
+
+    def execute(self, sql, params=None):
+        if sql.startswith("SELECT watermark"):
+            self.rows = [(self.wm,)] if (self.wm is not None and params[1] == "comment_stream") else []
+        elif sql.startswith("SELECT id FROM threads"):
+            self.rows = [(t,) for t in params[0] if t in self.threads]
+        elif sql.startswith("INSERT INTO ingest_state"):
+            self.set_wm.append((params[1], params[3], params[4]))
+        return self
+
+    def executemany(self, sql, rows):
+        assert "tree_fetched_at" in sql and "DO NOTHING" in sql
+        self.inserted += [r[0] for r in rows]
+
+    def fetchone(self):
+        return self.rows[0] if self.rows else None
+
+    def fetchall(self):
+        return self.rows
+
+
+class _Res:
+    def resolve(self, body, sub, title):
+        return ([{"brand_slug": "hubspot", "alias": "hubspot", "conf": 0.9, "rule_fired": "safe_word_boundary"}]
+                if "hubspot" in body.lower() else [])
+
+
+_real_sc, _real_get = collect.rc.subreddit_comments, collect.rc.get
+try:
+    _f, _calls = _listing([[_c("a", 900.0, link="t3_known"), _c("b", 890.0, link="t3_listed"),
+                            _c("c", 880.0, link="t3_asked"), _c("d", 870.0, link="t3_gone"),
+                            _c("e", 860.0, body="nothing here", link="t3_other"), _c("f", 500.0, link="t3_old")]])
+    collect.rc.subreddit_comments = _f
+    _info = []
+
+    def _get(path, params=None, bucket="misc", tries=3, use_cache=True):
+        _info.append(params["id"])
+        return {"data": {"children": [{"kind": "t3", "data": {
+            "name": "t3_asked", "id": "asked", "title": "Asked", "permalink": "/r/x/comments/asked/t/",
+            "created_utc": 100.0, "num_comments": 3, "score": 1}}]}}
+    collect.rc.get = _get
+    _cur = _SCur({"t3_known"}, "1970-01-01T00:10:00+00:00")     # the comment watermark: 600 s
+    _mrows, _m, _w = [], [0.0], [0.0]
+    _listed = {"t3_listed": {"id": "listed", "title": "Listed", "permalink": "/r/x/comments/listed/t/",
+                             "created_utc": 200.0, "num_comments": 2, "score": 1}}
+    _qual = [{"id": "post1", "title": "HubSpot?", "permalink": "/r/x/comments/post1/t/", "created_utc": 950.0,
+              "num_comments": 0, "score": 1},
+             {"id": "post2", "title": "nothing", "permalink": "/r/x/comments/post2/t/", "created_utc": 940.0}]
+    _sv = collect.stream_visit(_cur, "x", 7, _qual, {"post1"}, _listed, _mrows, _Res(), "run-1", _m, _w, 0.0, 3, 10)
+    check("stream visit: a row for every comment that names a brand, newer than the watermark, whose thread Reddit returns",
+          [r[0] for r in _mrows] == ["t1_a", "t1_b", "t1_c"] and all(r[1] == 1 and r[3] == 7 and r[12] == "run-1" for r in _mrows)
+          and [r[2] for r in _mrows] == ["t3_known", "t3_listed", "t3_asked"], _mrows)
+    check("stream visit: threads stored: the post that names a brand, one from the post listing, one from /api/info; "
+          "not the stored one, not a post that names nothing",
+          sorted(_cur.inserted) == ["t3_asked", "t3_listed", "t3_post1"], _cur.inserted)
+    check("stream visit: one /api/info call for the threads not on the listing, and its counts",
+          _info == ["t3_asked,t3_gone"] and _sv["info_calls"] == 1 and _sv["from_info"] == 1 and _sv["from_listing"] == 1
+          and _sv["from_posts"] == 1, (_info, _sv))
+    check("stream visit: a comment whose thread Reddit no longer returns is counted, not stored",
+          _sv["without_thread"] == 1 and _sv["rows"] == 3, _sv)
+    check("stream visit: the comment watermark moves to the newest comment listed",
+          _cur.set_wm == [("comment_stream", "1970-01-01T00:15:00+00:00", 6)] and _sv["failed"] == 0 and _sv["first"] == 0
+          and _sv["gap"] == 0, _cur.set_wm)
+    collect.rc.get = lambda *a, **k: {"_err": 503}
+    _cur = _SCur({"t3_known"}, "1970-01-01T00:10:00+00:00")
+    _mrows = []
+    _sv = collect.stream_visit(_cur, "x", 7, [], set(), _listed, _mrows, _Res(), "run-1", _m, _w, 0.0, 3, 10)
+    check("stream visit: a failed /api/info call keeps the rows whose thread is known, holds the watermark, and counts "
+          "nothing as lost", [r[0] for r in _mrows] == ["t1_a", "t1_b"] and _cur.set_wm == [] and _sv["failed"] == 1
+          and _sv["without_thread"] == 0, (_mrows, _cur.set_wm, _sv))
+    _f, _calls = _listing([[_c("a", 900.0)], [_c("b", 890.0)], [_c("c", 880.0)], [_c("d", 870.0)]])
+    collect.rc.subreddit_comments = _f
+    _cur = _SCur({"t3_L1"}, None)
+    _mrows = []
+    _sv = collect.stream_visit(_cur, "x", 7, [], set(), {}, _mrows, _Res(), "run-1", _m, _w, 0.0, 3, 10)
+    check("stream visit: a first visit reads its three pages, is not a gap, and sets the watermark",
+          _sv["first"] == 1 and _sv["gap"] == 0 and _sv["calls"] == 3 and len(_mrows) == 3 and len(_cur.set_wm) == 1, _sv)
+    _cur = _SCur({"t3_L1"}, "1970-01-01T00:01:40+00:00")
+    _mrows = []
+    _sv = collect.stream_visit(_cur, "x", 7, [], set(), {}, _mrows, _Res(), "run-1", _m, _w, 0.0, 3, 2)
+    check("stream visit: the pages ending before the watermark is a gap, and the watermark still moves on",
+          _sv["gap"] == 1 and _sv["calls"] == 2 and len(_cur.set_wm) == 1, _sv)
+    _cur = _SCur({"t3_L1"}, "1970-01-01T00:16:40+00:00")     # 1,000 s: the comment that set it was deleted since
+    _mrows = []
+    _sv = collect.stream_visit(_cur, "x", 7, [], set(), {}, _mrows, _Res(), "run-1", _m, _w, 0.0, 3, 10)
+    check("stream visit: the watermark never moves back (its own comment was deleted, the newest listed is older)",
+          _cur.set_wm == [] and _mrows == [] and _sv["failed"] == 0 and _sv["gap"] == 0 and _sv["calls"] == 1, (_cur.set_wm, _sv))
+finally:
+    collect.rc.subreddit_comments, collect.rc.get = _real_sc, _real_get
+
+# the whole stage under the comment listing, against a fake database and a fake Reddit
+import contextlib as _ctx  # noqa: E402
+
+
+class _RConn:
+    def __init__(self):
+        self.cur = _SCur(set(), None)
+        self.wm_new = []
+
+    def execute(self, sql, params=None):
+        c = _SCur(set(), None)
+        if "FROM subreddits" in sql:
+            c.rows = [("alpha", 1), ("beta", 2), ("gamma", 3)]
+        elif "count(*)" in sql:
+            c.rows = [(len(self.cur.inserted),)]
+        return c
+
+    def cursor(self):
+        return self.cur
+
+    @_ctx.contextmanager
+    def transaction(self):
+        yield
+
+
+_saved = (collect.plan, collect.d.fetch_new, collect.d.insert_mentions, collect.d.load_brands, collect.d.build_alias_re,
+          collect.d.Resolver, collect.rc.subreddit_comments, collect.rc.get, collect.d.content_qualify)
+try:
+    collect.plan = lambda conn, today: (["alpha", "beta", "gamma"], {x: ["crm"] for x in ("alpha", "beta", "gamma")},
+                                        {"alpha"}, 0, {"vendor": 0, "second_spelling": 0})
+    _now_ts = __import__("time").time()
+
+    def _fn(sub, wm, seen=None, listed=None):
+        post = {"id": f"{sub}p", "title": "HubSpot or not", "selftext": "", "author": "op", "created_utc": _now_ts - 60,
+                "permalink": f"/r/{sub}/comments/{sub}p/t/", "num_comments": 2, "score": 1}
+        if listed is not None:
+            listed[f"t3_{sub}p"] = post
+        return [post], True, False
+    collect.d.fetch_new = _fn
+    collect.d.content_qualify = lambda p, cats, alias_re: True
+    _stored = []
+
+    def _ins(cur, rows):
+        _stored.extend(rows)
+        return len(rows), 0
+    collect.d.insert_mentions = _ins
+    collect.d.load_brands = lambda: {}
+    collect.d.build_alias_re = lambda brands: None
+    collect.d.Resolver = _Res
+    collect.rc.subreddit_comments = lambda subs, limit=100, before=None, after=None: {"data": {"after": None, "children": [
+        _c(f"{subs}1", _now_ts - 30, link=f"t3_{subs}p"), _c(f"{subs}2", _now_ts - 40, link=f"t3_{subs}p"),
+        _c(f"{subs}3", _now_ts - 50, body="nothing", link=f"t3_{subs}p")]}}
+    collect.rc.get = lambda *a, **k: {"_err": 500}
+    _conn = _RConn()
+    _rec = collect.run(_conn, {"reddit_calls": 100, "mentions": 1000, "mode": "stream", "mentions_room": 5},
+                       _now_ts + 60, log=lambda *a, **k: None, run_id="run-2")
+    check("stream stage: two subreddits are read, then the run's room for new mentions ends the stage as planned",
+          _rec["subs_visited"] == 2 and _rec["mentions_new"] == 6 and _rec["stopped"] is None
+          and "room for were collected" in (_rec["allowance_used"] or ""), _rec)
+    check("stream stage: a post row and two comment rows a subreddit, the comments on the post's thread",
+          [(r[0], r[1], r[2]) for r in _stored[:3]] == [("t3_alphap", 2, "t3_alphap"), ("t1_alpha1", 1, "t3_alphap"),
+                                                       ("t1_alpha2", 1, "t3_alphap")], _stored[:3])
+    check("stream stage: the receipt says the mode and what the listing gave; no comment tree is read",
+          _rec["mode"] == "stream" and _rec["stream_calls"] == 2 and _rec["comments_listed"] == 6
+          and _rec["stream_first_visits"] == 2 and _rec["trees_fetched"] == 0 and _rec["stream_gaps"] == 0
+          and _rec["threads_from_posts"] == 2 and _rec["threads_from_listing"] == 0 and _rec["info_calls"] == 0, _rec)
+    check("stream stage: one thread a subreddit (the post that names a brand), both watermarks set",
+          sorted(_conn.cur.inserted) == ["t3_alphap", "t3_betap"]
+          and sorted(x[0] for x in _conn.cur.set_wm) == ["comment_stream", "comment_stream", "new_listing", "new_listing"]
+          and all(x[2] == 3 for x in _conn.cur.set_wm), (_conn.cur.inserted, _conn.cur.set_wm))
+    _conn = _RConn()
+    _conn.cur.executemany = lambda sql, rows: None      # the comment-tree path's own upsert
+    _rec = collect.run(_conn, {"reddit_calls": 100, "mentions": 1000}, _now_ts + 60, log=lambda *a, **k: None, run_id="run-3")
+    check("trees stage: the default mode is unchanged and reports itself", _rec["mode"] == "trees" and "stream_calls" not in _rec
+          and _rec["subs_visited"] == 3, _rec)
+finally:
+    (collect.plan, collect.d.fetch_new, collect.d.insert_mentions, collect.d.load_brands, collect.d.build_alias_re,
+     collect.d.Resolver, collect.rc.subreddit_comments, collect.rc.get, collect.d.content_qualify) = _saved
+
 print(f"\ntest_sweep_units: {len(FAILS)} failure(s)" + (": " + "; ".join(FAILS) if FAILS else ""))
 sys.exit(bool(FAILS))
 
