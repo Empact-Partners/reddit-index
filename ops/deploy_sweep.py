@@ -27,12 +27,14 @@ A deploy also starts the container once; outside the run window the sweep refuse
 from __future__ import annotations
 
 import argparse
+import datetime as dt
 import json
 import os
 import shutil
 import subprocess
 import sys
 import tempfile
+import time
 import urllib.error
 import urllib.request
 
@@ -148,6 +150,59 @@ def assemble(dest: str, cron: str | None = None, start: str | None = None) -> No
     json.dump(rj, open(os.path.join(dest, "railway.json"), "w"), indent=1)
 
 
+DEPLOY_MINUTES = 6   # a build and its switch-over take about four minutes; the margin is the rest
+
+
+def safe_to_deploy(key: str, now: dt.datetime) -> tuple[bool, str]:
+    """A new deployment of a cron service stops the execution the old one is running ("Stopping Container"). On
+    12 Oct at 18:12 UTC a deploy of the day service stopped the pass its 18:00 tick had started. So a service is
+    deployed only where none of its starts can fall inside the next DEPLOY_MINUTES: the day service's ticks are at
+    :00 and :30 from 06:00 to 21:30 UTC, the night service starts at 00:00 UTC."""
+    mins = now.hour * 60 + now.minute
+    if key == "day":
+        if 5 * 60 + 54 <= mins <= 21 * 60 + 31 and (now.minute % 30) > 30 - DEPLOY_MINUTES:
+            return False, f"the day service ticks at :{(now.minute // 30 + 1) * 30 % 60:02d} UTC"
+        if 5 * 60 + 54 <= mins <= 21 * 60 + 31 and (now.minute % 30) < 1:
+            return False, "the day service is ticking now"
+        return True, ""
+    if mins >= 24 * 60 - DEPLOY_MINUTES or mins < 1:
+        return False, "the night's run starts at 00:00 UTC"
+    return True, ""
+
+
+def open_runs() -> int | None:
+    """Sweep runs or retention steps still running (receipts younger than 6 hours with no end). None: unknown."""
+    try:
+        import watch_link as w
+        return int(w.query("select count(*) n from public.pipeline_runs where finished_at is null and stage in "
+                           "('sweep', 'retention') and started_at > now() - interval '6 hours'")[0]["n"])
+    except Exception:  # noqa: BLE001
+        return None
+
+
+def wait_for_a_gap(key: str, force: bool, max_wait_s: int = 1800) -> None:
+    """Refuse while a run is open; wait (at most half an hour) out of a window where a start could be cut off."""
+    if force:
+        return
+    n = open_runs()
+    if n is None:
+        raise SystemExit("refusing: could not read whether a run is open (watch_link). --force deploys anyway.")
+    if n:
+        raise SystemExit(f"refusing: {n} run(s) open. A deploy stops a running pass or night run. Wait for it to "
+                         f"end, or --force.")
+    end = time.time() + max_wait_s
+    while True:
+        ok, why = safe_to_deploy(key, dt.datetime.now(dt.timezone.utc))
+        if ok:
+            break
+        if time.time() > end:
+            raise SystemExit(f"refusing: still no gap after {max_wait_s // 60} minutes ({why})")
+        print(f"waiting: {why}; a deploy now could stop the run it starts", flush=True)
+        time.sleep(30)
+    if open_runs():   # a tick may have started one while this waited
+        raise SystemExit("refusing: a run opened while waiting for a gap")
+
+
 def deploy_one(name: str, cron: str, start: str | None, v: dict, dry_run: bool, vars_only: bool) -> int:
     with tempfile.TemporaryDirectory(prefix="ri-sweep-") as dest:
         assemble(dest, cron, start)
@@ -190,6 +245,8 @@ def main() -> int:
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--vars-only", action="store_true")
     ap.add_argument("--only", choices=["sweep", "day"], help="deploy one of the two services (default: both)")
+    ap.add_argument("--force", action="store_true",
+                    help="deploy even with a run open or a start due within minutes (it stops that run)")
     a = ap.parse_args()
     v = variables()
     sched = json.load(open(os.path.join(ROOT, "ops", "schedule.json")))
@@ -199,6 +256,8 @@ def main() -> int:
     for key, name, cron, start in services:
         if a.only and a.only != key:
             continue
+        if not (a.dry_run or a.vars_only):
+            wait_for_a_gap(key, a.force)
         rc = deploy_one(name, cron, start, v, a.dry_run, a.vars_only) or rc
     return rc
 
