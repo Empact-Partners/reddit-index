@@ -66,3 +66,15 @@ Tested on Railway on 11 Oct at 12:45 UTC, by hand: run `042b1a90` read the count
 since the newest reading at least 24 hours old (10 Oct 04:51, a 32-hour window: the readings before this day were
 few, and a longer window only reads high), skipped collection and ended capped in one second. From 12 Oct: no day over 2 GB on the watchdog's reading; the size of a normal
 day's 11:15 backup read from the readings either side of it.
+
+## Judged, 12 Oct
+
+- The watchdog's reading at 07:01 UTC: 1.68 GB for the index, no finding (2.24 the day before).
+- **A normal day's backup: 249 MB.** The half-hourly readings either side of it: 1463.7855 GB at 11:00:29 and
+  1464.0345 at 11:32:48 (the backup completed at 11:20:47), against about 2 MB a half hour when nothing runs. The 24
+  hours before it held one night's run (13,723 new mentions, 10,440 purged, 1,918 brands refreshed, 4,929 pages
+  stamped) and no daytime pass. A day with passes changes more pages and will ship more.
+- Idle, the node sends about 0.06 GB a day (2 MB a half hour, 12:17 to 21:31 on 11 Oct).
+- The day's sum, as measured: the night 0.60 GB, the backup 0.25 GB and more with passes, idle 0.06 GB. What is
+  left under 1.9 GB for daytime passes is about 0.9 GB.
+- The day service held off all morning (the 24 hours still held 11 Oct's overage) and said so at every tick.
