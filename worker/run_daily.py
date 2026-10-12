@@ -85,9 +85,10 @@ def wal_bytes(conn) -> int | None:
 
 # What the site reads from the database to re-render the pages the publisher fetches, estimated from the compressed
 # HTML the publisher received. Measured 11 Oct on the node counter: 800 waiting pages, 18.9 MB (20.5 KB a page after
-# the background rate) for 11.7 MB of HTML as fetched (14.6 KB a page): 1.4 times, taken as 1.5. The constant this
-# replaces, 0.2 MB a page, was the pilot's fifty largest pages and read about ten times high on a typical one.
-RENDER_BYTES_PER_HTML_BYTE = 1.5
+# the background rate) for 11.7 MB of HTML as fetched (14.6 KB a page): 1.4 times. The night of 12 Oct, every changed
+# page: 257 MB for 153 MB of HTML (4,929 pages), 1.68 times. Taken as 1.7. The constant this replaces, 0.2 MB a
+# page, was the pilot's fifty largest pages and read about ten times high on a typical one.
+RENDER_BYTES_PER_HTML_BYTE = 1.7
 RENDER_BYTES_FLOOR_PER_PAGE = 8_000
 
 
