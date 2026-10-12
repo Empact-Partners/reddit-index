@@ -134,34 +134,37 @@ def as_epoch(v):
         return None
 
 
-def get_watermark(cur, sub):
-    """Epoch seconds of the newest post this sub has already been read to."""
+def get_watermark(cur, sub, stage="new_listing"):
+    """Epoch seconds of the newest post this sub has already been read to (stage 'comment_stream': the newest
+    comment its comment listing was read to, decision 0029)."""
     cur.execute("SELECT watermark FROM ingest_state WHERE scope=%s AND ym='daily' "
-                "AND stage='new_listing' AND code_version=%s", (sub, CODE_VERSION))
+                "AND stage=%s AND code_version=%s", (sub, stage, CODE_VERSION))
     row = cur.fetchone()
     return as_epoch(row[0]) if row else None
 
 
-def set_watermark(cur, sub, wm, n_threads, status="ok"):
+def set_watermark(cur, sub, wm, n_threads, status="ok", stage="new_listing"):
     # The column is TEXT: write ISO-8601 explicitly rather than leaning on
     # psycopg's datetime adaptation, so what goes in is what as_epoch() reads.
     if hasattr(wm, "isoformat"):
         wm = wm.isoformat()
     cur.execute(
         "INSERT INTO ingest_state (scope, ym, stage, code_version, watermark, rows, status, finished_at) "
-        "VALUES (%s,'daily','new_listing',%s,%s,%s,%s,now()) "
+        "VALUES (%s,'daily',%s,%s,%s,%s,%s,now()) "
         "ON CONFLICT (scope, ym, stage, code_version) DO UPDATE SET "
         "watermark=EXCLUDED.watermark, rows=EXCLUDED.rows, status=EXCLUDED.status, "
         "finished_at=now()",
-        (sub, CODE_VERSION, wm, n_threads, status))
+        (sub, stage, CODE_VERSION, wm, n_threads, status))
 
 
-def fetch_new(sub, watermark_ts, seen=None):
+def fetch_new(sub, watermark_ts, seen=None, listed=None):
     """Newest posts, watermark-bounded. 100/page, at most MAX_PAGES pages.
 
     Returns (posts, ok, capped). `seen`, when given, receives "t3_<id>" -> the comment count Reddit shows now for
     EVERY post on the pages read, the ones at or under the watermark included: the sweep's collect stage uses it to
-    know whether a thread it already read has grown, without a call.
+    know whether a thread it already read has grown, without a call. `listed`, when given, receives "t3_<id>" ->
+    the post itself for the same posts: a comment found in the comment listing needs its thread's row, and a
+    thread on these pages costs no call (decision 0029).
 
     ok=False when any page failed: an error response used to collapse into an
     empty page, indistinguishable from a clean end of listing, and the caller
@@ -195,6 +198,9 @@ def fetch_new(sub, watermark_ts, seen=None):
         if seen is not None:
             for p in page:
                 seen[f"t3_{p.get('id')}"] = int(p.get("num_comments") or 0)
+        if listed is not None:
+            for p in page:
+                listed[f"t3_{p.get('id')}"] = p
         posts.extend(page)
         oldest = min((p.get("created_utc") or 0) for p in page)
         after = r.get("data", {}).get("after")

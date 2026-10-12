@@ -388,6 +388,8 @@ def main() -> int:
     ap.add_argument("--takedown-calls", type=int, default=None, help="pilot: cap the takedown stage's Reddit calls")
     ap.add_argument("--max-mentions", type=int, default=None, help="pilot: cap new mentions")
     ap.add_argument("--classify-items", type=int, default=None, help="pilot: cap mentions classified")
+    ap.add_argument("--collect-mode", choices=["trees", "stream"], default=None,
+                    help="pilot: where collection reads comments from (default: ops/schedule.json collect.mode_*)")
     args = ap.parse_args()
     args.stages = [s.strip() for s in args.stages.split(",") if s.strip()]
     sched = load_schedule()
@@ -494,9 +496,24 @@ def main() -> int:
         # that hour, and a collection that used the whole window would leave the day's mentions unlabelled. A daytime
         # pass (no publish) only labels after collecting: 30 minutes, then 5 for the end (10 Oct: ~12 min for 7,545).
         # comment trees in flight at once: a daytime pass's request may say (ops/day_passes.py), else the schedule
-        workers = (getattr(args, "options", None) or {}).get("tree_workers") or sched.get("collect", {}).get("tree_workers", 1)
-        return collect.run(conn, {"reddit_calls": max(0, left), "mentions": run.caps["mentions"],
-                                  "tree_workers": workers},
+        opts, cfg = (getattr(args, "options", None) or {}), sched.get("collect", {})
+        workers = opts.get("tree_workers") or cfg.get("tree_workers", 1)
+        night = "publish" in args.stages
+        # where comments come from (decision 0029): a pass's request or --collect-mode may say, else the schedule,
+        # separately for the night's run and for a daytime pass
+        mode = (getattr(args, "collect_mode", None) or opts.get("mode")
+                or cfg.get("mode_night" if night else "mode_day") or "trees")
+        ccaps = {"reddit_calls": max(0, left), "mentions": run.caps["mentions"], "tree_workers": workers, "mode": mode}
+        if mode == "stream":
+            # Under the comment listing a call brings several times the mentions, so the calls no longer end the
+            # stage: the room does. The night collects a set number and keeps its hours for labelling, refresh and
+            # publish; a daytime pass collects what its own egress cap can carry once labelled. Either is a planned
+            # end, and always comes before the new-mention cap (an abnormal flood, an alert).
+            room = (int(cfg.get("night_mentions", 15000)) if night else
+                    collect.mentions_room(run.caps["egress_gb"], cfg.get("bytes_per_mention", 13000)))
+            ccaps.update({"mentions_room": min(room, int(run.caps["mentions"] * 0.9)),
+                          "stream_pages": cfg.get("stream_pages"), "first_visit_pages": cfg.get("first_visit_pages")})
+        return collect.run(conn, ccaps,
                            run.deadline - (sched.get("reserve_minutes_after_collect", 95) if "publish" in args.stages
                                            else sched.get("reserve_minutes_after_collect_day", 30)) * 60,
                            run.stop_reason, log,
