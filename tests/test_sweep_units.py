@@ -523,7 +523,7 @@ check("meter: no reading old enough, or a counter that went backwards, is 'not k
 _real_read = _mt.read
 _reads = [1_001_000_000_000.0]
 _mt.read = lambda timeout=30.0: _reads[0]
-_real_clock = _rd.Run.clock
+_real_clock = _rd.Run.__dict__["clock"]   # the staticmethod itself, not the function it wraps
 _rd.Run.clock = staticmethod(lambda: _dt.datetime(2026, 10, 13, 13, 0, tzinfo=_dt.timezone.utc))   # after the backup
 try:
     class _A:
@@ -1176,6 +1176,9 @@ check("backup timing: a backup that moved past 11:45 UTC is a finding that names
 check("backup timing: none in 30 hours is a finding; none listed is a finding",
       any("30 hours" in f for f in _sc.backup_timing({}, _bnow + _dt.timedelta(days=2), _ok)[0])
       and _sc.backup_timing({}, _bnow, [])[0] == ["no daily backup is listed for the project"])
+
+check("day line: the pass's clock is restored as it was (a staticmethod, callable on an instance)",
+      isinstance(_rd.Run.__dict__["clock"], staticmethod) and _rd.Run.clock() is not None)
 
 print(f"\ntest_sweep_units: {len(FAILS)} failure(s)" + (": " + "; ".join(FAILS) if FAILS else ""))
 sys.exit(bool(FAILS))
