@@ -543,6 +543,16 @@ try:
     _late = _rd.Run(_MeterConn((1_000_000_000_000, _then)), _sched, _A())
     check("day line: a pass that starts with the line already reached stops before its first stage",
           _rd.is_egress_stop(_late.day_line_reason()) and "2.50 GB" in _late.day_line_reason(), _late.day_line_reason())
+    _real_br = _mt.backup_reserve
+    _mt.backup_reserve = lambda conn, b, now, cfg: (0.3e9, "0.30 GB held for the backup at about 11:15 UTC (test)")
+    try:
+        _reads[0] = 1_001_700_000_000.0
+        _held = _rd.Run(_MeterConn((1_000_000_000_000, _then)), _sched, _A())
+        check("day line: the backup still to come counts as sent (1.7 GB sent + 0.3 held reaches 1.9), and says so",
+              _rd.is_egress_stop(_held.day_line_reason()) and "held for the backup" in _held.day_line_reason()
+              and _held.meter["backup_held_gb"] == 0.3, _held.day_line_reason())
+    finally:
+        _mt.backup_reserve = _real_br
     _reads[0] = 1_001_300_000_000.0
     _day._meter_at = 0
     check("day line: under the line after a fresh reading, the pass goes on and the receipt carries the figure",
