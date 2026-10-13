@@ -887,7 +887,7 @@ try:
                                         {"alpha"}, 0, {"vendor": 0, "second_spelling": 0})
     _now_ts = __import__("time").time()
 
-    def _fn(sub, wm, seen=None, listed=None):
+    def _fn(sub, wm, seen=None, listed=None, err=None):
         post = {"id": f"{sub}p", "title": "HubSpot or not", "selftext": "", "author": "op", "created_utc": _now_ts - 60,
                 "permalink": f"/r/{sub}/comments/{sub}p/t/", "num_comments": 2, "score": 1}
         if listed is not None:
@@ -927,7 +927,7 @@ try:
           and all(x[2] == 3 for x in _conn.cur.set_wm), (_conn.cur.inserted, _conn.cur.set_wm))
     _asked = []
     _ok_fn = collect.d.fetch_new
-    collect.d.fetch_new = lambda sub, wm, seen=None, listed=None: ([], False, False) if sub == "alpha" else _ok_fn(sub, wm, seen, listed)
+    collect.d.fetch_new = lambda sub, wm, seen=None, listed=None, err=None: ([], False, False) if sub == "alpha" else _ok_fn(sub, wm, seen, listed)
     _sc = collect.rc.subreddit_comments
 
     def _sc2(subs, limit=100, before=None, after=None):
@@ -949,6 +949,126 @@ try:
 finally:
     (collect.plan, collect.d.fetch_new, collect.d.insert_mentions, collect.d.load_brands, collect.d.build_alias_re,
      collect.d.Resolver, collect.rc.subreddit_comments, collect.rc.get, collect.d.content_qualify) = _saved
+
+# ---- every visit is recorded (decision 0030: worker/collect.py, daily.fetch_new's err) -------------------------
+class _VCur:
+    """Records the visit ledger's writes; every other statement answers nothing."""
+    def __init__(self, wms):
+        self.wms, self.visits, self.rows = wms, [], []
+
+    def execute(self, sql, params=None):
+        self.rows = []
+        if sql.startswith("SELECT watermark"):
+            v = self.wms.get(params[0])
+            self.rows = [(v,)] if v is not None else []
+        elif sql.startswith("INSERT INTO ingest_state"):
+            self.visits.append((params[0], params[1], params[3], params[4], params[5]))
+        return self
+
+    def executemany(self, sql, rows):
+        pass
+
+    def fetchone(self):
+        return self.rows[0] if self.rows else None
+
+    def fetchall(self):
+        return self.rows
+
+
+class _VConn:
+    def __init__(self, wms):
+        self.cur = _VCur(wms)
+
+    def execute(self, sql, params=None):
+        c = _VCur({})
+        if "FROM subreddits" in sql:
+            c.rows = [(n, i + 1) for i, n in enumerate(["empty", "capped", "gone", "flaky", "gone2", "fine"])]
+        elif "count(*)" in sql:
+            c.rows = [(0,)]
+        return c
+
+    def cursor(self):
+        return self.cur
+
+    @_ctx.contextmanager
+    def transaction(self):
+        yield
+
+
+_saved = (collect.plan, collect.d.fetch_new, collect.d.insert_mentions, collect.d.load_brands, collect.d.build_alias_re,
+          collect.d.Resolver, collect.d.content_qualify, collect.GONE_STAMPS)
+try:
+    _subs = ["empty", "capped", "gone", "flaky", "gone2", "fine"]
+    collect.plan = lambda conn, today: (list(_subs), {x: ["crm"] for x in _subs}, set(), 0,
+                                        {"vendor": 0, "second_spelling": 0})
+    _n = __import__("time").time()
+
+    def _fn(sub, wm, seen=None, listed=None, err=None):
+        post = {"id": f"{sub}p", "title": "a post", "author": "op", "created_utc": _n - 600,
+                "permalink": f"/r/{sub}/comments/{sub}p/t/", "num_comments": 0}
+        if sub == "empty":
+            return [], True, False
+        if sub == "capped":
+            return [post], True, True
+        if sub in ("gone", "gone2", "flaky"):
+            if err is not None:
+                err["code"] = {"gone": 404, "gone2": 403, "flaky": 503}[sub]
+            return [], False, False
+        return [post], True, False
+    collect.d.fetch_new = _fn
+    collect.d.content_qualify = lambda p, cats, alias_re: False
+    collect.d.insert_mentions = lambda cur, rows: (0, 0)
+    collect.d.load_brands = lambda: {}
+    collect.d.build_alias_re = lambda brands: None
+    collect.d.Resolver = _Res
+    _conn = _VConn({"capped": "2026-10-01T00:00:00+00:00", "gone": "2026-09-01T00:00:00+00:00"})
+    _rec = collect.run(_conn, {"reddit_calls": 100, "mentions": 1000}, _n + 60, log=lambda *a, **k: None, run_id="r5")
+    _v = {x[0]: x for x in _conn.cur.visits}
+    _iso = lambda t: __import__("datetime").datetime.fromtimestamp(t, __import__("datetime").timezone.utc).isoformat()
+    check("visits: an empty first listing is recorded (no watermark yet, nothing found)",
+          _v.get("empty") == ("empty", "new_listing", None, 0, "ok") and _rec["empty_first_listings"] == 1, _v.get("empty"))
+    check("visits: a listing whose pages ran out before the watermark holds it and records the visit, marked capped",
+          _v.get("capped") == ("capped", "new_listing", "2026-10-01T00:00:00+00:00", 0, "capped")
+          and _rec["capped_listings"] == 1 and _rec["capped_subs"] == ["capped"], _v.get("capped"))
+    check("visits: a subreddit Reddit no longer serves (404, 403) is recorded as gone, its watermark kept",
+          _v.get("gone") == ("gone", "new_listing", "2026-09-01T00:00:00+00:00", 0, "gone")
+          and _v.get("gone2") == ("gone2", "new_listing", None, 0, "gone")
+          and _rec["subs_gone"] == 2 and _rec["subs_gone_names"] == ["gone (404)", "gone2 (403)"], (_v, _rec))
+    check("visits: a listing that failed for another reason (503) leaves no record, and is tried first again",
+          "flaky" not in _v and _rec["listings_failed"] == 3, (_v, _rec["listings_failed"]))
+    check("visits: a normal listing moves the watermark as before", _v.get("fine") == ("fine", "new_listing", _iso(_n - 600), 0, "ok"))
+    collect.GONE_STAMPS = 1
+    _conn = _VConn({})
+    _rec = collect.run(_conn, {"reddit_calls": 100, "mentions": 1000}, _n + 60, log=lambda *a, **k: None, run_id="r6")
+    check("visits: no more than GONE_STAMPS gone subreddits are recorded a run (an app-wide refusal marks nothing more)",
+          _rec["subs_gone"] == 1 and [x[0] for x in _conn.cur.visits if x[4] == "gone"] == ["gone"], _conn.cur.visits)
+    _pages = [{"_err": 404}]
+    _real_get2 = collect.rc.get
+    collect.rc.get = lambda *a, **k: _pages[0]
+    _e = {}
+    _r = _saved[1]("x", None, err=_e)
+    collect.rc.get = _real_get2
+    check("listing: a failed page says what Reddit answered", _r == ([], False, False) and _e == {"code": 404}, (_r, _e))
+    # a held watermark is reachable by a larger page budget (the remedy docs/worker.md names): pages of 2 posts, newest
+    # first, the watermark at t=10
+    _pg = [{"data": {"after": f"p{i + 1}" if i < 4 else None, "children": [
+        {"kind": "t3", "data": {"id": f"{i}a", "created_utc": 100 - 20 * i}},
+        {"kind": "t3", "data": {"id": f"{i}b", "created_utc": 90 - 20 * i}}]}} for i in range(5)]
+    collect.rc.get = lambda path, params=None, **k: _pg[0 if not (params or {}).get("after") else int(params["after"][1:])]
+    _mp = collect.d.MAX_PAGES
+    try:
+        collect.d.MAX_PAGES = 2
+        _a = _saved[1]("x", 10.0)
+        collect.d.MAX_PAGES = 8
+        _b = _saved[1]("x", 10.0)
+    finally:
+        collect.d.MAX_PAGES = _mp
+        collect.rc.get = _real_get2
+    check("listing: two pages do not reach the watermark (capped); eight do, and return every post above it",
+          _a[2] is True and len(_a[0]) == 4 and _b[2] is False and _b[1] and len(_b[0]) == 9, (_a[1:], len(_a[0]), _b[1:], len(_b[0])))
+finally:
+    (collect.plan, collect.d.fetch_new, collect.d.insert_mentions, collect.d.load_brands, collect.d.build_alias_re,
+     collect.d.Resolver, collect.d.content_qualify, collect.GONE_STAMPS) = _saved
 
 print(f"\ntest_sweep_units: {len(FAILS)} failure(s)" + (": " + "; ".join(FAILS) if FAILS else ""))
 sys.exit(bool(FAILS))
