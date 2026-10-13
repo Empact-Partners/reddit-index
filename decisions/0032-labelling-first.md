@@ -29,3 +29,10 @@ were missing:
 
 Some collection in the morning when the queue is long; the same egress then goes to labelling, so the day's total
 under the 1.9 GB line is unchanged and the site's pages, published by night, carry fewer unlabelled mentions.
+
+## Review
+
+An independent read by Codex (gpt-6-astra, read-only, no search; GLM was in its peak hours) found one fault, taken:
+the queue was counted whole, but an entry tried five times waits for a person and the classifier never picks it
+again, so enough of them would have held the room at zero on every run. Both places now count what the classifier
+still takes (`classify_sweep.LABELLABLE_SQL`, `attempts < 5`).

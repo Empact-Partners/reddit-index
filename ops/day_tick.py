@@ -86,7 +86,8 @@ def main() -> int:
                                "('sweep', 'retention') and started_at > now() - interval '6 hours'").fetchone()[0]
         b = meter.record(conn, "day tick")
         used = meter.used_24h(conn, b)[0] if b is not None else None
-        queue = conn.execute("select count(*) from public.classify_queue").fetchone()[0]
+        from classify_sweep import LABELLABLE_SQL   # entries tried five times wait for a person, not for GLM
+        queue = conn.execute(LABELLABLE_SQL).fetchone()[0]
         go, why, cap = decide(dt.datetime.now(dt.timezone.utc), running, None if used is None else used / 1e9,
                               cfg, float(sched.get("day_line_gb", 1.9)), queue)
         log(("a daytime pass starts: " if go else "no pass: ") + why)

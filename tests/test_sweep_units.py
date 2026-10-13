@@ -1082,6 +1082,12 @@ finally:
 check("label first: the waiting mentions take their share of the room, each as 4 KB of a 13 KB new one",
       collect.room_after_queue(23953, 24000, 4000, 13000) == 16568 and collect.room_after_queue(15000, 0, 4000, 13000) == 15000
       and collect.room_after_queue(15000, 60000, 4000, 13000) == 0, collect.room_after_queue(23953, 24000, 4000, 13000))
+import classify_sweep as _cs2  # noqa: E402
+check("label first: the queue is weighed as the classifier takes it (fewer than five tries), in both places",
+      "attempts < 5" in _cs2.LABELLABLE_SQL
+      and "classify_sweep.LABELLABLE_SQL" in open(os.path.join(ROOT, "worker", "run_daily.py")).read()
+      and "LABELLABLE_SQL" in open(os.path.join(ROOT, "ops", "day_tick.py")).read()
+      and all("attempts < 5" in q for q in _re.findall(r'"where attempts < \d[^"]*"', open(os.path.join(ROOT, "worker", "classify_sweep.py")).read())))
 _saved = (collect.plan, collect.d.fetch_new)
 try:
     _visited = []

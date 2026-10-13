@@ -519,7 +519,8 @@ def main() -> int:
             # one costs about label_bytes of the run's egress where collecting and labelling a new one costs
             # bytes_per_mention, so the queue counts as queue x label_bytes / bytes_per_mention new mentions
             # (13 Oct: a pass in GLM's peak hours collected 23,958 and labelled none).
-            queue = conn.execute("select count(*) from public.classify_queue").fetchone()[0]
+            import classify_sweep
+            queue = conn.execute(classify_sweep.LABELLABLE_SQL).fetchone()[0]   # what the classifier still takes
             room = collect.room_after_queue(min(room, int(run.caps["mentions"] * 0.9)), queue,
                                             cfg.get("label_bytes_per_mention", 4000), cfg.get("bytes_per_mention", 13000))
             ccaps.update({"mentions_room": room, "labelling_queue": queue,
