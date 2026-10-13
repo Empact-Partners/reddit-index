@@ -20,10 +20,15 @@ the window rolled, no pass could start (1.93 to 1.95 GB from 12:00 to 13:30).
 ## Decision
 
 Before 11:45 UTC, a daytime pass and its tick count the coming backup as already sent: 0.3 of what the node sent
-since 11:45 UTC the day before (at least 0.15 GB; 0.4 GB when that reading is missing or the counter restarted),
-`meter.backup_reserve`, `ops/schedule.json` `backup`. From 11:45 the backup is in the counter and nothing is held.
-The pass's receipt carries `meter.backup_held_gb`; the tick logs what it held and why. The night's run is not
-stopped by the line, as before (decision 0025).
+since 11:45 UTC the day before (at least 0.15 GB; 0.4 GB when that reading is missing), `meter.backup_reserve`,
+`ops/schedule.json` `backup`. From 11:45 the backup is in the counter and nothing is held. The pass's receipt carries
+`meter.backup_held_gb`; the tick logs what it held and why. The night's run is not stopped by the line, as before
+(decision 0025). Across a node restart the 24 hours are not known, so no pass starts and a running pass is left to
+its own estimate cap (decision 0025, unchanged).
+
+The hold rests on when Supabase runs the backup, so that is checked: `scripts/schedule_check.py` reads the project's
+backups and names any of the last three that ran outside the hour before 11:45 UTC, and a gap of more than 30 hours
+(10 to 13 Oct: 11:15, 11:20, 11:21).
 
 ## What is given up
 
@@ -34,3 +39,11 @@ The day's total under the line is the same; it moves to the hours after the back
 ## How it is judged
 
 The 24 hours to 11:30 UTC on the next days against 1.9 GB, and the share of each backup against 0.3.
+
+## Review
+
+An independent read by GLM-5.3 (clean clone, read-only), three findings, all taken: the decision claimed a restart
+was covered by the default hold, which the callers never reach (corrected: a restart leaves the 24 hours unknown and
+no pass starts); the hold trusted the clock alone (the backups' own record is now checked against it); and the tests
+of the pass's line depended on the time of day they ran at (the pass's clock is pinned in them, before and after
+11:45, and the tick's figure has its own test).

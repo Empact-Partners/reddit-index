@@ -523,6 +523,8 @@ check("meter: no reading old enough, or a counter that went backwards, is 'not k
 _real_read = _mt.read
 _reads = [1_001_000_000_000.0]
 _mt.read = lambda timeout=30.0: _reads[0]
+_real_clock = _rd.Run.clock
+_rd.Run.clock = staticmethod(lambda: _dt.datetime(2026, 10, 13, 13, 0, tzinfo=_dt.timezone.utc))   # after the backup
 try:
     class _A:
         manual, max_calls, takedown_calls, max_mentions, max_egress_gb, day_end, options, stages = True, None, None, None, None, None, {}, []
@@ -543,16 +545,19 @@ try:
     _late = _rd.Run(_MeterConn((1_000_000_000_000, _then)), _sched, _A())
     check("day line: a pass that starts with the line already reached stops before its first stage",
           _rd.is_egress_stop(_late.day_line_reason()) and "2.50 GB" in _late.day_line_reason(), _late.day_line_reason())
-    _real_br = _mt.backup_reserve
-    _mt.backup_reserve = lambda conn, b, now, cfg: (0.3e9, "0.30 GB held for the backup at about 11:15 UTC (test)")
-    try:
-        _reads[0] = 1_001_700_000_000.0
-        _held = _rd.Run(_MeterConn((1_000_000_000_000, _then)), _sched, _A())
-        check("day line: the backup still to come counts as sent (1.7 GB sent + 0.3 held reaches 1.9), and says so",
-              _rd.is_egress_stop(_held.day_line_reason()) and "held for the backup" in _held.day_line_reason()
-              and _held.meter["backup_held_gb"] == 0.3, _held.day_line_reason())
-    finally:
-        _mt.backup_reserve = _real_br
+    _reads[0] = 1_001_700_000_000.0
+    _after = _rd.Run(_MeterConn((1_000_000_000_000, _then)), _sched, _A())
+    check("day line: after 11:45 UTC nothing is held (1.7 GB sent goes on)",
+          _after.day_line_reason() is None and _after.meter["backup_held_gb"] == 0.0, _after.meter)
+    _rd.Run.clock = staticmethod(lambda: _dt.datetime(2026, 10, 13, 9, 0, tzinfo=_dt.timezone.utc))   # before it
+    _held = _rd.Run(_MeterConn((1_000_000_000_000, _then)), dict(_sched, backup={"after_utc": "11:45", "fraction": 0.3}), _A())
+    check("day line: before 11:45 UTC the backup still to come counts as sent (1.7 GB + 0.3 x 1.7 held), and says so",
+          _rd.is_egress_stop(_held.day_line_reason()) and "held for the backup" in _held.day_line_reason()
+          and _held.meter["backup_held_gb"] == 0.51, (_held.day_line_reason(), _held.meter))
+    _reads[0] = 1_001_200_000_000.0
+    _early = _rd.Run(_MeterConn((1_000_000_000_000, _then)), dict(_sched, backup={"after_utc": "11:45", "fraction": 0.3}), _A())
+    check("day line: before 11:45 UTC with room for both (1.2 GB + 0.36 held) the pass goes on",
+          _early.day_line_reason() is None and _early.meter["backup_held_gb"] == 0.36, _early.meter)
     _reads[0] = 1_001_300_000_000.0
     _day._meter_at = 0
     check("day line: under the line after a fresh reading, the pass goes on and the receipt carries the figure",
@@ -570,6 +575,7 @@ try:
     check("day line: the run's own estimate cap is an egress stop too; the switch is not",
           _rd.is_egress_stop("estimated database egress cap (0.7 GB) reached") and not _rd.is_egress_stop("stopped by the switch: x"))
 finally:
+    _rd.Run.clock = _real_clock
     _mt.read = _real_read
     _rd.wal_bytes = _wal
     if _old_env[0] is not None:
@@ -1143,6 +1149,33 @@ check("backup: no reading that old, or a counter that went back (a restart): the
       and _mt.backup_reserve(_MConn((1002e9,)), 1001.5e9, _dt.datetime(2026, 10, 13, 8, 0, tzinfo=_dt.timezone.utc), _bk)[0] == 0.4e9)
 check("backup: never less than min_gb before it",
       _mt.backup_reserve(_MConn((1000e9,)), 1000.1e9, _dt.datetime(2026, 10, 13, 8, 0, tzinfo=_dt.timezone.utc), _bk)[0] == 0.15e9)
+
+# the tick adds the held backup to the 24 hours (ops/day_tick.py effective_used)
+_then2 = _dt.datetime(2026, 10, 12, 8, 0, tzinfo=_dt.timezone.utc)
+_u, _w = _dtk.effective_used(_MeterConn((1_000_000_000_000, _then2)), 1_001_200_000_000,
+                             _dt.datetime(2026, 10, 13, 9, 0, tzinfo=_dt.timezone.utc), {"backup": {"fraction": 0.3}})
+check("day tick: before 11:45 UTC the room is figured on the 24 hours plus the held backup",
+      abs(_u - 1.56e9) < 1 and "held for the backup" in _w, (_u, _w))
+_u, _w = _dtk.effective_used(_MeterConn((1_000_000_000_000, _then2)), 1_001_200_000_000,
+                             _dt.datetime(2026, 10, 13, 12, 0, tzinfo=_dt.timezone.utc), {"backup": {"fraction": 0.3}})
+check("day tick: after 11:45 UTC on the 24 hours alone", _u == 1.2e9 and _w == "", (_u, _w))
+check("day tick: unknown 24 hours (no reading, or a restart) stay unknown, nothing held",
+      _dtk.effective_used(_MeterConn(None), 5.0, _dt.datetime(2026, 10, 13, 9, 0, tzinfo=_dt.timezone.utc), {}) == (None, "")
+      and _dtk.effective_used(_MeterConn(None), None, _dt.datetime(2026, 10, 13, 9, 0, tzinfo=_dt.timezone.utc), {}) == (None, ""))
+
+# the backup's real times are checked against the hold (scripts/schedule_check.py backup_timing)
+import schedule_check as _sc  # noqa: E402
+_bnow = _dt.datetime(2026, 10, 13, 14, 0, tzinfo=_dt.timezone.utc)
+_ok = [{"inserted_at": "2026-10-11T11:15:57.428Z"}, {"inserted_at": "2026-10-12T11:20:47.151Z"},
+       {"inserted_at": "2026-10-13T11:21:03.000Z"}]
+check("backup timing: backups in the hour before 11:45 UTC are no finding",
+      _sc.backup_timing({"backup": {"after_utc": "11:45"}}, _bnow, _ok)[0] == [])
+_moved = _ok[:2] + [{"inserted_at": "2026-10-13T12:30:00Z"}]
+check("backup timing: a backup that moved past 11:45 UTC is a finding that names it",
+      any("12:30" in f for f in _sc.backup_timing({"backup": {"after_utc": "11:45"}}, _bnow, _moved)[0]))
+check("backup timing: none in 30 hours is a finding; none listed is a finding",
+      any("30 hours" in f for f in _sc.backup_timing({}, _bnow + _dt.timedelta(days=2), _ok)[0])
+      and _sc.backup_timing({}, _bnow, [])[0] == ["no daily backup is listed for the project"])
 
 print(f"\ntest_sweep_units: {len(FAILS)} failure(s)" + (": " + "; ".join(FAILS) if FAILS else ""))
 sys.exit(bool(FAILS))

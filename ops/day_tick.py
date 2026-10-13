@@ -36,6 +36,17 @@ def _t(hhmm: str) -> dt.time:
     return dt.datetime.strptime(hhmm, "%H:%M").time()
 
 
+def effective_used(conn, now_bytes: float | None, now: dt.datetime, sched: dict) -> tuple[float | None, str]:
+    """Bytes the node sent in the 24 hours to now, plus the day's backup still to come (decision 0033), and what was
+    held back and why ("" when nothing). None when the 24 hours are not known (no reading, or a node restart)."""
+    import meter
+    used = meter.used_24h(conn, now_bytes)[0] if now_bytes is not None else None
+    if used is None:
+        return None, ""
+    held, why = meter.backup_reserve(conn, now_bytes, now, sched.get("backup", {}))
+    return used + held, (why if held else "")
+
+
 def glm_peak(now: dt.datetime) -> bool:
     """Z.ai's peak hours, 06:00 to 10:00 UTC: the classifier does not label then (worker/classify_sweep.py)."""
     return 6 <= now.hour < 10
@@ -85,13 +96,9 @@ def main() -> int:
         running = conn.execute("select count(*) from public.pipeline_runs where finished_at is null and stage in "
                                "('sweep', 'retention') and started_at > now() - interval '6 hours'").fetchone()[0]
         b = meter.record(conn, "day tick")
-        used = meter.used_24h(conn, b)[0] if b is not None else None
-        held, held_why = 0.0, ""
-        if used is not None:   # the day's backup still to come is held back from the room (decision 0033)
-            held, held_why = meter.backup_reserve(conn, b, dt.datetime.now(dt.timezone.utc), sched.get("backup", {}))
-            if held:
-                log(held_why)
-            used += held
+        used, held_why = effective_used(conn, b, dt.datetime.now(dt.timezone.utc), sched)
+        if held_why:
+            log(held_why)
         from classify_sweep import LABELLABLE_SQL   # entries tried five times wait for a person, not for GLM
         queue = conn.execute(LABELLABLE_SQL).fetchone()[0]
         go, why, cap = decide(dt.datetime.now(dt.timezone.utc), running, None if used is None else used / 1e9,

@@ -100,7 +100,9 @@ def backup_reserve(conn, now_bytes: float, now: "dt.datetime", cfg: dict) -> tup
     in the day before it (1.556 GB). A pass that fills the line before it leaves the backup over the line (13 Oct:
     2.20 GB in the 24 hours to 11:30). Until `cfg["after_utc"]` the expected backup is held back: `fraction` of what
     the node has sent since the same time yesterday, or `default_gb` when that is not known. After it, nothing: the
-    backup is in the counter."""
+    backup is in the counter. A node restart is not handled here: the callers first need `used_24h`, which is
+    unknown across a restart, and then no pass starts (decision 0025); `default_gb` covers a missing reading.
+    That the backup really runs before `after_utc` is checked from its own record by scripts/schedule_check.py."""
     import datetime as _dt
     hh, mm = (int(x) for x in cfg.get("after_utc", "11:45").split(":"))
     today = now.replace(hour=hh, minute=mm, second=0, microsecond=0)

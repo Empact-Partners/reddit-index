@@ -140,6 +140,39 @@ def database(sched: dict, since: str) -> tuple[list[str], dict]:
     return out, facts
 
 
+def backup_timing(sched: dict, now: dt.datetime | None = None, backups: list | None = None) -> tuple[list[str], dict]:
+    """The egress line holds the day's backup back until `backup.after_utc` (decision 0033), on the strength of when
+    Supabase ran it (11:15 to 11:21 UTC on 10-13 Oct). Read from the backups' own record; a backup outside the
+    hour before `after_utc`, or none in 30 hours, is a finding. `backups`: the API's list (tests pass their own)."""
+    now = now or dt.datetime.now(dt.timezone.utc)
+    if backups is None:
+        try:
+            import urllib.request
+            import investigation_2026_10 as inv
+            req = urllib.request.Request(f"https://api.supabase.com/v1/projects/{inv.REF}/database/backups",
+                                         headers={"Authorization": "Bearer " + inv._mgmt_token(),
+                                                  "User-Agent": "Mozilla/5.0"})
+            backups = json.loads(urllib.request.urlopen(req, timeout=60).read()).get("backups", [])
+        except Exception as e:  # noqa: BLE001 - not readable here (no token): said, not a finding
+            return [], {"backups": f"not read: {str(e)[:80]}"}
+    times = sorted(dt.datetime.fromisoformat(str(b.get("inserted_at")).replace("Z", "+00:00"))
+                   for b in backups if b.get("inserted_at"))
+    if not times:
+        return ["no daily backup is listed for the project"], {"backups": []}
+    last = times[-1]
+    hh, mm = (int(x) for x in sched.get("backup", {}).get("after_utc", "11:45").split(":"))
+    end = hh * 60 + mm
+    out = []
+    for t in times[-3:]:
+        m = t.hour * 60 + t.minute
+        if not (end - 60 <= m < end):
+            out.append(f"the daily backup of {t:%d %b} ran at {t:%H:%M} UTC, outside the hour before {hh:02d}:{mm:02d} "
+                       f"UTC that the egress line holds it back for (decision 0033): move backup.after_utc")
+    if now - last > dt.timedelta(hours=30):
+        out.append(f"the newest daily backup is from {last:%d %b %H:%M} UTC, more than 30 hours ago")
+    return out, {"backups": [t.strftime("%d %b %H:%M") for t in times[-3:]]}
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--since", default=None, help="ISO time; default: 72 hours ago, never before the parking")
@@ -151,6 +184,9 @@ def main() -> int:
     findings = railway(sched)
     more, facts = database(sched, since)
     findings += more
+    more, bfacts = backup_timing(sched)
+    findings += more
+    facts.update(bfacts)
     print(json.dumps({"since": since, "facts": facts, "findings": findings}, indent=1, default=str))
     if findings and a.dm:
         sys.path.insert(0, os.path.join(ROOT, "worker", "lib"))
