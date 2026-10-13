@@ -93,6 +93,9 @@ RENDER_BYTES_FLOOR_PER_PAGE = 8_000
 
 
 class Run:
+    # what time it is, for the egress line's backup hold (a test pins it)
+    clock = staticmethod(lambda: dt.datetime.now(dt.timezone.utc))
+
     def __init__(self, conn, sched: dict, args):
         self.conn, self.sched, self.args = conn, sched, args
         self.run_id = str(uuid.uuid4())
@@ -170,9 +173,13 @@ class Run:
             return
         line = float(self.sched.get("day_line_gb", 1.9))
         self.meter["last_24h_gb"], self.meter["since"] = round(used / 1e9, 3), since
-        if used >= line * 1e9:
+        # the day's backup, still to come before about 11:15 UTC, is held back (decision 0033)
+        held, why = meter.backup_reserve(self.conn, now_bytes, self.clock(), self.sched.get("backup", {}))
+        self.meter["backup_held_gb"] = round(held / 1e9, 3)
+        if used + held >= line * 1e9:
             self._line_reason = (f"the day's egress line: the database sent {used / 1e9:.2f} GB in the 24 hours "
-                                 f"to now (line {line} GB, node counter, since {since})")
+                                 f"to now (line {line} GB, node counter, since {since})"
+                                 + (f", and {why}" if held else ""))
 
     def egress_estimate(self) -> int:
         """Write-ahead log produced since the run started. Every byte of it is shipped to backup storage,

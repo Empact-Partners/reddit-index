@@ -86,5 +86,12 @@
    "itsm"
   ],
   "why": "decision 0018: the 90-day history of the partner categories' core subreddits, on Railway in daytime passes only (the laptop's route to Reddit ran at ~10 KB/s on 6 Oct)"
+ },
+ "backup": {
+  "after_utc": "11:45",
+  "fraction": 0.3,
+  "min_gb": 0.15,
+  "default_gb": 0.4,
+  "why": "Decision 0033: Supabase's daily backup (11:15 to 11:21 UTC on 10-13 Oct) ships the pages changed since the one before and the node counter counts it: 249 MB on 12 Oct, 390 MB on 13 Oct, 0.25 of what the node had sent since the backup before. Until after_utc, a daytime pass and its tick hold back fraction of what the node sent since after_utc yesterday (at least min_gb; default_gb when not known), so the backup lands under the line. 13 Oct: passes filled the line by 11:13 and the backup took the 24 hours to 2.20 GB."
  }
 }

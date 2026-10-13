@@ -90,3 +90,38 @@ def used_24h(conn, now_bytes: float) -> tuple[float | None, str | None]:
     if used < 0:
         return None, None
     return used, row[1].isoformat(timespec="minutes") if hasattr(row[1], "isoformat") else str(row[1])
+
+
+def backup_reserve(conn, now_bytes: float, now: "dt.datetime", cfg: dict) -> tuple[float, str]:
+    """Bytes to hold back for the day's backup, and why (decision 0033).
+
+    Supabase's daily backup (about 11:15 UTC; 10-13 Oct between 11:15 and 11:21) ships the pages changed since the
+    one before, and the node counter counts it: 249 MB on 12 Oct, 390 MB on 13 Oct, a quarter of what the node sent
+    in the day before it (1.556 GB). A pass that fills the line before it leaves the backup over the line (13 Oct:
+    2.20 GB in the 24 hours to 11:30). Until `cfg["after_utc"]` the expected backup is held back: `fraction` of what
+    the node has sent since the same time yesterday, or `default_gb` when that is not known. After it, nothing: the
+    backup is in the counter. A node restart is not handled here: the callers first need `used_24h`, which is
+    unknown across a restart, and then no pass starts (decision 0025); `default_gb` covers a missing reading.
+    That the backup really runs before `after_utc` is checked from its own record by scripts/schedule_check.py."""
+    import datetime as _dt
+    hh, mm = (int(x) for x in cfg.get("after_utc", "11:45").split(":"))
+    today = now.replace(hour=hh, minute=mm, second=0, microsecond=0)
+    if now >= today:
+        return 0.0, "the day's backup is in the counter"
+    since = today - _dt.timedelta(days=1)
+    default = float(cfg.get("default_gb", 0.4)) * 1e9
+    try:
+        row = conn.execute("select bytes from public.egress_counter where at <= %s order by at desc limit 1",
+                           (since,)).fetchone()
+    except Exception:  # noqa: BLE001
+        try:
+            conn.rollback()
+        except Exception:  # noqa: BLE001
+            pass
+        row = None
+    if not row or now_bytes < float(row[0]):
+        return default, f"{default / 1e9:.2f} GB held for the backup at about 11:15 UTC (what it follows is not known)"
+    sent = now_bytes - float(row[0])
+    held = max(float(cfg.get("min_gb", 0.15)) * 1e9, float(cfg.get("fraction", 0.3)) * sent)
+    return held, (f"{held / 1e9:.2f} GB held for the backup at about 11:15 UTC ({cfg.get('fraction', 0.3)} of the "
+                  f"{sent / 1e9:.2f} GB sent since {hh:02d}:{mm:02d} UTC yesterday)")
