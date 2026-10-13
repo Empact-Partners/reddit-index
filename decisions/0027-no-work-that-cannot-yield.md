@@ -91,3 +91,21 @@ the collector, still sets the pace. The night service runs this code from the ni
 Labelling did not keep up inside the pass: 18,177 of 28,948 were settled in its 25 minutes, 10,771 wait (no try is
 counted when time runs out). Daytime collection now ends 45 minutes before a pass's end instead of 30
 (`reserve_minutes_after_collect_day`).
+
+## Judged on the night, 13 Oct
+
+The night's run on it (run `4be6dba3`, collection 00:55 to 03:45 UTC), against the night of 12 Oct on the code before
+it (run `e375f287`):
+
+| | 12 Oct | 13 Oct |
+|---|---|---|
+| subreddits, Reddit calls | 332, 5,784 | 287, 4,207 |
+| new mentions, a call | 13,723, 2.37 | 10,341, **2.46** |
+| threads stored a new mention | 0.58 | 0.86 |
+| sent by the node a new mention | 11.2 KB | 9.8 KB |
+| seconds matching, of the stage | | **3,998 of 10,164** |
+
+By night the gain is small: the subreddits at the head of the order were quieter ones, and 39% of the stage went to
+matching brand names in posts, not to Reddit. That matching is decision 0031 (the qualification regex, 46 ms a post),
+on both services from 13 Oct 05:34 UTC. The 0.86 threads a mention is the order's doing (287 subreddits whose new
+posts were mostly young and so kept to be read later); it is watched on the next nights.
