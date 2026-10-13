@@ -590,6 +590,14 @@ check("day tick: the cap never passes 0.7 GB (the request table refuses more) an
 check("day tick: the first and the last minute of the window are inside it",
       _dtk.decide(_at(6, 15), 0, 0.5, _daycfg, 1.9)[0] and _dtk.decide(_at(21, 30), 0, 0.5, _daycfg, 1.9)[0])
 
+_pq = dict(_daycfg, peak_queue_max=20000)
+check("day tick: in GLM's peak hours (06:00 to 10:00 UTC) no pass starts while 20,000 or more mentions wait for a label",
+      not _dtk.decide(_at(8, 30), 0, 1.10, _pq, 1.9, 23958)[0] and not _dtk.decide(_at(9, 59), 0, 1.10, _pq, 1.9, 20000)[0]
+      and "wait for a label" in _dtk.decide(_at(8, 30), 0, 1.10, _pq, 1.9, 23958)[1])
+check("day tick: in the peak hours with a short queue, and outside them with any queue, a pass starts",
+      _dtk.decide(_at(8, 30), 0, 1.10, _pq, 1.9, 19999)[0] and _dtk.decide(_at(10, 0), 0, 1.10, _pq, 1.9, 90000)[0]
+      and _dtk.decide(_at(6, 30), 0, 1.10, _pq, 1.9, 0)[0])
+
 # ---- the archive copies name their columns (ops/retention.py) -----------------------------------------------------
 import re as _re  # noqa: E402
 _ret_src = open(os.path.join(ROOT, "ops", "retention.py")).read()
@@ -1069,6 +1077,31 @@ try:
 finally:
     (collect.plan, collect.d.fetch_new, collect.d.insert_mentions, collect.d.load_brands, collect.d.build_alias_re,
      collect.d.Resolver, collect.d.content_qualify, collect.GONE_STAMPS) = _saved
+
+# ---- labelling first (decision 0032: collect.room_after_queue, a run with no room) ----------------------------------
+check("label first: the waiting mentions take their share of the room, each as 4 KB of a 13 KB new one",
+      collect.room_after_queue(23953, 24000, 4000, 13000) == 16568 and collect.room_after_queue(15000, 0, 4000, 13000) == 15000
+      and collect.room_after_queue(15000, 60000, 4000, 13000) == 0, collect.room_after_queue(23953, 24000, 4000, 13000))
+import classify_sweep as _cs2  # noqa: E402
+check("label first: the queue is weighed as the classifier takes it (fewer than five tries), in both places",
+      "attempts < 5" in _cs2.LABELLABLE_SQL
+      and "classify_sweep.LABELLABLE_SQL" in open(os.path.join(ROOT, "worker", "run_daily.py")).read()
+      and "LABELLABLE_SQL" in open(os.path.join(ROOT, "ops", "day_tick.py")).read()
+      and all("attempts < 5" in q for q in _re.findall(r'"where attempts < \d[^"]*"', open(os.path.join(ROOT, "worker", "classify_sweep.py")).read())))
+_saved = (collect.plan, collect.d.fetch_new)
+try:
+    _visited = []
+    collect.plan = lambda conn, today: (["alpha"], {"alpha": ["crm"]}, set(), 0, {"vendor": 0, "second_spelling": 0})
+    collect.d.fetch_new = lambda *a, **k: _visited.append(1) or ([], True, False)
+    _rec = collect.run(_RConn(), {"reddit_calls": 100, "mentions": 1000, "mode": "stream", "mentions_room": 0,
+                                  "labelling_queue": 61000}, __import__("time").time() + 60, log=lambda *a, **k: None,
+                       run_id="r7")
+    check("label first: a run with no room visits nothing and says why, as a planned end",
+          _visited == [] and _rec["subs_visited"] == 0 and _rec["stopped"] is None
+          and _rec["allowance_used"] == "no room for new mentions this run: 61,000 wait to be labelled first"
+          and _rec["labelling_queue"] == 61000, _rec)
+finally:
+    collect.plan, collect.d.fetch_new = _saved
 
 print(f"\ntest_sweep_units: {len(FAILS)} failure(s)" + (": " + "; ".join(FAILS) if FAILS else ""))
 sys.exit(bool(FAILS))

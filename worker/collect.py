@@ -336,6 +336,12 @@ def stream_visit(cur, sub: str, sid: int, qual: list, named: set, listed: dict, 
     return sv
 
 
+def room_after_queue(room: int, queue: int, label_bytes: float, bytes_per_mention: float) -> int:
+    """New mentions a run may collect once the mentions already waiting for a label have taken their share: each
+    waiting one counts as label_bytes / bytes_per_mention of a new one (decision 0032)."""
+    return max(0, int(room - queue * float(label_bytes) / max(1.0, float(bytes_per_mention))))
+
+
 def mentions_room(egress_gb: float, bytes_per_mention: float, share: float = 0.9) -> int:
     """How many new mentions a run collects before it leaves the rest of its egress room to labelling them: the
     run's own cap on estimated egress, less a margin, over what one collected and labelled mention writes."""
@@ -447,6 +453,7 @@ def run(conn, caps: dict, deadline: float, should_stop=lambda: None, log=print, 
     stream_pages = max(1, min(int(caps.get("stream_pages") or STREAM_PAGES), STREAM_PAGES))
     first_pages = max(1, min(int(caps.get("first_visit_pages") or FIRST_VISIT_PAGES), STREAM_PAGES))
     room = caps.get("mentions_room")
+    queue = caps.get("labelling_queue")
     pool = (concurrent.futures.ThreadPoolExecutor(max_workers=workers, thread_name_prefix="tree")
             if workers > 1 and not stream else None)
     rec = {"subs_planned": len(subs) + quiet, "subs_skipped_quiet": quiet, "subs_skipped_vendor": never["vendor"],
@@ -464,7 +471,8 @@ def run(conn, caps: dict, deadline: float, should_stop=lambda: None, log=print, 
         # threads_new, read back from the table, can be lower than their sum.
         rec.update({"stream_calls": 0, "comments_listed": 0, "stream_first_visits": 0, "stream_gaps": 0,
                     "stream_gap_subs": [], "stream_failed": 0, "threads_from_posts": 0, "threads_from_listing": 0,
-                    "threads_from_info": 0, "mentions_without_thread": 0, "mentions_room": room})
+                    "threads_from_info": 0, "mentions_without_thread": 0, "mentions_room": room,
+                    "labelling_queue": queue})
 
     brands = d.load_brands()
     alias_re = d.build_alias_re([b for bs in brands.values() for b in bs])
@@ -479,6 +487,8 @@ def run(conn, caps: dict, deadline: float, should_stop=lambda: None, log=print, 
         if rec["mentions_new"] >= caps["mentions"]:
             raise Stop(f"new-mention cap ({caps['mentions']}) reached {where}")
         if room is not None and rec["mentions_new"] >= room:
+            if room == 0:
+                raise Allowance(f"no room for new mentions this run: {queue or 0:,} wait to be labelled first")
             raise Allowance(f"the {room:,} new mentions this run has room for were collected {where}")
         if time.time() > deadline:
             raise Allowance(f"the time set aside for collection ended {where}")

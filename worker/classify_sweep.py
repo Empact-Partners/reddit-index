@@ -387,6 +387,11 @@ def glm_judge(items: list[dict], in_flight: int = 6, model: str = "glm-5.3-flash
     return out, spend
 
 
+# The queue entries the classifier still takes (worker/classify_sweep.py run): after five failed tries an entry waits
+# for a person and is never picked again. Everything that weighs the queue counts only these (decision 0032, review).
+LABELLABLE_SQL = "select count(*) from public.classify_queue where attempts < 5"
+
+
 def glm_peak_now() -> bool:
     """Z.ai bills double 03:00-07:00 Chile time (06:00-10:00 UTC while Chile is on UTC-3)."""
     h = time.gmtime().tm_hour
