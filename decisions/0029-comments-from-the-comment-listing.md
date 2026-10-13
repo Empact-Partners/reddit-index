@@ -1,8 +1,7 @@
 # 0029 — Comments are read from each subreddit's comment listing
 
-Date: 2026-10-12. Status: accepted; daytime passes use it (`collect.mode_day: "stream"`) from the day service's
-next deploy; the night's run stays on comment trees until a daytime pass has been judged (the commission: full speed
-under the egress line and the shared Reddit app).
+Date: 2026-10-12. Status: accepted; daytime passes on it since 12 Oct 23:38 UTC, the night's run from the night of
+14 Oct (judged below).
 
 ## Context
 
@@ -106,3 +105,33 @@ Recorded below as each happens: a pilot by hand between two runs (about 150 call
 on `mode_day: "stream"`, judged on mention rows a call against 3.05, subreddits visited a pass against 755, bytes
 sent a new mention against 11 KB, the share of new mentions the classifier rejects as not the product against the
 trees' share, and gaps.
+
+## Pilot
+
+12 Oct 23:10 UTC, by hand on Railway's code from the laptop, kept (run `5e93d998`, 300 calls): 810 mentions (527 from
+comments, 283 from posts), every one with its thread and queued for labelling, no listing failed, no gap. It also
+showed 205 of its 300 calls going to subreddits that never got a visit row: decision 0030.
+
+## Judged, 13 Oct
+
+The first three daytime passes on it, against the two daytime passes of 12 Oct on comment trees
+(`scripts/run_yield.py`; the classifier's share read once their mentions were labelled):
+
+| | trees, 12 Oct (`3cdf67d3`, `996856ee`) | comment listing, 13 Oct (`d5ec012d`, `d159a62c`, `1304e863`) |
+|---|---|---|
+| mentions a Reddit call | 3.05, 3.14 | **7.19**, 5.03, 6.22 |
+| sent by the node a new mention | 9.5 KB, 7.6 KB | **6.2 KB**, 8.4 KB, 6.3 KB |
+| subreddits a minute | 2.5, 1.9 | 5.7, 7.2, 6.5 |
+| rejected by the classifier as not the product | 6.9%, 7.5% (7.2% together) | 5.8%, 9.4%, 7.7% (8.2% together) |
+| the brand "reddit", share of mentions | 10%, 12% | 19%, 24%, 19% |
+| gaps (the listing ended before the last comment read), comments without a thread | | 0, 0 |
+| seconds matching | 2,196 of 14,256 (12 Oct evening) | 26 of 6,552 (decision 0031) |
+
+`d5ec012d` collected 23,958 mentions in 109 minutes, about twice what a comment-tree pass found in five hours, and
+ended when its room was used, as designed. Two things it showed, each now its own decision: it labelled nothing in
+GLM's peak hours (decision 0032), and with the backup that followed the 24 hours read 2.20 GB at 11:30 UTC (decision
+0033). The classifier rejects one point more of what the listing brings; the brand "reddit" is about twice the
+share, the open question for Vlad in the README.
+
+The night's run moves to it from the night of 14 Oct (`collect.mode_night: stream`): its room is `night_mentions`
+(15,000) less the queue's share (decision 0032).
