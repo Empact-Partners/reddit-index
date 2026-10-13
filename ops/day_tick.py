@@ -36,13 +36,23 @@ def _t(hhmm: str) -> dt.time:
     return dt.datetime.strptime(hhmm, "%H:%M").time()
 
 
-def decide(now: dt.datetime, running: int, used_24h_gb: float | None, cfg: dict, line_gb: float) -> tuple[bool, str, float | None]:
-    """(start a pass?, why in plain words, the pass's cap on its own egress estimate in GB)."""
+def glm_peak(now: dt.datetime) -> bool:
+    """Z.ai's peak hours, 06:00 to 10:00 UTC: the classifier does not label then (worker/classify_sweep.py)."""
+    return 6 <= now.hour < 10
+
+
+def decide(now: dt.datetime, running: int, used_24h_gb: float | None, cfg: dict, line_gb: float,
+           queue: int | None = None) -> tuple[bool, str, float | None]:
+    """(start a pass?, why in plain words, the pass's cap on its own egress estimate in GB). queue: mentions waiting
+    for a label; in GLM's peak hours, when it is at least cfg peak_queue_max, no pass starts (decision 0032)."""
     first, last = _t(cfg["window_utc"][0]), _t(cfg["window_utc"][1])
     if not (first <= now.time() <= last):
         return False, f"outside the daytime window {cfg['window_utc'][0]} to {cfg['window_utc'][1]} UTC", None
     if running:
         return False, "a run or a retention step is in progress", None
+    if queue is not None and glm_peak(now) and queue >= int(cfg.get("peak_queue_max", 20000)):
+        return False, (f"{queue:,} mentions wait for a label, and none is labelled in GLM's peak hours (06:00 to "
+                       f"10:00 UTC): a pass now would only add to them"), None
     if used_24h_gb is None:
         return False, ("the node counter could not be read, or no reading is 24 hours old: no pass is started "
                        "without knowing the room"), None
@@ -76,8 +86,9 @@ def main() -> int:
                                "('sweep', 'retention') and started_at > now() - interval '6 hours'").fetchone()[0]
         b = meter.record(conn, "day tick")
         used = meter.used_24h(conn, b)[0] if b is not None else None
+        queue = conn.execute("select count(*) from public.classify_queue").fetchone()[0]
         go, why, cap = decide(dt.datetime.now(dt.timezone.utc), running, None if used is None else used / 1e9,
-                              cfg, float(sched.get("day_line_gb", 1.9)))
+                              cfg, float(sched.get("day_line_gb", 1.9)), queue)
         log(("a daytime pass starts: " if go else "no pass: ") + why)
         if not go or a.dry_run:
             return 0

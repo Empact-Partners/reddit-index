@@ -515,7 +515,14 @@ def main() -> int:
             # end, and always comes before the new-mention cap (an abnormal flood, an alert).
             room = (int(cfg.get("night_mentions", 15000)) if night else
                     collect.mentions_room(run.caps["egress_gb"], cfg.get("bytes_per_mention", 13000)))
-            ccaps.update({"mentions_room": min(room, int(run.caps["mentions"] * 0.9)),
+            # Mentions already waiting for a label take their share of the room first (decision 0032): labelling
+            # one costs about label_bytes of the run's egress where collecting and labelling a new one costs
+            # bytes_per_mention, so the queue counts as queue x label_bytes / bytes_per_mention new mentions
+            # (13 Oct: a pass in GLM's peak hours collected 23,958 and labelled none).
+            queue = conn.execute("select count(*) from public.classify_queue").fetchone()[0]
+            room = collect.room_after_queue(min(room, int(run.caps["mentions"] * 0.9)), queue,
+                                            cfg.get("label_bytes_per_mention", 4000), cfg.get("bytes_per_mention", 13000))
+            ccaps.update({"mentions_room": room, "labelling_queue": queue,
                           "stream_pages": cfg.get("stream_pages"), "first_visit_pages": cfg.get("first_visit_pages")})
         return collect.run(conn, ccaps,
                            run.deadline - (sched.get("reserve_minutes_after_collect", 95) if "publish" in args.stages

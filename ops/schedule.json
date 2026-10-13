@@ -32,7 +32,9 @@
   "max_calls": 15000,
   "min_room_gb": 0.15,
   "estimate_factor": 1.25,
-  "why": "The daytime passes, requested on Railway by ops/day_tick.py every 30 minutes (decision 0026): a pass starts when nothing else runs and the database sent at least min_room_gb less than day_line_gb in the 24 hours to now, capped at (room - 0.05) / estimate_factor on its own estimate. A pass ends by end_by_utc, 45 minutes before the night's run. Until 11 Oct a laptop requested them, and it slept."
+  "why": "The daytime passes, requested on Railway by ops/day_tick.py every 30 minutes (decision 0026): a pass starts when nothing else runs and the database sent at least min_room_gb less than day_line_gb in the 24 hours to now, capped at (room - 0.05) / estimate_factor on its own estimate. A pass ends by end_by_utc, 45 minutes before the night's run. Until 11 Oct a laptop requested them, and it slept.",
+  "peak_queue_max": 20000,
+  "peak_why": "Decision 0032: in Z.ai's peak hours (06:00 to 10:00 UTC) the classifier labels nothing, so no pass starts while this many mentions or more already wait for a label (13 Oct: the 06:30 pass collected 23,958 and labelled none)."
  },
  "takedown_brake_share": 0.15,
  "verify_pages": 7000,
@@ -57,7 +59,9 @@
   "first_visit_pages": 3,
   "night_mentions": 15000,
   "bytes_per_mention": 13000,
-  "mode_why": "Where comments come from (decision 0029). trees: the comment trees of stored threads, one thread a call. stream: each subreddit's comment listing, 100 comments a call whatever their thread, back to the newest comment already read (stream_pages calls at most: the listing ends near 1,000 comments; a first visit reads first_visit_pages). Under stream the stage ends when the run's room for new mentions is used: night_mentions by night, and by day the pass's egress cap x 0.9 / bytes_per_mention (12 Oct: 13 KB of log and classifier reads for a mention collected and labelled), never more than 0.9 of caps.mentions."
+  "mode_why": "Where comments come from (decision 0029). trees: the comment trees of stored threads, one thread a call. stream: each subreddit's comment listing, 100 comments a call whatever their thread, back to the newest comment already read (stream_pages calls at most: the listing ends near 1,000 comments; a first visit reads first_visit_pages). Under stream the stage ends when the run's room for new mentions is used: night_mentions by night, and by day the pass's egress cap x 0.9 / bytes_per_mention (12 Oct: 13 KB of log and classifier reads for a mention collected and labelled), never more than 0.9 of caps.mentions.",
+  "label_bytes_per_mention": 4000,
+  "label_why": "Decision 0032: the mentions already waiting for a label take their share of a run's room for new ones first, each as label_bytes_per_mention / bytes_per_mention of a new mention (12 Oct: labelling wrote and read about 3.8 KB a mention on the run's own estimate; collecting and labelling one, 13 KB)."
  },
  "egress_note": "The run stops at 0.7 GB estimated (write-ahead log + text the classifier reads) before the publisher. The publisher's renders are estimated from the HTML it fetched (1.5 bytes read from the database per byte of compressed HTML, measured 11 Oct: 800 pages moved the node counter by 18.9 MB). Every changed page a night is about 5,700 pages, about 0.2 GB. Measured nights on the node counter: 0.61 GB on 10 Oct, 0.49 GB on 11 Oct, each with 1,000 pages published.",
  "max_expire_note": "Every changed page goes out every night (decision 0024). The cap of 1,000 rested on 0.2 MB of database egress a page, measured on the pilot's fifty largest; a typical page is about 20 KB. With 1,000 a night and about 5,700 changed, the median page was 3.1 days behind on 11 Oct. 7,000 is above the 6,098 pages that exist: a bound, not a quota. If a night ever has fewer slots than pages, takedown pages go first, then pages whose own data changed, with a fifth of the slots kept for the longest-waiting (worker/site_publish.py pick). The publisher fetches every page it expires, so the site re-renders them inside the measured run.",
