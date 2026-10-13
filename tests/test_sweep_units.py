@@ -43,20 +43,29 @@ import harvest as _hv0  # noqa: E402
 
 _brands0 = [{"brand": n, "ambiguity_class": a, "domains": d} for n, a, d in [
     ("HubSpot", "low", "hubspot.com"), ("Notion", "low", "notion.so"), ("Portant", "low", ""), ("Monday", "high", "monday.com"),
-    ("WithSecure Elements Endpoint Detection and Response", "low", ""), ("x.ai", "low", ""), ("Zus", "low", "")]]
+    ("WithSecure Elements Endpoint Detection and Response", "low", ""), ("x.ai", "low", ""), ("iubenda", "low", ""),
+    ("Zus", "low", "")]]
 _forms0 = [b["brand"] for b in _brands0 if b["ambiguity_class"] == "low"] + [d for b in _brands0 for d in b["domains"].split(";") if d]
 _old0 = _re.compile(r"(?<![a-z0-9])" + "|".join(_re.escape(f) for f in sorted(set(_forms0), key=len, reverse=True))
                     + r"(?![a-z0-9])", _re.I)
 _new0 = _hv0.build_alias_re(_brands0)
 _texts0 = ["We moved to HubSpot last year", "hubspotting", "an important decision", "notional value", "I use NOTION daily",
            "visit hubspot.com/crm", "monday.com pricing", "Monday morning", "x.ai launched", "", "nothing here",
-           "WithSecure Elements Endpoint Detection and Responses", "the subreddit", "portant"]
+           "WithSecure Elements Endpoint Detection and Responses", "the subreddit", "portant", "İUBENDA politika",
+           "the İubenda banner", "hubſpot", "HUBSPOT", "ıubenda"]
 check("qualification: the automaton is not the regex object any more", isinstance(_new0, _hv0.AliasMatcher))
 check("qualification: the automaton answers every text as the regex did (forms found anywhere, case ignored)",
       [bool(_old0.search(t)) for t in _texts0] == [bool(_new0.search(t)) for t in _texts0],
       [(t, bool(_old0.search(t)), bool(_new0.search(t))) for t in _texts0])
-check("qualification: the regex's last form (one of thousands, by the set's order) is now found inside a word too, "
-      "like every other form", not _old0.search("zusammen") and _new0.search("zusammen"))
+check("qualification: the regex's last form and its first (by the set's order) are now found inside a word too, "
+      "like every other form", not _old0.search("zusammen") and _new0.search("zusammen")
+      and not _old0.search("xWithSecure Elements Endpoint Detection and Response")
+      and _new0.search("xWithSecure Elements Endpoint Detection and Response"))
+check("qualification: letters are compared as re.IGNORECASE compares them (Turkish dotted I, long s, final sigma)",
+      _hv0.re_i_fold("İubenda") == "iubenda" and _hv0.re_i_fold("HUBſPOT") == "hubspot"
+      and _hv0.re_i_fold("ΣΟΦΟΣ") == _hv0.re_i_fold("σοφοσ") and len(_hv0.re_i_fold("İİ")) == 2)
+check("qualification: forms that are empty or blank give a matcher that matches nothing",
+      _hv0.AliasMatcher(["", "  "]).search("anything") is None)
 check("qualification: a high-ambiguity name is not a form, its domain is",
       not _new0.search("Monday morning") and _new0.search("see monday.com"))
 check("qualification: no forms, no matcher", _hv0.build_alias_re([{"brand": "Monday", "ambiguity_class": "high", "domains": ""}]) is None)

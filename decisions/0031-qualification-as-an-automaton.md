@@ -27,17 +27,29 @@ qualified posts since August, and every yield the collector was judged on was me
 
 ## Decision
 
-`worker/harvest.py` `build_alias_re` returns an `AliasMatcher`: an Aho-Corasick automaton over the same forms, case
-ignored, a form found anywhere in the text. Its `search` returns True or None, so `content_qualify` and every other
-caller are unchanged. Without the automaton package (it is in the sweep image) the regex is built as before.
+`worker/harvest.py` `build_alias_re` returns an `AliasMatcher`: an Aho-Corasick automaton over the same forms, a form
+found anywhere in the text, letters compared as re.IGNORECASE compares them (`re_i_fold`: the Turkish capital I with
+dot becomes i before lowercasing, and Python's own table of extra equivalents, dotless i, long s, final sigma and a few
+Greek and Cyrillic variants, maps each group to one letter). Its `search` returns True or None, so `content_qualify`
+and every other caller are unchanged. Without the automaton package (it is in the sweep image) the regex is built as
+before. Forms that are all empty give a matcher that matches nothing.
 
-The one difference: the regex's last form (one of the shortest, chosen by the order of a Python set, so not the same
-form from one run to the next) needed no letter or digit after it; it is now found inside a word like every other
-form. On the 3,800 texts measured, no answer changed.
+The one difference: the regex's first form (a longest one) needed no letter or digit before it and its last (a
+shortest one) none after it, and which forms those were the order of a Python set decided, run by run. Both are now
+found inside a word like every other form. On the texts measured, no answer changed.
 
 Not changed: which posts qualify, the category nouns, the resolver that decides what a mention is. Whether
 qualification should become whole-word (it would qualify about a third as many texts) is a separate decision with its
 own measurement, and matters little once comments come from the comment listing (decision 0029).
+
+## Review
+
+An independent read by GLM-5.3 (clean clone, read-only) found the first version's claim of the same answers false in
+two places, both taken: str.lower() is not re.IGNORECASE ("İubenda" matched the regex and not the automaton; 481
+forms start with i), and the regex's first form lost its boundary as well as its last. Also taken: an automaton built
+from forms that are all blank cannot be searched. After the fix, every character of the Basic Multilingual Plane
+compared with every ASCII letter and digit gives re.IGNORECASE's answer (0 disagreements in 2.4 million), and the
+2,000 posts and 1,200 comment texts still give the same answers.
 
 ## How it is judged
 

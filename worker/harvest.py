@@ -150,32 +150,74 @@ def qualify(t3, cat_slug, alias_re):
     return True, round(score, 3)
 
 
+def _re_i_fold_tables():
+    """Two translation tables that make `str.lower()` agree with what re.IGNORECASE treats as the same letter.
+
+    re compares letters by their simple lowercase plus a short list of extra equivalents (re._casefix: dotless i and
+    i, long s and s, final and medial sigma, and a few Greek and Cyrillic variants). str.lower() differs in one place:
+    it turns the Turkish capital I with dot into two characters. So: that letter becomes i first, then lowercase,
+    then every extra equivalent becomes one representative (review of 0031, 13 Oct: "İubenda" matched the regex and
+    not the automaton)."""
+    before = {0x130: "i"}
+    try:
+        from re import _casefix
+        extra = _casefix._EXTRA_CASES
+    except Exception:  # noqa: BLE001 - an interpreter without the table folds only the Turkish I
+        extra = {}
+    parent: dict = {}
+
+    def find(x):
+        while parent.setdefault(x, x) != x:
+            parent[x] = parent[parent[x]]
+            x = parent[x]
+        return x
+    for k, vs in extra.items():
+        for v in vs:
+            ra, rb = find(k), find(v)
+            if ra != rb:
+                parent[max(ra, rb)] = min(ra, rb)
+    after = {cp: chr(find(cp)) for cp in list(parent) if find(cp) != cp}
+    return before, after
+
+
+_FOLD_BEFORE, _FOLD_AFTER = _re_i_fold_tables()
+
+
+def re_i_fold(text: str) -> str:
+    """The text as re.IGNORECASE compares it, one character for one."""
+    return text.translate(_FOLD_BEFORE).lower().translate(_FOLD_AFTER)
+
+
 class AliasMatcher:
-    """Does the text contain a brand form? The qualification regex, as an automaton: the same answer, 4,000 times
+    """Does the text contain a brand form? The qualification regex, as an automaton: what it matched, 4,000 times
     faster.
 
     The regex was `(?<![a-z0-9])form|form|...|form(?![a-z0-9])` with re.I over every low-ambiguity brand name and
     every domain: a 218 KB alternation that cost 16 to 24 ms a document (12 Oct, 1,800 texts), run on every post
     listed, so a 100-post page spent about 2 s matching and the 0029 pilot 628 of its 1,602 seconds. Its two
-    boundary checks sit outside the alternation, so they bound only the first form and the last: every other form
-    matched anywhere inside a word ("portant" in "important", "soci" in "social", "reddit" in "subreddit"). That is
-    what has qualified posts since August and what the collector's yields were measured on, so this keeps it: any
-    form, anywhere, case ignored (on the 1,800 texts: 383 matches both ways, no text answered differently). Whether
-    qualification should become whole-word is a separate change with its own measurement. `search` returns True or
-    None, so the callers that test `alias_re.search(text)` are unchanged.
+    boundary checks sit outside the alternation, so they bound only its first form (a longest one) and its last (a
+    shortest one; which ones, the order of a Python set decided): every other form matched anywhere inside a word
+    ("portant" in "important", "soci" in "social", "reddit" in "subreddit"). That is what has qualified posts since
+    August and what the collector's yields were measured on, so this keeps it for every form, those two included:
+    any form, anywhere, compared as re.I compares letters (`re_i_fold`). On 2,000 real posts and 1,800 comment texts
+    no answer changed. Whether qualification should become whole-word is a separate change with its own measurement.
+    `search` returns True or None, so the callers that test `alias_re.search(text)` are unchanged.
     """
 
     def __init__(self, forms):
         import ahocorasick
-        self._a = ahocorasick.Automaton()
-        for f in {x.lower() for x in forms if x}:
-            self._a.add_word(f, len(f))
-        self._a.make_automaton()
+        keys = {re_i_fold(x) for x in forms if x and x.strip()}
+        self._a = None
+        if keys:   # an automaton with no word cannot be searched; no form matches nothing
+            self._a = ahocorasick.Automaton()
+            for f in keys:
+                self._a.add_word(f, len(f))
+            self._a.make_automaton()
 
     def search(self, text):
-        if not text:
+        if not text or self._a is None:
             return None
-        for _ in self._a.iter(text.lower()):
+        for _ in self._a.iter(re_i_fold(text)):
             return True
         return None
 
