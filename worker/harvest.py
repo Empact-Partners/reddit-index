@@ -150,6 +150,36 @@ def qualify(t3, cat_slug, alias_re):
     return True, round(score, 3)
 
 
+class AliasMatcher:
+    """Does the text contain a brand form? The qualification regex, as an automaton: the same answer, 4,000 times
+    faster.
+
+    The regex was `(?<![a-z0-9])form|form|...|form(?![a-z0-9])` with re.I over every low-ambiguity brand name and
+    every domain: a 218 KB alternation that cost 16 to 24 ms a document (12 Oct, 1,800 texts), run on every post
+    listed, so a 100-post page spent about 2 s matching and the 0029 pilot 628 of its 1,602 seconds. Its two
+    boundary checks sit outside the alternation, so they bound only the first form and the last: every other form
+    matched anywhere inside a word ("portant" in "important", "soci" in "social", "reddit" in "subreddit"). That is
+    what has qualified posts since August and what the collector's yields were measured on, so this keeps it: any
+    form, anywhere, case ignored (on the 1,800 texts: 383 matches both ways, no text answered differently). Whether
+    qualification should become whole-word is a separate change with its own measurement. `search` returns True or
+    None, so the callers that test `alias_re.search(text)` are unchanged.
+    """
+
+    def __init__(self, forms):
+        import ahocorasick
+        self._a = ahocorasick.Automaton()
+        for f in {x.lower() for x in forms if x}:
+            self._a.add_word(f, len(f))
+        self._a.make_automaton()
+
+    def search(self, text):
+        if not text:
+            return None
+        for _ in self._a.iter(text.lower()):
+            return True
+        return None
+
+
 def build_alias_re(brands):
     forms = []
     for b in brands:
@@ -160,8 +190,11 @@ def build_alias_re(brands):
                 forms.append(d)
     if not forms:
         return None
-    pat = "|".join(re.escape(f) for f in sorted(set(forms), key=len, reverse=True))
-    return re.compile(rf"(?<![a-z0-9]){pat}(?![a-z0-9])", re.I)
+    try:
+        return AliasMatcher(forms)
+    except ImportError:   # pyahocorasick is in the image (deploy/sweep/Dockerfile); without it, the regex
+        pat = "|".join(re.escape(f) for f in sorted(set(forms), key=len, reverse=True))
+        return re.compile(rf"(?<![a-z0-9]){pat}(?![a-z0-9])", re.I)
 
 
 def flatten_tree(listing, out):
