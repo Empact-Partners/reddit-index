@@ -86,6 +86,12 @@ def main() -> int:
                                "('sweep', 'retention') and started_at > now() - interval '6 hours'").fetchone()[0]
         b = meter.record(conn, "day tick")
         used = meter.used_24h(conn, b)[0] if b is not None else None
+        held, held_why = 0.0, ""
+        if used is not None:   # the day's backup still to come is held back from the room (decision 0033)
+            held, held_why = meter.backup_reserve(conn, b, dt.datetime.now(dt.timezone.utc), sched.get("backup", {}))
+            if held:
+                log(held_why)
+            used += held
         from classify_sweep import LABELLABLE_SQL   # entries tried five times wait for a person, not for GLM
         queue = conn.execute(LABELLABLE_SQL).fetchone()[0]
         go, why, cap = decide(dt.datetime.now(dt.timezone.utc), running, None if used is None else used / 1e9,

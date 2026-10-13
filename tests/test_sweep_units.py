@@ -1103,6 +1103,37 @@ try:
 finally:
     collect.plan, collect.d.fetch_new = _saved
 
+# ---- the day's backup is held back from the line (decision 0033: meter.backup_reserve) ------------------------------
+import meter as _mt  # noqa: E402
+
+
+class _MConn:
+    def __init__(self, row):
+        self.row, self.asked = row, []
+
+    def execute(self, sql, params=None):
+        self.asked.append(params)
+        return self
+
+    def fetchone(self):
+        return self.row
+
+
+_bk = {"after_utc": "11:45", "fraction": 0.3, "min_gb": 0.15, "default_gb": 0.4}
+_c = _MConn((1000e9,))
+_h, _why = _mt.backup_reserve(_c, 1001.5e9, _dt.datetime(2026, 10, 13, 10, 0, tzinfo=_dt.timezone.utc), _bk)
+check("backup: before 11:45 UTC, 0.3 of what was sent since 11:45 yesterday is held back",
+      abs(_h - 0.45e9) < 1 and _c.asked == [(_dt.datetime(2026, 10, 12, 11, 45, tzinfo=_dt.timezone.utc),)]
+      and "0.45 GB held" in _why, (_h, _c.asked, _why))
+check("backup: from 11:45 UTC nothing is held (the backup is in the counter)",
+      _mt.backup_reserve(_MConn((1000e9,)), 1001.5e9, _dt.datetime(2026, 10, 13, 11, 45, tzinfo=_dt.timezone.utc), _bk)[0] == 0
+      and _mt.backup_reserve(_MConn((1000e9,)), 1001.5e9, _dt.datetime(2026, 10, 13, 23, 0, tzinfo=_dt.timezone.utc), _bk)[0] == 0)
+check("backup: no reading that old, or a counter that went back (a restart): the default is held",
+      _mt.backup_reserve(_MConn(None), 1001.5e9, _dt.datetime(2026, 10, 13, 8, 0, tzinfo=_dt.timezone.utc), _bk)[0] == 0.4e9
+      and _mt.backup_reserve(_MConn((1002e9,)), 1001.5e9, _dt.datetime(2026, 10, 13, 8, 0, tzinfo=_dt.timezone.utc), _bk)[0] == 0.4e9)
+check("backup: never less than min_gb before it",
+      _mt.backup_reserve(_MConn((1000e9,)), 1000.1e9, _dt.datetime(2026, 10, 13, 8, 0, tzinfo=_dt.timezone.utc), _bk)[0] == 0.15e9)
+
 print(f"\ntest_sweep_units: {len(FAILS)} failure(s)" + (": " + "; ".join(FAILS) if FAILS else ""))
 sys.exit(bool(FAILS))
 
