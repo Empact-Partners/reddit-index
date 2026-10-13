@@ -40,3 +40,21 @@ then 15,123 from the lap (0.2 s), no document in both; from the last document th
 
 The first night on it: `never_checked_before`, `first_checks_stamped` and `slow_lap` (from, to, documents) on the
 receipt; the takedown stage's log against 121.7 MB on 11 Oct; the same documents checked (200,000).
+
+## Judged, 13 Oct
+
+The first night on it (run `4be6dba3`, 13 Oct 00:03 UTC), against the night of 12 Oct (run `e375f287`, the stamps):
+
+| | 12 Oct | 13 Oct |
+|---|---|---|
+| documents checked, Reddit calls | 199,999, 2,000 | 200,000, 2,000 |
+| on pages / never checked before / the slow lap | | 118,678 / 41,424 / 39,898 |
+| first checks stamped | | 41,203 (the rest of the 41,424 went unanswered and wait for the next night) |
+| write-ahead log of the stage | 84.8 MB (121.7 MB on 11 Oct) | **38.9 MB** |
+| sent by the node during the stage | 70.0 MB | **43.6 MB** |
+| minutes | 46.8 | 52.0 |
+| gone, mention rows purged | 5,873, 10,440 | 925, 1,656 |
+
+The lap ran from the first document to `t1_oohi844` and did not wrap. The same number of documents is checked for a
+little over half the log. The fall in documents gone is the catch-up ending: the nights of 11 and 12 Oct were
+still clearing the comments deleted while the check was off (25 Aug to 4 Oct).

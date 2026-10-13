@@ -48,8 +48,9 @@ An independent read by GLM-5.3 (clean clone, read-only) found the first version'
 two places, both taken: str.lower() is not re.IGNORECASE ("İubenda" matched the regex and not the automaton; 481
 forms start with i), and the regex's first form lost its boundary as well as its last. Also taken: an automaton built
 from forms that are all blank cannot be searched. After the fix, every character of the Basic Multilingual Plane
-compared with every ASCII letter and digit gives re.IGNORECASE's answer (0 disagreements in 2.4 million), and the
-2,000 posts and 1,200 comment texts still give the same answers.
+compared with every ASCII letter and digit gives re.IGNORECASE's answer (0 disagreements in 2.4 million, on Python
+3.14 and on 3.12, the sweep image's), and the 2,000 posts and the 1,200 comment bodies and thread titles still give the
+same answers. A second read on the fixed head: SHIP.
 
 ## How it is judged
 
