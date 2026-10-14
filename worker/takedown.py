@@ -163,7 +163,7 @@ def repurge_ledgered(conn, dry_run: bool) -> int:
 
 
 def calls_for(on_pages: int, max_calls: int) -> int:
-    """Calls a night makes: every document on a page, then the rest up to the cap (decision 0034)."""
+    """The night's call ceiling: the cap, or more when the documents on pages alone need more (decision 0034)."""
     return max(max_calls, -(-on_pages // BATCH))
 
 
@@ -196,7 +196,7 @@ def run(conn, max_calls: int = 2000, dry_run: bool = False, max_gone_share: floa
     # cap bounds only what comes after them. It used to cut the list at the cap, so past 200,000 documents on pages
     # the rest would have gone unchecked without a word (decision 0034; 122,148 on 14 Oct, growing).
     calls = calls_for(len(on_pages), max_calls)
-    receipt["on_pages"], receipt["calls_planned"] = len(on_pages), calls
+    receipt["on_pages"] = len(on_pages)
     if calls > max_calls:
         receipt["calls_over_cap_for_pages"] = calls - max_calls
         log(f"  {len(on_pages)} documents on pages need {calls} calls, {calls - max_calls} more than the "
@@ -209,6 +209,7 @@ def run(conn, max_calls: int = 2000, dry_run: bool = False, max_gone_share: floa
     receipt["never_checked_before"] = len(never)
     receipt["slow_lap"] = {"from": position, "documents": len(lap), "wrapped": wrapped}
     queue = build_queue(on_pages, rest, max_calls)
+    receipt["calls_planned"] = -(-len(queue) // BATCH)
     on_set = set(on_pages)
     log(f"  {len(on_pages)} documents on pages, {len(never)} never checked before, {len(lap)} more from the slow "
         f"lap, {max_calls} calls allowed")
@@ -219,7 +220,8 @@ def run(conn, max_calls: int = 2000, dry_run: bool = False, max_gone_share: floa
     calls0 = rc.stats()["calls"]
     for i in range(0, len(queue), BATCH):
         if deadline and time.time() > deadline:
-            log("  out of time: the rest is not checked this run")
+            receipt["stopped"] = "the time set aside for the takedown check ended"
+            log("  out of time: the documents not reached are not checked this run")
             break
         if (i // BATCH) % 50 == 0:
             reason = should_stop()
@@ -255,6 +257,11 @@ def run(conn, max_calls: int = 2000, dry_run: bool = False, max_gone_share: floa
             log(f"    checked {len(verdicts)} documents, {sum(v != 'alive' for v in verdicts.values())} gone or edited", flush=True)
     receipt["reddit_calls"] = rc.stats()["calls"] - calls0
     receipt["docs_checked"] = len(verdicts)
+    # what decision 0002 requires and this night did not do: a document on a page Reddit was not asked about, or
+    # whose batch failed. Read by run_daily, which makes it a problem the owner hears of (decision 0034, review).
+    receipt["on_pages_not_checked"] = len(on_set - answered)
+    if receipt["on_pages_not_checked"]:
+        log(f"  {receipt['on_pages_not_checked']} documents on pages were not checked this run")
     receipt["docs_gone"] = sum(v == "source_deleted" for v in verdicts.values())
     receipt["docs_edited"] = sum(v == "source_edited" for v in verdicts.values())
     receipt["docs_not_checked"] += len(queue) - len(verdicts) - receipt["docs_not_checked"]

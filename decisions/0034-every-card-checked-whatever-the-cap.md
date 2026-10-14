@@ -17,10 +17,23 @@ the count grows faster than it did.
 
 `worker/takedown.py`: the list is every document on a page, then the rest while the cap allows (`build_queue`). When
 the pages alone need more calls than the cap, they are all made and nothing else is checked that night; the receipt
-carries `on_pages`, `calls_planned` and `calls_over_cap_for_pages`, and the log says it. The cap bounds what comes
-after the pages: the documents shown nowhere, first checks and the slow lap (decision 0028).
+carries `on_pages`, `calls_planned` (the list's calls) and `calls_over_cap_for_pages`, and the log says it. The cap
+bounds what comes after the pages: the documents shown nowhere, first checks and the slow lap (decision 0028).
+
+With the calls no longer bounded, the time is: the check ends by the run's end less the reserve that collection
+keeps for labelling, refresh and publish (`reserve_minutes_after_collect`, 105 minutes; 03:45 UTC on a night). And
+the condition is now verified, not assumed: the receipt counts `on_pages_not_checked` (documents on a page Reddit was
+not asked about, or whose batch failed), and any is a problem on the run, which the owner hears of.
 
 ## What it costs
 
 Past the cap, about 22 KB sent and 1.5 seconds a call (14 Oct: 2,000 calls in 41 minutes, 43.6 MB on 13 Oct), taken
 from the night's Reddit calls before collection. At 250,000 documents on pages: 500 calls more, about 12 minutes.
+
+## Review
+
+An independent read by GLM-5.3 (clean clone, read-only), four findings, all taken: a check cut short by its time or
+by Reddit's failures still left the run "ok" (now `on_pages_not_checked`, a problem on the run); with the calls
+unbounded the check could take the night's reserve (now bounded by it); `calls_planned` was the ceiling, not the list
+(now the list's calls); and the guard was a string search (now a test that runs the stage against a fake database
+and Reddit: past the cap, under it, a failed batch, out of time).

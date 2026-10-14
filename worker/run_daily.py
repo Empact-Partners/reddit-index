@@ -488,12 +488,18 @@ def main() -> int:
     import site_publish
     import takedown
 
+    # The takedown check keeps the night's reserve for labelling, refresh and publish: every document on a page is
+    # checked whatever the call cap (decision 0034), so its time, not its calls, is what must be bounded.
     stage(run, "takedowns", lambda: takedown.run(
         conn, max_calls=run.caps["takedown_calls"], max_gone_share=sched["takedown_brake_share"],
-        deadline=run.deadline, log=log, should_stop=run.stop_reason))
+        deadline=run.deadline - sched.get("reserve_minutes_after_collect", 105) * 60, log=log,
+        should_stop=run.stop_reason))
     td = run.receipt["stages"].get("takedowns", {})
     if td.get("brake"):
         run.receipt["problems"].append(f"takedown brake: {td.get('gone_share')} of checked documents looked gone")
+    if td.get("on_pages_not_checked"):   # decision 0002's condition not met tonight (time ran out, or Reddit failed)
+        run.receipt["problems"].append(f"takedown check failed for {td['on_pages_not_checked']} documents shown on "
+                                       f"pages: Reddit was not asked about them, or did not answer")
 
     def collect_stage():
         import collect
