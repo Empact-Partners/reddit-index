@@ -135,3 +135,12 @@ share, the open question for Vlad in the README.
 
 The night's run moves to it from the night of 14 Oct (`collect.mode_night: stream`): its room is `night_mentions`
 (15,000) less the queue's share (decision 0032).
+
+## The first night, 14 Oct
+
+Run `a38372fe` on the comment listing: takedowns 41 minutes, collection 15,005 mentions in 62 minutes from 621
+subreddits (5.27 a call, 6.6 KB sent a mention, classifier rejections 7.9%), labelling 17 minutes, refresh 23,
+publishing 5,707 pages in 18.5 minutes, none waiting; the run ended at 02:46 UTC and sent 0.523 GB (the night before,
+on comment trees: 10,341 mentions, ended 04:42, 0.494 GB). With 2 h 44 min of its window unused, the night's room is
+30,000 from 14 Oct (`collect.night_mentions`): night mentions are labelled off GLM's peak and published the same night.
+In the 24 hours from 13 Oct 06:00 UTC the index collected about 84,700 mentions (69,679 by day, 15,005 by night).
