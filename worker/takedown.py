@@ -162,6 +162,16 @@ def repurge_ledgered(conn, dry_run: bool) -> int:
     return n
 
 
+def calls_for(on_pages: int, max_calls: int) -> int:
+    """Calls a night makes: every document on a page, then the rest up to the cap (decision 0034)."""
+    return max(max_calls, -(-on_pages // BATCH))
+
+
+def build_queue(on_pages: list, rest: list, max_calls: int) -> list:
+    """Every document on a page, then the rest while the cap allows (decision 0034)."""
+    return list(on_pages) + list(rest)[: max(0, max_calls * BATCH - len(on_pages))]
+
+
 def run(conn, max_calls: int = 2000, dry_run: bool = False, max_gone_share: float = 0.15,
         ledgered_only: bool = False, deadline: float | None = None, log=print, should_stop=lambda: None) -> dict:
     import reddit_client as rc
@@ -182,6 +192,15 @@ def run(conn, max_calls: int = 2000, dry_run: bool = False, max_gone_share: floa
     # a watch card's document is not in public.mentions: its stored time is when the watch stored it (0020)
     watch_stored = {d: float(t) for d, t in conn.execute(
         "select doc_id, extract(epoch from min(stored_at)) from site.watch_card group by 1").fetchall()}
+    # Every document on a page is checked every night, whatever the night's calls (decision 0002's condition): the
+    # cap bounds only what comes after them. It used to cut the list at the cap, so past 200,000 documents on pages
+    # the rest would have gone unchecked without a word (decision 0034; 122,148 on 14 Oct, growing).
+    calls = calls_for(len(on_pages), max_calls)
+    receipt["on_pages"], receipt["calls_planned"] = len(on_pages), calls
+    if calls > max_calls:
+        receipt["calls_over_cap_for_pages"] = calls - max_calls
+        log(f"  {len(on_pages)} documents on pages need {calls} calls, {calls - max_calls} more than the "
+            f"{max_calls} allowed: they are all checked, nothing else is")
     room = max(0, max_calls * BATCH - len(on_pages))
     never = [r[0] for r in conn.execute(NEVER_SQL, (room,))] if room else []
     position = lap_position(conn)
@@ -189,7 +208,7 @@ def run(conn, max_calls: int = 2000, dry_run: bool = False, max_gone_share: floa
     rest = never + lap
     receipt["never_checked_before"] = len(never)
     receipt["slow_lap"] = {"from": position, "documents": len(lap), "wrapped": wrapped}
-    queue = (on_pages + rest)[: max_calls * BATCH]
+    queue = build_queue(on_pages, rest, max_calls)
     on_set = set(on_pages)
     log(f"  {len(on_pages)} documents on pages, {len(never)} never checked before, {len(lap)} more from the slow "
         f"lap, {max_calls} calls allowed")

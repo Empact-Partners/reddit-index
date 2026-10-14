@@ -1180,6 +1180,17 @@ check("backup timing: none in 30 hours is a finding; none listed is a finding",
 check("day line: the pass's clock is restored as it was (a staticmethod, callable on an instance)",
       isinstance(_rd.Run.__dict__["clock"], staticmethod) and _rd.Run.clock() is not None)
 
+# ---- every document on a page is checked, whatever the night's calls (decision 0034: takedown.build_queue) ---------
+import takedown as _td3  # noqa: E402
+_pages = [f"t1_p{i}" for i in range(250)]
+_rest = [f"t1_r{i}" for i in range(500)]
+check("takedown: under the cap, the pages first and then the rest up to it",
+      _td3.build_queue(_pages[:150], _rest, 3) == _pages[:150] + _rest[:150] and _td3.calls_for(150, 3) == 3)
+check("takedown: past the cap every document on a page is still checked, and nothing else",
+      _td3.build_queue(_pages, _rest, 2) == _pages and _td3.calls_for(250, 2) == 3 and _td3.calls_for(200, 2) == 2)
+check("takedown: no cut of the pages' list is left in the stage", "(on_pages + rest)[:" not in
+      open(os.path.join(ROOT, "worker", "takedown.py")).read())
+
 print(f"\ntest_sweep_units: {len(FAILS)} failure(s)" + (": " + "; ".join(FAILS) if FAILS else ""))
 sys.exit(bool(FAILS))
 
