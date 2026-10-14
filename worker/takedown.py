@@ -162,6 +162,16 @@ def repurge_ledgered(conn, dry_run: bool) -> int:
     return n
 
 
+def calls_for(on_pages: int, max_calls: int) -> int:
+    """The night's call ceiling: the cap, or more when the documents on pages alone need more (decision 0034)."""
+    return max(max_calls, -(-on_pages // BATCH))
+
+
+def build_queue(on_pages: list, rest: list, max_calls: int) -> list:
+    """Every document on a page, then the rest while the cap allows (decision 0034)."""
+    return list(on_pages) + list(rest)[: max(0, max_calls * BATCH - len(on_pages))]
+
+
 def run(conn, max_calls: int = 2000, dry_run: bool = False, max_gone_share: float = 0.15,
         ledgered_only: bool = False, deadline: float | None = None, log=print, should_stop=lambda: None) -> dict:
     import reddit_client as rc
@@ -182,6 +192,15 @@ def run(conn, max_calls: int = 2000, dry_run: bool = False, max_gone_share: floa
     # a watch card's document is not in public.mentions: its stored time is when the watch stored it (0020)
     watch_stored = {d: float(t) for d, t in conn.execute(
         "select doc_id, extract(epoch from min(stored_at)) from site.watch_card group by 1").fetchall()}
+    # Every document on a page is checked every night, whatever the night's calls (decision 0002's condition): the
+    # cap bounds only what comes after them. It used to cut the list at the cap, so past 200,000 documents on pages
+    # the rest would have gone unchecked without a word (decision 0034; 122,148 on 14 Oct, growing).
+    calls = calls_for(len(on_pages), max_calls)
+    receipt["on_pages"] = len(on_pages)
+    if calls > max_calls:
+        receipt["calls_over_cap_for_pages"] = calls - max_calls
+        log(f"  {len(on_pages)} documents on pages need {calls} calls, {calls - max_calls} more than the "
+            f"{max_calls} allowed: they are all checked, nothing else is")
     room = max(0, max_calls * BATCH - len(on_pages))
     never = [r[0] for r in conn.execute(NEVER_SQL, (room,))] if room else []
     position = lap_position(conn)
@@ -189,7 +208,8 @@ def run(conn, max_calls: int = 2000, dry_run: bool = False, max_gone_share: floa
     rest = never + lap
     receipt["never_checked_before"] = len(never)
     receipt["slow_lap"] = {"from": position, "documents": len(lap), "wrapped": wrapped}
-    queue = (on_pages + rest)[: max_calls * BATCH]
+    queue = build_queue(on_pages, rest, max_calls)
+    receipt["calls_planned"] = -(-len(queue) // BATCH)
     on_set = set(on_pages)
     log(f"  {len(on_pages)} documents on pages, {len(never)} never checked before, {len(lap)} more from the slow "
         f"lap, {max_calls} calls allowed")
@@ -198,44 +218,56 @@ def run(conn, max_calls: int = 2000, dry_run: bool = False, max_gone_share: floa
     asked: set[str] = set()      # every document of a batch that was sent to Reddit
     answered: set[str] = set()   # every document of a batch Reddit answered, whatever became of it
     calls0 = rc.stats()["calls"]
-    for i in range(0, len(queue), BATCH):
-        if deadline and time.time() > deadline:
-            log("  out of time: the rest is not checked this run")
-            break
-        if (i // BATCH) % 50 == 0:
-            reason = should_stop()
-            if reason:
-                receipt["stopped"] = reason
-                log(f"  stopped: {reason}")
+    net_wait = rc.NET_MAX_WAIT   # a call rides out a network outage this long; never past the check's own end
+    try:
+        for i in range(0, len(queue), BATCH):
+            if deadline:
+                rc.NET_MAX_WAIT = max(60.0, min(net_wait, deadline - time.time()))
+            if deadline and time.time() > deadline:
+                receipt["stopped"] = "the time set aside for the takedown check ended"
+                log("  out of time: the documents not reached are not checked this run")
                 break
-        chunk = queue[i:i + BATCH]
-        asked.update(chunk)
-        resp = rc.info(chunk)
-        children = (resp.get("data") or {}).get("children") if isinstance(resp, dict) else None
-        if not isinstance(resp, dict) or "_err" in resp or children is None:
-            # A failure is residue, never a verdict.
-            receipt["docs_not_checked"] += len(chunk)
-            continue
-        answered.update(chunk)
-        stored = dict(conn.execute(
-            "select doc_id, extract(epoch from min(loaded_at)) from public.mentions "
-            "where doc_id = any (%s) group by 1", (chunk,)).fetchall())
-        stored = {k: float(v) for k, v in stored.items()}
-        for d in chunk:   # the earliest time either collection stored it: an edit after either one counts (review 0020)
-            if d in watch_stored:
-                stored[d] = min(stored.get(d, watch_stored[d]), watch_stored[d])
-        got = judge(children, [c for c in chunk if c in stored], stored)
-        verdicts.update(got)
-        receipt["on_pages_checked"] += sum(1 for d in got if d in on_set)
-        ghosts = [c for c in chunk if c not in stored and c not in watch_stored]
-        if ghosts and not dry_run:   # a probe row whose document has no mention left: nothing to check, ever
-            receipt["probe_rows_without_a_document"] += conn.execute(
-                "delete from public.doc_probe where doc_id = any (%s) and not exists "
-                "(select 1 from public.mentions m where m.doc_id = doc_probe.doc_id)", (ghosts,)).rowcount
-        if i and (i // BATCH) % 200 == 0:
-            log(f"    checked {len(verdicts)} documents, {sum(v != 'alive' for v in verdicts.values())} gone or edited", flush=True)
+            if (i // BATCH) % 50 == 0:
+                reason = should_stop()
+                if reason:
+                    receipt["stopped"] = reason
+                    log(f"  stopped: {reason}")
+                    break
+            chunk = queue[i:i + BATCH]
+            asked.update(chunk)
+            resp = rc.info(chunk)
+            children = (resp.get("data") or {}).get("children") if isinstance(resp, dict) else None
+            if not isinstance(resp, dict) or "_err" in resp or children is None:
+                # A failure is residue, never a verdict.
+                receipt["docs_not_checked"] += len(chunk)
+                continue
+            answered.update(chunk)
+            stored = dict(conn.execute(
+                "select doc_id, extract(epoch from min(loaded_at)) from public.mentions "
+                "where doc_id = any (%s) group by 1", (chunk,)).fetchall())
+            stored = {k: float(v) for k, v in stored.items()}
+            for d in chunk:   # the earliest time either collection stored it: an edit after either one counts (review 0020)
+                if d in watch_stored:
+                    stored[d] = min(stored.get(d, watch_stored[d]), watch_stored[d])
+            got = judge(children, [c for c in chunk if c in stored], stored)
+            verdicts.update(got)
+            receipt["on_pages_checked"] += sum(1 for d in got if d in on_set)
+            ghosts = [c for c in chunk if c not in stored and c not in watch_stored]
+            if ghosts and not dry_run:   # a probe row whose document has no mention left: nothing to check, ever
+                receipt["probe_rows_without_a_document"] += conn.execute(
+                    "delete from public.doc_probe where doc_id = any (%s) and not exists "
+                    "(select 1 from public.mentions m where m.doc_id = doc_probe.doc_id)", (ghosts,)).rowcount
+            if i and (i // BATCH) % 200 == 0:
+                log(f"    checked {len(verdicts)} documents, {sum(v != 'alive' for v in verdicts.values())} gone or edited", flush=True)
+    finally:
+        rc.NET_MAX_WAIT = net_wait
     receipt["reddit_calls"] = rc.stats()["calls"] - calls0
     receipt["docs_checked"] = len(verdicts)
+    # what decision 0002 requires and this night did not do: a document on a page Reddit was not asked about, or
+    # whose batch failed. Read by run_daily, which makes it a problem the owner hears of (decision 0034, review).
+    receipt["on_pages_not_checked"] = len(on_set - answered)
+    if receipt["on_pages_not_checked"]:
+        log(f"  {receipt['on_pages_not_checked']} documents on pages were not checked this run")
     receipt["docs_gone"] = sum(v == "source_deleted" for v in verdicts.values())
     receipt["docs_edited"] = sum(v == "source_edited" for v in verdicts.values())
     receipt["docs_not_checked"] += len(queue) - len(verdicts) - receipt["docs_not_checked"]

@@ -1180,6 +1180,105 @@ check("backup timing: none in 30 hours is a finding; none listed is a finding",
 check("day line: the pass's clock is restored as it was (a staticmethod, callable on an instance)",
       isinstance(_rd.Run.__dict__["clock"], staticmethod) and _rd.Run.clock() is not None)
 
+# ---- every document on a page is checked, whatever the night's calls (decision 0034: takedown.build_queue) ---------
+import takedown as _td3  # noqa: E402
+_pages = [f"t1_p{i}" for i in range(250)]
+_rest = [f"t1_r{i}" for i in range(500)]
+check("takedown: under the cap, the pages first and then the rest up to it",
+      _td3.build_queue(_pages[:150], _rest, 3) == _pages[:150] + _rest[:150] and _td3.calls_for(150, 3) == 3)
+check("takedown: past the cap every document on a page is still checked, and nothing else",
+      _td3.build_queue(_pages, _rest, 2) == _pages and _td3.calls_for(250, 2) == 3 and _td3.calls_for(200, 2) == 2)
+
+
+class _TCur(list):
+    def fetchone(self):
+        return self[0] if self else None
+
+    def fetchall(self):
+        return list(self)
+
+
+class _TConn:
+    """The statements takedown.run sends on a dry run, against lists."""
+    def __init__(self, pages, never, lap):
+        self.pages, self.never, self.lap = pages, never, lap
+
+    def execute(self, sql, params=None):
+        if sql.startswith("select count(*) from public.mentions m where exists"):
+            return _TCur([(0,)])
+        if "from site.rail_key union" in sql:
+            return _TCur([(d,) for d in self.pages])
+        if "from site.watch_card group by" in sql:
+            return _TCur([])
+        if sql == _td3.NEVER_SQL:
+            return _TCur([(d,) for d in self.never[:params[0]]])
+        if "from public.ingest_state" in sql:
+            return _TCur([])
+        if "from public.doc_probe p where p.checked_at is not null" in sql:
+            return _TCur([(d,) for d in self.lap[:params[-1]]])
+        if "from public.mentions where doc_id = any" in sql:
+            return _TCur([(d, 1.0) for d in params[0]])
+        return _TCur([])
+
+
+_real_info = _td3.__dict__.get("rc")
+import reddit_client as _rc3  # noqa: E402
+_saved_info = _rc3.info
+_fail = set()
+
+
+def _info(chunk):
+    if chunk[0] in _fail:
+        return {"_err": 503}
+    return {"data": {"children": [{"kind": "t1", "data": {"name": d, "body": "ok", "author": "a"}} for d in chunk]}}
+
+
+try:
+    _rc3.info = _info
+    _r = _td3.run(_TConn(_pages, _rest, []), max_calls=2, dry_run=True, log=lambda *a, **k: None)
+    check("takedown run: past the cap every document on a page is asked, nothing else; the receipt says so",
+          _r["docs_checked"] == 250 and _r["on_pages"] == 250 and _r["calls_planned"] == 3
+          and _r["calls_over_cap_for_pages"] == 1 and _r["never_checked_before"] == 0
+          and _r["slow_lap"]["documents"] == 0 and _r["on_pages_not_checked"] == 0, _r)
+    _r = _td3.run(_TConn(_pages[:150], _rest, []), max_calls=200, dry_run=True, log=lambda *a, **k: None)
+    check("takedown run: the calls planned are the queue's, not the cap (150 on pages, 500 more: 7 calls)",
+          _r["calls_planned"] == 7 and "calls_over_cap_for_pages" not in _r and _r["never_checked_before"] == 500, _r)
+    _fail.add("t1_p100")
+    _r = _td3.run(_TConn(_pages, [], []), max_calls=2, dry_run=True, log=lambda *a, **k: None)
+    check("takedown run: a failed batch of documents on pages is counted as not checked",
+          _r["on_pages_not_checked"] == 100 and _r["docs_checked"] == 150, _r)
+    _fail.clear()
+    _r = _td3.run(_TConn(_pages, [], []), max_calls=2, dry_run=True, log=lambda *a, **k: None, deadline=1.0)
+    check("takedown run: out of time is a stop on the receipt, and every page document not reached is counted",
+          _r["stopped"] and _r["on_pages_not_checked"] == 250, _r)
+finally:
+    _rc3.info = _saved_info
+_tp = _rd.takedown_problems({"on_pages_not_checked": 120})
+check("takedown: documents on pages left unchecked are a problem that fails the run (it says 'failed')",
+      len(_tp) == 1 and "failed" in _tp[0] and "120" in _tp[0] and _rd.takedown_problems({"on_pages_not_checked": 0}) == []
+      and _rd.takedown_problems({}) == [] and "brake" in _rd.takedown_problems({"brake": True, "gone_share": 0.2})[0], _tp)
+check("takedown: the check ends at the run's end less the reserve for labelling, refresh and publish",
+      _rd.takedown_deadline(10_000.0, {"reserve_minutes_after_collect": 105}) == 10_000.0 - 6300
+      and _rd.takedown_deadline(10_000.0, {}) == 10_000.0 - 6300)
+_net = []
+_saved_info = _rc3.info
+
+
+def _info2(chunk):
+    _net.append(_rc3.NET_MAX_WAIT)
+    return _info(chunk)
+
+
+try:
+    _rc3.info = _info2
+    _nw = _rc3.NET_MAX_WAIT
+    _td3.run(_TConn(_pages[:150], [], []), max_calls=2, dry_run=True, log=lambda *a, **k: None,
+             deadline=__import__("time").time() + 300)
+    check("takedown: a call rides out a network outage no longer than the check's own end, and the wait is restored",
+          _net and all(60 <= x <= 300 for x in _net) and _rc3.NET_MAX_WAIT == _nw, (_net, _rc3.NET_MAX_WAIT))
+finally:
+    _rc3.info = _saved_info
+
 print(f"\ntest_sweep_units: {len(FAILS)} failure(s)" + (": " + "; ".join(FAILS) if FAILS else ""))
 sys.exit(bool(FAILS))
 
