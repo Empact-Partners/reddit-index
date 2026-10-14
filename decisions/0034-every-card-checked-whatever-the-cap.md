@@ -40,3 +40,8 @@ and Reddit: past the cap, under it, a failed batch, out of time). A second read 
 that started just before the check's end could ride out a network outage for up to an hour past it (the wait is now
 bounded by the check's end, and restored after it), and the run's part was still checked by searching its source
 (now `takedown_deadline` and `takedown_problems`, tested).
+
+A third read found one more, not taken here: a token refresh during a network outage keeps its own wait, so a call
+started near the check's end can still run past it, by at most what was left of the check again (at most an hour,
+inside the 105-minute reserve). It is the Reddit client's behaviour for every stage, not something this change made,
+and a network outage that long stops the night whatever the takedown check does. Recorded as a known limit.
