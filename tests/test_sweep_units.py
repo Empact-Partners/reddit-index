@@ -1253,9 +1253,31 @@ try:
           _r["stopped"] and _r["on_pages_not_checked"] == 250, _r)
 finally:
     _rc3.info = _saved_info
-check("takedown: run_daily makes documents on pages left unchecked a problem, and bounds the check by the reserve",
-      "on_pages_not_checked" in open(os.path.join(ROOT, "worker", "run_daily.py")).read()
-      and "deadline=run.deadline - sched.get(\"reserve_minutes_after_collect\"" in open(os.path.join(ROOT, "worker", "run_daily.py")).read())
+_tp = _rd.takedown_problems({"on_pages_not_checked": 120})
+check("takedown: documents on pages left unchecked are a problem that fails the run (it says 'failed')",
+      len(_tp) == 1 and "failed" in _tp[0] and "120" in _tp[0] and _rd.takedown_problems({"on_pages_not_checked": 0}) == []
+      and _rd.takedown_problems({}) == [] and "brake" in _rd.takedown_problems({"brake": True, "gone_share": 0.2})[0], _tp)
+check("takedown: the check ends at the run's end less the reserve for labelling, refresh and publish",
+      _rd.takedown_deadline(10_000.0, {"reserve_minutes_after_collect": 105}) == 10_000.0 - 6300
+      and _rd.takedown_deadline(10_000.0, {}) == 10_000.0 - 6300)
+_net = []
+_saved_info = _rc3.info
+
+
+def _info2(chunk):
+    _net.append(_rc3.NET_MAX_WAIT)
+    return _info(chunk)
+
+
+try:
+    _rc3.info = _info2
+    _nw = _rc3.NET_MAX_WAIT
+    _td3.run(_TConn(_pages[:150], [], []), max_calls=2, dry_run=True, log=lambda *a, **k: None,
+             deadline=__import__("time").time() + 300)
+    check("takedown: a call rides out a network outage no longer than the check's own end, and the wait is restored",
+          _net and all(60 <= x <= 300 for x in _net) and _rc3.NET_MAX_WAIT == _nw, (_net, _rc3.NET_MAX_WAIT))
+finally:
+    _rc3.info = _saved_info
 
 print(f"\ntest_sweep_units: {len(FAILS)} failure(s)" + (": " + "; ".join(FAILS) if FAILS else ""))
 sys.exit(bool(FAILS))

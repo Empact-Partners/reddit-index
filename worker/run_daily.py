@@ -298,6 +298,25 @@ def backfill(run: "Run", cfg: dict, log) -> dict:
     return out
 
 
+def takedown_deadline(run_deadline: float, sched: dict) -> float:
+    """The takedown check ends where collection would: the run's end less the reserve kept for labelling, refresh and
+    publish. Every document on a page is checked whatever the call cap (decision 0034), so its time is the bound."""
+    return run_deadline - sched.get("reserve_minutes_after_collect", 105) * 60
+
+
+def takedown_problems(td: dict) -> list[str]:
+    """What the takedown stage's receipt makes a problem of the run: the brake, and documents on pages left unchecked
+    (decision 0002's condition not met tonight: time ran out, or Reddit failed). Each says 'brake' or 'failed', so
+    the run is failed and the owner hears of it."""
+    out = []
+    if td.get("brake"):
+        out.append(f"takedown brake: {td.get('gone_share')} of checked documents looked gone")
+    if td.get("on_pages_not_checked"):
+        out.append(f"takedown check failed for {td['on_pages_not_checked']} documents shown on pages: Reddit was not "
+                   f"asked about them, or did not answer")
+    return out
+
+
 def stage(run: Run, name: str, fn) -> None:
     if name not in run.args.stages:
         return
@@ -492,14 +511,8 @@ def main() -> int:
     # checked whatever the call cap (decision 0034), so its time, not its calls, is what must be bounded.
     stage(run, "takedowns", lambda: takedown.run(
         conn, max_calls=run.caps["takedown_calls"], max_gone_share=sched["takedown_brake_share"],
-        deadline=run.deadline - sched.get("reserve_minutes_after_collect", 105) * 60, log=log,
-        should_stop=run.stop_reason))
-    td = run.receipt["stages"].get("takedowns", {})
-    if td.get("brake"):
-        run.receipt["problems"].append(f"takedown brake: {td.get('gone_share')} of checked documents looked gone")
-    if td.get("on_pages_not_checked"):   # decision 0002's condition not met tonight (time ran out, or Reddit failed)
-        run.receipt["problems"].append(f"takedown check failed for {td['on_pages_not_checked']} documents shown on "
-                                       f"pages: Reddit was not asked about them, or did not answer")
+        deadline=takedown_deadline(run.deadline, sched), log=log, should_stop=run.stop_reason))
+    run.receipt["problems"] += takedown_problems(run.receipt["stages"].get("takedowns", {}))
 
     def collect_stage():
         import collect

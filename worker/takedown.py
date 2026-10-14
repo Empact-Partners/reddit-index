@@ -218,43 +218,49 @@ def run(conn, max_calls: int = 2000, dry_run: bool = False, max_gone_share: floa
     asked: set[str] = set()      # every document of a batch that was sent to Reddit
     answered: set[str] = set()   # every document of a batch Reddit answered, whatever became of it
     calls0 = rc.stats()["calls"]
-    for i in range(0, len(queue), BATCH):
-        if deadline and time.time() > deadline:
-            receipt["stopped"] = "the time set aside for the takedown check ended"
-            log("  out of time: the documents not reached are not checked this run")
-            break
-        if (i // BATCH) % 50 == 0:
-            reason = should_stop()
-            if reason:
-                receipt["stopped"] = reason
-                log(f"  stopped: {reason}")
+    net_wait = rc.NET_MAX_WAIT   # a call rides out a network outage this long; never past the check's own end
+    try:
+        for i in range(0, len(queue), BATCH):
+            if deadline:
+                rc.NET_MAX_WAIT = max(60.0, min(net_wait, deadline - time.time()))
+            if deadline and time.time() > deadline:
+                receipt["stopped"] = "the time set aside for the takedown check ended"
+                log("  out of time: the documents not reached are not checked this run")
                 break
-        chunk = queue[i:i + BATCH]
-        asked.update(chunk)
-        resp = rc.info(chunk)
-        children = (resp.get("data") or {}).get("children") if isinstance(resp, dict) else None
-        if not isinstance(resp, dict) or "_err" in resp or children is None:
-            # A failure is residue, never a verdict.
-            receipt["docs_not_checked"] += len(chunk)
-            continue
-        answered.update(chunk)
-        stored = dict(conn.execute(
-            "select doc_id, extract(epoch from min(loaded_at)) from public.mentions "
-            "where doc_id = any (%s) group by 1", (chunk,)).fetchall())
-        stored = {k: float(v) for k, v in stored.items()}
-        for d in chunk:   # the earliest time either collection stored it: an edit after either one counts (review 0020)
-            if d in watch_stored:
-                stored[d] = min(stored.get(d, watch_stored[d]), watch_stored[d])
-        got = judge(children, [c for c in chunk if c in stored], stored)
-        verdicts.update(got)
-        receipt["on_pages_checked"] += sum(1 for d in got if d in on_set)
-        ghosts = [c for c in chunk if c not in stored and c not in watch_stored]
-        if ghosts and not dry_run:   # a probe row whose document has no mention left: nothing to check, ever
-            receipt["probe_rows_without_a_document"] += conn.execute(
-                "delete from public.doc_probe where doc_id = any (%s) and not exists "
-                "(select 1 from public.mentions m where m.doc_id = doc_probe.doc_id)", (ghosts,)).rowcount
-        if i and (i // BATCH) % 200 == 0:
-            log(f"    checked {len(verdicts)} documents, {sum(v != 'alive' for v in verdicts.values())} gone or edited", flush=True)
+            if (i // BATCH) % 50 == 0:
+                reason = should_stop()
+                if reason:
+                    receipt["stopped"] = reason
+                    log(f"  stopped: {reason}")
+                    break
+            chunk = queue[i:i + BATCH]
+            asked.update(chunk)
+            resp = rc.info(chunk)
+            children = (resp.get("data") or {}).get("children") if isinstance(resp, dict) else None
+            if not isinstance(resp, dict) or "_err" in resp or children is None:
+                # A failure is residue, never a verdict.
+                receipt["docs_not_checked"] += len(chunk)
+                continue
+            answered.update(chunk)
+            stored = dict(conn.execute(
+                "select doc_id, extract(epoch from min(loaded_at)) from public.mentions "
+                "where doc_id = any (%s) group by 1", (chunk,)).fetchall())
+            stored = {k: float(v) for k, v in stored.items()}
+            for d in chunk:   # the earliest time either collection stored it: an edit after either one counts (review 0020)
+                if d in watch_stored:
+                    stored[d] = min(stored.get(d, watch_stored[d]), watch_stored[d])
+            got = judge(children, [c for c in chunk if c in stored], stored)
+            verdicts.update(got)
+            receipt["on_pages_checked"] += sum(1 for d in got if d in on_set)
+            ghosts = [c for c in chunk if c not in stored and c not in watch_stored]
+            if ghosts and not dry_run:   # a probe row whose document has no mention left: nothing to check, ever
+                receipt["probe_rows_without_a_document"] += conn.execute(
+                    "delete from public.doc_probe where doc_id = any (%s) and not exists "
+                    "(select 1 from public.mentions m where m.doc_id = doc_probe.doc_id)", (ghosts,)).rowcount
+            if i and (i // BATCH) % 200 == 0:
+                log(f"    checked {len(verdicts)} documents, {sum(v != 'alive' for v in verdicts.values())} gone or edited", flush=True)
+    finally:
+        rc.NET_MAX_WAIT = net_wait
     receipt["reddit_calls"] = rc.stats()["calls"] - calls0
     receipt["docs_checked"] = len(verdicts)
     # what decision 0002 requires and this night did not do: a document on a page Reddit was not asked about, or

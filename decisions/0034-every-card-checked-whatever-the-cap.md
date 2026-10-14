@@ -36,4 +36,7 @@ An independent read by GLM-5.3 (clean clone, read-only), four findings, all take
 by Reddit's failures still left the run "ok" (now `on_pages_not_checked`, a problem on the run); with the calls
 unbounded the check could take the night's reserve (now bounded by it); `calls_planned` was the ceiling, not the list
 (now the list's calls); and the guard was a string search (now a test that runs the stage against a fake database
-and Reddit: past the cap, under it, a failed batch, out of time).
+and Reddit: past the cap, under it, a failed batch, out of time). A second read found two more, both taken: a call
+that started just before the check's end could ride out a network outage for up to an hour past it (the wait is now
+bounded by the check's end, and restored after it), and the run's part was still checked by searching its source
+(now `takedown_deadline` and `takedown_problems`, tested).
