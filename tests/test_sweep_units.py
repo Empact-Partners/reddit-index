@@ -1350,13 +1350,13 @@ _slow_started = _thr.Event()
 
 class _Fence:
     def __init__(self):
-        self.closed, self.autocommit, self.cancelled = False, False, False
+        self.closed, self.autocommit, self.cancelled, self.closed_by = False, False, False, None
 
     def cancel(self):
         self.cancelled = True
 
     def close(self):
-        self.closed = True
+        self.closed, self.closed_by = True, _thr.current_thread().name
 
 
 _fc = _Fence()
@@ -1372,8 +1372,9 @@ def _stuck(conn, cfg, deadline, should_stop=lambda: None, log=print):
 _f = _al.Alongside(lambda: _fc, _stuck, {"glm_credits_max": 10}, 1e12, log=lambda *a, **k: None).start()
 _slow_started.wait(2)
 _fout = _f.finish(timeout=0.2)
-check("alongside: a round that does not end when told is fenced (query cancelled, connection closed) before the pass "
-      "goes on", _fc.cancelled and _fc.closed and _fout["ended"] != "still running at the join", _fout)
+check("alongside: a round that does not end when told is fenced: its query cancelled from the pass, its connection "
+      "closed by its own thread, and the receipt says fenced (so the pass's classify stage does not run)",
+      _fc.cancelled and _fc.closed and _fc.closed_by == "label-alongside" and _fout.get("fenced") is True, _fout)
 
 # ---- the shared app's windows (reddit_client._win, 15 Oct) ---------------------------------------------------------
 import reddit_client as _rc5  # noqa: E402

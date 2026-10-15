@@ -34,6 +34,7 @@ class Alongside:
         self.halt = halt or threading.Event()
         self._stop = threading.Event()
         self._conn = None
+        self.fenced = False
         self.recs: list[dict] = []
         self.error: str | None = None
         self.ended: str | None = None
@@ -105,19 +106,23 @@ class Alongside:
 
     def finish(self, timeout: float = 1200.0) -> dict:
         """Tell the thread collection has ended, wait for its round to end (a GLM job may take its 15 minutes), and
-        return what it did. A thread still alive after that is fenced: its query cancelled and its connection closed,
-        so nothing it does can land after the pass's receipt (review, 15 Oct)."""
+        return what it did. A thread still alive after that is fenced: its query is cancelled from here (psycopg's
+        cancel() is the one call made for another thread; the thread closes its own connection), and the pass's own
+        classify stage does not run after a fence, so a round's uncounted work can never be labelled or paid twice
+        (review rounds 1 and 2, 15 Oct)."""
         self._stop.set()
         self._t.join(timeout)
         if self._t.is_alive() and self._conn is not None:
-            for f in ("cancel", "close"):
-                try:
-                    getattr(self._conn, f)()
-                except Exception:  # noqa: BLE001
-                    pass
+            self.fenced = True
+            try:
+                self._conn.cancel()
+            except Exception:  # noqa: BLE001
+                pass
             self._t.join(60)
         out = {k: (round(v, 4) if k in ("jev_usd", "glm_credits") else int(v)) for k, v in self.used().items()}
         out["rounds"] = len(self.recs)
+        if self.fenced:
+            out["fenced"] = True
         out["ended"] = self.ended or ("collection ended" if not self._t.is_alive() else "still running at the join")
         if self.error:
             out["error"] = self.error

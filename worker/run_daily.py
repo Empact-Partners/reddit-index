@@ -631,9 +631,9 @@ def main() -> int:
         if args.classify_items is not None:
             cfg["max_items"] = args.classify_items
         if al is not None:   # what labelling beside collection spent comes off the pass's allowances (decision 0037)
-            if al_out and al_out.get("ended") == "still running at the join":
+            if al_out and (al_out.get("fenced") or al_out.get("ended") == "still running at the join"):
                 run.receipt["problems"].append("labelling beside collection did not end when told; it was fenced")
-                return {"skipped": "labelling beside collection had not ended: two labellers never share the queue"}
+                return {"skipped": "labelling beside collection had to be fenced: the queue waits for the next pass"}
             cfg = al.left()
         # the night labels no more than the watchdog's day has left once collection is in it (decision 0035)
         nr = run.night_room()
