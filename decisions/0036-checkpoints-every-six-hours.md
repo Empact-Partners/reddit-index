@@ -42,3 +42,19 @@ Each step so far took a large share of the images off; the cost left is the per-
 The two mention-insert statements' log and images a row on the day passes of 15 Oct against the table above; the
 log of the night of 16 Oct per stage (receipts' `wal_mb`); and, with the line unchanged, more mentions collected per
 GB on the counter. If the images a row do not fall, the setting goes back to 3,600 s and this record says so.
+
+## Judged, 15 Oct (applied 04:53 UTC)
+
+Per statement (`pg_stat_statements`, the sweep's role), from 04:53 to 11:20 UTC, against the same statements at one
+checkpoint an hour (14 Oct 05:50 to 15 Oct 02:40):
+
+| | at 60 minutes | at six hours |
+|---|---|---|
+| mention insert, main form | 3.90 KB, 0.91 full-page images a row (25,002 rows) | **2.76 KB, 0.40** (23,391 rows) |
+| mention insert, second form | 6.04 KB, 1.85 (13,061 rows) | **2.31 KB, 0.22** (5,738 rows) |
+| thread insert | 1.96 KB, 0.67 | **1.57 KB, 0.42** (10,963 rows) |
+
+The whole cluster wrote 108 MB of log in those hours, for the 28,500 mentions of the first daytime pass and everything
+else. On the node counter the watchdog's day of 15 Oct stood at **0.10 GB at 11:14 UTC with those 28,500 mentions
+collected**, about 3.5 KB a mention (the night before: 5.5 KB a mention in its collection stage alone). One timed and
+one requested checkpoint ran in the six hours. The setting stays.

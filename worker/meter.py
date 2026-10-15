@@ -137,17 +137,19 @@ def sent_since(rs: list, t, now_bytes: float) -> tuple[float | None, object]:
     return now_bytes - r[1], r[0]
 
 
-def bursts(rs: list, since, pass_rate_bps: float, min_bytes: float) -> list[tuple]:
+def bursts(rs: list, since, pass_rate_bps: float, min_bytes: float, max_gap_s: float = 3600) -> list[tuple]:
     """(time, bytes) of every interval between two readings after `since` that sent at least `min_bytes` more than a
     pass sends at its fastest (`pass_rate_bps` a second): the day's backup, seen in the counter. By day nothing else
-    sends at that rate (10 to 14 Oct: passes 1 to 3 MB a minute; backups 249 MB in 17 to 32 minutes and 1,285 MB in 4)."""
+    sends at that rate (10 to 14 Oct: passes 1 to 3 MB a minute; backups 249 MB in 17 to 32 minutes and 1,285 MB in 4).
+    An interval longer than `max_gap_s` says nothing about what sent its bytes and is left out (15 Oct: 11 Oct's seven
+    hours between two readings held a morning of investigation queries and read as a 1.93 GB "full backup")."""
     out = []
     prev = None
     for at, b in rs:
         if at <= since:
             prev = (at, b)
             continue
-        if prev is not None and b >= prev[1]:
+        if prev is not None and b >= prev[1] and (at - prev[0]).total_seconds() <= max_gap_s:
             excess = (b - prev[1]) - pass_rate_bps * (at - prev[0]).total_seconds()
             if excess >= min_bytes:
                 out.append((at, b - prev[1]))
