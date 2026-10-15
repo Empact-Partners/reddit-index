@@ -444,6 +444,7 @@ def run(conn, caps: dict, deadline: float, should_stop=lambda: None, log=print, 
     t0 = time.time()
     calls0 = rc.stats()["calls"]
     now = dt.datetime.now(dt.timezone.utc)
+    rc.window_mark()   # the shared app's window under way began before this stage
     net0 = rc.stats()
     subs, mapping, core, quiet, never = plan(conn, now)
     matching = [0.0]   # seconds spent finding brand names in text; see rec["seconds"] at the end
@@ -473,6 +474,9 @@ def run(conn, caps: dict, deadline: float, should_stop=lambda: None, log=print, 
                     "stream_gap_subs": [], "stream_failed": 0, "threads_from_posts": 0, "threads_from_listing": 0,
                     "threads_from_info": 0, "mentions_without_thread": 0, "mentions_room": room,
                     "labelling_queue": queue})
+        for k in ("room_why", "night_room"):   # decision 0035: what bounded the night's room, when the day did
+            if caps.get(k) is not None:
+                rec[k] = caps[k]
 
     brands = d.load_brands()
     alias_re = d.build_alias_re([b for bs in brands.values() for b in bs])
@@ -488,8 +492,10 @@ def run(conn, caps: dict, deadline: float, should_stop=lambda: None, log=print, 
             raise Stop(f"new-mention cap ({caps['mentions']}) reached {where}")
         if room is not None and rec["mentions_new"] >= room:
             if room == 0:
-                raise Allowance(f"no room for new mentions this run: {queue or 0:,} wait to be labelled first")
-            raise Allowance(f"the {room:,} new mentions this run has room for were collected {where}")
+                raise Allowance(f"no room for new mentions this run: {caps['room_why']}" if caps.get("room_why") else
+                                f"no room for new mentions this run: {queue or 0:,} wait to be labelled first")
+            raise Allowance(f"the {room:,} new mentions this run has room for were collected {where}"
+                            + (f" ({caps['room_why']})" if caps.get("room_why") else ""))
         if time.time() > deadline:
             raise Allowance(f"the time set aside for collection ended {where}")
 
@@ -712,4 +718,12 @@ def run(conn, caps: dict, deadline: float, should_stop=lambda: None, log=print, 
         "of_reddit": {"network": round(net1["net_s"] - net0["net_s"]),
                       "pacing_sleep": round(net1["paced_s"] - net0["paced_s"]),
                       "rate_limit_waits": round(net1["limit_wait_s"] - net0["limit_wait_s"])}}
+    # the shared Reddit app (reddit_client._win): in the complete windows of the stage, what the app used against
+    # what this stage's calls were; the rest went to the other users of the same client id
+    wins = net1.get("app_windows", 0) - net0.get("app_windows", 0)
+    if wins:
+        used = net1["app_used"] - net0["app_used"]
+        own = net1["app_own"] - net0["app_own"]
+        rec["shared_app"] = {"windows": wins, "app_used": round(used), "own": round(own),
+                             "others_share": round(max(0.0, used - own) / used, 3) if used else None}
     return rec

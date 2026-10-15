@@ -36,3 +36,12 @@ An independent read by Codex (gpt-6-astra, read-only, no search; GLM was in its 
 the queue was counted whole, but an entry tried five times waits for a person and the classifier never picks it
 again, so enough of them would have held the room at zero on every run. Both places now count what the classifier
 still takes (`classify_sweep.LABELLABLE_SQL`, `attempts < 5`).
+
+## Amended, 15 Oct: Jev labels in the peak hours
+
+Until today the classifier labelled nothing between 06:00 and 10:00 UTC ("ended rather than leave GLM's share
+unjudged"), so a morning pass's mentions all waited and the whole queue came off the next pass's room. It now does in
+those hours what it already did when GLM's allowance is used up: Jev settles what it can (about half of a batch on 5
+Oct's receipt, when GLM was down), GLM is not asked, and Jev's residue keeps its tries and waits for GLM after 10:00
+UTC (`worker/classify_sweep.py`, `glm_peak` on the receipt). The day tick's rule stands: no pass starts in those hours
+while 20,000 or more mentions wait.

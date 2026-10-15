@@ -524,54 +524,102 @@ _real_read = _mt.read
 _reads = [1_001_000_000_000.0]
 _mt.read = lambda timeout=30.0: _reads[0]
 _real_clock = _rd.Run.__dict__["clock"]   # the staticmethod itself, not the function it wraps
-_rd.Run.clock = staticmethod(lambda: _dt.datetime(2026, 10, 13, 13, 0, tzinfo=_dt.timezone.utc))   # after the backup
+_U = lambda d, h, m: _dt.datetime(2026, 10, d, h, m, tzinfo=_dt.timezone.utc)  # noqa: E731
+
+
+class _LedgerConn:
+    """The readings the ledger asks for (decision 0035), and the database's size."""
+    def __init__(self, readings, db_bytes=3.6e9):
+        self.rs, self.db, self.kept, self.closed = readings, db_bytes, [], False
+
+    def execute(self, sql, params=None):
+        if sql.startswith("insert into public.egress_counter"):
+            self.kept.append(params)
+        rows = ([tuple(r) for r in self.rs if r[0] > params[0]] if "from public.egress_counter where at >" in sql
+                else [(self.db,)] if "pg_database_size" in sql else [])
+        return type("R", (), {"fetchone": lambda s: rows[0] if rows else None, "fetchall": lambda s: rows,
+                              "rowcount": 0})()
+
+    def rollback(self):
+        pass
+
+
+# 12 Oct 23:55 to 13 Oct 11:30: the night (0.6 GB), the watchdog's reading, then the backup at 11:10 to 11:30
+_day13 = [(_U(12, 11, 20), 999.5e9), (_U(12, 23, 55), 1000.0e9), (_U(13, 5, 0), 1000.6e9), (_U(13, 6, 55), 1000.62e9),
+          (_U(13, 11, 10), 1000.8e9), (_U(13, 11, 30), 1001.2e9)]
+_morning13 = _day13[:4]
+_real_read = _mt.read
+_reads = [1_001_000_000_000.0]
+_mt.read = lambda timeout=30.0: _reads[0]
+_rd.Run.clock = staticmethod(lambda: _U(13, 13, 0))   # after the backup
 try:
     class _A:
         manual, max_calls, takedown_calls, max_mentions, max_egress_gb, day_end, options, stages = True, None, None, None, None, None, {}, []
-    _sched = {"caps": {"reddit_calls": 1, "takedown_calls": 1, "mentions": 1, "minutes": 10, "egress_gb": 0.7}, "day_line_gb": 1.9}
+    _sched = {"caps": {"reddit_calls": 1, "takedown_calls": 1, "mentions": 1, "minutes": 10, "egress_gb": 0.7},
+              "day_line_gb": 1.9, "backup": {"fraction": 0.3}}
     _wal = _rd.wal_bytes
     _rd.wal_bytes = lambda conn: 0
-    _c = _MeterConn((1_000_000_000_000, _then))
-    _night = _rd.Run(_c, _sched, _A())
+    _night = _rd.Run(_LedgerConn(_day13), _sched, _A())
     _night._meter_at = 0
     _reads[0] = 1_009_000_000_000.0
     check("day line: the night's run is never stopped by it, whatever the counter says", _night.day_line_reason() is None)
     _A.day_end = _dt.time(23, 15)
-    _reads[0] = 1_001_200_000_000.0
-    _day = _rd.Run(_MeterConn((1_000_000_000_000, _then)), _sched, _A())
-    check("day line: a daytime pass under the line goes on (and a reading younger than three minutes is not repeated)",
-          _day.day_line_reason() is None and _day.meter["readings"] == 1 and _day.meter["last_24h_gb"] == 1.2)
-    _reads[0] = 1_002_500_000_000.0
-    _late = _rd.Run(_MeterConn((1_000_000_000_000, _then)), _sched, _A())
-    check("day line: a pass that starts with the line already reached stops before its first stage",
-          _rd.is_egress_stop(_late.day_line_reason()) and "2.50 GB" in _late.day_line_reason(), _late.day_line_reason())
-    _reads[0] = 1_001_700_000_000.0
-    _after = _rd.Run(_MeterConn((1_000_000_000_000, _then)), _sched, _A())
-    check("day line: after 11:45 UTC nothing is held (1.7 GB sent goes on)",
-          _after.day_line_reason() is None and _after.meter["backup_held_gb"] == 0.0, _after.meter)
-    _rd.Run.clock = staticmethod(lambda: _dt.datetime(2026, 10, 13, 9, 0, tzinfo=_dt.timezone.utc))   # before it
-    _held = _rd.Run(_MeterConn((1_000_000_000_000, _then)), dict(_sched, backup={"after_utc": "11:45", "fraction": 0.3}), _A())
-    check("day line: before 11:45 UTC the backup still to come counts as sent (1.7 GB + 0.3 x 1.7 held), and says so",
-          _rd.is_egress_stop(_held.day_line_reason()) and "held for the backup" in _held.day_line_reason()
-          and _held.meter["backup_held_gb"] == 0.51, (_held.day_line_reason(), _held.meter))
-    _reads[0] = 1_001_200_000_000.0
-    _early = _rd.Run(_MeterConn((1_000_000_000_000, _then)), dict(_sched, backup={"after_utc": "11:45", "fraction": 0.3}), _A())
-    check("day line: before 11:45 UTC with room for both (1.2 GB + 0.36 held) the pass goes on",
-          _early.day_line_reason() is None and _early.meter["backup_held_gb"] == 0.36, _early.meter)
+    _reads[0] = 1_001_500_000_000.0
+    _day = _rd.Run(_LedgerConn(_day13), _sched, _A())
+    check("day line: a pass under the line goes on; the receipt carries the watchdog's day (0.88 GB since 06:55) and "
+          "tonight's run held (0.6 GB, the night before)",
+          _day.day_line_reason() is None and _day.meter["readings"] == 1 and _day.meter["day_sent_gb"] == 0.88
+          and _day.meter["night_held_gb"] == 0.6 and _day.meter["backup_held_gb"] == 0.0, _day.meter)
+    _reads[0] = 1_002_000_000_000.0
+    _late = _rd.Run(_LedgerConn(_day13), _sched, _A())
+    check("day line: 1.38 GB sent and 0.6 held for tonight reach the line: the pass stops before its first stage",
+          _rd.is_egress_stop(_late.day_line_reason()) and "1.38 GB" in _late.day_line_reason()
+          and "held for tonight's run" in _late.day_line_reason(), _late.day_line_reason())
+    _rd.Run.clock = staticmethod(lambda: _U(13, 9, 0))   # before the backup
+    _reads[0] = 1_001_000_000_000.0
+    _early = _rd.Run(_LedgerConn(_morning13), _sched, _A())
+    check("day line: before the backup shows, 0.3 of what was sent since 11:30 yesterday is held with tonight's run "
+          "(0.38 + 0.45 + 0.6): the pass goes on",
+          _early.day_line_reason() is None and _early.meter["backup_held_gb"] == 0.45, _early.meter)
+    _reads[0] = 1_001_400_000_000.0
+    _held = _rd.Run(_LedgerConn(_morning13), _sched, _A())
+    check("day line: 0.78 sent + 0.57 for the backup + 0.6 for tonight reach the line, and the reason says so",
+          _rd.is_egress_stop(_held.day_line_reason()) and "held for the day's backup" in _held.day_line_reason(),
+          (_held.day_line_reason(), _held.meter))
+    _full = _rd.Run(_LedgerConn(_morning13), dict(_sched, backup={"full_last": "2026-10-06", "full_gb": 1.4}), _A())
+    _reads[0] = 1_001_000_000_000.0
+    _full._meter_at = 0
+    check("day line: on a full-backup day the full one is held (0.38 + 1.4 + 0.6): the pass stops",
+          _rd.is_egress_stop(_full.day_line_reason()) and "full backup" in _full.day_line_reason(), _full.day_line_reason())
+    _rd.Run.clock = staticmethod(lambda: _U(13, 13, 0))
     _reads[0] = 1_001_300_000_000.0
     _day._meter_at = 0
-    check("day line: under the line after a fresh reading, the pass goes on and the receipt carries the figure",
-          _day.day_line_reason() is None and _day.meter["last_24h_gb"] == 1.3 and _day.meter["readings"] == 2)
+    check("day line: after a fresh reading under the line, the pass goes on and the figure moves",
+          _day.day_line_reason() is None and _day.meter["day_sent_gb"] == 0.68 and _day.meter["readings"] == 2)
     _day._meter_at = 0
     _reads[0] = 1_001_950_000_000.0
     _why = _day.day_line_reason()
-    check("day line: at 1.9 GB in 24 hours the pass stops itself, as an egress stop (capped, not failed)",
-          bool(_why) and _rd.is_egress_stop(_why) and "1.95 GB" in _why, _why)
+    check("day line: at the line the pass stops itself, as an egress stop (capped, not failed)",
+          bool(_why) and _rd.is_egress_stop(_why) and "1.33 GB" in _why, _why)
     _reads[0] = None
-    _day2 = _rd.Run(_MeterConn((1_000_000_000_000, _then)), _sched, _A())
+    _day2 = _rd.Run(_LedgerConn(_day13), _sched, _A())
     _day2._meter_at = 0
     check("day line: a counter that cannot be read stops nothing and is counted as unread",
           _day2.day_line_reason() is None and _day2.meter.get("unread", 0) >= 1)
+    _reads[0] = 1_001_000_000_000.0
+    _blind = _rd.Run(_LedgerConn([]), _sched, _A())
+    check("day line: no reading before the watchdog's day: not known, nothing stopped", _blind.day_line_reason() is None)
+    # the night's share (decision 0035): what the day has left once publish and refresh are counted
+    _A.day_end = None
+    _rd.Run.clock = staticmethod(lambda: _U(14, 1, 0))
+    _reads[0] = 1_002_000_000_000.0
+    _n = _rd.Run(_LedgerConn(_day13), dict(_sched, night={"publish_reserve_gb": 0.35}), _A())
+    _nr = _n.night_room()
+    check("night room: 1.38 GB sent in the watchdog's day leaves 1.9 - 1.38 - 0.35 = 0.17 GB for collecting and "
+          "labelling", _nr is not None and _nr["gb"] == 0.17 and _nr["sent_gb"] == 1.38, _nr)
+    _A.day_end = _dt.time(23, 15)
+    check("night room: a daytime pass has none (it is judged on the line)",
+          _rd.Run(_LedgerConn(_day13), _sched, _A()).night_room() is None)
     check("day line: the run's own estimate cap is an egress stop too; the switch is not",
           _rd.is_egress_stop("estimated database egress cap (0.7 GB) reached") and not _rd.is_egress_stop("stopped by the switch: x"))
 finally:
@@ -1119,60 +1167,227 @@ try:
 finally:
     collect.plan, collect.d.fetch_new = _saved
 
-# ---- the day's backup is held back from the line (decision 0033: meter.backup_reserve) ------------------------------
-import meter as _mt  # noqa: E402
+# ---- Jev labels in Z.ai's peak hours; GLM is not asked (classify_sweep._loop, 15 Oct) -------------------------------
+import classify_sweep as _cs3  # noqa: E402
 
 
-class _MConn:
-    def __init__(self, row):
-        self.row, self.asked = row, []
+class _QConn:
+    def __init__(self, keys):
+        self.keys, self.sql = list(keys), []
 
     def execute(self, sql, params=None):
-        self.asked.append(params)
-        return self
+        self.sql.append(sql)
+        rows = []
+        if "from public.classify_queue" in sql and sql.lstrip().startswith("select brand_id"):
+            rows, self.keys = self.keys, []
+        return type("R", (), {"fetchall": lambda s: rows, "fetchone": lambda s: (0,), "rowcount": 0})()
 
-    def fetchone(self):
-        return self.row
 
+_saved3 = {k: getattr(_cs3, k) for k in ("fetch_items", "jev_judge", "decide", "glm_judge", "write", "glm_peak_now")}
+try:
+    _asked_glm, _written = [], []
+    _cs3.fetch_items = lambda conn, keys: [{"brand_id": b, "doc_id": d, "created_utc": c} for b, d, c in keys]
 
-_bk = {"after_utc": "11:45", "fraction": 0.3, "min_gb": 0.15, "default_gb": 0.4}
-_c = _MConn((1000e9,))
-_h, _why = _mt.backup_reserve(_c, 1001.5e9, _dt.datetime(2026, 10, 13, 10, 0, tzinfo=_dt.timezone.utc), _bk)
-check("backup: before 11:45 UTC, 0.3 of what was sent since 11:45 yesterday is held back",
-      abs(_h - 0.45e9) < 1 and _c.asked == [(_dt.datetime(2026, 10, 12, 11, 45, tzinfo=_dt.timezone.utc),)]
-      and "0.45 GB held" in _why, (_h, _c.asked, _why))
-check("backup: from 11:45 UTC nothing is held (the backup is in the counter)",
-      _mt.backup_reserve(_MConn((1000e9,)), 1001.5e9, _dt.datetime(2026, 10, 13, 11, 45, tzinfo=_dt.timezone.utc), _bk)[0] == 0
-      and _mt.backup_reserve(_MConn((1000e9,)), 1001.5e9, _dt.datetime(2026, 10, 13, 23, 0, tzinfo=_dt.timezone.utc), _bk)[0] == 0)
-check("backup: no reading that old, or a counter that went back (a restart): the default is held",
-      _mt.backup_reserve(_MConn(None), 1001.5e9, _dt.datetime(2026, 10, 13, 8, 0, tzinfo=_dt.timezone.utc), _bk)[0] == 0.4e9
-      and _mt.backup_reserve(_MConn((1002e9,)), 1001.5e9, _dt.datetime(2026, 10, 13, 8, 0, tzinfo=_dt.timezone.utc), _bk)[0] == 0.4e9)
-check("backup: never less than min_gb before it",
-      _mt.backup_reserve(_MConn((1000e9,)), 1000.1e9, _dt.datetime(2026, 10, 13, 8, 0, tzinfo=_dt.timezone.utc), _bk)[0] == 0.15e9)
+    def _jev(items, log=print):
+        return [{"i": i} for i in range(len(items))]
+    _jev.last_usd, _jev.last_errors = 0.001, {}
+    _cs3.jev_judge = _jev
+    _cs3.decide = lambda x, t: "positive" if (x is not None and x["i"] == 0) else None   # Jev settles one of three
+    _cs3.glm_judge = lambda items, **k: (_asked_glm.append(len(items)) or (["neutral"] * len(items), {
+        "credits": 1.0, "failed_jobs": 0, "retried_jobs": 0, "errors": {}, "asked": [True] * len(items), "jobs": 1,
+        "skipped_jobs": 0, "rate_limited": False}))
+    _cs3.write = lambda conn, items, verdicts, models, tried, jev_seen: (
+        _written.append((list(verdicts), list(tried))) or {"labelled": sum(v is not None for v in verdicts), "rejected": 0})
+    _keys = [(1, "t1_a", 0), (1, "t1_b", 0), (2, "t1_c", 0)]
+    _cs3.glm_peak_now = lambda: True
+    _r3 = {"jev_decided": 0, "glm_decided": 0, "labelled": 0, "rejected": 0, "not_checked": 0, "jev_usd": 0.0,
+           "glm_credits": 0.0, "allowance_used": None}
+    _q3 = _QConn(_keys)
+    _cs3._loop(_q3, {}, {}, "glm-5.3", _r3, {"glm": 0.0, "jev": 0.0}, 100, 1e12, lambda: None, lambda *a, **k: None)
+    check("peak hours: Jev's settled share is written, GLM is not asked, the residue keeps its tries, and only items "
+          "Jev has not seen are taken",
+          _asked_glm == [] and _written == [(["positive", None, None], [True, False, False])]
+          and _r3["labelled"] == 1 and _r3["glm_peak"] and any("jev_checked_at is null" in q for q in _q3.sql),
+          (_asked_glm, _written, _r3))
+    _asked_glm.clear(); _written.clear()
+    _cs3.glm_peak_now = lambda: False
+    _r4 = dict(_r3, labelled=0, jev_decided=0, glm_decided=0, not_checked=0)
+    _r4.pop("glm_peak")
+    _cs3._loop(_QConn(_keys), {}, {}, "glm-5.3", _r4, {"glm": 0.0, "jev": 0.0}, 100, 1e12, lambda: None,
+               lambda *a, **k: None)
+    check("off peak: GLM takes Jev's residue as before", _asked_glm == [2] and _r4["labelled"] == 3
+          and "glm_peak" not in _r4, (_asked_glm, _r4))
+    # Jev failing in the peak hours: what it did not answer is not re-sent this run; a batch it answered none of ends
+    _asked_jev, _written = [], []
 
-# the tick adds the held backup to the 24 hours (ops/day_tick.py effective_used)
-_then2 = _dt.datetime(2026, 10, 12, 8, 0, tzinfo=_dt.timezone.utc)
-_u, _w = _dtk.effective_used(_MeterConn((1_000_000_000_000, _then2)), 1_001_200_000_000,
-                             _dt.datetime(2026, 10, 13, 9, 0, tzinfo=_dt.timezone.utc), {"backup": {"fraction": 0.3}})
-check("day tick: before 11:45 UTC the room is figured on the 24 hours plus the held backup",
-      abs(_u - 1.56e9) < 1 and "held for the backup" in _w, (_u, _w))
-_u, _w = _dtk.effective_used(_MeterConn((1_000_000_000_000, _then2)), 1_001_200_000_000,
-                             _dt.datetime(2026, 10, 13, 12, 0, tzinfo=_dt.timezone.utc), {"backup": {"fraction": 0.3}})
-check("day tick: after 11:45 UTC on the 24 hours alone", _u == 1.2e9 and _w == "", (_u, _w))
-check("day tick: unknown 24 hours (no reading, or a restart) stay unknown, nothing held",
-      _dtk.effective_used(_MeterConn(None), 5.0, _dt.datetime(2026, 10, 13, 9, 0, tzinfo=_dt.timezone.utc), {}) == (None, "")
-      and _dtk.effective_used(_MeterConn(None), None, _dt.datetime(2026, 10, 13, 9, 0, tzinfo=_dt.timezone.utc), {}) == (None, ""))
+    def _jev_flaky(items, log=print):
+        _asked_jev.append([it["doc_id"] for it in items])
+        return [None if it["doc_id"] == "t1_b" else {"i": 0} for it in items]
+    _jev_flaky.last_usd, _jev_flaky.last_errors = 0.0, {}
+    _cs3.jev_judge = _jev_flaky
+    _cs3.glm_peak_now = lambda: True
+
+    _seen_docs: set = set()
+    _cs3.write = lambda conn, items, verdicts, models, tried, jev_seen: (
+        _seen_docs.update(it["doc_id"] for it, sn in zip(items, jev_seen) if sn)
+        or {"labelled": sum(v is not None for v in verdicts), "rejected": 0})
+
+    class _QRepeat(_QConn):   # the queue as the database keeps it: what Jev answered is marked seen, its misses are not
+        def execute(self, sql, params=None):
+            self.sql.append(sql)
+            rows = ([k for k in _keys if k[1] not in _seen_docs]
+                    if ("from public.classify_queue" in sql and sql.lstrip().startswith("select brand_id")
+                        and "<= now()" not in sql) else [])
+            return type("R", (), {"fetchall": lambda s: rows, "fetchone": lambda s: (0,), "rowcount": 0})()
+    _r5 = dict(_r3, labelled=0, jev_decided=0, not_checked=0, allowance_used=None)
+    _cs3._loop(_QRepeat([]), {}, {}, "glm-5.3", _r5, {"glm": 0.0, "jev": 0.0}, 100, 1e12, lambda: None,
+               lambda *a, **k: None)
+    check("peak hours: an item Jev did not answer is not sent to it again this run (one round, not a loop to the "
+          "cap)", _asked_jev[0] == ["t1_a", "t1_b", "t1_c"] and all("t1_b" not in a for a in _asked_jev[1:])
+          and len(_asked_jev) <= 3, _asked_jev)
+    _cs3.jev_judge = lambda items, log=print: [None] * len(items)
+    _cs3.jev_judge.last_usd, _cs3.jev_judge.last_errors = 0.0, {}
+    _r6 = dict(_r3, labelled=0, jev_decided=0, not_checked=0, allowance_used=None)
+    _q6 = _QRepeat([])
+    _cs3._loop(_q6, {}, {}, "glm-5.3", _r6, {"glm": 0.0, "jev": 0.0}, 100, 1e12, lambda: None, lambda *a, **k: None)
+    check("peak hours: a batch Jev answered none of ends the labelling, said on the receipt",
+          "answered none" in (_r6["allowance_used"] or "") and _r6["labelled"] == 0, _r6)
+finally:
+    for k, v in _saved3.items():
+        setattr(_cs3, k, v)
+
+# ---- the shared app's windows (reddit_client._win, 15 Oct) ---------------------------------------------------------
+import reddit_client as _rc5  # noqa: E402
+_t0 = [1_000_000.0]
+_realtime = _rc5.time.time
+_rc5.time.time = lambda: _t0[0]
+_saved_stats = dict(_rc5._stats)
+_rc5._win.update(end=None, max_used=0.0, own=0, first=True)
+for k in ("app_windows", "app_used", "app_own"):
+    _rc5._stats[k] = 0
+try:
+    def _hit(used, reset):
+        _rc5._read_ratelimit({"x-ratelimit-remaining": str(1000 - used), "x-ratelimit-reset": str(reset),
+                              "x-ratelimit-used": str(used)})
+    _hit(400, 300)                      # joined midway: this window is left out
+    _t0[0] += 300; _hit(10, 600)        # a new window
+    _t0[0] += 100; _hit(300, 500)
+    _t0[0] += 100; _hit(620, 400)       # this process made 3 calls of the 620
+    _t0[0] += 400; _hit(5, 600)         # the next window closes it
+    check("shared app: a complete window counts what the app used and this process's calls in it; the first, "
+          "joined midway, is left out",
+          _rc5._stats["app_windows"] == 1 and _rc5._stats["app_used"] == 620 and _rc5._stats["app_own"] == 3,
+          {k: _rc5._stats[k] for k in ("app_windows", "app_used", "app_own")})
+finally:
+    _rc5.time.time = _realtime
+    _rc5._stats.clear(); _rc5._stats.update(_saved_stats)
+    _rc5._win.update(end=None, max_used=0.0, own=0, first=True)
+
+# ---- the watchdog's day (decision 0035: meter.ledger_from, replacing 0033's backup_reserve) -------------------------
+import meter as _mt  # noqa: E402
+check("watchdog day: 06:59 UTC is still yesterday's day; 07:00 starts today's",
+      _mt.watchdog_day_start(_U(14, 6, 59)) == _U(13, 7, 0) and _mt.watchdog_day_start(_U(14, 7, 0)) == _U(14, 7, 0))
+_rate = 3e6 / 60
+check("bursts: 14 Oct's full backup (1,285 MB in 4 minutes) and 13 Oct's (390 MB in 17) are seen; a pass's 9 MB "
+      "in 3 minutes and anything before `since` are not",
+      [round(b / 1e6) for _, b in _mt.bursts([(_U(13, 11, 13), 0.0), (_U(13, 11, 30), 390e6), (_U(13, 11, 33), 399e6),
+                                              (_U(14, 12, 21), 600e6), (_U(14, 12, 25), 1885e6)],
+                                             _U(13, 10, 30), _rate, 1e8)] == [390, 1285]
+      and _mt.bursts([(_U(13, 11, 13), 0.0), (_U(13, 11, 30), 390e6)], _U(13, 11, 30), _rate, 1e8) == [])
+_sp = [(_U(13, 23, 50), 10e9), (_U(14, 2, 45), 10.52e9), (_U(14, 5, 59), 10.55e9), (_U(14, 23, 40), 11e9),
+       (_U(15, 3, 0), 11.6e9)]
+check("night spends: 00:00 to 06:00 UTC per night, tonight's left out until 06:00, a night without its readings "
+      "skipped", [round(x / 1e9, 2) for x in _mt.night_spends(_sp, _U(15, 4, 0))] == [0.55]
+      and [round(x / 1e9, 2) for x in _mt.night_spends(_sp + [(_U(15, 5, 50), 11.7e9)], _U(15, 6, 30))] == [0.7, 0.55])
+# the day of 14 Oct replayed: the night before, the watchdog's reading, passes, the full backup at 12:21-12:25
+_r14 = [(_U(13, 11, 20), 1465.4e9), (_U(13, 23, 55), 1466.29e9), (_U(14, 2, 46), 1466.814e9), (_U(14, 6, 32), 1466.853e9),
+        (_U(14, 9, 47), 1466.945e9), (_U(14, 12, 21), 1467.041e9), (_U(14, 12, 25), 1468.326e9)]
+_s14 = {"day_line_gb": 1.9, "backup": {"fraction": 0.3, "full_last": "2026-10-14", "full_gb": 1.4, "full_share": 0.37},
+        "night": {"reserve_min_gb": 0.6, "publish_reserve_gb": 0.35}}
+_upto = lambda t: [r for r in _r14 if r[0] <= t]  # noqa: E731
+_L = _mt.ledger_from(_upto(_U(14, 9, 47)), 1466.945e9, _U(14, 9, 47), _s14, 3.58e9)
+check("ledger: on 14 Oct (a full-backup day) at 09:47 the full one is held and tonight's run: no room for a pass",
+      _L["full_backup_day"] and _L["backup_held"] == 1.4e9 and _L["night_held"] == 0.6e9
+      and _L["used"] > 1.9e9 and round(_L["sent"] / 1e6) == 92, _L)
+_L = _mt.ledger_from(_upto(_U(14, 9, 47)), 1466.945e9, _U(14, 9, 47), _s14, 4.2e9)
+check("ledger: a full backup is held at full_share of the database when that is more (0.37 x 4.2 GB)",
+      abs(_L["backup_held"] - 1.554e9) < 1, _L["backup_held"])
+_L = _mt.ledger_from(_r14 + [(_U(14, 12, 30), 1468.33e9)], 1468.33e9, _U(14, 12, 30), _s14, 3.58e9)
+check("ledger: from 12:25 the backup is in the counter (1.28 GB seen, a pass's reading after it) and nothing more is "
+      "held for it",
+      _L["backup_held"] == 0 and _L.get("backup_seen_gb") == 1.285 and "in the counter" in _L["backup_why"], _L)
+_L = _mt.ledger_from(_r14, 1468.426e9, _U(15, 0, 52), _s14, 3.58e9)
+check("ledger: tonight's run, once in the day, is not held; its room is the line less the day and the publish "
+      "(1.9 - 1.573 - 0.35 < 0: the night collects nothing)",
+      _L["night_held"] == 0 and _L["night_room"] < 0 and round(_L["sent"] / 1e9, 3) == 1.573, _L)
+_r15 = _r14 + [(_U(15, 3, 0), 1469.0e9), (_U(15, 6, 58), 1469.01e9)]
+_L = _mt.ledger_from(_r15, 1469.02e9, _U(15, 7, 30), _s14, 3.58e9)
+check("ledger: the morning after, a new day: the delta backup is held on what was sent since 11:30 yesterday less the "
+      "full backup itself (0.3 x 0.79 GB), with tonight's run, and a pass has its room from 07:00",
+      not _L["full_backup_day"] and abs(_L["backup_held"] - 0.3 * (1469.02e9 - 1466.945e9 - 1.285e9)) < 1e6
+      and _L["used"] < 1.75e9, _L)
+_split = _upto(_U(14, 12, 21)) + [(_U(14, 12, 23), 1467.941e9)]   # 0.9 GB of the full backup by 12:23
+_L = _mt.ledger_from(_split, 1467.941e9, _U(14, 12, 23), _s14, 3.58e9)
+check("ledger: a backup seen in its first reading only keeps the rest of its estimate held until the counter "
+      "settles (1.4 - 0.9 GB)", abs(_L["backup_held"] - 0.5e9) < 1e6 and "held until the counter settles"
+      in _L["backup_why"], (_L["backup_held"], _L["backup_why"]))
+_L = _mt.ledger_from(_split + [(_U(14, 12, 25), 1468.326e9), (_U(14, 12, 28), 1468.33e9)], 1468.33e9,
+                     _U(14, 12, 28), _s14, 3.58e9)
+check("ledger: its two readings add up (1.285 GB) and, once a reading at a pass's pace follows, nothing is held",
+      _L["backup_held"] == 0 and _L.get("backup_seen_gb") == 1.285, _L)
+_tail = _split + [(_U(14, 12, 26), 1468.0e9)]   # 59 MB in three minutes after the burst: the backup is still sending
+_L = _mt.ledger_from(_tail, 1468.0e9, _U(14, 12, 26), _s14, 3.58e9)
+check("ledger: a tail under the burst threshold but over a pass's pace does not end the hold (review round 2)",
+      abs(_L["backup_held"] - 0.5e9) < 1e6, (_L["backup_held"], _L["backup_why"]))
+_L = _mt.ledger_from(_tail + [(_U(14, 12, 29), 1468.005e9)], 1468.005e9, _U(14, 12, 29), _s14, 3.58e9)
+check("ledger: the hold ends when a reading comes back at a pass's pace (5 MB in three minutes)",
+      _L["backup_held"] == 0, (_L["backup_held"], _L["backup_why"]))
+_L = _mt.ledger_from(_r14, 1466.945e9, _U(14, 9, 47), _s14, 3.58e9)
+check("ledger: readings after `now` never count (the full backup at 12:25 is not seen at 09:47)",
+      _L["backup_held"] == 1.4e9 and "backup_seen_gb" not in _L, _L)
+_L = _mt.ledger_from([(_U(13, 6, 50), 1e12)], 1e12 + 5e8, _U(13, 15, 0), {"backup": {}}, None)
+check("ledger: no backup seen by 14:00 UTC: none is held after it", _L["backup_held"] == 0
+      and "none is held after it" in _L["backup_why"], _L["backup_why"])
+check("ledger: no reading before the day's start, or a counter that went back: 'not known' (used None)",
+      _mt.ledger_from([], 5e9, _U(13, 9, 0), {}, None)["used"] is None
+      and _mt.ledger_from([(_U(13, 6, 0), 9e9)], 5e9, _U(13, 9, 0), {}, None)["used"] is None)
+
+# the tick figures the room on the same ledger (ops/day_tick.py effective_used)
+_u, _w = _dtk.effective_used(_LedgerConn(_morning13), 1_001_000_000_000, _U(13, 9, 0), {"backup": {"fraction": 0.3}})
+check("day tick: the room is figured on the watchdog's day with the backup and tonight's run held, and says why",
+      abs(_u - 1.43e9) < 1 and "held for the day's backup" in _w and "tonight's run" in _w, (_u, _w))
+check("day tick: unknown (no reading before the day, or nothing read now) stays unknown, nothing held",
+      _dtk.effective_used(_LedgerConn([]), 5.0, _U(13, 9, 0), {}) == (None, "")
+      and _dtk.effective_used(_LedgerConn(_morning13), None, _U(13, 9, 0), {}) == (None, ""))
 
 # the backup's real times are checked against the hold (scripts/schedule_check.py backup_timing)
 import schedule_check as _sc  # noqa: E402
 _bnow = _dt.datetime(2026, 10, 13, 14, 0, tzinfo=_dt.timezone.utc)
 _ok = [{"inserted_at": "2026-10-11T11:15:57.428Z"}, {"inserted_at": "2026-10-12T11:20:47.151Z"},
        {"inserted_at": "2026-10-13T11:21:03.000Z"}]
-check("backup timing: backups in the hour before 11:45 UTC are no finding",
-      _sc.backup_timing({"backup": {"after_utc": "11:45"}}, _bnow, _ok)[0] == [])
-_moved = _ok[:2] + [{"inserted_at": "2026-10-13T12:30:00Z"}]
-check("backup timing: a backup that moved past 11:45 UTC is a finding that names it",
-      any("12:30" in f for f in _sc.backup_timing({"backup": {"after_utc": "11:45"}}, _bnow, _moved)[0]))
+check("backup timing: backups between 10:30 and 14:00 UTC are no finding (14 Oct's full one at 12:25 included)",
+      _sc.backup_timing({}, _bnow, _ok)[0] == []
+      and _sc.backup_timing({}, _bnow, _ok[:2] + [{"inserted_at": "2026-10-13T12:25:02Z"}])[0] == [])
+_moved = _ok[:2] + [{"inserted_at": "2026-10-13T14:30:00Z"}]
+check("backup timing: a backup that moved past 14:00 UTC is a finding that names it",
+      any("14:30" in f for f in _sc.backup_timing({}, _bnow, _moved)[0]))
+_fb = {"backup": {"full_last": "2026-10-14", "full_every_days": 7, "full_gb": 1.4}}
+check("full backups: 14 Oct's on its predicted day is no finding",
+      _sc.full_backups(_fb, _r14, _U(15, 9, 0))[0] == [], _sc.full_backups(_fb, _r14, _U(15, 9, 0)))
+_r14s = _r14[:5] + [(_U(14, 12, 21), 1467.041e9), (_U(14, 12, 23), 1467.68e9), (_U(14, 12, 25), 1468.326e9)]
+check("full backups: one split across two readings (0.64 + 0.65 GB) is still one full backup",
+      _sc.full_backups(dict(_fb, backup=dict(_fb["backup"], full_last="2026-10-12")), _r14s, _U(15, 9, 0))[1]
+      .get("full_backups") == {"2026-10-14": 1.285}, _sc.full_backups(dict(_fb, backup=dict(_fb["backup"], full_last="2026-10-12")), _r14s, _U(15, 9, 0)))
+check("full backups: the night's publish (0.3 GB at 02:30) is never added to a day's backup",
+      _sc.full_backups(_fb, [(_U(13, 2, 27), 0.0), (_U(13, 2, 45), 0.3e9), (_U(13, 11, 13), 0.31e9),
+                             (_U(13, 11, 30), 0.72e9)], _U(13, 16, 0))[1].get("full_backups") == {}, "publish")
+check("full backups: one on a day the schedule does not call full is a finding that names the day to set",
+      any("2026-10-14" in f for f in _sc.full_backups({"backup": dict(_fb["backup"], full_last="2026-10-12")}, _r14,
+                                                      _U(15, 9, 0))[0]))
+check("full backups: a full day of the last week without one, read on the counter, is a finding",
+      any("13 Oct" in f for f in _sc.full_backups({"backup": dict(_fb["backup"], full_last="2026-10-06")},
+                                                  _r14[:2] + [(_U(13, 12, 0), 1465.6e9), (_U(13, 15, 0), 1465.7e9)],
+                                                  _U(13, 16, 0))[0]))
 check("backup timing: none in 30 hours is a finding; none listed is a finding",
       any("30 hours" in f for f in _sc.backup_timing({}, _bnow + _dt.timedelta(days=2), _ok)[0])
       and _sc.backup_timing({}, _bnow, [])[0] == ["no daily backup is listed for the project"])

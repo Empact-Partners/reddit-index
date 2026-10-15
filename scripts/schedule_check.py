@@ -141,9 +141,10 @@ def database(sched: dict, since: str) -> tuple[list[str], dict]:
 
 
 def backup_timing(sched: dict, now: dt.datetime | None = None, backups: list | None = None) -> tuple[list[str], dict]:
-    """The egress line holds the day's backup back until `backup.after_utc` (decision 0033), on the strength of when
-    Supabase ran it (11:15 to 11:21 UTC on 10-13 Oct). Read from the backups' own record; a backup outside the
-    hour before `after_utc`, or none in 30 hours, is a finding. `backups`: the API's list (tests pass their own)."""
+    """The egress line holds the day's backup until the counter shows it, and at most until `backup.hold_until_utc`
+    (decisions 0033, 0035), on the strength of when Supabase runs it (11:15 to 11:21 UTC on 8-13 Oct, 12:25 on 14 Oct,
+    the full one). Read from the backups' own record; a backup outside `seen_after_utc` to `hold_until_utc`, or none
+    in 30 hours, is a finding. `backups`: the API's list (tests pass their own)."""
     now = now or dt.datetime.now(dt.timezone.utc)
     if backups is None:
         try:
@@ -160,17 +161,53 @@ def backup_timing(sched: dict, now: dt.datetime | None = None, backups: list | N
     if not times:
         return ["no daily backup is listed for the project"], {"backups": []}
     last = times[-1]
-    hh, mm = (int(x) for x in sched.get("backup", {}).get("after_utc", "11:45").split(":"))
-    end = hh * 60 + mm
+    bk = sched.get("backup", {})
+    lo, hi = bk.get("seen_after_utc", "10:30"), bk.get("hold_until_utc", "14:00")
+    mins = lambda hhmm: int(hhmm[:2]) * 60 + int(hhmm[3:5])  # noqa: E731
     out = []
     for t in times[-3:]:
-        m = t.hour * 60 + t.minute
-        if not (end - 60 <= m < end):
-            out.append(f"the daily backup of {t:%d %b} ran at {t:%H:%M} UTC, outside the hour before {hh:02d}:{mm:02d} "
-                       f"UTC that the egress line holds it back for (decision 0033): move backup.after_utc")
+        if not (mins(lo) <= t.hour * 60 + t.minute < mins(hi)):
+            out.append(f"the daily backup of {t:%d %b} ran at {t:%H:%M} UTC, outside {lo} to {hi} UTC where the egress "
+                       f"line holds it (decision 0035): move backup.seen_after_utc / hold_until_utc")
     if now - last > dt.timedelta(hours=30):
         out.append(f"the newest daily backup is from {last:%d %b %H:%M} UTC, more than 30 hours ago")
     return out, {"backups": [t.strftime("%d %b %H:%M") for t in times[-3:]]}
+
+
+def full_backups(sched: dict, readings: list, now: dt.datetime) -> tuple[list[str], dict]:
+    """Decision 0035 predicts the full backup (every `full_every_days` from `full_last`, about the database's size x
+    `full_share`). Read from the counter's readings (sorted (at, bytes)): a burst of at least half a full one on a day
+    the schedule does not call full, or a full day of the last week without one, is a finding."""
+    import meter
+    bk = sched.get("backup", {})
+    if not bk.get("full_last"):
+        return [], {}
+    every, first = int(bk.get("full_every_days", 7)), dt.date.fromisoformat(bk["full_last"])
+    big = 0.5 * float(bk.get("full_gb", 1.4)) * 1e9
+    # each day's backup window, its bursts added up (a backup can span two readings; review, 15 Oct); the night's
+    # publish (0.3 GB at 02:00 to 05:00 UTC) is outside it
+    mins = lambda hhmm: int(hhmm[:2]) * 60 + int(hhmm[3:5])  # noqa: E731
+    lo, hi = mins(bk.get("seen_after_utc", "10:30")), mins(bk.get("hold_until_utc", "14:00")) + 120   # 10:30 to 16:00
+    per_day: dict = {}
+    for at, b in meter.bursts(readings, now - dt.timedelta(days=8), float(bk.get("pass_rate_mb_min", 3)) * 1e6 / 60,
+                              float(bk.get("seen_min_gb", 0.1)) * 1e9):
+        if lo <= at.hour * 60 + at.minute < hi:
+            per_day[at.date()] = per_day.get(at.date(), 0) + b
+    seen = {d: b for d, b in per_day.items() if b >= big}
+    out = []
+    for day, b in sorted(seen.items()):
+        if (day - first).days % every:
+            out.append(f"a full backup of {b / 1e9:.2f} GB ran on {day:%d %b}, a day backup.full_last does not call full: "
+                       f"set full_last to {day.isoformat()}")
+    d = now.date() - dt.timedelta(days=7)
+    hold = mins(bk.get("hold_until_utc", "14:00"))
+    while d <= now.date():
+        due = d >= first and (d - first).days % every == 0
+        over = d < now.date() or now.hour * 60 + now.minute >= hold
+        if due and over and d not in seen and any(r[0].date() == d for r in readings):
+            out.append(f"{d:%d %b} was a full-backup day under backup.full_last and the counter shows none")
+        d += dt.timedelta(days=1)
+    return out, {"full_backups": {k.isoformat(): round(v / 1e9, 3) for k, v in seen.items()}}
 
 
 def main() -> int:
@@ -187,6 +224,17 @@ def main() -> int:
     more, bfacts = backup_timing(sched)
     findings += more
     facts.update(bfacts)
+    try:   # the full backup's cadence, read on the counter (decision 0035)
+        import db as _db
+        _c = _db.connect()
+        _rows = _c.execute("select at, bytes::float8 from public.egress_counter where at > now() - interval '9 days' "
+                           "order by at").fetchall()
+        _c.close()
+        more, ffacts = full_backups(sched, [(a, float(b)) for a, b in _rows], dt.datetime.now(dt.timezone.utc))
+        findings += more
+        facts.update(ffacts)
+    except Exception as e:  # noqa: BLE001 - not readable from here: said, not a finding
+        facts["full_backups"] = f"not read: {str(e)[:80]}"
     print(json.dumps({"since": since, "facts": facts, "findings": findings}, indent=1, default=str))
     if findings and a.dm:
         sys.path.insert(0, os.path.join(ROOT, "worker", "lib"))
