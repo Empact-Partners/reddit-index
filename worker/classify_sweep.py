@@ -483,6 +483,8 @@ def run(conn, cfg: dict, deadline: float, should_stop=lambda: None, log=print) -
     rec["glm_credits"] = round(rec["glm_credits"], 1)
     rec["read_bytes"] = READ_BYTES - read0
     rec["left_in_queue"] = conn.execute("select count(*) from public.classify_queue").fetchone()[0]
+    if rec.get("glm_peak") and rec["left_in_queue"] and not rec["allowance_used"]:
+        rec["allowance_used"] = rec["glm_peak"]
     return rec
 
 
@@ -504,16 +506,20 @@ def known_glm_wall(conn) -> str | None:
 def _loop(conn, cfg, t, model, rec, last_batch, limit, deadline, should_stop, log) -> None:
     taken = 0
     while taken < limit:
-        glm_on = cfg.get("glm", True) and not _walled(rec)
+        # In Z.ai's peak hours GLM is not asked (it bills double), and Jev still settles what it can: its residue keeps
+        # its tries and waits for GLM after 10:00 UTC, as when GLM's allowance is used up (15 Oct: until then the
+        # classifier labelled nothing in those four hours, and a pass's room shrank by the whole queue)
+        peak = glm_peak_now()
+        glm_on = cfg.get("glm", True) and not _walled(rec) and not peak
+        if peak and not rec.get("glm_peak"):
+            rec["glm_peak"] = ("Z.ai peak hours (06:00-10:00 UTC): Jev settled what it could; GLM's share waits for "
+                               "10:00 UTC with its tries")
         if time.time() > deadline:
             rec["allowance_used"] = "the time set aside for classification ended"
             break
         reason = should_stop()
         if reason:
             rec["stopped"] = reason
-            break
-        if glm_on and glm_peak_now():
-            rec["allowance_used"] = "Z.ai peak hours (06:00-10:00 UTC): ended rather than leave GLM's share unjudged"
             break
         # the caps are checked BEFORE a batch is spent, on what the last batch cost
         if rec["glm_credits"] + last_batch["glm"] > float(cfg.get("glm_credits_max", 3000)):

@@ -67,8 +67,8 @@ def decide(now: dt.datetime, running: int, used_gb: float | None, cfg: dict, lin
     if running:
         return False, "a run or a retention step is in progress", None
     if queue is not None and glm_peak(now) and queue >= int(cfg.get("peak_queue_max", 20000)):
-        return False, (f"{queue:,} mentions wait for a label, and none is labelled in GLM's peak hours (06:00 to "
-                       f"10:00 UTC): a pass now would only add to them"), None
+        return False, (f"{queue:,} mentions wait for a label, and in GLM's peak hours (06:00 to 10:00 UTC) only Jev "
+                       f"labels, its confident share: a pass now would mostly add to them"), None
     if used_gb is None:
         return False, ("the node counter could not be read, or no reading is older than the watchdog's day: no pass "
                        "is started without knowing the room"), None

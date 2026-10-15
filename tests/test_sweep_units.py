@@ -1167,6 +1167,60 @@ try:
 finally:
     collect.plan, collect.d.fetch_new = _saved
 
+# ---- Jev labels in Z.ai's peak hours; GLM is not asked (classify_sweep._loop, 15 Oct) -------------------------------
+import classify_sweep as _cs3  # noqa: E402
+
+
+class _QConn:
+    def __init__(self, keys):
+        self.keys, self.sql = list(keys), []
+
+    def execute(self, sql, params=None):
+        self.sql.append(sql)
+        rows = []
+        if "from public.classify_queue" in sql and sql.lstrip().startswith("select brand_id"):
+            rows, self.keys = self.keys, []
+        return type("R", (), {"fetchall": lambda s: rows, "fetchone": lambda s: (0,), "rowcount": 0})()
+
+
+_saved3 = {k: getattr(_cs3, k) for k in ("fetch_items", "jev_judge", "decide", "glm_judge", "write", "glm_peak_now")}
+try:
+    _asked_glm, _written = [], []
+    _cs3.fetch_items = lambda conn, keys: [{"brand_id": b, "doc_id": d, "created_utc": c} for b, d, c in keys]
+
+    def _jev(items, log=print):
+        return [{"i": i} for i in range(len(items))]
+    _jev.last_usd, _jev.last_errors = 0.001, {}
+    _cs3.jev_judge = _jev
+    _cs3.decide = lambda x, t: "positive" if x["i"] == 0 else None   # Jev settles one of three
+    _cs3.glm_judge = lambda items, **k: (_asked_glm.append(len(items)) or (["neutral"] * len(items), {
+        "credits": 1.0, "failed_jobs": 0, "retried_jobs": 0, "errors": {}, "asked": [True] * len(items), "jobs": 1,
+        "skipped_jobs": 0, "rate_limited": False}))
+    _cs3.write = lambda conn, items, verdicts, models, tried, jev_seen: (
+        _written.append((list(verdicts), list(tried))) or {"labelled": sum(v is not None for v in verdicts), "rejected": 0})
+    _keys = [(1, "t1_a", 0), (1, "t1_b", 0), (2, "t1_c", 0)]
+    _cs3.glm_peak_now = lambda: True
+    _r3 = {"jev_decided": 0, "glm_decided": 0, "labelled": 0, "rejected": 0, "not_checked": 0, "jev_usd": 0.0,
+           "glm_credits": 0.0, "allowance_used": None}
+    _q3 = _QConn(_keys)
+    _cs3._loop(_q3, {}, {}, "glm-5.3", _r3, {"glm": 0.0, "jev": 0.0}, 100, 1e12, lambda: None, lambda *a, **k: None)
+    check("peak hours: Jev's settled share is written, GLM is not asked, the residue keeps its tries, and only items "
+          "Jev has not seen are taken",
+          _asked_glm == [] and _written == [(["positive", None, None], [True, False, False])]
+          and _r3["labelled"] == 1 and _r3["glm_peak"] and any("jev_checked_at is null" in q for q in _q3.sql),
+          (_asked_glm, _written, _r3))
+    _asked_glm.clear(); _written.clear()
+    _cs3.glm_peak_now = lambda: False
+    _r4 = dict(_r3, labelled=0, jev_decided=0, glm_decided=0, not_checked=0)
+    _r4.pop("glm_peak")
+    _cs3._loop(_QConn(_keys), {}, {}, "glm-5.3", _r4, {"glm": 0.0, "jev": 0.0}, 100, 1e12, lambda: None,
+               lambda *a, **k: None)
+    check("off peak: GLM takes Jev's residue as before", _asked_glm == [2] and _r4["labelled"] == 3
+          and "glm_peak" not in _r4, (_asked_glm, _r4))
+finally:
+    for k, v in _saved3.items():
+        setattr(_cs3, k, v)
+
 # ---- the shared app's windows (reddit_client._win, 15 Oct) ---------------------------------------------------------
 import reddit_client as _rc5  # noqa: E402
 _t0 = [1_000_000.0]

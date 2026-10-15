@@ -40,7 +40,7 @@
   "estimate_factor": 1.25,
   "why": "The daytime passes, requested on Railway by ops/day_tick.py every 30 minutes (decision 0026): a pass starts when nothing else runs and the watchdog's day (decision 0035) holds at least min_room_gb of room under day_line_gb once the day's backup and tonight's run are counted, capped at (room - 0.05) / estimate_factor on its own estimate. A pass ends by end_by_utc, 45 minutes before the night's run. Until 11 Oct a laptop requested them, and it slept.",
   "peak_queue_max": 20000,
-  "peak_why": "Decision 0032: in Z.ai's peak hours (06:00 to 10:00 UTC) the classifier labels nothing, so no pass starts while this many mentions or more already wait for a label (13 Oct: the 06:30 pass collected 23,958 and labelled none)."
+  "peak_why": "Decision 0032: in Z.ai's peak hours (06:00 to 10:00 UTC) GLM is not asked, so no pass starts while this many mentions or more already wait for a label (13 Oct: the 06:30 pass collected 23,958 and labelled none). Since 15 Oct Jev still labels its confident share in those hours and its residue waits for GLM after 10:00 (worker/classify_sweep.py)."
  },
  "takedown_brake_share": 0.15,
  "verify_pages": 7000,
