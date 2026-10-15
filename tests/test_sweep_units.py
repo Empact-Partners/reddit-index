@@ -535,7 +535,7 @@ class _LedgerConn:
     def execute(self, sql, params=None):
         if sql.startswith("insert into public.egress_counter"):
             self.kept.append(params)
-        rows = ([tuple(r) for r in self.rs] if "from public.egress_counter where at >" in sql
+        rows = ([tuple(r) for r in self.rs if r[0] > params[0]] if "from public.egress_counter where at >" in sql
                 else [(self.db,)] if "pg_database_size" in sql else [])
         return type("R", (), {"fetchone": lambda s: rows[0] if rows else None, "fetchall": lambda s: rows,
                               "rowcount": 0})()
@@ -1277,8 +1277,9 @@ check("ledger: on 14 Oct (a full-backup day) at 09:47 the full one is held and t
 _L = _mt.ledger_from(_upto(_U(14, 9, 47)), 1466.945e9, _U(14, 9, 47), _s14, 4.2e9)
 check("ledger: a full backup is held at full_share of the database when that is more (0.37 x 4.2 GB)",
       abs(_L["backup_held"] - 1.554e9) < 1, _L["backup_held"])
-_L = _mt.ledger_from(_r14, 1468.326e9, _U(14, 12, 30), _s14, 3.58e9)
-check("ledger: from 12:25 the backup is in the counter (1.28 GB seen) and nothing more is held for it",
+_L = _mt.ledger_from(_r14 + [(_U(14, 12, 30), 1468.33e9)], 1468.33e9, _U(14, 12, 30), _s14, 3.58e9)
+check("ledger: from 12:25 the backup is in the counter (1.28 GB seen, a pass's reading after it) and nothing more is "
+      "held for it",
       _L["backup_held"] == 0 and _L.get("backup_seen_gb") == 1.285 and "in the counter" in _L["backup_why"], _L)
 _L = _mt.ledger_from(_r14, 1468.426e9, _U(15, 0, 52), _s14, 3.58e9)
 check("ledger: tonight's run, once in the day, is not held; its room is the line less the day and the publish "
@@ -1290,6 +1291,18 @@ check("ledger: the morning after, a new day: the delta backup is held on what wa
       "full backup itself (0.3 x 0.79 GB), with tonight's run, and a pass has its room from 07:00",
       not _L["full_backup_day"] and abs(_L["backup_held"] - 0.3 * (1469.02e9 - 1466.945e9 - 1.285e9)) < 1e6
       and _L["used"] < 1.75e9, _L)
+_split = _upto(_U(14, 12, 21)) + [(_U(14, 12, 23), 1467.941e9)]   # 0.9 GB of the full backup by 12:23
+_L = _mt.ledger_from(_split, 1467.941e9, _U(14, 12, 23), _s14, 3.58e9)
+check("ledger: a backup seen in its first reading only keeps the rest of its estimate held until the counter "
+      "settles (1.4 - 0.9 GB)", abs(_L["backup_held"] - 0.5e9) < 1e6 and "held until the counter settles"
+      in _L["backup_why"], (_L["backup_held"], _L["backup_why"]))
+_L = _mt.ledger_from(_split + [(_U(14, 12, 25), 1468.326e9), (_U(14, 12, 28), 1468.33e9)], 1468.33e9,
+                     _U(14, 12, 28), _s14, 3.58e9)
+check("ledger: its two readings add up (1.285 GB) and, once a reading at a pass's pace follows, nothing is held",
+      _L["backup_held"] == 0 and _L.get("backup_seen_gb") == 1.285, _L)
+_L = _mt.ledger_from(_r14, 1466.945e9, _U(14, 9, 47), _s14, 3.58e9)
+check("ledger: readings after `now` never count (the full backup at 12:25 is not seen at 09:47)",
+      _L["backup_held"] == 1.4e9 and "backup_seen_gb" not in _L, _L)
 _L = _mt.ledger_from([(_U(13, 6, 50), 1e12)], 1e12 + 5e8, _U(13, 15, 0), {"backup": {}}, None)
 check("ledger: no backup seen by 14:00 UTC: none is held after it", _L["backup_held"] == 0
       and "none is held after it" in _L["backup_why"], _L["backup_why"])
@@ -1319,6 +1332,13 @@ check("backup timing: a backup that moved past 14:00 UTC is a finding that names
 _fb = {"backup": {"full_last": "2026-10-14", "full_every_days": 7, "full_gb": 1.4}}
 check("full backups: 14 Oct's on its predicted day is no finding",
       _sc.full_backups(_fb, _r14, _U(15, 9, 0))[0] == [], _sc.full_backups(_fb, _r14, _U(15, 9, 0)))
+_r14s = _r14[:5] + [(_U(14, 12, 21), 1467.041e9), (_U(14, 12, 23), 1467.68e9), (_U(14, 12, 25), 1468.326e9)]
+check("full backups: one split across two readings (0.64 + 0.65 GB) is still one full backup",
+      _sc.full_backups(dict(_fb, backup=dict(_fb["backup"], full_last="2026-10-12")), _r14s, _U(15, 9, 0))[1]
+      .get("full_backups") == {"2026-10-14": 1.285}, _sc.full_backups(dict(_fb, backup=dict(_fb["backup"], full_last="2026-10-12")), _r14s, _U(15, 9, 0)))
+check("full backups: the night's publish (0.3 GB at 02:30) is never added to a day's backup",
+      _sc.full_backups(_fb, [(_U(13, 2, 27), 0.0), (_U(13, 2, 45), 0.3e9), (_U(13, 11, 13), 0.31e9),
+                             (_U(13, 11, 30), 0.72e9)], _U(13, 16, 0))[1].get("full_backups") == {}, "publish")
 check("full backups: one on a day the schedule does not call full is a finding that names the day to set",
       any("2026-10-14" in f for f in _sc.full_backups({"backup": dict(_fb["backup"], full_last="2026-10-12")}, _r14,
                                                       _U(15, 9, 0))[0]))

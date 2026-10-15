@@ -175,6 +175,7 @@ def ledger_from(rs: list, now_bytes: float, now, sched: dict, db_bytes: float | 
     """The watchdog's day as a pass and the night see it (pure; `rs` are the counter's readings sorted by time,
     `db_bytes` the database's size for a full backup's estimate). See ledger()."""
     import datetime as _dt
+    rs = [r for r in rs if r[0] <= now]   # a reading after `now` (clock skew, a replay) never counts (review, 15 Oct)
     bk, nt = sched.get("backup", {}), sched.get("night", {})
     line = float(sched.get("day_line_gb", 1.9)) * 1e9
     start = watchdog_day_start(now, sched.get("watchdog_reads_utc", "07:00"))
@@ -191,15 +192,10 @@ def ledger_from(rs: list, now_bytes: float, now, sched: dict, db_bytes: float | 
     full_last = bk.get("full_last")
     every = int(bk.get("full_every_days", 7))
     full = bool(full_last) and (day - _dt.date.fromisoformat(full_last)).days % every == 0
-    if seen:
-        held, why = 0.0, f"the day's backup is in the counter ({max(x[1] for x in seen) / 1e9:.2f} GB, {seen[-1][0]:%H:%M} UTC)"
-        out["backup_seen_gb"] = round(max(x[1] for x in seen) / 1e9, 3)
-    elif now >= hold_until:
-        held, why = 0.0, f"no backup seen in the counter by {bk.get('hold_until_utc', '14:00')} UTC: none is held after it"
-    elif full:
-        held = max(float(bk.get("full_gb", 1.4)) * 1e9, float(bk.get("full_share", 0.37)) * (db_bytes or 0))
-        why = (f"{held / 1e9:.2f} GB held for today's full backup (every {every} days since {full_last}; "
-               f"14 Oct: 1.285 GB)")
+    # what the day's backup is expected to send
+    if full:
+        expected = max(float(bk.get("full_gb", 1.4)) * 1e9, float(bk.get("full_share", 0.37)) * (db_bytes or 0))
+        what = f"today's full backup (every {every} days since {full_last}; 14 Oct: 1.285 GB)"
     else:
         base_from = t(bk.get("since_utc", "11:30")) - _dt.timedelta(days=1)
         base, _ = sent_since(rs, base_from, now_bytes)
@@ -209,14 +205,31 @@ def ledger_from(rs: list, now_bytes: float, now, sched: dict, db_bytes: float | 
                                               float(bk.get("pass_rate_mb_min", 3)) * 1e6 / 60,
                                               float(bk.get("seen_min_gb", 0.1)) * 1e9)
                         if base_from < x[0] <= yday(bk.get("hold_until_utc", "14:00")))
+            base -= sum(x[1] for x in seen)   # nor is today's, while it is under way
             base = max(0.0, base)
         if base is None:
-            held = float(bk.get("default_gb", 0.4)) * 1e9
-            why = f"{held / 1e9:.2f} GB held for the day's backup (what it follows is not known)"
+            expected = float(bk.get("default_gb", 0.4)) * 1e9
+            what = "the day's backup (what it follows is not known)"
         else:
-            held = max(float(bk.get("min_gb", 0.15)) * 1e9, float(bk.get("fraction", 0.3)) * base)
-            why = (f"{held / 1e9:.2f} GB held for the day's backup ({bk.get('fraction', 0.3)} of the {base / 1e9:.2f} GB "
-                   f"sent since {bk.get('since_utc', '11:30')} UTC yesterday)")
+            expected = max(float(bk.get("min_gb", 0.15)) * 1e9, float(bk.get("fraction", 0.3)) * base)
+            what = (f"the day's backup ({bk.get('fraction', 0.3)} of the {base / 1e9:.2f} GB sent since "
+                    f"{bk.get('since_utc', '11:30')} UTC yesterday)")
+    if seen:
+        got = sum(x[1] for x in seen)   # a backup can span two readings (review, 15 Oct)
+        last = seen[-1][0]
+        # the burst is over once a later reading came at a pass's pace, or 15 minutes passed without one
+        closed = any(at > last for at, _ in rs) or (now - last).total_seconds() >= 900
+        out["backup_seen_gb"] = round(got / 1e9, 3)
+        if closed:
+            held, why = 0.0, f"the day's backup is in the counter ({got / 1e9:.2f} GB, to {last:%H:%M} UTC)"
+        else:
+            held = max(0.0, expected - got)
+            why = (f"{got / 1e9:.2f} GB of {what} seen so far (to {last:%H:%M} UTC): the rest of its "
+                   f"{expected / 1e9:.2f} GB is held until the counter settles")
+    elif now >= hold_until:
+        held, why = 0.0, f"no backup seen in the counter by {bk.get('hold_until_utc', '14:00')} UTC: none is held after it"
+    else:
+        held, why = expected, f"{expected / 1e9:.2f} GB held for {what}"
     out["backup_held"], out["backup_why"] = held, why
     out["full_backup_day"] = full
 

@@ -184,11 +184,15 @@ def full_backups(sched: dict, readings: list, now: dt.datetime) -> tuple[list[st
         return [], {}
     every, first = int(bk.get("full_every_days", 7)), dt.date.fromisoformat(bk["full_last"])
     big = 0.5 * float(bk.get("full_gb", 1.4)) * 1e9
-    seen: dict = {}
+    # each day's backup window, its bursts added up (a backup can span two readings; review, 15 Oct); the night's
+    # publish (0.3 GB at 02:00 to 05:00 UTC) is outside it
+    lo, hi = int(bk.get("seen_after_utc", "10:30")[:2]), int(bk.get("hold_until_utc", "14:00")[:2]) + 2
+    per_day: dict = {}
     for at, b in meter.bursts(readings, now - dt.timedelta(days=8), float(bk.get("pass_rate_mb_min", 3)) * 1e6 / 60,
                               float(bk.get("seen_min_gb", 0.1)) * 1e9):
-        if b >= big:
-            seen[at.date()] = max(seen.get(at.date(), 0), b)
+        if lo <= at.hour < hi:
+            per_day[at.date()] = per_day.get(at.date(), 0) + b
+    seen = {d: b for d, b in per_day.items() if b >= big}
     out = []
     for day, b in sorted(seen.items()):
         if (day - first).days % every:
