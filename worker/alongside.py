@@ -24,13 +24,16 @@ SUM_KEYS = ("labelled", "rejected", "not_checked", "jev_decided", "glm_decided",
 
 class Alongside:
     def __init__(self, connect, run_fn, cfg: dict, deadline: float, log=print, pause_s: float = 120.0,
-                 switch=None):
+                 switch=None, halt: threading.Event | None = None):
         """connect(): a new database connection. run_fn: classify_sweep.run. cfg: the classify config, whose
         glm_credits_max, jev_usd_max and max_items are the pass's allowances for the thread and the stage together.
-        switch(conn): a reason to stop (the stop switch off), or None."""
+        switch(conn): a reason to stop (the stop switch off), or None. halt: set by the pass's main thread when it
+        meets the egress line or its own estimate cap (Run.stop_reason); the thread stops at its next batch."""
         self.connect, self.run_fn, self.cfg, self.deadline = connect, run_fn, dict(cfg), deadline
         self.log, self.pause_s, self.switch = log, pause_s, switch
+        self.halt = halt or threading.Event()
         self._stop = threading.Event()
+        self._conn = None
         self.recs: list[dict] = []
         self.error: str | None = None
         self.ended: str | None = None
@@ -58,7 +61,11 @@ class Alongside:
         try:
             conn = self.connect()
             conn.autocommit = True
+            self._conn = conn
             while not self._stop.is_set():
+                if self.halt.is_set():
+                    self.ended = "the pass stopped for egress"
+                    break
                 if time.time() >= self.deadline:
                     self.ended = "its deadline"
                     break
@@ -70,8 +77,7 @@ class Alongside:
                 if cfg["glm_credits_max"] <= 0 or cfg["jev_usd_max"] <= 0 or cfg["max_items"] <= 0:
                     self.ended = "the pass's labelling allowance is used"
                     break
-                rec = self.run_fn(conn, cfg, self.deadline,
-                                  should_stop=lambda: "collection ended" if self._stop.is_set() else None, log=self.log)
+                rec = self.run_fn(conn, cfg, self.deadline, should_stop=self._should_stop, log=self.log)
                 self.recs.append(rec)
                 if rec.get("error"):
                     self.error = rec["error"]
@@ -79,6 +85,9 @@ class Alongside:
                     break
                 if not (rec.get("labelled") or rec.get("rejected")):
                     self._stop.wait(self.pause_s)   # nothing to label yet: let collection add some
+                    if self.halt.is_set():
+                        self.ended = "the pass stopped for egress"
+                        break
         except Exception as e:  # noqa: BLE001 - on the receipt; the pass's own classify stage still runs
             self.error = f"{type(e).__name__}: {str(e)[:200]}"
             self.ended = "it failed"
@@ -89,10 +98,24 @@ class Alongside:
                 except Exception:  # noqa: BLE001
                     pass
 
-    def finish(self, timeout: float = 900.0) -> dict:
-        """Tell the thread collection has ended, wait for its round to end, and return what it did."""
+    def _should_stop(self) -> str | None:
+        if self.halt.is_set():
+            return "the pass stopped for egress"
+        return "collection ended" if self._stop.is_set() else None
+
+    def finish(self, timeout: float = 1200.0) -> dict:
+        """Tell the thread collection has ended, wait for its round to end (a GLM job may take its 15 minutes), and
+        return what it did. A thread still alive after that is fenced: its query cancelled and its connection closed,
+        so nothing it does can land after the pass's receipt (review, 15 Oct)."""
         self._stop.set()
         self._t.join(timeout)
+        if self._t.is_alive() and self._conn is not None:
+            for f in ("cancel", "close"):
+                try:
+                    getattr(self._conn, f)()
+                except Exception:  # noqa: BLE001
+                    pass
+            self._t.join(60)
         out = {k: (round(v, 4) if k in ("jev_usd", "glm_credits") else int(v)) for k, v in self.used().items()}
         out["rounds"] = len(self.recs)
         out["ended"] = self.ended or ("collection ended" if not self._t.is_alive() else "still running at the join")

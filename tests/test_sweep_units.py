@@ -1324,10 +1324,56 @@ _e = _al.Alongside(lambda: (_ for _ in ()).throw(RuntimeError("no database")), _
                    log=lambda *a, **k: None).start()
 _tm.sleep(0.1)
 check("alongside: a thread that cannot connect says so and the pass goes on", "no database" in _e.finish(timeout=5)["error"])
-check("alongside: the pass wires it only by day, with collect and classify both asked for, and reads the thread's "
-      "allowance left in its own classify stage",
-      "alongside_on = bool(run.receipt[\"day_run\"]" in open(os.path.join(ROOT, "worker", "run_daily.py")).read()
-      and "cfg = al.left()" in open(os.path.join(ROOT, "worker", "run_daily.py")).read())
+_aw = {"day": {"label_alongside": True}, "classify": {"enabled": True}}
+check("alongside: only a daytime pass that asks for collect and classify, with the classifier and the switch on and "
+      "the pass not stopped (run_daily.alongside_wanted)",
+      _rd.alongside_wanted(True, _aw, ["collect", "classify"], None)
+      and not _rd.alongside_wanted(False, _aw, ["takedowns", "collect", "classify", "publish"], None)   # the night
+      and not _rd.alongside_wanted(True, _aw, ["collect"], None)
+      and not _rd.alongside_wanted(True, _aw, ["classify"], None)
+      and not _rd.alongside_wanted(True, {"day": {"label_alongside": True}, "classify": {"enabled": False}},
+                                   ["collect", "classify"], None)
+      and not _rd.alongside_wanted(True, {"day": {}, "classify": {"enabled": True}}, ["collect", "classify"], None)
+      and not _rd.alongside_wanted(True, _aw, ["collect", "classify"], "the day's egress line: x"))
+_halt = _thr.Event()
+_rounds.clear()
+_h = _al.Alongside(_aconnect, _arun, {"glm_credits_max": 1000, "jev_usd_max": 1.0, "max_items": 100000}, 1e12,
+                   log=lambda *a, **k: None, pause_s=0.05, halt=_halt).start()
+_tm.sleep(0.2)
+_halt.set()
+_tm.sleep(0.2)
+_hout = _h.finish(timeout=5)
+check("alongside: the pass's egress stop (its halt event) ends the thread, and the round's own check sees it",
+      _hout["ended"] == "the pass stopped for egress" and _h._should_stop() == "the pass stopped for egress", _hout)
+_slow_started = _thr.Event()
+
+
+class _Fence:
+    def __init__(self):
+        self.closed, self.autocommit, self.cancelled = False, False, False
+
+    def cancel(self):
+        self.cancelled = True
+
+    def close(self):
+        self.closed = True
+
+
+_fc = _Fence()
+
+
+def _stuck(conn, cfg, deadline, should_stop=lambda: None, log=print):
+    _slow_started.set()
+    while not conn.cancelled:
+        _tm.sleep(0.01)
+    return {"labelled": 1, "error": "cancelled"}
+
+
+_f = _al.Alongside(lambda: _fc, _stuck, {"glm_credits_max": 10}, 1e12, log=lambda *a, **k: None).start()
+_slow_started.wait(2)
+_fout = _f.finish(timeout=0.2)
+check("alongside: a round that does not end when told is fenced (query cancelled, connection closed) before the pass "
+      "goes on", _fc.cancelled and _fc.closed and _fout["ended"] != "still running at the join", _fout)
 
 # ---- the shared app's windows (reddit_client._win, 15 Oct) ---------------------------------------------------------
 import reddit_client as _rc5  # noqa: E402

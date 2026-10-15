@@ -127,6 +127,7 @@ class Run:
         self.meter: dict = {"readings": 0}
         self._meter_at = time.time()
         self._line_reason: str | None = None
+        self.halt = threading.Event()   # set at an egress stop; labelling beside collection reads it (decision 0037)
         b = self.meter_read("sweep start")
         if b is not None and self.receipt["day_run"]:
             self._judge_line(b)   # a pass requested with the line already reached stops before it collects
@@ -140,8 +141,12 @@ class Run:
         if not enabled:
             return f"stopped by the switch: {reason or 'no reason given'}"
         if self.egress_estimate() > self.caps["egress_gb"] * 1e9:
+            self.halt.set()   # labelling beside collection stops too (decision 0037)
             return f"estimated database egress cap ({self.caps['egress_gb']} GB) reached"
-        return self.day_line_reason()
+        why = self.day_line_reason()
+        if why:
+            self.halt.set()
+        return why
 
     def meter_read(self, source: str) -> float | None:
         b = meter.record(self.conn, source)
@@ -313,6 +318,13 @@ def backfill(run: "Run", cfg: dict, log) -> dict:
     out["reddit_calls"] = rc.stats()["calls"] - calls0
     out["left"] = len(subs) - len(out["done"])
     return out
+
+
+def alongside_wanted(day_run: bool, sched: dict, stages: list[str], stopped: str | None) -> bool:
+    """Decision 0037: only a daytime pass that asks for collect and classify labels beside its collection, with the
+    classifier enabled, the schedule's switch on, and the pass not already stopped."""
+    return bool(day_run and sched.get("day", {}).get("label_alongside") and "collect" in stages
+                and "classify" in stages and sched.get("classify", {}).get("enabled") and not stopped)
 
 
 def takedown_deadline(run_deadline: float, sched: dict) -> float:
@@ -582,10 +594,7 @@ def main() -> int:
 
     # Decision 0037: a daytime pass labels beside its collection, in its own thread and connection, and so collects
     # until reserve_minutes_after_collect_alongside before its end instead of stopping 45 minutes early to label
-    dcfg = sched.get("day", {})
-    alongside_on = bool(run.receipt["day_run"] and dcfg.get("label_alongside") and "collect" in args.stages
-                        and "classify" in args.stages and sched.get("classify", {}).get("enabled")
-                        and not run.stop_reason())
+    alongside_on = alongside_wanted(run.receipt["day_run"], sched, args.stages, run.stop_reason())
     collect_deadline = run.deadline - (
         sched.get("reserve_minutes_after_collect", 95) if "publish" in args.stages
         else sched.get("reserve_minutes_after_collect_alongside", 15) if alongside_on
@@ -601,7 +610,8 @@ def main() -> int:
         def _switch(c) -> str | None:
             on, why = c.execute("select enabled, reason from public.sweep_control").fetchone()
             return None if on else f"stopped by the switch: {why or 'no reason given'}"
-        al = alongside.Alongside(db.connect, _cs_al.run, acfg, collect_deadline, log=log, switch=_switch).start()
+        al = alongside.Alongside(db.connect, _cs_al.run, acfg, collect_deadline, log=log, switch=_switch,
+                                 halt=run.halt).start()
         log("labelling runs beside collection (decision 0037)")
     stage(run, "collect", collect_stage)
     al_out = al.finish() if al is not None else None
@@ -622,6 +632,7 @@ def main() -> int:
             cfg["max_items"] = args.classify_items
         if al is not None:   # what labelling beside collection spent comes off the pass's allowances (decision 0037)
             if al_out and al_out.get("ended") == "still running at the join":
+                run.receipt["problems"].append("labelling beside collection did not end when told; it was fenced")
                 return {"skipped": "labelling beside collection had not ended: two labellers never share the queue"}
             cfg = al.left()
         # the night labels no more than the watchdog's day has left once collection is in it (decision 0035)
