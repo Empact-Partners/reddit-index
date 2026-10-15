@@ -19,7 +19,13 @@
   "egress_gb": 0.7
  },
  "day_line_gb": 1.9,
- "day_line_note": "A daytime pass stops itself when the database node has sent this much in the 24 hours to now, read on the node counter by the pass every 3 minutes (worker/meter.py, decision 0025). The watchdog speaks at 2 GB a day. The night's run is never stopped by it.",
+ "day_line_note": "Decision 0035: the line is judged on the watchdog's day, 07:00 to 07:00 UTC (the Empact watchdog reads every project's node counter once a day at about 07:01 UTC and speaks over 2 GB a day). A daytime pass counts the day's backup and tonight's run as already sent while they are still to come (worker/meter.py ledger), reads the counter every 3 minutes and stops at the line (decision 0025). The night's run takes for collection and labelling only what the day has left once its publish and refresh are counted (night.publish_reserve_gb); takedowns, refresh and publish always run. Until 15 Oct the line was the 24 hours to now, which kept a weekly full backup in it for a whole day and never asked the night to make room.",
+ "watchdog_reads_utc": "07:00",
+ "night": {
+  "reserve_min_gb": 0.6,
+  "publish_reserve_gb": 0.35,
+  "why": "Decision 0035. reserve_min_gb: what a daytime pass holds for tonight's run, or the largest of the last three nights on the counter (00:00 to 06:00 UTC) when that is more (14 Oct: 0.54 GB with 15,000 mentions). publish_reserve_gb: what the night keeps for refresh, score and publish after collection and labelling (14 Oct: 0.043 GB refresh, 0.299 GB publish)."
+ },
  "day": {
   "service_name": "reddit-index-day",
   "cron": "*/30 6-21 * * *",
@@ -32,7 +38,7 @@
   "max_calls": 15000,
   "min_room_gb": 0.15,
   "estimate_factor": 1.25,
-  "why": "The daytime passes, requested on Railway by ops/day_tick.py every 30 minutes (decision 0026): a pass starts when nothing else runs and the database sent at least min_room_gb less than day_line_gb in the 24 hours to now, capped at (room - 0.05) / estimate_factor on its own estimate. A pass ends by end_by_utc, 45 minutes before the night's run. Until 11 Oct a laptop requested them, and it slept.",
+  "why": "The daytime passes, requested on Railway by ops/day_tick.py every 30 minutes (decision 0026): a pass starts when nothing else runs and the watchdog's day (decision 0035) holds at least min_room_gb of room under day_line_gb once the day's backup and tonight's run are counted, capped at (room - 0.05) / estimate_factor on its own estimate. A pass ends by end_by_utc, 45 minutes before the night's run. Until 11 Oct a laptop requested them, and it slept.",
   "peak_queue_max": 20000,
   "peak_why": "Decision 0032: in Z.ai's peak hours (06:00 to 10:00 UTC) the classifier labels nothing, so no pass starts while this many mentions or more already wait for a label (13 Oct: the 06:30 pass collected 23,958 and labelled none)."
  },
@@ -89,10 +95,18 @@
   "why": "decision 0018: the 90-day history of the partner categories' core subreddits, on Railway in daytime passes only (the laptop's route to Reddit ran at ~10 KB/s on 6 Oct)"
  },
  "backup": {
-  "after_utc": "11:45",
+  "seen_after_utc": "10:30",
+  "hold_until_utc": "14:00",
+  "since_utc": "11:30",
+  "pass_rate_mb_min": 3,
+  "seen_min_gb": 0.1,
   "fraction": 0.3,
   "min_gb": 0.15,
   "default_gb": 0.4,
-  "why": "Decision 0033: Supabase's daily backup (11:15 to 11:21 UTC on 10-13 Oct) ships the pages changed since the one before and the node counter counts it: 249 MB on 12 Oct, 390 MB on 13 Oct, 0.25 of what the node had sent since the backup before. Until after_utc, a daytime pass and its tick hold back fraction of what the node sent since after_utc yesterday (at least min_gb; default_gb when not known), so the backup lands under the line. 13 Oct: passes filled the line by 11:13 and the backup took the 24 hours to 2.20 GB."
+  "full_every_days": 7,
+  "full_last": "2026-10-14",
+  "full_gb": 1.4,
+  "full_share": 0.37,
+  "why": "Decisions 0033 and 0035. Supabase's daily physical backup ships the pages changed since the one before (249 MB on 12 Oct, 390 MB on 13 Oct, about 0.25 of what the node sent since the backup before) and, every seventh day, the whole database (14 Oct, 12:21 to 12:25 UTC: 1,285 MB of a 3,578 MB database, 0.36). Until the counter shows a burst after seen_after_utc (at least seen_min_gb beyond what a pass sends, pass_rate_mb_min), a pass counts the backup as sent: fraction of what the node sent since since_utc yesterday, the backup before taken out (at least min_gb, default_gb when not known), or on a full day max(full_gb, full_share x the database's size). At hold_until_utc with no burst seen nothing is held. scripts/schedule_check.py names a backup outside seen_after_utc to hold_until_utc, a full one on another day, or a full day without one."
  }
 }

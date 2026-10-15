@@ -473,6 +473,9 @@ def run(conn, caps: dict, deadline: float, should_stop=lambda: None, log=print, 
                     "stream_gap_subs": [], "stream_failed": 0, "threads_from_posts": 0, "threads_from_listing": 0,
                     "threads_from_info": 0, "mentions_without_thread": 0, "mentions_room": room,
                     "labelling_queue": queue})
+        for k in ("room_why", "night_room"):   # decision 0035: what bounded the night's room, when the day did
+            if caps.get(k) is not None:
+                rec[k] = caps[k]
 
     brands = d.load_brands()
     alias_re = d.build_alias_re([b for bs in brands.values() for b in bs])
@@ -488,8 +491,10 @@ def run(conn, caps: dict, deadline: float, should_stop=lambda: None, log=print, 
             raise Stop(f"new-mention cap ({caps['mentions']}) reached {where}")
         if room is not None and rec["mentions_new"] >= room:
             if room == 0:
-                raise Allowance(f"no room for new mentions this run: {queue or 0:,} wait to be labelled first")
-            raise Allowance(f"the {room:,} new mentions this run has room for were collected {where}")
+                raise Allowance(f"no room for new mentions this run: {caps['room_why']}" if caps.get("room_why") else
+                                f"no room for new mentions this run: {queue or 0:,} wait to be labelled first")
+            raise Allowance(f"the {room:,} new mentions this run has room for were collected {where}"
+                            + (f" ({caps['room_why']})" if caps.get("room_why") else ""))
         if time.time() > deadline:
             raise Allowance(f"the time set aside for collection ended {where}")
 

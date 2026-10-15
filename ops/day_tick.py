@@ -3,7 +3,8 @@
 
 The second Railway service of the index (`reddit-index-day`) starts this every 30 minutes between 06:00 and 21:30
 UTC. A tick reads the database node's transmit counter, keeps the reading, and decides whether a daytime pass may
-start: inside the daytime window, nothing else running, and room under the day's line in the 24 hours to now. If it
+start: inside the daytime window, nothing else running, and room under the day's line in the watchdog's day (07:00 to
+07:00 UTC, with the day's backup and tonight's run still to come counted as sent: decision 0035). If it
 may, the tick writes the request row (migration 0023) and becomes the pass: worker/run_daily.py in this same
 container. Railway does not start a cron execution while the one before it is still running, so a pass in progress
 is never doubled; the sweep's own lock covers the rest.
@@ -37,14 +38,17 @@ def _t(hhmm: str) -> dt.time:
 
 
 def effective_used(conn, now_bytes: float | None, now: dt.datetime, sched: dict) -> tuple[float | None, str]:
-    """Bytes the node sent in the 24 hours to now, plus the day's backup still to come (decision 0033), and what was
-    held back and why ("" when nothing). None when the 24 hours are not known (no reading, or a node restart)."""
+    """What a pass is judged on (decision 0035): the bytes the node sent in the watchdog's day (07:00 to 07:00 UTC),
+    plus the day's backup and tonight's run while they are still to come in it, and why ("" when nothing is held).
+    None when the day's start is not known (no reading before it, or a node restart)."""
     import meter
-    used = meter.used_24h(conn, now_bytes)[0] if now_bytes is not None else None
-    if used is None:
+    if now_bytes is None:
         return None, ""
-    held, why = meter.backup_reserve(conn, now_bytes, now, sched.get("backup", {}))
-    return used + held, (why if held else "")
+    led = meter.ledger(conn, now_bytes, now, sched)
+    if led["used"] is None:
+        return None, ""
+    held = [w for v, w in ((led["backup_held"], led["backup_why"]), (led["night_held"], led["night_why"])) if v]
+    return led["used"], "; ".join(held)
 
 
 def glm_peak(now: dt.datetime) -> bool:
@@ -52,10 +56,11 @@ def glm_peak(now: dt.datetime) -> bool:
     return 6 <= now.hour < 10
 
 
-def decide(now: dt.datetime, running: int, used_24h_gb: float | None, cfg: dict, line_gb: float,
+def decide(now: dt.datetime, running: int, used_gb: float | None, cfg: dict, line_gb: float,
            queue: int | None = None) -> tuple[bool, str, float | None]:
-    """(start a pass?, why in plain words, the pass's cap on its own egress estimate in GB). queue: mentions waiting
-    for a label; in GLM's peak hours, when it is at least cfg peak_queue_max, no pass starts (decision 0032)."""
+    """(start a pass?, why in plain words, the pass's cap on its own egress estimate in GB). used_gb: the watchdog's
+    day so far with what is still to come in it (effective_used). queue: mentions waiting for a label; in GLM's peak
+    hours, when it is at least cfg peak_queue_max, no pass starts (decision 0032)."""
     first, last = _t(cfg["window_utc"][0]), _t(cfg["window_utc"][1])
     if not (first <= now.time() <= last):
         return False, f"outside the daytime window {cfg['window_utc'][0]} to {cfg['window_utc'][1]} UTC", None
@@ -64,18 +69,19 @@ def decide(now: dt.datetime, running: int, used_24h_gb: float | None, cfg: dict,
     if queue is not None and glm_peak(now) and queue >= int(cfg.get("peak_queue_max", 20000)):
         return False, (f"{queue:,} mentions wait for a label, and none is labelled in GLM's peak hours (06:00 to "
                        f"10:00 UTC): a pass now would only add to them"), None
-    if used_24h_gb is None:
-        return False, ("the node counter could not be read, or no reading is 24 hours old: no pass is started "
-                       "without knowing the room"), None
-    room = line_gb - used_24h_gb
+    if used_gb is None:
+        return False, ("the node counter could not be read, or no reading is older than the watchdog's day: no pass "
+                       "is started without knowing the room"), None
+    room = line_gb - used_gb
     if room < float(cfg["min_room_gb"]):
-        return False, (f"the database sent {used_24h_gb:.2f} GB in the last 24 hours: {room:.2f} GB of room under "
-                       f"the {line_gb} GB line, and a pass needs {cfg['min_room_gb']}"), None
+        return False, (f"the watchdog's day (since 07:00 UTC) stands at {used_gb:.2f} GB with what is still to come "
+                       f"in it: {room:.2f} GB of room under the {line_gb} GB line, and a pass needs "
+                       f"{cfg['min_room_gb']}"), None
     # the pass caps itself on its own estimate, which reads a little under the counter (1.17 to 1.19 times on the
     # two clean passes of 10 Oct); the counter itself is the pass's hard stop (decision 0025)
     cap = round(max(0.05, min(0.7, (room - 0.05) / float(cfg["estimate_factor"]))), 3)
-    return True, (f"the database sent {used_24h_gb:.2f} GB in the last 24 hours: {room:.2f} GB of room, "
-                  f"a pass capped at {cap} GB on its own estimate"), cap
+    return True, (f"the watchdog's day (since 07:00 UTC) stands at {used_gb:.2f} GB with what is still to come in "
+                  f"it: {room:.2f} GB of room, a pass capped at {cap} GB on its own estimate"), cap
 
 
 def main() -> int:

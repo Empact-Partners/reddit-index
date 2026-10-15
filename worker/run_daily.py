@@ -57,7 +57,7 @@ EGRESS_STOPS = ("estimated database egress cap", "the day's egress line")
 
 
 def is_egress_stop(reason: str | None) -> bool:
-    """A stop for egress (the run's own estimate, or the node counter's 24 hours): nothing more reads or calls out,
+    """A stop for egress (the run's own estimate, or the node counter's watchdog day): nothing more reads or calls out,
     the in-database stages still run, and the receipt reads capped, not stopped."""
     return bool(reason) and reason.startswith(EGRESS_STOPS)
 LOCK_KEY = 0x52494458  # "RIDX": one sweep at a time, whatever starts it
@@ -154,9 +154,10 @@ class Run:
         return b
 
     def day_line_reason(self) -> str | None:
-        """A daytime pass stops itself when the database node has sent the day's line in the 24 hours to now, read
-        on the node counter (decision 0025). The night's run is never stopped by it: takedowns are a duty. The
-        pass used to rely on its requester for this, a laptop that sleeps: 11 Oct, 2.42 GB by midday."""
+        """A daytime pass stops itself when the database node has sent the day's line in the watchdog's day (decision
+        0035; until 15 Oct the 24 hours to now), read on the node counter (decision 0025). The night's run is never
+        stopped by it (takedowns are a duty); it takes its collection and labelling room from the same day instead
+        (night_room). The pass used to rely on its requester for this, a laptop that sleeps: 11 Oct, 2.42 GB by midday."""
         if not self.receipt["day_run"]:
             return None
         if self._line_reason or time.time() - self._meter_at < METER_EVERY_S:
@@ -168,18 +169,34 @@ class Run:
         return self._line_reason
 
     def _judge_line(self, now_bytes: float) -> None:
-        used, since = meter.used_24h(self.conn, now_bytes)
-        if used is None:   # no reading old enough yet, or the node restarted: not known, so nothing is stopped
+        """Decision 0035: the line is judged on the watchdog's day (07:00 to 07:00 UTC), with the day's backup and
+        tonight's run counted as sent while they are still to come in it (meter.ledger)."""
+        led = meter.ledger(self.conn, now_bytes, self.clock(), self.sched)
+        if led["used"] is None:   # no reading before the day's start, or the node restarted: not known, nothing stopped
             return
-        line = float(self.sched.get("day_line_gb", 1.9))
-        self.meter["last_24h_gb"], self.meter["since"] = round(used / 1e9, 3), since
-        # the day's backup, still to come before about 11:15 UTC, is held back (decision 0033)
-        held, why = meter.backup_reserve(self.conn, now_bytes, self.clock(), self.sched.get("backup", {}))
-        self.meter["backup_held_gb"] = round(held / 1e9, 3)
-        if used + held >= line * 1e9:
-            self._line_reason = (f"the day's egress line: the database sent {used / 1e9:.2f} GB in the 24 hours "
-                                 f"to now (line {line} GB, node counter, since {since})"
-                                 + (f", and {why}" if held else ""))
+        line = led["line"]
+        self.meter.update({"day_sent_gb": round(led["sent"] / 1e9, 3), "since": led["since"],
+                           "backup_held_gb": round(led["backup_held"] / 1e9, 3),
+                           "night_held_gb": round(led["night_held"] / 1e9, 3)})
+        if led["used"] >= line:
+            held = [w for v, w in ((led["backup_held"], led["backup_why"]), (led["night_held"], led["night_why"])) if v]
+            self._line_reason = (f"the day's egress line: the database sent {led['sent'] / 1e9:.2f} GB in the "
+                                 f"watchdog's day, since {led['since']} (line {line / 1e9:g} GB, node counter)"
+                                 + "".join(f", and {w}" for w in held))
+
+    def night_room(self) -> dict | None:
+        """The night's share of the watchdog's day (decision 0035): what collection and labelling may still send
+        once the day so far and the publish and refresh to come are counted. None by day, or when not known."""
+        if self.receipt["day_run"]:
+            return None
+        b = self.meter_read("night room")
+        if b is None:
+            return None
+        led = meter.ledger(self.conn, b, self.clock(), self.sched)
+        if led["night_room"] is None:
+            return None
+        self.meter.update({"day_sent_gb": round(led["sent"] / 1e9, 3), "since": led["since"]})
+        return {"gb": round(led["night_room"] / 1e9, 3), "sent_gb": round(led["sent"] / 1e9, 3), "since": led["since"]}
 
     def egress_estimate(self) -> int:
         """Write-ahead log produced since the run started. Every byte of it is shipped to backup storage,
@@ -541,6 +558,16 @@ def main() -> int:
             # end, and always comes before the new-mention cap (an abnormal flood, an alert).
             room = (int(cfg.get("night_mentions", 15000)) if night else
                     collect.mentions_room(run.caps["egress_gb"], cfg.get("bytes_per_mention", 13000)))
+            # and the night takes no more than the watchdog's day has left (decision 0035): a full backup that day
+            # (14 Oct: 1.285 GB) leaves the night little, and the watchdog reads the day at 07:01 UTC
+            nr = run.night_room() if night else None
+            if nr is not None:
+                fits = collect.mentions_room(max(0.0, nr["gb"]), cfg.get("bytes_per_mention", 13000))
+                ccaps["night_room"] = dict(nr, mentions=fits)
+                if fits < room:
+                    room = fits
+                    ccaps["room_why"] = (f"the watchdog's day had {nr['gb']:.2f} GB left for tonight's collection and "
+                                         f"labelling ({nr['sent_gb']:.2f} GB sent since {nr['since']})")
             # Mentions already waiting for a label take their share of the room first (decision 0032): labelling
             # one costs about label_bytes of the run's egress where collecting and labelling a new one costs
             # bytes_per_mention, so the queue counts as queue x label_bytes / bytes_per_mention new mentions
@@ -569,6 +596,17 @@ def main() -> int:
         cfg = dict(sched["classify"])
         if args.classify_items is not None:
             cfg["max_items"] = args.classify_items
+        # the night labels no more than the watchdog's day has left once collection is in it (decision 0035)
+        nr = run.night_room()
+        if nr is not None:
+            fits = int(max(0.0, nr["gb"]) * 1e9 * 0.9 / float(sched.get("collect", {}).get("label_bytes_per_mention", 4000)))
+            if fits < int(cfg.get("max_items", 60000)):
+                cfg["max_items"] = fits
+                why = (f"the watchdog's day had {nr['gb']:.2f} GB left for tonight's labelling ({nr['sent_gb']:.2f} GB "
+                       f"sent since {nr['since']}): {fits:,} labels")
+                if fits <= 0:
+                    return {"skipped": why, "allowance_used": why + "; the rest waits for the day's passes"}
+                run.receipt.setdefault("allowances_used", []).append(f"classify: {why}")
         # and classification leaves time for refresh, score and publish (measured 4 Oct: refresh 15 minutes for
         # 3,262 brands, publish about 3 minutes per 1,000 pages)
         return classify_sweep.run(conn, cfg, run.deadline - (sched.get("reserve_minutes_after_classify", 35) if "publish" in args.stages

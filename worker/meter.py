@@ -11,6 +11,8 @@ read()        the counter in bytes, or None when it cannot be read (no key in th
 record(conn)  read and keep the reading in public.egress_counter (migration 0033).
 used_24h(...) bytes sent in the 24 hours before a reading, from the newest reading at least 24 hours older; a gap in
               the readings makes the window longer, never shorter, so the figure can only read high.
+ledger(...)   the watchdog's day (decision 0035): what the node sent since the watchdog's last daily reading, the day's
+              backup and the night's run still to come in it, and what that leaves a daytime pass and the night.
 """
 from __future__ import annotations
 
@@ -92,36 +94,162 @@ def used_24h(conn, now_bytes: float) -> tuple[float | None, str | None]:
     return used, row[1].isoformat(timespec="minutes") if hasattr(row[1], "isoformat") else str(row[1])
 
 
-def backup_reserve(conn, now_bytes: float, now: "dt.datetime", cfg: dict) -> tuple[float, str]:
-    """Bytes to hold back for the day's backup, and why (decision 0033).
+# ---- the watchdog's day (decision 0035) ------------------------------------------------------------------------------
+# The Empact watchdog (command-center sync/admin/supabase_watchdog.py) reads every project's counter once a day, at
+# about 07:01 UTC, and speaks when the pair of readings makes more than 2 GB a day. The line is judged on that same day:
+# from 07:00 UTC to 07:00 UTC, with what is still to come in it (the backup, the night's run) counted as already sent.
+# Until 15 Oct it was judged on the 24 hours to now. That window kept a weekly full backup (1.285 GB on 14 Oct, at
+# 12:21 to 12:25 UTC) in the line for a whole day, stopping every pass from 12:25 to 21:30 and again the next morning
+# until 12:25, and it never asked the night's run to make room: the night came on top and the watchdog's day read 2.2.
 
-    Supabase's daily backup (about 11:15 UTC; 10-13 Oct between 11:15 and 11:21) ships the pages changed since the
-    one before, and the node counter counts it: 249 MB on 12 Oct, 390 MB on 13 Oct, a quarter of what the node sent
-    in the day before it (1.556 GB). A pass that fills the line before it leaves the backup over the line (13 Oct:
-    2.20 GB in the 24 hours to 11:30). Until `cfg["after_utc"]` the expected backup is held back: `fraction` of what
-    the node has sent since the same time yesterday, or `default_gb` when that is not known. After it, nothing: the
-    backup is in the counter. A node restart is not handled here: the callers first need `used_24h`, which is
-    unknown across a restart, and then no pass starts (decision 0025); `default_gb` covers a missing reading.
-    That the backup really runs before `after_utc` is checked from its own record by scripts/schedule_check.py."""
+def _utc(t):
     import datetime as _dt
-    hh, mm = (int(x) for x in cfg.get("after_utc", "11:45").split(":"))
-    today = now.replace(hour=hh, minute=mm, second=0, microsecond=0)
-    if now >= today:
-        return 0.0, "the day's backup is in the counter"
-    since = today - _dt.timedelta(days=1)
-    default = float(cfg.get("default_gb", 0.4)) * 1e9
+    if isinstance(t, str):
+        t = _dt.datetime.fromisoformat(t)
+    return t if t.tzinfo else t.replace(tzinfo=_dt.timezone.utc)
+
+
+def watchdog_day_start(now, hhmm: str = "07:00"):
+    """The start of the watchdog's day that `now` falls in: the latest `hhmm` UTC at or before it."""
+    import datetime as _dt
+    hh, mm = (int(x) for x in hhmm.split(":"))
+    start = now.replace(hour=hh, minute=mm, second=0, microsecond=0)
+    return start if now >= start else start - _dt.timedelta(days=1)
+
+
+def at_or_before(rs: list, t) -> tuple | None:
+    """The newest reading (at, bytes) taken at or before t, from readings sorted by time."""
+    best = None
+    for at, b in rs:
+        if at <= t:
+            best = (at, b)
+        else:
+            break
+    return best
+
+
+def sent_since(rs: list, t, now_bytes: float) -> tuple[float | None, object]:
+    """(bytes sent from the newest reading at or before t to now, that reading's time). An older reading makes the
+    span longer and the figure higher, never lower. (None, None): no reading that old, or the counter went back."""
+    r = at_or_before(rs, t)
+    if r is None or now_bytes < r[1]:
+        return None, None
+    return now_bytes - r[1], r[0]
+
+
+def bursts(rs: list, since, pass_rate_bps: float, min_bytes: float) -> list[tuple]:
+    """(time, bytes) of every interval between two readings after `since` that sent at least `min_bytes` more than a
+    pass sends at its fastest (`pass_rate_bps` a second): the day's backup, seen in the counter. By day nothing else
+    sends at that rate (10 to 14 Oct: passes 1 to 3 MB a minute; backups 249 MB in 17 to 32 minutes and 1,285 MB in 4)."""
+    out = []
+    prev = None
+    for at, b in rs:
+        if at <= since:
+            prev = (at, b)
+            continue
+        if prev is not None and b >= prev[1]:
+            excess = (b - prev[1]) - pass_rate_bps * (at - prev[0]).total_seconds()
+            if excess >= min_bytes:
+                out.append((at, b - prev[1]))
+        prev = (at, b)
+    return out
+
+
+def night_spends(rs: list, now, nights: int = 3) -> list[float]:
+    """What the node sent in each of the last `nights` nights, 00:00 to 06:00 UTC: the night's run and nothing else
+    of note (the passes start at 06:15). A night with a reading missing at either end is left out."""
+    import datetime as _dt
+    out = []
+    day = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    if now < day + _dt.timedelta(hours=6):
+        day -= _dt.timedelta(days=1)   # tonight's run is not over: the last full night is yesterday's
+    for _ in range(nights):
+        a, b = at_or_before(rs, day), at_or_before(rs, day + _dt.timedelta(hours=6))
+        if a and b and b[0] > day and b[1] >= a[1] and (day - a[0]).total_seconds() < 6 * 3600:
+            out.append(b[1] - a[1])
+        day -= _dt.timedelta(days=1)
+    return out
+
+
+def ledger_from(rs: list, now_bytes: float, now, sched: dict, db_bytes: float | None = None) -> dict:
+    """The watchdog's day as a pass and the night see it (pure; `rs` are the counter's readings sorted by time,
+    `db_bytes` the database's size for a full backup's estimate). See ledger()."""
+    import datetime as _dt
+    bk, nt = sched.get("backup", {}), sched.get("night", {})
+    line = float(sched.get("day_line_gb", 1.9)) * 1e9
+    start = watchdog_day_start(now, sched.get("watchdog_reads_utc", "07:00"))
+    sent, since = sent_since(rs, start, now_bytes)
+    out = {"day_start": start.isoformat(timespec="minutes"), "line": line, "sent": sent,
+           "since": since.isoformat(timespec="minutes") if since is not None else None}
+
+    # the day's backup: held as sent until the counter shows it, or until hold_until when it never shows
+    day = start.date()
+    t = lambda hhmm: _dt.datetime.combine(day, _dt.datetime.strptime(hhmm, "%H:%M").time(), _dt.timezone.utc)  # noqa: E731
+    seen_after, hold_until = t(bk.get("seen_after_utc", "10:30")), t(bk.get("hold_until_utc", "14:00"))
+    seen = bursts(rs, seen_after, float(bk.get("pass_rate_mb_min", 3)) * 1e6 / 60,
+                  float(bk.get("seen_min_gb", 0.1)) * 1e9) if now > seen_after else []
+    full_last = bk.get("full_last")
+    every = int(bk.get("full_every_days", 7))
+    full = bool(full_last) and (day - _dt.date.fromisoformat(full_last)).days % every == 0
+    if seen:
+        held, why = 0.0, f"the day's backup is in the counter ({max(x[1] for x in seen) / 1e9:.2f} GB, {seen[-1][0]:%H:%M} UTC)"
+        out["backup_seen_gb"] = round(max(x[1] for x in seen) / 1e9, 3)
+    elif now >= hold_until:
+        held, why = 0.0, f"no backup seen in the counter by {bk.get('hold_until_utc', '14:00')} UTC: none is held after it"
+    elif full:
+        held = max(float(bk.get("full_gb", 1.4)) * 1e9, float(bk.get("full_share", 0.37)) * (db_bytes or 0))
+        why = (f"{held / 1e9:.2f} GB held for today's full backup (every {every} days since {full_last}; "
+               f"14 Oct: 1.285 GB)")
+    else:
+        base_from = t(bk.get("since_utc", "11:30")) - _dt.timedelta(days=1)
+        base, _ = sent_since(rs, base_from, now_bytes)
+        if base is not None:   # the backup before is not part of what the next one follows (15 Oct: a full one)
+            yday = lambda hhmm: t(hhmm) - _dt.timedelta(days=1)  # noqa: E731
+            base -= sum(x[1] for x in bursts(rs, yday(bk.get("seen_after_utc", "10:30")),
+                                              float(bk.get("pass_rate_mb_min", 3)) * 1e6 / 60,
+                                              float(bk.get("seen_min_gb", 0.1)) * 1e9)
+                        if base_from < x[0] <= yday(bk.get("hold_until_utc", "14:00")))
+            base = max(0.0, base)
+        if base is None:
+            held = float(bk.get("default_gb", 0.4)) * 1e9
+            why = f"{held / 1e9:.2f} GB held for the day's backup (what it follows is not known)"
+        else:
+            held = max(float(bk.get("min_gb", 0.15)) * 1e9, float(bk.get("fraction", 0.3)) * base)
+            why = (f"{held / 1e9:.2f} GB held for the day's backup ({bk.get('fraction', 0.3)} of the {base / 1e9:.2f} GB "
+                   f"sent since {bk.get('since_utc', '11:30')} UTC yesterday)")
+    out["backup_held"], out["backup_why"] = held, why
+    out["full_backup_day"] = full
+
+    # the night's run still to come in this day (a pass from 07:00 to midnight), at what the last nights cost
+    if now < start + _dt.timedelta(hours=17):   # before midnight: tonight's run is still ahead in this day
+        spends = night_spends(rs, now)
+        night = max([float(nt.get("reserve_min_gb", 0.6)) * 1e9] + spends)
+        out["night_held"] = night
+        out["night_why"] = (f"{night / 1e9:.2f} GB held for tonight's run (the last nights: "
+                            f"{', '.join(f'{x / 1e9:.2f}' for x in spends) or 'not read'} GB)")
+    else:
+        out["night_held"], out["night_why"] = 0.0, "tonight's run is in this day already"
+    out["used"] = None if sent is None else sent + held + out["night_held"]
+    # what the night may still send before its publish and refresh (which always run) once the day is accounted
+    out["night_room"] = (None if sent is None else
+                         line - sent - held - float(nt.get("publish_reserve_gb", 0.35)) * 1e9)
+    return out
+
+
+def ledger(conn, now_bytes: float, now, sched: dict) -> dict:
+    """The watchdog's day: `sent` (bytes since its start, None when not known), `backup_held`, `night_held`, `used`
+    (sent plus what is held: what a daytime pass is judged on) and `night_room` (what the night's collection and
+    labelling may send), each with its reason. Read from public.egress_counter (four days of readings, ~25 KB)."""
+    import datetime as _dt
     try:
-        row = conn.execute("select bytes from public.egress_counter where at <= %s order by at desc limit 1",
-                           (since,)).fetchone()
-    except Exception:  # noqa: BLE001
+        rows = conn.execute("select at, bytes::float8 from public.egress_counter where at > %s order by at",
+                            (now - _dt.timedelta(days=4),)).fetchall()
+        db_bytes = conn.execute("select pg_database_size(current_database())::float8").fetchone()[0]
+    except Exception:  # noqa: BLE001 - the readings are not there: nothing is known
         try:
             conn.rollback()
         except Exception:  # noqa: BLE001
             pass
-        row = None
-    if not row or now_bytes < float(row[0]):
-        return default, f"{default / 1e9:.2f} GB held for the backup at about 11:15 UTC (what it follows is not known)"
-    sent = now_bytes - float(row[0])
-    held = max(float(cfg.get("min_gb", 0.15)) * 1e9, float(cfg.get("fraction", 0.3)) * sent)
-    return held, (f"{held / 1e9:.2f} GB held for the backup at about 11:15 UTC ({cfg.get('fraction', 0.3)} of the "
-                  f"{sent / 1e9:.2f} GB sent since {hh:02d}:{mm:02d} UTC yesterday)")
+        rows, db_bytes = [], None
+    rs = [(_utc(a), float(b)) for a, b in rows]
+    return ledger_from(rs, now_bytes, now, sched, db_bytes)
