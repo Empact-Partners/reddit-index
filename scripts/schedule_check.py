@@ -200,10 +200,10 @@ def full_backups(sched: dict, readings: list, now: dt.datetime) -> tuple[list[st
             out.append(f"a full backup of {b / 1e9:.2f} GB ran on {day:%d %b}, a day backup.full_last does not call full: "
                        f"set full_last to {day.isoformat()}")
     d = now.date() - dt.timedelta(days=7)
-    hold = int(bk.get("hold_until_utc", "14:00")[:2])
+    hold = mins(bk.get("hold_until_utc", "14:00"))
     while d <= now.date():
         due = d >= first and (d - first).days % every == 0
-        over = d < now.date() or now.hour >= hold
+        over = d < now.date() or now.hour * 60 + now.minute >= hold
         if due and over and d not in seen and any(r[0].date() == d for r in readings):
             out.append(f"{d:%d %b} was a full-backup day under backup.full_last and the counter shows none")
         d += dt.timedelta(days=1)
