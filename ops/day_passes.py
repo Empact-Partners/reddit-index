@@ -174,6 +174,7 @@ def main() -> int:
         n = run["notes"] if isinstance(run["notes"], dict) else json.loads(run["notes"] or "{}")
         st = n.get("stages") or {}
         bf, cl, co = st.get("backfill") or {}, st.get("classify") or {}, st.get("collect") or {}
+        la = st.get("label_alongside") or {}   # decision 0037: labels made beside collection
         if co:
             per_min = (f", {co['reddit_calls'] / co['minutes']:.0f} calls a minute"
                        if co.get("minutes") and co.get("reddit_calls") else "")
@@ -183,7 +184,8 @@ def main() -> int:
                 log(f"  collect time: trees {co.get('tree_workers', 1)} at a time; seconds {json.dumps(co['seconds'])}")
         log(f"pass {run['status']}: backfill done {len(bf.get('done') or [])} subs, left {bf.get('left')}, "
             f"{bf.get('mentions')} mentions, {bf.get('reddit_calls')} calls, stopped: {bf.get('stopped')}; "
-            f"classify labelled {cl.get('labelled')}, rejected {cl.get('rejected')}, left {cl.get('left_in_queue')}; "
+            f"classify labelled {cl.get('labelled')}, rejected {cl.get('rejected')}, left {cl.get('left_in_queue')} "
+            f"(beside collection: {la.get('labelled', 0)} labelled, {la.get('rejected', 0)} rejected); "
             f"egress estimate {n.get('egress_estimate_gb')} GB; caps hit {n.get('caps_hit')}")
         if run["status"] not in ("ok", "capped") and "day pass guard" not in json.dumps(n):
             log("the pass failed; stopping"); break
@@ -192,7 +194,8 @@ def main() -> int:
         rf = st.get("refresh") or {}
         work = sum(int(x or 0) for x in (co.get("reddit_calls"), co.get("mentions_new"),
                                          bf.get("reddit_calls"), bf.get("trees"), len(bf.get("done") or []),
-                                         cl.get("labelled"), cl.get("rejected"), rf.get("brands_refreshed")))
+                                         cl.get("labelled"), cl.get("rejected"), rf.get("brands_refreshed"),
+                                         la.get("labelled"), la.get("rejected")))
         if work == 0:   # 9 Oct: 150 passes in a row did nothing, one a minute; an empty pass means wait, not retry
             log("the pass did nothing; next request in 30 minutes")
             time.sleep(1800)
