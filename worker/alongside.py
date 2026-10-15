@@ -108,8 +108,10 @@ class Alongside:
         """Tell the thread collection has ended, wait for its round to end (a GLM job may take its 15 minutes), and
         return what it did. A thread still alive after that is fenced: its query is cancelled from here (psycopg's
         cancel() is the one call made for another thread; the thread closes its own connection), and the pass's own
-        classify stage does not run after a fence, so a round's uncounted work can never be labelled or paid twice
-        (review rounds 1 and 2, 15 Oct)."""
+        classify stage does not run after a fence, so a round's uncounted work can never be labelled or paid twice.
+        After the cancel it waits for the thread to end, however long: the pass records nothing while its labeller
+        lives, and the run's own hard exit (20 minutes past its deadline, worker/run_daily.py) is the bound, which
+        ends the thread with the process (review rounds 1 to 3, 15 Oct)."""
         self._stop.set()
         self._t.join(timeout)
         if self._t.is_alive() and self._conn is not None:
@@ -118,7 +120,7 @@ class Alongside:
                 self._conn.cancel()
             except Exception:  # noqa: BLE001
                 pass
-            self._t.join(60)
+            self._t.join()
         out = {k: (round(v, 4) if k in ("jev_usd", "glm_credits") else int(v)) for k, v in self.used().items()}
         out["rounds"] = len(self.recs)
         if self.fenced:
