@@ -1294,6 +1294,8 @@ check("bursts: 14 Oct's full backup (1,285 MB in 4 minutes) and 13 Oct's (390 MB
                                               (_U(14, 12, 21), 600e6), (_U(14, 12, 25), 1885e6)],
                                              _U(13, 10, 30), _rate, 1e8)] == [390, 1285]
       and _mt.bursts([(_U(13, 11, 13), 0.0), (_U(13, 11, 30), 390e6)], _U(13, 11, 30), _rate, 1e8) == [])
+check("bursts: an interval longer than an hour says nothing about what sent it (11 Oct: seven hours, 1.93 GB)",
+      _mt.bursts([(_U(11, 5, 9), 0.0), (_U(11, 12, 17), 1.929e9)], _U(11, 10, 30), _rate, 1e8) == [])
 _sp = [(_U(13, 23, 50), 10e9), (_U(14, 2, 45), 10.52e9), (_U(14, 5, 59), 10.55e9), (_U(14, 23, 40), 11e9),
        (_U(15, 3, 0), 11.6e9)]
 check("night spends: 00:00 to 06:00 UTC per night, tonight's left out until 06:00, a night without its readings "
