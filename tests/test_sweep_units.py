@@ -1167,6 +1167,33 @@ try:
 finally:
     collect.plan, collect.d.fetch_new = _saved
 
+# ---- the shared app's windows (reddit_client._win, 15 Oct) ---------------------------------------------------------
+import reddit_client as _rc5  # noqa: E402
+_t0 = [1_000_000.0]
+_realtime = _rc5.time.time
+_rc5.time.time = lambda: _t0[0]
+_saved_stats = dict(_rc5._stats)
+_rc5._win.update(end=None, max_used=0.0, own=0, first=True)
+for k in ("app_windows", "app_used", "app_own"):
+    _rc5._stats[k] = 0
+try:
+    def _hit(used, reset):
+        _rc5._read_ratelimit({"x-ratelimit-remaining": str(1000 - used), "x-ratelimit-reset": str(reset),
+                              "x-ratelimit-used": str(used)})
+    _hit(400, 300)                      # joined midway: this window is left out
+    _t0[0] += 300; _hit(10, 600)        # a new window
+    _t0[0] += 100; _hit(300, 500)
+    _t0[0] += 100; _hit(620, 400)       # this process made 3 calls of the 620
+    _t0[0] += 400; _hit(5, 600)         # the next window closes it
+    check("shared app: a complete window counts what the app used and this process's calls in it; the first, "
+          "joined midway, is left out",
+          _rc5._stats["app_windows"] == 1 and _rc5._stats["app_used"] == 620 and _rc5._stats["app_own"] == 3,
+          {k: _rc5._stats[k] for k in ("app_windows", "app_used", "app_own")})
+finally:
+    _rc5.time.time = _realtime
+    _rc5._stats.clear(); _rc5._stats.update(_saved_stats)
+    _rc5._win.update(end=None, max_used=0.0, own=0, first=True)
+
 # ---- the watchdog's day (decision 0035: meter.ledger_from, replacing 0033's backup_reserve) -------------------------
 import meter as _mt  # noqa: E402
 check("watchdog day: 06:59 UTC is still yesterday's day; 07:00 starts today's",

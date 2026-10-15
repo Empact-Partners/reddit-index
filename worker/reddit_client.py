@@ -71,7 +71,13 @@ _token = {"v": None, "t": 0.0}
 # net_s: seconds inside a request (connect to last byte); paced_s: seconds slept to hold the declared pace;
 # limit_wait_s: seconds slept because the app's window was used up (a 429, or under 30 calls left)
 _stats = {"calls": 0, "cached": 0, "errors": 0, "started": time.time(),
-          "net_s": 0.0, "paced_s": 0.0, "limit_wait_s": 0.0}
+          "net_s": 0.0, "paced_s": 0.0, "limit_wait_s": 0.0,
+          "app_windows": 0, "app_used": 0.0, "app_own": 0.0}
+# The app's budget is one window of x-ratelimit-used for every process on the client id. Per complete window this
+# process saw (the first is joined midway and left out): the most the app had used, and how many of this process's
+# answered calls fell in it. app_used - app_own is what every other user of the shared app took (15 Oct: the night's
+# run, pacing at 1.2 s a call, met "1 left" in windows where it had made 300 to 500).
+_win = {"end": None, "max_used": 0.0, "own": 0, "first": True}
 # get() may be called from a few threads at once (collect's comment trees, 11 Oct). The app must still see ONE request
 # start per period, so the pace is held under a lock; a 429 answered to one thread holds every thread's next start.
 _pace_lock = threading.Lock()
@@ -98,6 +104,18 @@ def _read_ratelimit_locked(headers):
             return
         rem = float(rem)
         rst = float(headers.get("x-ratelimit-reset") or 60.0)
+        used = headers.get("x-ratelimit-used")
+        if used is not None:
+            end = time.time() + rst
+            if _win["end"] is not None and end > _win["end"] + 30:   # a new window: close the one before
+                if not _win["first"] and _win["max_used"] > 0:
+                    _stats["app_windows"] += 1
+                    _stats["app_used"] += _win["max_used"]
+                    _stats["app_own"] += _win["own"]
+                _win.update(max_used=0.0, own=0, first=False)
+            _win["end"] = end
+            _win["max_used"] = max(_win["max_used"], float(used))
+            _win["own"] += 1
         prev = _adaptive[0]
         _adaptive[0] = max(SLEEP, rst / max(rem, 1.0)) if rem < 30 else SLEEP
         # SAY SO. With remaining at 0 this sets the inter-call floor to the whole

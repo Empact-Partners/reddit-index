@@ -717,4 +717,12 @@ def run(conn, caps: dict, deadline: float, should_stop=lambda: None, log=print, 
         "of_reddit": {"network": round(net1["net_s"] - net0["net_s"]),
                       "pacing_sleep": round(net1["paced_s"] - net0["paced_s"]),
                       "rate_limit_waits": round(net1["limit_wait_s"] - net0["limit_wait_s"])}}
+    # the shared Reddit app (reddit_client._win): in the complete windows of the stage, what the app used against
+    # what this stage's calls were; the rest went to the other users of the same client id
+    wins = net1.get("app_windows", 0) - net0.get("app_windows", 0)
+    if wins:
+        used = net1["app_used"] - net0["app_used"]
+        own = net1["app_own"] - net0["app_own"]
+        rec["shared_app"] = {"windows": wins, "app_used": round(used), "own": round(own),
+                             "others_share": round(max(0.0, used - own) / used, 3) if used else None}
     return rec
