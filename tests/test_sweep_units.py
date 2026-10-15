@@ -1256,6 +1256,79 @@ finally:
     for k, v in _saved3.items():
         setattr(_cs3, k, v)
 
+# ---- labelling beside collection (worker/alongside.py, decision 0037) -------------------------------------------------
+import alongside as _al  # noqa: E402
+import threading as _thr  # noqa: E402
+
+
+class _AConn:
+    def __init__(self):
+        self.closed, self.autocommit = False, False
+
+    def close(self):
+        self.closed = True
+
+
+_aconns = []
+
+
+def _aconnect():
+    c = _AConn()
+    _aconns.append(c)
+    return c
+
+
+_rounds = []
+
+
+def _arun(conn, cfg, deadline, should_stop=lambda: None, log=print):
+    _rounds.append((conn, dict(cfg)))
+    n = len(_rounds)
+    if n <= 2:   # two rounds with work, then an empty queue
+        return {"labelled": 100, "rejected": 10, "not_checked": 5, "jev_usd": 0.01, "glm_credits": 40.0}
+    return {"labelled": 0, "rejected": 0, "not_checked": 0, "jev_usd": 0.0, "glm_credits": 0.0}
+
+
+_a = _al.Alongside(_aconnect, _arun, {"glm_credits_max": 100, "jev_usd_max": 1.0, "max_items": 1000}, 1e12,
+                   log=lambda *a, **k: None, pause_s=0.05).start()
+import time as _tm  # noqa: E402
+_t_end = _tm.time() + 3
+while len(_rounds) < 4 and _tm.time() < _t_end:
+    _tm.sleep(0.01)
+_aout = _a.finish(timeout=5)
+check("alongside: rounds run on the thread's own connection, the allowance left shrinks after each, an empty queue "
+      "waits and asks again, and finish() stops it and sums what it did",
+      len(_aconns) == 1 and all(r[0] is _aconns[0] for r in _rounds) and _aconns[0].closed
+      and _rounds[1][1]["glm_credits_max"] == 60.0 and _rounds[2][1]["max_items"] == 1000 - 230
+      and _aout["labelled"] == 200 and _aout["rejected"] == 20 and _aout["rounds"] >= 3
+      and _aout["ended"] == "collection ended", (_aout, [r[1] for r in _rounds][:3]))
+_rounds.clear()
+_b = _al.Alongside(_aconnect, _arun, {"glm_credits_max": 60, "jev_usd_max": 1.0, "max_items": 1000}, 1e12,
+                   log=lambda *a, **k: None, pause_s=0.05).start()
+_bout = _b.finish(timeout=5) if (_tm.sleep(0.3) or True) else None
+check("alongside: once the pass's GLM allowance is used it stops on its own and says so",
+      _bout["ended"] == "the pass's labelling allowance is used" and _bout["rounds"] == 2, _bout)
+check("alongside: left() is what the pass's own classify stage then gets", _b.left()["glm_credits_max"] == 0.0
+      and _b.left()["max_items"] == 1000 - 230)
+_c = _al.Alongside(_aconnect, lambda *a, **k: {"error": "every GLM job of a batch failed"},
+                   {"glm_credits_max": 60}, 1e12, log=lambda *a, **k: None, pause_s=0.05).start()
+_tm.sleep(0.2)
+_cout = _c.finish(timeout=5)
+check("alongside: a round that failed ends the thread, the error on the receipt",
+      "failed" in _cout.get("error", "") and _cout["rounds"] == 1, _cout)
+_d = _al.Alongside(_aconnect, _arun, {}, 1e12, log=lambda *a, **k: None, pause_s=0.05,
+                   switch=lambda c: "stopped by the switch: test").start()
+_tm.sleep(0.2)
+check("alongside: the stop switch ends it before a round", _d.finish(timeout=5)["ended"] == "stopped by the switch: test")
+_e = _al.Alongside(lambda: (_ for _ in ()).throw(RuntimeError("no database")), _arun, {}, 1e12,
+                   log=lambda *a, **k: None).start()
+_tm.sleep(0.1)
+check("alongside: a thread that cannot connect says so and the pass goes on", "no database" in _e.finish(timeout=5)["error"])
+check("alongside: the pass wires it only by day, with collect and classify both asked for, and reads the thread's "
+      "allowance left in its own classify stage",
+      "alongside_on = bool(run.receipt[\"day_run\"]" in open(os.path.join(ROOT, "worker", "run_daily.py")).read()
+      and "cfg = al.left()" in open(os.path.join(ROOT, "worker", "run_daily.py")).read())
+
 # ---- the shared app's windows (reddit_client._win, 15 Oct) ---------------------------------------------------------
 import reddit_client as _rc5  # noqa: E402
 _t0 = [1_000_000.0]

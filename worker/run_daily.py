@@ -578,12 +578,36 @@ def main() -> int:
                                             cfg.get("label_bytes_per_mention", 4000), cfg.get("bytes_per_mention", 13000))
             ccaps.update({"mentions_room": room, "labelling_queue": queue,
                           "stream_pages": cfg.get("stream_pages"), "first_visit_pages": cfg.get("first_visit_pages")})
-        return collect.run(conn, ccaps,
-                           run.deadline - (sched.get("reserve_minutes_after_collect", 95) if "publish" in args.stages
-                                           else sched.get("reserve_minutes_after_collect_day", 30)) * 60,
-                           run.stop_reason, log,
-                           run_id=run.run_id)
+        return collect.run(conn, ccaps, collect_deadline, run.stop_reason, log, run_id=run.run_id)
+
+    # Decision 0037: a daytime pass labels beside its collection, in its own thread and connection, and so collects
+    # until reserve_minutes_after_collect_alongside before its end instead of stopping 45 minutes early to label
+    dcfg = sched.get("day", {})
+    alongside_on = bool(run.receipt["day_run"] and dcfg.get("label_alongside") and "collect" in args.stages
+                        and "classify" in args.stages and sched.get("classify", {}).get("enabled")
+                        and not run.stop_reason())
+    collect_deadline = run.deadline - (
+        sched.get("reserve_minutes_after_collect", 95) if "publish" in args.stages
+        else sched.get("reserve_minutes_after_collect_alongside", 15) if alongside_on
+        else sched.get("reserve_minutes_after_collect_day", 30)) * 60
+    al = None
+    if alongside_on:
+        import alongside
+        import classify_sweep as _cs_al
+        acfg = dict(sched["classify"])
+        if args.classify_items is not None:
+            acfg["max_items"] = args.classify_items
+
+        def _switch(c) -> str | None:
+            on, why = c.execute("select enabled, reason from public.sweep_control").fetchone()
+            return None if on else f"stopped by the switch: {why or 'no reason given'}"
+        al = alongside.Alongside(db.connect, _cs_al.run, acfg, collect_deadline, log=log, switch=_switch).start()
+        log("labelling runs beside collection (decision 0037)")
     stage(run, "collect", collect_stage)
+    al_out = al.finish() if al is not None else None
+    if al_out is not None:
+        run.receipt["stages"]["label_alongside"] = al_out
+        log(f"labelling beside collection: {al_out}")
 
     def backfill_stage():
         return backfill(run, sched.get("backfill") or {}, log)
@@ -596,6 +620,10 @@ def main() -> int:
         cfg = dict(sched["classify"])
         if args.classify_items is not None:
             cfg["max_items"] = args.classify_items
+        if al is not None:   # what labelling beside collection spent comes off the pass's allowances (decision 0037)
+            if al_out and al_out.get("ended") == "still running at the join":
+                return {"skipped": "labelling beside collection had not ended: two labellers never share the queue"}
+            cfg = al.left()
         # the night labels no more than the watchdog's day has left once collection is in it (decision 0035)
         nr = run.night_room()
         if nr is not None:

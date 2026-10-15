@@ -40,7 +40,9 @@
   "estimate_factor": 1.25,
   "why": "The daytime passes, requested on Railway by ops/day_tick.py every 30 minutes (decision 0026): a pass starts when nothing else runs and the watchdog's day (decision 0035) holds at least min_room_gb of room under day_line_gb once the day's backup and tonight's run are counted, capped at (room - 0.05) / estimate_factor on its own estimate. A pass ends by end_by_utc, 45 minutes before the night's run. Until 11 Oct a laptop requested them, and it slept.",
   "peak_queue_max": 20000,
-  "peak_why": "Decision 0032: in Z.ai's peak hours (06:00 to 10:00 UTC) GLM is not asked, so no pass starts while this many mentions or more already wait for a label (13 Oct: the 06:30 pass collected 23,958 and labelled none). Since 15 Oct Jev still labels its confident share in those hours and its residue waits for GLM after 10:00 (worker/classify_sweep.py)."
+  "peak_why": "Decision 0032: in Z.ai's peak hours (06:00 to 10:00 UTC) GLM is not asked, so no pass starts while this many mentions or more already wait for a label (13 Oct: the 06:30 pass collected 23,958 and labelled none). Since 15 Oct Jev still labels its confident share in those hours and its residue waits for GLM after 10:00 (worker/classify_sweep.py).",
+  "label_alongside": true,
+  "label_alongside_why": "Decision 0037: a daytime pass labels in its own thread and connection while it collects (worker/alongside.py), so collection runs until reserve_minutes_after_collect_alongside before the pass ends instead of reserve_minutes_after_collect_day. 15 Oct: the pass of 07:03 collected for 285 of its 325 minutes and labelled in the last 40, with nobody calling Reddit; the shared app, not egress, is the bound on collection now."
  },
  "takedown_brake_share": 0.15,
  "verify_pages": 7000,
@@ -74,6 +76,7 @@
  "max_expire_note": "Every changed page goes out every night (decision 0024). The cap of 1,000 rested on 0.2 MB of database egress a page, measured on the pilot's fifty largest; a typical page is about 20 KB. With 1,000 a night and about 5,700 changed, the median page was 3.1 days behind on 11 Oct. 7,000 is above the 6,098 pages that exist: a bound, not a quota. If a night ever has fewer slots than pages, takedown pages go first, then pages whose own data changed, with a fifth of the slots kept for the longest-waiting (worker/site_publish.py pick). The publisher fetches every page it expires, so the site re-renders them inside the measured run.",
  "reserve_minutes_after_classify": 45,
  "reserve_minutes_after_collect_day": 45,
+ "reserve_minutes_after_collect_alongside": 15,
  "reserve_minutes_after_classify_day": 5,
  "reserve_day_note": "A daytime pass ends collection 45 minutes before its end and labelling 5 (no refresh or publish by day). Was 30: on 12 Oct, at 3 mentions a Reddit call (decision 0027), a pass collected 28,948 mentions and its 25 minutes of labelling settled 18,177; 10,771 waited for the next stage. Labelling runs about 700 a minute.",
  "reserve_note": "Collection ends 105 minutes before the run's end, classification 45 minutes before it, so refresh (18 minutes for 1,904 brands on 11 Oct), score and publish (about 11 minutes for 5,700 pages at 8 fetches at once, measured 11 Oct: 9 pages a second) finish inside the window. Each was 10 minutes shorter until 11 Oct, when the publisher's share grew from 1,000 pages to every changed page.",
