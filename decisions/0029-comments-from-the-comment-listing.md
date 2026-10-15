@@ -144,3 +144,17 @@ publishing 5,707 pages in 18.5 minutes, none waiting; the run ended at 02:46 UTC
 on comment trees: 10,341 mentions, ended 04:42, 0.494 GB). With 2 h 44 min of its window unused, the night's room is
 30,000 from 14 Oct (`collect.night_mentions`): night mentions are labelled off GLM's peak and published the same night.
 In the 24 hours from 13 Oct 06:00 UTC the index collected about 84,700 mentions (69,679 by day, 15,005 by night).
+
+## 30,000 a night, judged on 15 Oct
+
+Run `99d0d483`: takedowns 51 minutes (200,000 documents, 1,654 gone), collection **28,772 mentions** in 154 minutes
+from 1,385 of 4,251 subreddits (5.03 a call over 5,720 calls; 3,512 comment-listing calls read 336,896 comments; no
+gap, none without its thread), **5.5 KB sent a mention** (6.6 the night before), labelling 30,102 and 2,723 rejected
+(8.3%) in 43 minutes with 7 left, refresh 2,469 brands in 22 minutes, publish 4,758 pages in 17 minutes. Ended 04:49
+UTC, ok, **0.587 GB** on the counter (0.523 the night before with half the mentions). The brand "reddit" was 18.3% of
+them.
+
+The collection was bounded by Reddit, not by the night's room: 9,077 of its 9,246 seconds waited on Reddit, 1,714 of
+them on the shared app's rate window (it ran out in windows where this run had made 300 to 500 calls; the collect
+receipt now says what share of each window other users took, `shared_app`). The 30,000 stays. From the night of 16 Oct
+the room is also bounded by what the watchdog's day has left (decision 0035).
