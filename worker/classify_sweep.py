@@ -505,6 +505,7 @@ def known_glm_wall(conn) -> str | None:
 
 def _loop(conn, cfg, t, model, rec, last_batch, limit, deadline, should_stop, log) -> None:
     taken = 0
+    unanswered: set = set()   # with GLM not asked: what Jev did not answer this run is not sent to it again (review)
     while taken < limit:
         # In Z.ai's peak hours GLM is not asked (it bills double), and Jev still settles what it can: its residue keeps
         # its tries and waits for GLM after 10:00 UTC, as when GLM's allowance is used up (15 Oct: until then the
@@ -545,6 +546,8 @@ def _loop(conn, cfg, t, model, rec, last_batch, limit, deadline, should_stop, lo
                                  "where attempts < 5 and enqueued_at <= now() - interval '26 hours'" + seen +
                                  " order by brand_id, doc_id, created_utc limit %s", (n - len(keys),)).fetchall()
         keys.sort(key=lambda k: (k[0], k[1]))   # the batch's writes in brand order too
+        if not glm_on:
+            keys = [k for k in keys if (k[0], k[1], k[2]) not in unanswered]
         if not keys:
             break
         taken += len(keys)
@@ -565,6 +568,13 @@ def _loop(conn, cfg, t, model, rec, last_batch, limit, deadline, should_stop, lo
         last_batch["jev"] = jev_judge.last_usd
         for why, k in jev_judge.last_errors.items():
             rec.setdefault("jev_errors", {})[why] = rec.get("jev_errors", {}).get(why, 0) + k
+        if not glm_on:   # Jev's own failures wait for a later run, and a batch it answered none of ends this one
+            miss = [(it["brand_id"], it["doc_id"], it["created_utc"]) for it, x in zip(items, j) if x is None]
+            unanswered.update(miss)
+            if len(miss) == len(items):
+                rec["allowance_used"] = (f"Jev answered none of a batch of {len(items)} with GLM not asked (Z.ai's peak "
+                                         f"hours or its allowance): the queue waits for the next run")
+                break
         verdicts = [decide(x, t) for x in j]
         models = [MV_JEV if v else None for v in verdicts]
         rec["jev_decided"] += sum(v is not None for v in verdicts)

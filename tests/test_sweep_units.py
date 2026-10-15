@@ -1192,7 +1192,7 @@ try:
         return [{"i": i} for i in range(len(items))]
     _jev.last_usd, _jev.last_errors = 0.001, {}
     _cs3.jev_judge = _jev
-    _cs3.decide = lambda x, t: "positive" if x["i"] == 0 else None   # Jev settles one of three
+    _cs3.decide = lambda x, t: "positive" if (x is not None and x["i"] == 0) else None   # Jev settles one of three
     _cs3.glm_judge = lambda items, **k: (_asked_glm.append(len(items)) or (["neutral"] * len(items), {
         "credits": 1.0, "failed_jobs": 0, "retried_jobs": 0, "errors": {}, "asked": [True] * len(items), "jobs": 1,
         "skipped_jobs": 0, "rate_limited": False}))
@@ -1217,6 +1217,41 @@ try:
                lambda *a, **k: None)
     check("off peak: GLM takes Jev's residue as before", _asked_glm == [2] and _r4["labelled"] == 3
           and "glm_peak" not in _r4, (_asked_glm, _r4))
+    # Jev failing in the peak hours: what it did not answer is not re-sent this run; a batch it answered none of ends
+    _asked_jev, _written = [], []
+
+    def _jev_flaky(items, log=print):
+        _asked_jev.append([it["doc_id"] for it in items])
+        return [None if it["doc_id"] == "t1_b" else {"i": 0} for it in items]
+    _jev_flaky.last_usd, _jev_flaky.last_errors = 0.0, {}
+    _cs3.jev_judge = _jev_flaky
+    _cs3.glm_peak_now = lambda: True
+
+    _seen_docs: set = set()
+    _cs3.write = lambda conn, items, verdicts, models, tried, jev_seen: (
+        _seen_docs.update(it["doc_id"] for it, sn in zip(items, jev_seen) if sn)
+        or {"labelled": sum(v is not None for v in verdicts), "rejected": 0})
+
+    class _QRepeat(_QConn):   # the queue as the database keeps it: what Jev answered is marked seen, its misses are not
+        def execute(self, sql, params=None):
+            self.sql.append(sql)
+            rows = ([k for k in _keys if k[1] not in _seen_docs]
+                    if ("from public.classify_queue" in sql and sql.lstrip().startswith("select brand_id")
+                        and "<= now()" not in sql) else [])
+            return type("R", (), {"fetchall": lambda s: rows, "fetchone": lambda s: (0,), "rowcount": 0})()
+    _r5 = dict(_r3, labelled=0, jev_decided=0, not_checked=0, allowance_used=None)
+    _cs3._loop(_QRepeat([]), {}, {}, "glm-5.3", _r5, {"glm": 0.0, "jev": 0.0}, 100, 1e12, lambda: None,
+               lambda *a, **k: None)
+    check("peak hours: an item Jev did not answer is not sent to it again this run (one round, not a loop to the "
+          "cap)", _asked_jev[0] == ["t1_a", "t1_b", "t1_c"] and all("t1_b" not in a for a in _asked_jev[1:])
+          and len(_asked_jev) <= 3, _asked_jev)
+    _cs3.jev_judge = lambda items, log=print: [None] * len(items)
+    _cs3.jev_judge.last_usd, _cs3.jev_judge.last_errors = 0.0, {}
+    _r6 = dict(_r3, labelled=0, jev_decided=0, not_checked=0, allowance_used=None)
+    _q6 = _QRepeat([])
+    _cs3._loop(_q6, {}, {}, "glm-5.3", _r6, {"glm": 0.0, "jev": 0.0}, 100, 1e12, lambda: None, lambda *a, **k: None)
+    check("peak hours: a batch Jev answered none of ends the labelling, said on the receipt",
+          "answered none" in (_r6["allowance_used"] or "") and _r6["labelled"] == 0, _r6)
 finally:
     for k, v in _saved3.items():
         setattr(_cs3, k, v)
@@ -1300,6 +1335,13 @@ _L = _mt.ledger_from(_split + [(_U(14, 12, 25), 1468.326e9), (_U(14, 12, 28), 14
                      _U(14, 12, 28), _s14, 3.58e9)
 check("ledger: its two readings add up (1.285 GB) and, once a reading at a pass's pace follows, nothing is held",
       _L["backup_held"] == 0 and _L.get("backup_seen_gb") == 1.285, _L)
+_tail = _split + [(_U(14, 12, 26), 1468.0e9)]   # 59 MB in three minutes after the burst: the backup is still sending
+_L = _mt.ledger_from(_tail, 1468.0e9, _U(14, 12, 26), _s14, 3.58e9)
+check("ledger: a tail under the burst threshold but over a pass's pace does not end the hold (review round 2)",
+      abs(_L["backup_held"] - 0.5e9) < 1e6, (_L["backup_held"], _L["backup_why"]))
+_L = _mt.ledger_from(_tail + [(_U(14, 12, 29), 1468.005e9)], 1468.005e9, _U(14, 12, 29), _s14, 3.58e9)
+check("ledger: the hold ends when a reading comes back at a pass's pace (5 MB in three minutes)",
+      _L["backup_held"] == 0, (_L["backup_held"], _L["backup_why"]))
 _L = _mt.ledger_from(_r14, 1466.945e9, _U(14, 9, 47), _s14, 3.58e9)
 check("ledger: readings after `now` never count (the full backup at 12:25 is not seen at 09:47)",
       _L["backup_held"] == 1.4e9 and "backup_seen_gb" not in _L, _L)

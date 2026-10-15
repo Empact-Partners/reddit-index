@@ -6,9 +6,9 @@ Date: 2026-10-15. Status: accepted (the commission: full speed under the egress 
 ## Context
 
 What the database node sends follows its write-ahead log almost byte for byte: the log is shipped off the node for
-backups, and the node counter the line is judged on counts it. Measured on 15 Oct, 02:27 to 02:51 UTC, inside the
-night's collection, two minutes at a time (`pg_stat_wal` against the counter): 7.0 MB sent for 6.5 MB of log in the
-first eight minutes, and the checkpoint's segment shipped the next interval.
+backups, and the node counter the line is judged on counts it. Measured on 15 Oct, 02:27 to 02:47 UTC, inside the
+night's collection (which ran from 00:52 past 03:00), ten two-minute intervals of `pg_stat_wal` against the counter:
+26.6 MB sent for 30.3 MB of log, 9,278 full-page images among it.
 
 Most of that log is full-page images: the first change to a page after a checkpoint writes the whole page. At one
 checkpoint an hour, an hour of collection touches nearly every page of the October partition's four mention indexes

@@ -444,6 +444,7 @@ def run(conn, caps: dict, deadline: float, should_stop=lambda: None, log=print, 
     t0 = time.time()
     calls0 = rc.stats()["calls"]
     now = dt.datetime.now(dt.timezone.utc)
+    rc.window_mark()   # the shared app's window under way began before this stage
     net0 = rc.stats()
     subs, mapping, core, quiet, never = plan(conn, now)
     matching = [0.0]   # seconds spent finding brand names in text; see rec["seconds"] at the end

@@ -52,7 +52,8 @@ def effective_used(conn, now_bytes: float | None, now: dt.datetime, sched: dict)
 
 
 def glm_peak(now: dt.datetime) -> bool:
-    """Z.ai's peak hours, 06:00 to 10:00 UTC: the classifier does not label then (worker/classify_sweep.py)."""
+    """Z.ai's peak hours, 06:00 to 10:00 UTC: GLM is not asked then and only Jev labels, its confident share
+    (worker/classify_sweep.py; decision 0032 amended)."""
     return 6 <= now.hour < 10
 
 

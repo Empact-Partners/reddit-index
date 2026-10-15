@@ -217,8 +217,13 @@ def ledger_from(rs: list, now_bytes: float, now, sched: dict, db_bytes: float | 
     if seen:
         got = sum(x[1] for x in seen)   # a backup can span two readings (review, 15 Oct)
         last = seen[-1][0]
-        # the burst is over once a later reading came at a pass's pace, or 15 minutes passed without one
-        closed = any(at > last for at, _ in rs) or (now - last).total_seconds() >= 900
+        # the burst is over once the interval after it came at a pass's pace (twice its fastest, for the counter's
+        # minute steps), or 15 minutes passed after it (review round 2: a tail under the burst threshold is not the end)
+        pace = float(bk.get("pass_rate_mb_min", 3)) * 1e6 / 60
+        tail = [r for r in rs if r[0] >= last]   # the burst's last reading and every one after it
+        calm = any(b - a <= 2 * pace * max(1.0, (tb - ta).total_seconds())
+                   for (ta, a), (tb, b) in zip(tail, tail[1:]))
+        closed = calm or (now - last).total_seconds() >= 900
         out["backup_seen_gb"] = round(got / 1e9, 3)
         if closed:
             held, why = 0.0, f"the day's backup is in the counter ({got / 1e9:.2f} GB, to {last:%H:%M} UTC)"

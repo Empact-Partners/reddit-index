@@ -105,8 +105,9 @@ def _read_ratelimit_locked(headers):
         rem = float(rem)
         rst = float(headers.get("x-ratelimit-reset") or 60.0)
         used = headers.get("x-ratelimit-used")
-        if used is not None:
-            end = time.time() + rst
+        real_reset = headers.get("x-ratelimit-reset")
+        if used is not None and real_reset is not None and float(real_reset) > 0:   # never on a made-up window
+            end = time.time() + float(real_reset)
             if _win["end"] is not None and end > _win["end"] + 30:   # a new window: close the one before
                 if not _win["first"] and _win["max_used"] > 0:
                     _stats["app_windows"] += 1
@@ -134,6 +135,12 @@ def _read_ratelimit_locked(headers):
                   flush=True)
     except (TypeError, ValueError):
         pass
+
+
+def window_mark() -> None:
+    """A stage boundary: the window under way is not counted for what follows (its calls began before)."""
+    with _state_lock:
+        _win["first"] = True
 
 
 def stats():
