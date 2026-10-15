@@ -2,7 +2,7 @@
 
 **Live: [redditindex.com](https://redditindex.com)** (noindex while provisional).
 
-## STATUS (kept current; last edit 2026-10-15 05:10 UTC)
+## STATUS (kept current; last edit 2026-10-15 12:40 UTC)
 
 | | |
 |---|---|
@@ -13,7 +13,7 @@
 | **Pages** | **Every changed page is published every night** (decision 0024): 4,758 on 15 Oct, all proven at their fingerprint in 17 minutes (6,361 pages, 2 waiting). |
 | **Storage** | 3,625 MB on an 8.4 GB disk (15 Oct). The old site's rail view is gone, each comment's text is kept once (retention step 3, 11 Oct), four indexes nothing read are dropped (migrations 0035 and 0038). Checkpoints every six hours from 15 Oct 04:53 UTC (decision 0036): the log the node ships is almost all whole-page images, one per page touched after each checkpoint. |
 | **Collection** | Comments come from each subreddit's comment listing, 100 a call whatever their thread (decision 0029), by day and by night. The night of 15 Oct: 28,772 mentions, 5.03 a Reddit call, 5.5 KB sent a mention, no gap; Reddit's shared app was its bound (19% of collection time waited on its rate window). The 24 hours from 13 Oct 06:00 UTC: about 84,700 mentions. Every visit is recorded (0030), the post test is an automaton (0031), waiting mentions are labelled before new ones are collected (0032), every document on a page is checked by the takedown check whatever its call cap (0034). |
-| **Open** | **For Vlad:** a dedicated Reddit API app for the index (the shared app's rate window is now the bound on collection: 29 minutes of waiting in the night of 15 Oct; the receipt's `shared_app` measures what other users take); whether a vendor-named subreddit excludes every mention found in it (today: 316 subreddits) or only the vendor's own; whether the brand "reddit" itself should count (18 to 24% of new mentions). The watchdog's day of 14 Oct reads about 2.1 GB at its 07:01 check (the weekly full backup and the night after it; decision 0035 holds both from now). **To judge:** the passes of 15 Oct from 07:00 under the watchdog's day (0035), the mention insert's log and images a row after six-hour checkpoints (0036), Jev's peak-hour labels (0032), the next full backup on 21 Oct. |
+| **Open** | **For Vlad:** a dedicated Reddit API app for the index (the shared app's rate window is now the bound on collection: in the first daytime pass of 15 Oct the app answered 26,028 calls in 27 windows and **67% of them were other users'**, and the pass waited on the window 24% of its collection time); whether a vendor-named subreddit excludes every mention found in it (today: 316 subreddits) or only the vendor's own; whether the brand "reddit" itself should count (18 to 24% of new mentions). The watchdog's day of 14 Oct reads about 2.1 GB at its 07:01 check (the weekly full backup and the night after it; decision 0035 holds both from now). **To judge:** the passes of 15 Oct from 07:00 under the watchdog's day (0035), the mention insert's log and images a row after six-hour checkpoints (0036), Jev's peak-hour labels (0032), the next full backup on 21 Oct. |
 | **How to stop everything** | `python3 ops/ri.py stop "reason"` turns the sweep off and its database login off. |
 
 A public index of what Reddit actually says about software brands: one

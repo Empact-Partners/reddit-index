@@ -78,3 +78,15 @@ backup smaller.
 
 The watchdog's reading each morning (the index under 2 GB a day, every day), the passes from 07:00 on the day after
 a full backup (the next on 21 Oct), and `schedule_check.py` with no finding about the backups.
+
+## The first day, 15 Oct
+
+The watchdog read 1.98 GB for 14 Oct at 07:04 UTC (no finding). The tick at 07:03 found the new day at 0.81 GB with
+what was still to come in it (0.21 GB held for the day's backup, 0.6 GB for tonight's run) and started a pass capped at
+0.7 GB: `a815baa0`, 07:03 to 12:28, **31,806 mentions** from 2,048 subreddits in 8,989 Reddit calls, no gap, 27,469
+labelled and 2,991 rejected, the day at 0.395 GB when it ended with the 11:18 backup in it. Under the 24-hour window
+no pass could have started before 12:25. The next tick, 12:30, started the next pass at once.
+
+Its collection waited on Reddit for 16,801 of its 17,100 seconds, 4,047 of them on the shared app's rate window. In
+the 27 complete windows of the stage the app answered **26,028 calls, 8,478 of them this pass's: the other users of
+the shared client id took 67%** (`shared_app` on the receipt). The bound on collection is now that app, not egress.
