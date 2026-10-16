@@ -42,3 +42,14 @@ One more database connection by day. GLM jobs at the same width (6 in flight) an
 
 The next daytime passes against `a815baa0`: minutes of collection a pass (285 before), mentions a pass, labels a pass,
 and what was left in the queue at the pass's end.
+
+## Judged, 16 Oct (deployed to the day service 15 Oct 23:21 UTC)
+
+The first pass, `16 Oct 06:33 to 11:48 UTC`, against `a815baa0` (15 Oct): collection ran 315 minutes (285 before: it
+now runs until 15 minutes before the pass ends), 17,411 mentions from 3,685 subreddits on 10,545 Reddit calls, and the
+thread labelled beside it in 263 rounds: **15,291 labelled, 2,071 rejected**, Jev $0.48, GLM 930 credits. GLM's share
+waited out Z.ai's peak hours (06:00 to 10:00 UTC) with its tries and was labelled after; the classify stage at the
+end found 49 mentions, labelled them in six seconds, and left the queue at 0. Mentions per call were lower than on
+15 Oct (1.65 against 3.54) because the pass reached the quiet end of the rotation (3,685 subreddits against 2,048),
+not because of labelling. The setting stays.
+
