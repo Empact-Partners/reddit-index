@@ -56,6 +56,10 @@ def railway(sched: dict) -> list[str]:
         cron = (sm.get("deploy") or {}).get("cronSchedule")
         df = (sm.get("build") or {}).get("dockerfilePath") or ""
         region = list(((sm.get("deploy") or {}).get("multiRegionConfig") or {}).keys())
+        restart = (sm.get("deploy") or {}).get("restartPolicyType")
+        if sid != d.OLD_COLLECTOR and name in (d.NAME, sched.get("day", {}).get("service_name")) and restart != "NEVER":
+            # a cron service that restarts on failure runs a failed night (or pass) again: takedowns, publish, DMs
+            out.append(f"service {name} restarts with policy {restart!r}, not 'NEVER'")
         if sid == d.OLD_COLLECTOR:
             if cron or not df.endswith("Dockerfile.parked"):
                 out.append(f"the old collector is not parked: newest deployment {n['id'][:8]} runs {df or '?'} "
@@ -129,6 +133,11 @@ def database(sched: dict, since: str) -> tuple[list[str], dict]:
             # and only the scheduled run: a daytime pass (manual on its receipt) on the same date is not the night
             # (until 11 Oct any receipt of the date counted, so a lost night would have hidden behind a day pass)
             nights = {r[0].date() for r in rows if r[1] in ("ok", "capped", "failed") and not r[3]}
+            # tonight's run while it runs (it ends by 05:30 and stops itself 20 minutes past its deadline): until
+            # 16 Oct a check inside the window named a missing receipt for a night that was still collecting
+            now_utc = dt.datetime.now(dt.timezone.utc)
+            nights |= {r[0].date() for r in rows if r[1] == "running" and not r[3]
+                       and r[0].date() == now_utc.date() and now_utc.time() < dt.time(6, 0)}
             day = max(since_on.date(), (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=7)).date())
             today = dt.datetime.now(dt.timezone.utc)
             while day <= today.date():
