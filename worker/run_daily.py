@@ -449,10 +449,10 @@ def tell_vlad(run: Run) -> None:
         head = "*Reddit Index: last night's update stopped before deleting anything*"
     elif any("takedown" in p.lower() for p in r["problems"]):
         head = "*Reddit Index: a deleted comment may still be showing on the site*"
-    elif r["caps_hit"] or r["status"] != "ok":
-        head = "*Reddit Index: last night's update stopped early at one of its limits*"
-    else:
+    elif warnings and r["status"] == "ok" and not r["caps_hit"]:
         head = "*Reddit Index: the database disk is nearly full*"
+    else:
+        head = "*Reddit Index: last night's update stopped early at one of its limits*"
     story = []
     if r["caps_hit"]:
         story.append("It reached a limit set to keep the cost down: " + "; ".join(r["caps_hit"])[:300] + ".")
