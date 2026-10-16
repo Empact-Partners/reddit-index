@@ -206,7 +206,7 @@ def deploy_one(name: str, cron: str, start: str | None, v: dict, dry_run: bool, 
         size = sum(os.path.getsize(os.path.join(p, f)) for p, _, fs in os.walk(dest) for f in fs)
         print(f"{name}: build folder {size / 1e6:.1f} MB; variables: {sorted(v)}")
         if dry_run:
-            print(json.dumps({"builder": "DOCKERFILE", "dockerfilePath": "Dockerfile", "cronSchedule": cron,
+            print(json.dumps({"dockerfilePath": "Dockerfile", "cronSchedule": cron,
                               "restartPolicyType": "NEVER", "region": REGION,
                               "startCommand": start, "dockerfile": os.path.exists(os.path.join(dest, "Dockerfile"))}))
             return 0
@@ -221,7 +221,9 @@ def deploy_one(name: str, cron: str, start: str | None, v: dict, dry_run: bool, 
         # cron, region and restart policy are service settings, copied into each deployment's manifest. Set
         # them on the service first (one field per call: a combined update was refused), so the deployment
         # below carries them.
-        fields = [{"builder": "DOCKERFILE"}, {"dockerfilePath": "Dockerfile"},   # no railway.json since 16 Oct
+        # no railway.json since 16 Oct: the Dockerfile path selects the Dockerfile build (the API's Builder enum has no
+        # DOCKERFILE value: HEROKU, NIXPACKS, PAKETO, RAILPACK; a builder field was refused with HTTP 400 on 16 Oct)
+        fields = [{"dockerfilePath": "Dockerfile"},
                   {"cronSchedule": cron}, {"restartPolicyType": "NEVER"},
                   {"multiRegionConfig": {REGION: {"numReplicas": 1}}}]
         if start:
