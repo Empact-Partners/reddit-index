@@ -5,8 +5,8 @@ Why a separate folder: the repository root's railway.json belonged to the old co
 2026-10-02 because Railway kept re-running it (decision 0016) and deleted on 9 Oct. This script copies exactly what
 the image needs into a temporary folder and deploys that folder to one service. The folder carries no railway.json
 since 16 Oct: Railway ends Config as Code on 2026-12-01, and the settings it carried (cron, restart policy, region,
-start command) are set on the service through the API before every deploy, which is what Railway runs; the build is
-the folder's own Dockerfile, found at its root.
+start command, and the Dockerfile build) are set on the service through the API before every deploy, which is what
+Railway runs; scripts/schedule_check.py reads them back from the newest deployment's manifest.
 
 What it sets on the service (read from the local credential files, never printed):
   SUPABASE_*            the ri_sweep login (ops/sweep_role.py), session pooler, port 5432
@@ -206,7 +206,8 @@ def deploy_one(name: str, cron: str, start: str | None, v: dict, dry_run: bool, 
         size = sum(os.path.getsize(os.path.join(p, f)) for p, _, fs in os.walk(dest) for f in fs)
         print(f"{name}: build folder {size / 1e6:.1f} MB; variables: {sorted(v)}")
         if dry_run:
-            print(json.dumps({"cronSchedule": cron, "restartPolicyType": "NEVER", "region": REGION,
+            print(json.dumps({"builder": "DOCKERFILE", "dockerfilePath": "Dockerfile", "cronSchedule": cron,
+                              "restartPolicyType": "NEVER", "region": REGION,
                               "startCommand": start, "dockerfile": os.path.exists(os.path.join(dest, "Dockerfile"))}))
             return 0
         svc = service_id(create=True, name=name)
@@ -220,14 +221,15 @@ def deploy_one(name: str, cron: str, start: str | None, v: dict, dry_run: bool, 
         # cron, region and restart policy are service settings, copied into each deployment's manifest. Set
         # them on the service first (one field per call: a combined update was refused), so the deployment
         # below carries them.
-        fields = [{"cronSchedule": cron}, {"restartPolicyType": "NEVER"},
+        fields = [{"builder": "DOCKERFILE"}, {"dockerfilePath": "Dockerfile"},   # no railway.json since 16 Oct
+                  {"cronSchedule": cron}, {"restartPolicyType": "NEVER"},
                   {"multiRegionConfig": {REGION: {"numReplicas": 1}}}]
         if start:
             fields.append({"startCommand": start})
         for field in fields:
             gql("mutation($s:String!,$e:String!,$i:ServiceInstanceUpdateInput!){ "
                 "serviceInstanceUpdate(serviceId:$s, environmentId:$e, input:$i) }", {"s": svc, "e": ENV, "i": field})
-        print(f"service settings: cron {cron} UTC, region {REGION}, never restarted"
+        print(f"service settings: Dockerfile build, cron {cron} UTC, region {REGION}, never restarted"
               + (f", start command {start}" if start else ""))
         if vars_only:
             return 0

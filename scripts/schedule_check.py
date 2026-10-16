@@ -60,6 +60,11 @@ def railway(sched: dict) -> list[str]:
         if sid != d.OLD_COLLECTOR and name in (d.NAME, sched.get("day", {}).get("service_name")) and restart != "NEVER":
             # a cron service that restarts on failure runs a failed night (or pass) again: takedowns, publish, DMs
             out.append(f"service {name} restarts with policy {restart!r}, not 'NEVER'")
+        if sid != d.OLD_COLLECTOR and name in (d.NAME, sched.get("day", {}).get("service_name")):
+            builder = (sm.get("build") or {}).get("builder")
+            if builder != "DOCKERFILE" or df.lstrip("/") != "Dockerfile":
+                # the image is deploy/sweep/Dockerfile, copied to the build folder's root: anything else is not it
+                out.append(f"service {name} was built by {builder!r} from {df!r}, not the folder's Dockerfile")
         if sid == d.OLD_COLLECTOR:
             if cron or not df.endswith("Dockerfile.parked"):
                 out.append(f"the old collector is not parked: newest deployment {n['id'][:8]} runs {df or '?'} "
