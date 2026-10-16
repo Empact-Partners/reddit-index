@@ -1616,6 +1616,80 @@ try:
 finally:
     _rc3.info = _saved_info
 
+# ---- the disk on the night's receipt (decision 0038: meter.parse_disk, run_daily.storage_notes, the DM) ------------
+_disk_text = """node_filesystem_size_bytes{device="/dev/nvme1n1",fstype="ext4",mountpoint="/data"} 8.416882688e+09
+node_filesystem_avail_bytes{device="/dev/nvme1n1",fstype="ext4",mountpoint="/data"} 1.859715072e+09
+node_filesystem_size_bytes{device="/dev/root",fstype="ext4",mountpoint="/"} 1.0e+10
+node_filesystem_avail_bytes{device="/dev/root",fstype="ext4",mountpoint="/"} 9.0e+09
+node_network_transmit_bytes_total{device="ens5"} 1.5e+12
+"""
+check("disk: the data disk's size and free bytes are read from the mountpoint /data only",
+      _mt.parse_disk(_disk_text) == (8416882688.0, 1859715072.0), _mt.parse_disk(_disk_text))
+check("disk: a missing series, a NaN or more free than size is 'not known'",
+      _mt.parse_disk(_metrics_text) is None
+      and _mt.parse_disk(_disk_text.replace("1.859715072e+09", "NaN")) is None
+      and _mt.parse_disk(_disk_text.replace("1.859715072e+09", "9e+09")) is None)
+_sn_ok = _rd.storage_notes((8416882688.0, 1859715072.0), 3.9e9, {})
+_sn_full = _rd.storage_notes((8416882688.0, 0.5e9), 3.9e9, {"disk_warn_used_pct": 92})
+_sn_none = _rd.storage_notes(None, 3.9e9, {})
+check("disk: 78% used is noted on the receipt with no warning",
+      _sn_ok[1] == [] and _sn_ok[0]["disk_used_pct"] == 77.9 and _sn_ok[0]["db_mb"] == 3719
+      and _sn_ok[0]["disk_free_gb"] == 1.86, _sn_ok)
+check("disk: past 92% is a warning, never a problem word (the run stays ok)",
+      len(_sn_full[1]) == 1 and "94%" in _sn_full[1][0]
+      and not any(w in _sn_full[1][0] for w in ("failed", "brake")), _sn_full)
+check("disk: a disk that was not read is said, and warns of nothing", _sn_none == ({"db_mb": 3719, "disk": "not read"}, []),
+      _sn_none)
+
+
+class _DiskResp:
+    headers = {}
+
+    def __init__(self, body):
+        self.body = body
+
+    def read(self):
+        return self.body
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *a):
+        return False
+
+
+import importlib.util as _ilu  # noqa: E402
+_mspec = _ilu.spec_from_file_location("meter_fresh", os.path.join(ROOT, "worker", "meter.py"))
+_mf = _ilu.module_from_spec(_mspec)
+_mspec.loader.exec_module(_mf)   # a fresh copy: the tests above leave meter.read patched
+_saved_urlopen, _saved_env = _mf.urllib.request.urlopen, dict(os.environ)
+try:
+    os.environ.update({"SUPABASE_METRICS_KEY": "k", "SUPABASE_PROJECT_REF": "x"})
+    _mf.urllib.request.urlopen = lambda req, timeout=30.0: _DiskResp(_disk_text.encode())
+    _got = _mf.read()
+    check("disk: one metrics read gives the counter and the disk (no read of its own)",
+          _got == 1.5e12 and _mf.last_disk() == (8416882688.0, 1859715072.0), (_got, _mf.last_disk()))
+finally:
+    _mf.urllib.request.urlopen = _saved_urlopen
+    os.environ.clear()
+    os.environ.update(_saved_env)
+
+_sent = []
+_saved_dm = _rd.dm
+try:
+    _rd.dm = lambda text: _sent.append(text)
+    _wr = type("W", (), {"receipt": {"run_id": "abcdef0123", "status": "ok", "caps_hit": [], "problems": [],
+                                     "warnings": _sn_full[1], "stages": {}}})()
+    _rd.tell_vlad(_wr)
+    _quiet = type("Q", (), {"receipt": {"run_id": "abcdef0123", "status": "ok", "caps_hit": [], "problems": [],
+                                        "warnings": [], "stages": {}}})()
+    _rd.tell_vlad(_quiet)
+    check("disk: an ok night with a disk warning sends one DM naming the disk and the step; a quiet ok night sends none",
+          len(_sent) == 1 and "disk is nearly full" in _sent[0] and "Compute and Disk" in _sent[0]
+          and "Nothing for anyone to do" not in _sent[0], _sent)
+finally:
+    _rd.dm = _saved_dm
+
 print(f"\ntest_sweep_units: {len(FAILS)} failure(s)" + (": " + "; ".join(FAILS) if FAILS else ""))
 sys.exit(bool(FAILS))
 

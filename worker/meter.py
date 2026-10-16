@@ -9,6 +9,7 @@ bulk step had rewritten that morning, a daytime pass capped at 0.36 GB estimated
 read()        the counter in bytes, or None when it cannot be read (no key in the environment, or the endpoint
               did not answer). One read is 18 KB of egress itself (compressed), so nothing here reads in a loop.
 record(conn)  read and keep the reading in public.egress_counter (migration 0033).
+last_disk()   the data disk's size and free bytes from the same metrics text as the last reading (decision 0038).
 used_24h(...) bytes sent in the 24 hours before a reading, from the newest reading at least 24 hours older; a gap in
               the readings makes the window longer, never shorter, so the figure can only read high.
 ledger(...)   the watchdog's day (decision 0035): what the node sent since the watchdog's last daily reading, the day's
@@ -41,6 +42,38 @@ def parse(text: str) -> float | None:
     return total if (seen and total > 0) else None
 
 
+def parse_disk(text: str) -> tuple[float, float] | None:
+    """The data disk's size and free bytes (node_filesystem_size_bytes and node_filesystem_avail_bytes on the
+    mountpoint "/data", where Postgres keeps its data and its log), or None when either is absent or not a number."""
+    size = free = None
+    for line in text.splitlines():
+        if 'mountpoint="/data"' not in line or " " not in line:
+            continue
+        name = "size" if line.startswith("node_filesystem_size_bytes") else (
+            "free" if line.startswith("node_filesystem_avail_bytes") else None)
+        if name is None:
+            continue
+        try:
+            v = float(line.rsplit(" ", 1)[1])
+        except ValueError:
+            continue
+        if not math.isfinite(v) or v < 0:
+            continue
+        if name == "size" and size is None:
+            size = v
+        elif name == "free" and free is None:
+            free = v
+    return (size, free) if (size and free is not None and free <= size) else None
+
+
+_LAST: dict = {"disk": None}
+
+
+def last_disk() -> tuple[float, float] | None:
+    """The disk as of the last successful read() in this process, or None when none has read it."""
+    return _LAST["disk"]
+
+
 def read(timeout: float = 30.0) -> float | None:
     key, ref = os.environ.get("SUPABASE_METRICS_KEY"), os.environ.get("SUPABASE_PROJECT_REF")
     if not key or not ref:
@@ -55,6 +88,7 @@ def read(timeout: float = 30.0) -> float | None:
             text = (gzip.decompress(raw) if r.headers.get("Content-Encoding") == "gzip" else raw).decode()
     except Exception:  # noqa: BLE001 - an unread meter is "not known", never zero
         return None
+    _LAST["disk"] = parse_disk(text) or _LAST["disk"]   # the same text: the disk costs no read of its own
     return parse(text)
 
 

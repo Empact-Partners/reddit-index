@@ -203,6 +203,23 @@ class Run:
         self.meter.update({"day_sent_gb": round(led["sent"] / 1e9, 3), "since": led["since"]})
         return {"gb": round(led["night_room"] / 1e9, 3), "sent_gb": round(led["sent"] / 1e9, 3), "since": led["since"]}
 
+    def storage_check(self) -> None:
+        """Decision 0038, at the end of a night's run: the disk and the database's size on the receipt (one more read
+        of the node's metrics, 18 KB), and a warning for Vlad when the disk is nearly full. A warning is not a
+        problem: the run stays ok."""
+        self.meter_read("storage")
+        try:
+            db_bytes = self.conn.execute("select pg_database_size(current_database())::float8").fetchone()[0]
+        except Exception:  # noqa: BLE001 - the size is a note; the run does not stop on it
+            try:
+                self.conn.rollback()
+            except Exception:  # noqa: BLE001
+                pass
+            db_bytes = None
+        st, warn = storage_notes(meter.last_disk(), db_bytes, self.sched.get("storage", {}))
+        self.receipt["storage"] = st
+        self.receipt.setdefault("warnings", []).extend(warn)
+
     def egress_estimate(self) -> int:
         """Write-ahead log produced since the run started. Every byte of it is shipped to backup storage,
         and the node counter the egress watchdog reads counts it. Query results the sweep reads are small
@@ -333,6 +350,25 @@ def takedown_deadline(run_deadline: float, sched: dict) -> float:
     return run_deadline - sched.get("reserve_minutes_after_collect", 105) * 60
 
 
+def storage_notes(disk: tuple[float, float] | None, db_bytes: float | None, cfg: dict) -> tuple[dict, list[str]]:
+    """Decision 0038: the data disk and the database's size for the night's receipt, and a warning when the disk is
+    past `disk_warn_used_pct` (92): Supabase grows the disk by half at 90% used, so past that it did not, and at 95%
+    the database stops taking writes. A disk that could not be read is said, never read as empty."""
+    st: dict = {}
+    if db_bytes:
+        st["db_mb"] = round(db_bytes / 1048576)
+    if not disk:
+        st["disk"] = "not read"
+        return st, []
+    size, free = disk
+    used = (size - free) / size * 100
+    st.update({"disk_gb": round(size / 1e9, 2), "disk_free_gb": round(free / 1e9, 2), "disk_used_pct": round(used, 1)})
+    if used >= float(cfg.get("disk_warn_used_pct", 92)):
+        return st, [f"the database disk is {used:.0f}% full ({free / 1e9:.2f} GB free of {size / 1e9:.1f} GB): "
+                    f"Supabase grows it at 90% used and the database stops taking writes at 95%"]
+    return st, []
+
+
 def takedown_problems(td: dict) -> list[str]:
     """What the takedown stage's receipt makes a problem of the run: the brake, and documents on pages left unchecked
     (decision 0002's condition not met tonight: time ran out, or Reddit failed). Each says 'brake' or 'failed', so
@@ -404,7 +440,8 @@ def tell_vlad(run: Run) -> None:
     r = run.receipt
     c = r["stages"].get("collect", {})
     t = r["stages"].get("takedowns", {})
-    if r["status"] == "ok" and not r["caps_hit"]:
+    warnings = r.get("warnings") or []
+    if r["status"] == "ok" and not r["caps_hit"] and not warnings:
         return
     if r["status"] == "failed":
         head = "*Reddit Index: last night's update failed*"
@@ -412,21 +449,31 @@ def tell_vlad(run: Run) -> None:
         head = "*Reddit Index: last night's update stopped before deleting anything*"
     elif any("takedown" in p.lower() for p in r["problems"]):
         head = "*Reddit Index: a deleted comment may still be showing on the site*"
-    else:
+    elif r["caps_hit"] or r["status"] != "ok":
         head = "*Reddit Index: last night's update stopped early at one of its limits*"
+    else:
+        head = "*Reddit Index: the database disk is nearly full*"
     story = []
     if r["caps_hit"]:
         story.append("It reached a limit set to keep the cost down: " + "; ".join(r["caps_hit"])[:300] + ".")
     if r["problems"]:
         story.append("What went wrong: " + "; ".join(r["problems"])[:400] + ".")
+    if warnings:
+        story.append("Worth knowing: " + "; ".join(warnings)[:300] + ".")
     story.append(f"It collected {c.get('mentions_new', 0):,} new mentions from {c.get('subs_visited', 0):,} subreddits "
                  f"and checked {t.get('docs_checked', 0):,} comments on the site against Reddit.")
     you = ("Nothing for you to do. The next run picks up where this one stopped."
            if r["status"] != "failed" else
            "Nothing for you to do yet: the site keeps showing the last good data until the next run succeeds.")
+    if warnings and r["status"] == "ok" and not r["caps_hit"]:
+        you = ("Last night's update itself went fine and the site is current. If the disk reaches 95% the database "
+               "stops taking writes, and the next night's update fails.")
     link = "<https://github.com/Empact-Partners/reddit-index/blob/main/SOP.md|how the daily update works>"
-    text = (f"{head}\n\n{' '.join(story)}\n\n*What this means for you*\n{you}\n\n*To do*\nNothing for anyone "
-            f"to do.\n\n*Details for the curious (and for your Claude)*\nrun {r['run_id'][:8]} in the "
+    todo = ("Nothing for anyone to do." if not warnings else
+            "<@U016BPWFC7Q>: grow the reddit-index disk in Supabase (Project Settings, Compute and Disk) to the next "
+            "size, or ask Claude to do it.")
+    text = (f"{head}\n\n{' '.join(story)}\n\n*What this means for you*\n{you}\n\n*To do*\n{todo}"
+            f"\n\n*Details for the curious (and for your Claude)*\nrun {r['run_id'][:8]} in the "
             f"database's run log · {link}")
     try:
         dm(text)
@@ -733,6 +780,8 @@ def main() -> int:
     if open_td:
         run.receipt["problems"].append(f"takedown proof failed: {open_td} takedowns older than 36 hours are "
                                        f"not yet proven on the site")
+    if not run.receipt["day_run"]:   # once a night is enough: the disk moves by megabytes a day (decision 0038)
+        run.storage_check()
     hard = [p for p in run.receipt["problems"] if "failed" in p or "brake" in p]
     status = ("stopped" if run.receipt.get("stopped") else
               "failed" if hard else ("capped" if run.receipt["caps_hit"] else "ok"))
