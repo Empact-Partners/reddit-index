@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 """Deploy the daily sweep to its own Railway service, reddit-index-sweep, from a folder built for it.
 
-Why a separate folder: the repository root's railway.json belongs to the old collector service, parked on
-2026-10-02 because Railway kept re-running it (decision 0016). Deploying the sweep from the root would hand that
-service's settings to this one, or the other way round. This script copies exactly what the image needs into a
-temporary folder with its own railway.json, and deploys that folder to the sweep service only.
+Why a separate folder: the repository root's railway.json belonged to the old collector service, parked on
+2026-10-02 because Railway kept re-running it (decision 0016) and deleted on 9 Oct. This script copies exactly what
+the image needs into a temporary folder and deploys that folder to one service. The folder carries no railway.json
+since 16 Oct: Railway ends Config as Code on 2026-12-01, and the settings it carried (cron, restart policy, region,
+start command, and the Dockerfile build) are set on the service through the API before every deploy, which is what
+Railway runs; scripts/schedule_check.py reads them back from the newest deployment's manifest.
 
 What it sets on the service (read from the local credential files, never printed):
   SUPABASE_*            the ri_sweep login (ops/sweep_role.py), session pooler, port 5432
@@ -141,13 +143,8 @@ def assemble(dest: str, cron: str | None = None, start: str | None = None) -> No
            'wire_api = "responses"', 'env_key = "ZAI_API_KEY"']
     open(os.path.join(dest, "codex-zai", "config.toml"), "w").write("\n".join(cfg) + "\n")
     shutil.copy(os.path.expanduser("~/.codex-zai/models.json"), os.path.join(dest, "codex-zai", "models.json"))
-    rj = {"$schema": "https://railway.com/railway.schema.json",
-          "build": {"builder": "DOCKERFILE", "dockerfilePath": "Dockerfile"},
-          "deploy": {"cronSchedule": cron or sched["railway"]["cron"], "restartPolicyType": "NEVER",
-                     "multiRegionConfig": {REGION: {"numReplicas": 1}}}}
-    if start:
-        rj["deploy"]["startCommand"] = start
-    json.dump(rj, open(os.path.join(dest, "railway.json"), "w"), indent=1)
+    # No railway.json (Config as Code ends 2026-12-01): deploy_one sets the service's cron, restart policy, region
+    # and start command through the API, and Railway builds the Dockerfile at the folder's root.
 
 
 DEPLOY_MINUTES = 6   # a build and its switch-over take about four minutes; the margin is the rest
@@ -209,7 +206,9 @@ def deploy_one(name: str, cron: str, start: str | None, v: dict, dry_run: bool, 
         size = sum(os.path.getsize(os.path.join(p, f)) for p, _, fs in os.walk(dest) for f in fs)
         print(f"{name}: build folder {size / 1e6:.1f} MB; variables: {sorted(v)}")
         if dry_run:
-            print(open(os.path.join(dest, "railway.json")).read())
+            print(json.dumps({"builder": "DOCKERFILE", "dockerfilePath": "Dockerfile", "cronSchedule": cron,
+                              "restartPolicyType": "NEVER", "region": REGION,
+                              "startCommand": start, "dockerfile": os.path.exists(os.path.join(dest, "Dockerfile"))}))
             return 0
         svc = service_id(create=True, name=name)
         if svc == OLD_COLLECTOR:
@@ -218,18 +217,19 @@ def deploy_one(name: str, cron: str, start: str | None, v: dict, dry_run: bool, 
             {"i": {"projectId": PROJECT, "environmentId": ENV, "serviceId": svc, "variables": v,
                    "skipDeploys": True}})
         print(f"service {name} ({svc[:8]}): {len(v)} variables set")
-        # Railway read this folder's railway.json (2026-10-02) and still deployed with no cron in Europe: the
+        # Railway read the folder's railway.json (2026-10-02) and still deployed with no cron in Europe: the
         # cron, region and restart policy are service settings, copied into each deployment's manifest. Set
         # them on the service first (one field per call: a combined update was refused), so the deployment
         # below carries them.
-        fields = [{"cronSchedule": cron}, {"restartPolicyType": "NEVER"},
+        fields = [{"builder": "DOCKERFILE"}, {"dockerfilePath": "Dockerfile"},   # no railway.json since 16 Oct
+                  {"cronSchedule": cron}, {"restartPolicyType": "NEVER"},
                   {"multiRegionConfig": {REGION: {"numReplicas": 1}}}]
         if start:
             fields.append({"startCommand": start})
         for field in fields:
             gql("mutation($s:String!,$e:String!,$i:ServiceInstanceUpdateInput!){ "
                 "serviceInstanceUpdate(serviceId:$s, environmentId:$e, input:$i) }", {"s": svc, "e": ENV, "i": field})
-        print(f"service settings: cron {cron} UTC, region {REGION}, never restarted"
+        print(f"service settings: Dockerfile build, cron {cron} UTC, region {REGION}, never restarted"
               + (f", start command {start}" if start else ""))
         if vars_only:
             return 0

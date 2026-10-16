@@ -56,6 +56,15 @@ def railway(sched: dict) -> list[str]:
         cron = (sm.get("deploy") or {}).get("cronSchedule")
         df = (sm.get("build") or {}).get("dockerfilePath") or ""
         region = list(((sm.get("deploy") or {}).get("multiRegionConfig") or {}).keys())
+        restart = (sm.get("deploy") or {}).get("restartPolicyType")
+        if sid != d.OLD_COLLECTOR and name in (d.NAME, sched.get("day", {}).get("service_name")) and restart != "NEVER":
+            # a cron service that restarts on failure runs a failed night (or pass) again: takedowns, publish, DMs
+            out.append(f"service {name} restarts with policy {restart!r}, not 'NEVER'")
+        if sid != d.OLD_COLLECTOR and name in (d.NAME, sched.get("day", {}).get("service_name")):
+            builder = (sm.get("build") or {}).get("builder")
+            if builder != "DOCKERFILE" or df.lstrip("/") != "Dockerfile":
+                # the image is deploy/sweep/Dockerfile, copied to the build folder's root: anything else is not it
+                out.append(f"service {name} was built by {builder!r} from {df!r}, not the folder's Dockerfile")
         if sid == d.OLD_COLLECTOR:
             if cron or not df.endswith("Dockerfile.parked"):
                 out.append(f"the old collector is not parked: newest deployment {n['id'][:8]} runs {df or '?'} "
@@ -75,7 +84,7 @@ def railway(sched: dict) -> list[str]:
                 out.append(f"the day service's newest deployment carries cron {cron!r}, ops/schedule.json says "
                            f"{sched['day']['cron']!r}")
             start = (sm.get("deploy") or {}).get("startCommand") or ""
-            if "day_tick.py" not in start:
+            if start != d.DAY_START:
                 out.append(f"the day service does not start ops/day_tick.py (start command {start!r}): it would "
                            f"run the sweep itself every half hour")
             if region != [d.REGION]:
@@ -117,6 +126,13 @@ def database(sched: dict, since: str) -> tuple[list[str], dict]:
             if n[0]:
                 out.append(f"{n[0]:,} rows of {table} were written between {n[1]:%d %b %H:%M} and {n[2]:%d %b %H:%M} "
                            f"UTC outside every sweep's receipt")
+        # a receipt left "running" (a run that died before it could write, or a pass the hard exit ended) blocks the
+        # next pass behind the lock check and hides a lost night: name every one older than six hours, any stage
+        for st, started in conn.execute("select stage, started_at from public.pipeline_runs where status = 'running' "
+                                        "and started_at < now() - interval '6 hours' "
+                                        "and started_at > now() - interval '8 days' order by started_at").fetchall():
+            out.append(f"a {st} receipt started {started:%d %b %H:%M} UTC is still 'running': close it after "
+                       f"reading its run's log")
         on, since_on = conn.execute("select enabled, updated_at from public.sweep_control").fetchone()
         facts["sweep switched on"] = bool(on)
         rows = conn.execute("select started_at, status, notes->>'skipped', "
@@ -129,6 +145,11 @@ def database(sched: dict, since: str) -> tuple[list[str], dict]:
             # and only the scheduled run: a daytime pass (manual on its receipt) on the same date is not the night
             # (until 11 Oct any receipt of the date counted, so a lost night would have hidden behind a day pass)
             nights = {r[0].date() for r in rows if r[1] in ("ok", "capped", "failed") and not r[3]}
+            # tonight's run while it runs (it ends by 05:30 and stops itself 20 minutes past its deadline): until
+            # 16 Oct a check inside the window named a missing receipt for a night that was still collecting
+            now_utc = dt.datetime.now(dt.timezone.utc)
+            nights |= {r[0].date() for r in rows if r[1] == "running" and not r[3]
+                       and r[0].date() == now_utc.date() and now_utc.time() < dt.time(6, 0)}
             day = max(since_on.date(), (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=7)).date())
             today = dt.datetime.now(dt.timezone.utc)
             while day <= today.date():
