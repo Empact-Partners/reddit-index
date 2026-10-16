@@ -111,5 +111,9 @@
   "full_gb": 1.4,
   "full_share": 0.37,
   "why": "Decisions 0033 and 0035. Supabase's daily physical backup ships the pages changed since the one before (249 MB on 12 Oct, 390 MB on 13 Oct, about 0.25 of what the node sent since the backup before) and, every seventh day, the whole database (14 Oct, 12:21 to 12:25 UTC: 1,285 MB of a 3,578 MB database, 0.36). Until the counter shows a burst after seen_after_utc (at least seen_min_gb beyond what a pass sends, pass_rate_mb_min), a pass counts the backup as sent: fraction of what the node sent since since_utc yesterday, the backup before taken out (at least min_gb, default_gb when not known), or on a full day max(full_gb, full_share x the database's size). At hold_until_utc with no burst seen nothing is held. scripts/schedule_check.py names a backup outside seen_after_utc to hold_until_utc, a full one on another day, or a full day without one."
+ },
+ "storage": {
+  "disk_warn_used_pct": 92,
+  "why": "Decision 0038. Every night's receipt carries the data disk (size, free, % used, from the node metrics the counter is read from) and the database's size. Supabase grows the disk by half at 90% used (at most four times in 24 hours, four hours apart) and stops writes at 95%, so a disk past 92% at the end of a night is one Supabase did not grow: the run stays ok and Vlad gets a DM with the step to take. Since decision 0036 Postgres keeps up to max_wal_size (4 GB) of log files beside the data (2.3 GB on 16 Oct, 147 segments, mostly the 16 MB files archive_timeout closes every two minutes), so the disk crosses 90% well before the database does."
  }
 }
