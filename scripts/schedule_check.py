@@ -84,7 +84,7 @@ def railway(sched: dict) -> list[str]:
                 out.append(f"the day service's newest deployment carries cron {cron!r}, ops/schedule.json says "
                            f"{sched['day']['cron']!r}")
             start = (sm.get("deploy") or {}).get("startCommand") or ""
-            if "day_tick.py" not in start:
+            if start != d.DAY_START:
                 out.append(f"the day service does not start ops/day_tick.py (start command {start!r}): it would "
                            f"run the sweep itself every half hour")
             if region != [d.REGION]:
@@ -126,6 +126,13 @@ def database(sched: dict, since: str) -> tuple[list[str], dict]:
             if n[0]:
                 out.append(f"{n[0]:,} rows of {table} were written between {n[1]:%d %b %H:%M} and {n[2]:%d %b %H:%M} "
                            f"UTC outside every sweep's receipt")
+        # a receipt left "running" (a run that died before it could write, or a pass the hard exit ended) blocks the
+        # next pass behind the lock check and hides a lost night: name every one older than six hours, any stage
+        for st, started in conn.execute("select stage, started_at from public.pipeline_runs where status = 'running' "
+                                        "and started_at < now() - interval '6 hours' "
+                                        "and started_at > now() - interval '8 days' order by started_at").fetchall():
+            out.append(f"a {st} receipt started {started:%d %b %H:%M} UTC is still 'running': close it after "
+                       f"reading its run's log")
         on, since_on = conn.execute("select enabled, updated_at from public.sweep_control").fetchone()
         facts["sweep switched on"] = bool(on)
         rows = conn.execute("select started_at, status, notes->>'skipped', "
