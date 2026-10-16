@@ -61,3 +61,12 @@ Before then the line on a full-backup day is for Vlad: count it over the week, o
 The night of 17 Oct's receipt shows `storage` with the disk and the database; `scripts/schedule_check.py` stays clean.
 When Supabase grows the disk, the next receipt shows the new size and nobody had to do anything. The database's size
 night by night against 100 to 150 MB a day decides when the full-backup question above is due.
+
+## Review
+
+GLM-5.3 on a clean clone, two rounds. Round 1, FIX FIRST: a failed metrics read at the end of the night would have put
+an earlier reading's disk on the receipt as if it were this one (now `read()` clears the disk when it fails and the
+check uses only its own read's), and a night with another problem would have been told "the site is current" (now
+only a night with no problem is). Round 2 confirmed both; its one new finding (the disk headline for an ok night
+with no warning) cannot happen, because such a night sends no DM, and the headline now names its condition anyway.
+The suite passes with nine new checks.
