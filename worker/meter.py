@@ -9,7 +9,7 @@ bulk step had rewritten that morning, a daytime pass capped at 0.36 GB estimated
 read()        the counter in bytes, or None when it cannot be read (no key in the environment, or the endpoint
               did not answer). One read is 18 KB of egress itself (compressed), so nothing here reads in a loop.
 record(conn)  read and keep the reading in public.egress_counter (migration 0033).
-last_disk()   the data disk's size and free bytes from the same metrics text as the last reading (decision 0038).
+last_disk()   the data disk's size and free bytes from the latest read's metrics text, or None (decision 0038).
 used_24h(...) bytes sent in the 24 hours before a reading, from the newest reading at least 24 hours older; a gap in
               the readings makes the window longer, never shorter, so the figure can only read high.
 ledger(...)   the watchdog's day (decision 0035): what the node sent since the watchdog's last daily reading, the day's
@@ -70,7 +70,7 @@ _LAST: dict = {"disk": None}
 
 
 def last_disk() -> tuple[float, float] | None:
-    """The disk as of the last successful read() in this process, or None when none has read it."""
+    """The disk from the latest read() in this process: None when that read failed or its text had no disk."""
     return _LAST["disk"]
 
 
@@ -87,8 +87,9 @@ def read(timeout: float = 30.0) -> float | None:
             raw = r.read()
             text = (gzip.decompress(raw) if r.headers.get("Content-Encoding") == "gzip" else raw).decode()
     except Exception:  # noqa: BLE001 - an unread meter is "not known", never zero
+        _LAST["disk"] = None   # nor is the disk: never an older reading passed off as this one
         return None
-    _LAST["disk"] = parse_disk(text) or _LAST["disk"]   # the same text: the disk costs no read of its own
+    _LAST["disk"] = parse_disk(text)   # the same text: the disk costs no read of its own
     return parse(text)
 
 

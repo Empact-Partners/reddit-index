@@ -207,7 +207,7 @@ class Run:
         """Decision 0038, at the end of a night's run: the disk and the database's size on the receipt (one more read
         of the node's metrics, 18 KB), and a warning for Vlad when the disk is nearly full. A warning is not a
         problem: the run stays ok."""
-        self.meter_read("storage")
+        disk = meter.last_disk() if self.meter_read("storage") is not None else None   # this read's, or none
         try:
             db_bytes = self.conn.execute("select pg_database_size(current_database())::float8").fetchone()[0]
         except Exception:  # noqa: BLE001 - the size is a note; the run does not stop on it
@@ -216,7 +216,7 @@ class Run:
             except Exception:  # noqa: BLE001
                 pass
             db_bytes = None
-        st, warn = storage_notes(meter.last_disk(), db_bytes, self.sched.get("storage", {}))
+        st, warn = storage_notes(disk, db_bytes, self.sched.get("storage", {}))
         self.receipt["storage"] = st
         self.receipt.setdefault("warnings", []).extend(warn)
 
@@ -465,7 +465,7 @@ def tell_vlad(run: Run) -> None:
     you = ("Nothing for you to do. The next run picks up where this one stopped."
            if r["status"] != "failed" else
            "Nothing for you to do yet: the site keeps showing the last good data until the next run succeeds.")
-    if warnings and r["status"] == "ok" and not r["caps_hit"]:
+    if warnings and r["status"] == "ok" and not r["caps_hit"] and not r["problems"]:
         you = ("Last night's update itself went fine and the site is current. If the disk reaches 95% the database "
                "stops taking writes, and the next night's update fails.")
     link = "<https://github.com/Empact-Partners/reddit-index/blob/main/SOP.md|how the daily update works>"

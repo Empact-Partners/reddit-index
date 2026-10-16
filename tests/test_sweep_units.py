@@ -1669,6 +1669,12 @@ try:
     _got = _mf.read()
     check("disk: one metrics read gives the counter and the disk (no read of its own)",
           _got == 1.5e12 and _mf.last_disk() == (8416882688.0, 1859715072.0), (_got, _mf.last_disk()))
+
+    def _boom(req, timeout=30.0):
+        raise OSError("metrics endpoint down")
+    _mf.urllib.request.urlopen = _boom
+    check("disk: a failed read leaves no disk, never the reading before it",
+          _mf.read() is None and _mf.last_disk() is None, _mf.last_disk())
 finally:
     _mf.urllib.request.urlopen = _saved_urlopen
     os.environ.clear()
@@ -1687,6 +1693,13 @@ try:
     check("disk: an ok night with a disk warning sends one DM naming the disk and the step; a quiet ok night sends none",
           len(_sent) == 1 and "disk is nearly full" in _sent[0] and "Compute and Disk" in _sent[0]
           and "Nothing for anyone to do" not in _sent[0], _sent)
+    _sent.clear()
+    _fr = type("F", (), {"receipt": {"run_id": "abcdef0123", "status": "ok", "caps_hit": [], "warnings": _sn_full[1],
+                                     "problems": ["the site's freshness date reads x eight minutes after the run"],
+                                     "stages": {}}})()
+    _rd.tell_vlad(_fr)
+    check("disk: with another problem on the night the DM names it and does not say the site is current",
+          len(_sent) == 1 and "freshness" in _sent[0] and "site is current" not in _sent[0], _sent)
 finally:
     _rd.dm = _saved_dm
 
