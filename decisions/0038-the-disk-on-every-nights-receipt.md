@@ -43,18 +43,22 @@ Nothing on the index read the disk. A disk that did not grow would have been fou
 
 ## To watch: the database grows, and so does the weekly full backup
 
-At 60,000 to 85,000 new mentions a day (comment listings by day and night since 13 Oct, 0029), the database grows by
-about 100 to 150 MB a day once the space retention step 3 freed inside the tables (11 Oct) is used up: `mentions` holds
-2,623 MB for 1.77 million rows (1.46 GB heap, 0.84 GB text out of line, 0.35 GB indexes), about 1.5 KB a row, and
-`mention_sentiment` about 0.3 KB more. Nothing of it ages out for a year: the score reads the trailing 365 days and
-pages count the whole corpus (`docs/methodology.md`).
+At 60,000 to 85,000 new mentions a day (comment listings by day and night since 13 Oct, 0029) the database grew 100
+to 150 MB a day; from 16 Oct, with collection near the actual flow (about 50,000 a day), it grows about 67 MB a day
+(3,824 MB on 17 Oct, 3,891 MB on 18 Oct, the nights' `storage`). `mentions` holds 2,623 MB for 1.77 million rows
+(1.46 GB heap, 0.84 GB text out of line, 0.35 GB indexes), about 1.5 KB a row, and `mention_sentiment` about 0.3 KB
+more. Nothing of it ages out for a year: the score reads the trailing 365 days and pages count the whole corpus
+(`docs/methodology.md`).
 
 Supabase's full backup every seventh day sends about 0.37 of the database on the egress counter (1,285 MB of 3,578 MB
-on 14 Oct). Decision 0035 holds max(1.4 GB, 0.37 × the database) on that day. **At about 5.4 GB, near 1 November at
-this rate, the full backup alone is the whole 2 GB line**: that day's passes do not start and that night collects and
-labels nothing (0035's night room reaches zero; takedowns, refresh and publish still run). One day in seven of
-collection, and a busy subreddit can then lose comments past its newest 100 (`stream_gaps` on the next receipts).
-Before then the line on a full-backup day is for Vlad: count it over the week, or accept the lost day.
+on 14 Oct). Decision 0035 holds max(1.4 GB, 0.37 × the database) for it on that day, beside tonight's run (at least
+0.6 GB), against the passes' line of 1.9 GB. **That already fills the day**: on the full-backup day of 21 Oct the hold
+is about 1.51 GB + 0.6 GB = 2.11 GB, so no daytime pass starts from 07:00 UTC, and the night of 22 Oct has no room
+left (1.9 − about 1.57 sent − 0.35 for publish), so it collects and labels nothing; takedowns, refresh, score and
+publish still run. One day in seven of collection (about 50,000 mentions, 13% of the week) is given up, and a busy
+subreddit can lose comments past its newest 100 until the next visit (`stream_gaps`). On the other six days the index
+sends about 0.9 GB (the watchdog: 0.96 GB on 17 Oct, 0.89 GB on 18 Oct), so the week averages about 1.05 GB a day
+against a 2 GB line. Whether the full-backup day may spend from the week's room is Vlad's call.
 
 ## How it is judged
 
