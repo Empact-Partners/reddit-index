@@ -26,6 +26,10 @@
  *     5. No `unstable_cache` and no `revalidateTag`: a second cache that revalidatePath does not clear is
  *        how a page keeps serving a comment that was taken down.
  *     6. The publish endpoint reaches no data.
+ *     8. The read API (decision 0040): its routes under app/api/v1/ may be dynamic, and they read through ONE
+ *        module, lib/data/api-db.ts, which connects through DATABASE_URL_API (the `ri_api` role: EXECUTE on
+ *        api.threads and api.brands, nothing else) and whose every query is one call of one of those two
+ *        functions, naming no table. The routes never import the site's data layer.
  *   OUTPUT (--built)
  *     7. Nothing in the prerender manifest carries a revalidate interval, except those three, at or above
  *        their floor.
@@ -42,7 +46,10 @@ const checkBuilt = process.argv.includes('--built');
 const problems = [];
 
 const DB_MODULE = 'lib/data/site-db.ts';
+const API_DB_MODULE = 'lib/data/api-db.ts';
 const DYNAMIC_ALLOWED = new Set(['app/api/revalidate/route.ts']);
+/** The read API's routes (decision 0040): dynamic by nature, data only through API_DB_MODULE. */
+const isApiRoute = (name) => name.startsWith('app/api/v1/');
 /** The only files that may carry a timer, the path each serves, and the shortest interval allowed (seconds). */
 const TIMED = {
   'app/freshness.json/route.ts': { route: '/freshness.json', floor: 300 },  // one row of site.meta
@@ -74,7 +81,7 @@ for (const file of routeFiles) {
   } else if (numeric) {
     problems.push(`${name}: export const revalidate = ${numeric[1]} — a number here regenerates the page on a timer, which is what cost 3.80 billion rows`);
   }
-  if (DYNAMIC_ALLOWED.has(name)) continue;
+  if (DYNAMIC_ALLOWED.has(name) || isApiRoute(name)) continue;
   if (!/export\s+const\s+dynamic\s*=\s*["']force-static["']/.test(src)) {
     problems.push(`${name}: no \`export const dynamic = "force-static"\``);
   }
@@ -92,12 +99,12 @@ const codeFiles = ['app', 'lib', 'components'].flatMap((d) => walk(path.join(roo
 for (const file of codeFiles) {
   const name = rel(file);
   const src = stripComments(fs.readFileSync(file, 'utf8'));
-  if (name !== DB_MODULE) {
+  if (name !== DB_MODULE && name !== API_DB_MODULE) {
     if (/(?:from|import)\s*\(?\s*["']postgres["']/.test(src) || /["']@supabase\//.test(src) || /from\s+["']pg["']/.test(src)) {
-      problems.push(`${name}: imports a database driver — only ${DB_MODULE} may open a connection`);
+      problems.push(`${name}: imports a database driver — only ${DB_MODULE} and ${API_DB_MODULE} may open a connection`);
     }
     if (/process\.env\.DATABASE_URL/.test(src) || /process\.env\[["']DATABASE_URL/.test(src)) {
-      problems.push(`${name}: reads a DATABASE_URL — only ${DB_MODULE} may`);
+      problems.push(`${name}: reads a DATABASE_URL — only ${DB_MODULE} and ${API_DB_MODULE} may`);
     }
   }
   if (/\bunstable_cache\b/.test(src)) problems.push(`${name}: unstable_cache — a second cache that revalidatePath does not clear`);
@@ -129,6 +136,49 @@ if (!fs.existsSync(dbPath)) {
   }
   if (/DATABASE_URL_READONLY/.test(src)) {
     problems.push(`${DB_MODULE}: uses DATABASE_URL_READONLY — that role can read the corpus`);
+  }
+  if (/DATABASE_URL_API/.test(src)) {
+    problems.push(`${DB_MODULE}: uses DATABASE_URL_API — the pages read schema \`site\` through their own role`);
+  }
+}
+
+// ---- 8: the read API -----------------------------------------------------------------------------
+const apiDbPath = path.join(root, API_DB_MODULE);
+if (fs.existsSync(apiDbPath)) {
+  const src = stripComments(fs.readFileSync(apiDbPath, 'utf8'));
+  const queries = [...src.matchAll(/\)\s*`([\s\S]*?)`/g)].map((m) => m[1]);
+  if (queries.length === 0) problems.push(`${API_DB_MODULE}: found no queries to check`);
+  for (const q of queries) {
+    if (/\b(?:from|join)\b/i.test(q)) {
+      problems.push(`${API_DB_MODULE}: a query reads a relation — the API only calls api.threads() and api.brands()`);
+    }
+    if (!/^\s*select\s+api\.(?:threads|brands)\(/i.test(q)) {
+      problems.push(`${API_DB_MODULE}: a query is not one call of api.threads() or api.brands()`);
+    }
+    if (/\b(?:public|published|site|archive|watch)\s*\./i.test(q)) {
+      problems.push(`${API_DB_MODULE}: a query names a schema other than \`api\``);
+    }
+  }
+  if (!/process\.env\.DATABASE_URL_API\b/.test(src)) {
+    problems.push(`${API_DB_MODULE}: does not connect through DATABASE_URL_API (the role that can only call the API's functions)`);
+  }
+  if (/DATABASE_URL_(?:SITE|READONLY)\b/.test(src)) {
+    problems.push(`${API_DB_MODULE}: uses another role's connection string`);
+  }
+}
+for (const file of routeFiles) {
+  const name = rel(file);
+  if (!isApiRoute(name)) continue;
+  const src = stripComments(fs.readFileSync(file, 'utf8'));
+  if (/site-db|lib\/routing/.test(src)) {
+    problems.push(`${name}: an API route imports the site's data layer — it reads only through ${API_DB_MODULE}`);
+  }
+}
+for (const file of codeFiles) {
+  const name = rel(file);
+  if (isApiRoute(name) || name === API_DB_MODULE) continue;
+  if (/["']@\/lib\/data\/api-db["']|\/api-db["']/.test(stripComments(fs.readFileSync(file, 'utf8')))) {
+    problems.push(`${name}: imports ${API_DB_MODULE} — only the API's routes may`);
   }
 }
 
@@ -180,4 +230,4 @@ if (problems.length) {
     'and docs/investigation-2026-10.md.',
   ]);
 }
-pass('bounded reads (source)', `${routeFiles.length} routes, one database module, every relation in \`site\``);
+pass('bounded reads (source)', `${routeFiles.length} routes; the pages read \`site\` only, the read API calls its two functions only`);

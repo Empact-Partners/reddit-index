@@ -14,6 +14,7 @@
 | **Storage** | The database is 3,730 MB on an 8.4 GB disk that is 78% used (16 Oct): the other 2.3 GB is Postgres's log directory, which six-hour checkpoints (0036) keep at 2 to 4 GB. Supabase grows the disk by half at 90% on its own; every night's receipt carries `storage` (disk, free, % used, database size) and a disk past 92% at the end of a night DMs Vlad (decision 0038). The database grows about 100 to 150 MB a day at today's collection, and the weekly full backup sends about 0.37 of it on the egress counter: near 1 November that backup alone fills its day's 2 GB line (0038, to watch). The old site's rail view is gone, each comment's text is kept once (retention step 3, 11 Oct), four indexes nothing read are dropped (migrations 0035 and 0038). |
 | **Collection** | Comments come from each subreddit's comment listing, 100 a call whatever their thread (decision 0029), by day and by night. Reddit's shared app is the bound: the night of 16 Oct collected 12,164 mentions before its time for collection ran out (28,772 the night before), with other users taking 65% of the app's calls and Reddit answering 429 with waits of up to 335 s; the first daytime pass of 16 Oct, 17,411 mentions from 3,685 subreddits with 66% of the app's calls not ours. The day's passes take up what the night leaves. Every visit is recorded (0030), the post test is an automaton (0031), waiting mentions are labelled first (0032), every document on a page is checked by the takedown check whatever its call cap (0034). |
 | **Open** | **For Vlad:** (1) a dedicated Reddit API app for the index. Since November 2025 Reddit approves every new app by hand (a request through its Developer Support form with a stated use case, reported at 2 to 4 weeks). Today one app (one client id) serves the index, the Reddit agent, the mentions tracker, the outbound sourcing and the MCP: `01-legal.md` risk 8 asks for separate credentials so that an action against the index cannot reach the partner operation; applying names the index to Reddit. (2) whether a vendor-named subreddit excludes every mention found in it (316 subreddits) or only the vendor's own. (3) whether the brand "reddit" itself should count (18 to 24% of new mentions). (4) the weekly full-backup day: Supabase's full backup (about 1.5 GB now) plus the night's reserve already fill that day's line, so from 21 Oct one day in seven has no daytime pass and its night collects nothing (about 13% of the week's collection), while the other six days send about 0.9 GB each; whether that day may spend from the week's room (decision 0038). **To judge:** the night of 17 Oct's `storage` (0038), the next full backup on 21 Oct. |
+| **Read API** | **Since 26 Oct** (decision 0040): `GET /api/v1/threads/?brand=<slug>` gives a brand's mentions, negative by default, negative and highest-scored first, 500 a page at most, with a cursor; `GET /api/v1/brands/` gives the slugs. A key per person (`ops/api_keys.py mint`, hashed at rest, revocable, 300 calls a day), its own database role (`ri_api`: two functions, nothing else). Caller's guide: [docs/api.md](docs/api.md). |
 | **How to stop everything** | `python3 ops/ri.py stop "reason"` turns the sweep off and its database login off. |
 
 A public index of what Reddit actually says about software brands: one
@@ -62,9 +63,9 @@ categories finished on 9 Oct.
 
 | Path | What |
 |---|---|
-| `app/`, `components/`, `lib/` | The site. One file opens a database connection (`lib/data/site-db.ts`), as a role that can read schema `site` only; `scripts/gates/bounded-reads.mjs` fails the build otherwise |
+| `app/`, `components/`, `lib/` | The site. The pages open one database connection (`lib/data/site-db.ts`), as a role that can read schema `site` only; the read API (`app/api/v1/`) opens one other (`lib/data/api-db.ts`), as a role that can call `api.threads` and `api.brands` only; `scripts/gates/bounded-reads.mjs` fails the build otherwise |
 | `worker/` | The sweep: `run_daily.py` and what it imports (`takedown`, `collect`, `daily`, `harvest`, `sweep`, `resolve`, `classify_sweep`, `rubric`, `site_score`, `numerics`, `site_publish`, `reddit_client`, `db`). Everything else in the folder is the old pipeline; see below |
-| `ops/` | Running it: `schedule.json` (the one schedule), `deploy_sweep.py`, `migrate.py`, `ri.py` (stop/start), `day_passes.py`, `retention.py`, `codex_lane.py`, `alias_blocklist.py`, `go_live.py` |
+| `ops/` | Running it: `schedule.json` (the one schedule), `deploy_sweep.py`, `migrate.py`, `ri.py` (stop/start), `day_passes.py`, `retention.py`, `codex_lane.py`, `alias_blocklist.py`, `go_live.py`, `api_keys.py` and `api_role.py` (the read API) |
 | `data/` | The taxonomy, the brand gazetteer, the subreddit map, the alias blocklist |
 | `supabase/migrations/` | The schema, applied by `ops/migrate.py` (ledger: `public.schema_migrations`) |
 | `scripts/` | Build gates (`gates/`, each proven to fail by its self-test) and the investigation script |
@@ -80,6 +81,7 @@ categories finished on 9 Oct.
 - [entity-resolution.md](docs/entity-resolution.md) — how a word becomes a brand mention (and when it refuses)
 - [sentiment.md](docs/sentiment.md) — the four-way verdict
 - [worker.md](docs/worker.md) — collection: fetch algorithm, watermarks, failure matrix
+- [api.md](docs/api.md) — the read API: keys, calls, answers (decision 0040)
 - [go-live/RUNBOOK.md](docs/go-live/RUNBOOK.md) — how the read path went live on 6 Oct 2026
 
 ## Operating it
@@ -90,6 +92,7 @@ python3 ops/deploy_sweep.py             # deploy the sweep; never while a pass r
 python3 ops/migrate.py --status         # what is applied; --apply 0030 applies one file in one transaction
 python3 ops/retention.py status         # sizes and what each retention step would remove
 python3 scripts/schedule_check.py       # every write since the last check matches a receipt
+python3 ops/api_keys.py list            # read API keys; mint --name <who> (prints the key once), revoke <id>
 
 pnpm build                              # site + every gate
 pnpm test                               # vitest, the resolver and collection suites, the sweep units

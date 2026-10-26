@@ -35,6 +35,12 @@ const CASES = [
   ['a named file refreshing faster than its floor', (d) => edit(d, 'app/llms.txt/route.ts', (s) => s.replace('export const revalidate = 3600;', 'export const revalidate = 60;'))],
   ['a named file with its timer removed', (d) => edit(d, 'app/freshness.json/route.ts', (s) => s.replace('export const revalidate = 300;', ''))],
   ['the publish endpoint reading data', (d) => edit(d, 'app/api/revalidate/route.ts', (s) => 'import { getMeta } from "@/lib/data/site-db";\n' + s)],
+  ['the read API reading a table', (d) => edit(d, 'lib/data/api-db.ts', (s) => s.replace('${q}::text) as r`', '${q}::text) as r from public.mentions`'))],
+  ['the read API calling something else', (d) => edit(d, 'lib/data/api-db.ts', (s) => s.replace('select api.brands(', 'select site.refresh_brand('))],
+  ['the read API on the site role', (d) => edit(d, 'lib/data/api-db.ts', (s) => s.replaceAll('DATABASE_URL_API', 'DATABASE_URL_SITE'))],
+  ['an API route importing the site data layer', (d) => edit(d, 'app/api/v1/threads/route.ts', (s) => 'import { getMeta } from "@/lib/data/site-db";\n' + s)],
+  ['a page importing the API module', (d) => edit(d, 'app/page.tsx', (s) => 'import { brands } from "@/lib/data/api-db";\n' + s)],
+  ['the site module on the API role', (d) => edit(d, 'lib/data/site-db.ts', (s) => s + '\nexport const leak = process.env.DATABASE_URL_API;\n')],
 ];
 
 let bad = 0;
