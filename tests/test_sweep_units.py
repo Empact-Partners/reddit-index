@@ -115,6 +115,14 @@ cs.glm_job = lambda chunk, model, timeout=900: (None, {"_error": "401 unauthoriz
 _out, _spend = cs.glm_judge(_items[:200], in_flight=2, model="glm-5.3", deadline=_time.time() + 3600)
 check("glm: another error is not retried and not called a rate limit",
       not _spend["rate_limited"] and _spend["retried_jobs"] == 0 and _spend["failed_jobs"] == 2)
+# Z.ai's content filter (24 Oct 2026, run b0c62ee1): the items were asked and refused, so they count a try; it is not
+# GLM being down, and nothing is retried
+cs.glm_job = lambda chunk, model, timeout=900: (None, {"_error": "System detected potentially unsafe or sensitive "
+                                                                 "content in input or generation. Please avoid using"})
+_out, _spend = cs.glm_judge(_items[:200], in_flight=2, model="glm-5.3", deadline=_time.time() + 3600)
+check("glm: a content-filter refusal counts the items' try and is not retried",
+      _spend["content_refused_jobs"] == 2 and _spend["content_refused_items"] == len(_out) and all(_spend["asked"])
+      and _spend["retried_jobs"] == 0 and not _spend["rate_limited"] and not any(_out))
 # the plan's weekly allowance used up (2026-10-07): no retries, the wall's reset time reported, not a rate limit
 _WALL = ("rate limit exceeded: Weekly/Monthly Limit Exhausted. Your limit will reset at 2026-10-10 21:12:22"
          "[20251204-quota]")

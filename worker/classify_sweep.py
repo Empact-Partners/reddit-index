@@ -243,6 +243,10 @@ def _glm_env() -> dict:
 
 
 RATE_LIMIT = re.compile(r"rate.?limit|too many requests|\b429\b|concurren", re.I)
+# Z.ai's content filter refuses a job for what its ITEMS say (24 Oct 2026, run b0c62ee1: "System detected potentially
+# unsafe or sensitive content in input or generation"). That is the batch, not GLM being down: the items count a try
+# (after five they wait for a person) and the stage goes on.
+CONTENT_FILTER = re.compile(r"unsafe or sensitive content|content.?filter|\b1301\b", re.I)
 # The plan's weekly or monthly allowance is used up (2026-10-07: "Weekly/Monthly Limit Exhausted. Your limit will
 # reset at 2026-10-10 21:12:22"). Not a rate limit: no retry helps until the stated time, so the stage stops asking
 # GLM, lets Jev settle what it can across the whole queue, and leaves the rest queued with its tries.
@@ -374,6 +378,13 @@ def glm_judge(items: list[dict], in_flight: int = 6, model: str = "glm-5.3-flash
             break
         pending, width = again, max(1, width // 2)
     spend["failed_jobs"] = len(last_err)
+    sizes = dict((st, len(ch)) for st, ch in chunks)
+    refused = [st for st, e in last_err.items() if CONTENT_FILTER.search(e)]
+    for st in refused:                                 # asked and refused for its content: the items count a try
+        for j in range(sizes[st]):
+            asked[st + j] = True
+    spend["content_refused_jobs"] = len(refused)
+    spend["content_refused_items"] = sum(sizes[st] for st in refused)
     for e in last_err.values():
         key = e[:100]
         spend["errors"][key] = spend["errors"].get(key, 0) + 1
@@ -599,7 +610,8 @@ def _loop(conn, cfg, t, model, rec, last_batch, limit, deadline, should_stop, lo
                     rec["glm_decided"] += 1
             # every job of the batch failed: GLM (or the codex CLI) is down, not the items. Stop asking tonight.
             started = spend["jobs"] - spend["skipped_jobs"]   # jobs the deadline left unstarted are not failures
-            glm_down = started > 0 and spend["failed_jobs"] == started
+            glm_down = started > 0 and spend["failed_jobs"] == started and not spend.get("content_refused_jobs")
+            rec["glm_content_refused"] = rec.get("glm_content_refused", 0) + spend.get("content_refused_items", 0)
             glm_limited = glm_down and spend["rate_limited"]
             if spend.get("walled_until"):   # the allowance is used up: Jev only from the next batch, no stop
                 rec["glm_walled_until"] = spend["walled_until"]

@@ -816,7 +816,10 @@ def main() -> int:
     log(f"run {run.run_id[:8]} {status}: {json.dumps({k: v for k, v in run.receipt.items() if k != 'stages'}, default=str)[:600]}")
     if not args.no_dm and status != "stopped":   # a stop is someone's decision; they know
         tell_vlad(run)
-    return 0 if status != "failed" else 1
+    # A daytime pass exits 0 even when it failed: the receipt and the DM carry the failure, and on Railway a failed
+    # exit marks the day service's deployment crashed, after which its cron started no tick for 53 hours (24 Oct
+    # 15:33 to 26 Oct 20:38 UTC, until the next deploy). The night keeps its exit code.
+    return 0 if status != "failed" or run.receipt["day_run"] else 1
 
 
 if __name__ == "__main__":
