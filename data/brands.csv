@@ -9698,6 +9698,62 @@ Varicent,varicent,sales-planning,,low,SAFE,False,0,varicent.com,,Competitor of a
 Xactly,xactly,sales-planning,,low,SAFE,False,0,,,Competitor of an Empact partner in sales-planning.,empact-partners-2026-10
 Amazon Web Services,amazon-web-services,cloud-hosting,,low,SAFE,False,0,,,Competitor of an Empact partner in cloud-hosting.,empact-partners-2026-10
 Linode (Akamai Cloud),linode-akamai-cloud,cloud-hosting,,low,SAFE,False,0,,,Competitor of an Empact partner in cloud-hosting.,empact-partners-2026-10
+Lasso Moderation,lasso-moderation,community-platforms,,low,SAFE,False,0,lassomoderation.com,,The two-word name is product-specific; bare 'lasso' is a common word and is disabled.,empact-followups-2026-10
+TestingBot,testingbot,software-test-automation,,low,SAFE,False,0,testingbot.com,,A coined compound for a cross-browser testing cloud.,empact-followups-2026-10
+Aftershoot,aftershoot,photo-editing,,low,SAFE,False,0,aftershoot.com,,A coined name for AI culling and editing software for photographers.,empact-followups-2026-10
+Botcopy,botcopy,ai-agent-platforms,live-chat,low,SAFE,False,0,botcopy.com,,A coined name for a chat front end for CX AI agents.,empact-followups-2026-10
+FitBudd,fitbudd,fitness-business-management,,low,SAFE,False,0,fitbudd.com,,A coined name for a coaching app platform.,empact-followups-2026-10
+Gleam,gleam,affiliate-referral-marketing,social-media-management,high,HOSTILE,True,2,gleam.io,Gleam language;gleam.run;BEAM;Erlang;Elixir,"'Gleam' is an English word and also a programming language (gleam.run); the bare word is disabled, the brand matches by gleam.io and its qualified forms.",empact-followups-2026-10
+Optimal Workshop,optimal-workshop,survey-tools,product-analytics,low,SAFE,False,0,optimalworkshop.com,,The two-word name is product-specific; OptimalSort and Treejack are its own tools; bare 'optimal' is disabled.,empact-followups-2026-10
+Payhip,payhip,ecommerce,course-platforms,low,SAFE,False,0,payhip.com,,A coined name for a digital products store platform.,empact-followups-2026-10
+Sentiment,sentiment,help-desk,ai-agent-platforms;live-chat,high,HOSTILE,True,2,sentiment.io,sentiment analysis;market sentiment;customer sentiment;sentiment score,"'Sentiment' is an ordinary word (sentiment analysis, market sentiment); the brand matches only by sentiment.io.",empact-followups-2026-10
+Spike.sh,spike-sh,observability,,low,SAFE,False,0,spike.sh,Spike email;spikenow,"The dotted name is unambiguous; bare 'spike' is a common word and another index brand (Spike, spikenow.com), so it is disabled for this row.",empact-followups-2026-10
+SweetProcess,sweetprocess,wikis,workflow-automation,low,SAFE,False,0,sweetprocess.com,,A coined compound for SOP and process documentation software.,empact-followups-2026-10
+Aiosell,aiosell,hotel-management,,low,SAFE,False,0,aiosell.com,,A coined name for hotel channel manager and PMS software.,empact-followups-2026-10
+Parafin,parafin,loan-management,payment-processing,high,HOSTILE,True,2,parafin.com,wax;paraffin;candle;candles;lamp;kerosene;oil heater,"'Parafin' is a common misspelling of paraffin (wax, lamp oil); the bare form needs corroboration and no stop context.",empact-followups-2026-10
+Plutio,plutio,invoicing,project-management,low,SAFE,False,0,plutio.com,,A coined name for an all-in-one freelancer business app.,empact-followups-2026-10
+Synsona,synsona,marketing-automation,,low,SAFE,False,0,synsona.com,,A coined name for an AI ABM platform.,empact-followups-2026-10
+Testlify,testlify,recruiting,,low,SAFE,False,0,testlify.com,,A coined name for a skills assessment platform.,empact-followups-2026-10
+Togal,togal,construction,,medium,AMBIGUOUS,True,1,togal.ai,,A short name that is rare in English but not a coined compound; the bare form needs one corroborating signal.,empact-followups-2026-10
+Adzact,adzact,marketing-automation,marketing-attribution,low,SAFE,False,0,adzact.com,,A coined name for a B2B advertising and attribution platform.,empact-followups-2026-10
+Affinity CRM,affinity-crm,crm,,low,SAFE,False,0,affinity.co,Affinity Photo;Affinity Designer;Affinity Publisher;Serif;Canva,"Affinity the private capital CRM (affinity.co), not Affinity the photo and design app (Serif/Canva, its own index brand at /affinity); bare 'affinity' is disabled for this row.",empact-followups-2026-10
+Amlyze,amlyze,aml-financial-crime,,low,SAFE,False,0,amlyze.com,,A coined name for an AML/CFT compliance platform.,empact-followups-2026-10
+Baabuk,baabuk,ecommerce,,low,SAFE,False,0,baabuk.com,,"A coined name for a Swiss wool footwear brand; the index has no footwear category, so it sits in ecommerce as a direct-to-consumer store.",empact-followups-2026-10
+Blended Tech,blended-tech,inventory,farm-management,low,SAFE,False,0,blendedtech.com,,"The product is called Blended, an ordinary word, so the brand is named by its company name and domain; bare 'blended' is disabled.",empact-followups-2026-10
+BoomPop,boompop,event-management,,low,SAFE,False,0,boompop.com,,A coined compound for a company events platform.,empact-followups-2026-10
+Cello,cello,affiliate-referral-marketing,,high,HOSTILE,True,2,cello.so,instrument;orchestra;violin;viola;bow;strings,'Cello' is the instrument; the bare word is disabled and the brand matches by cello.so.,empact-followups-2026-10
+Chamaileon,chamaileon,email-marketing,,low,SAFE,False,0,chamaileon.io,,A coined spelling for an email builder.,empact-followups-2026-10
+ClassLink,classlink,identity,lms,medium,AMBIGUOUS,True,1,classlink.com,,"The one-word compound is distinctive, but 'class link' is an ordinary phrase; the bare form needs one corroborating signal and the spaced phrase is disabled.",empact-followups-2026-10
+Corebook,corebook,digital-asset-management,design,high,HOSTILE,True,2,corebook.io,rulebook;D&D;RPG;Pathfinder;campaign;GM;DM;edition,'Corebook' is also tabletop RPG slang for a core rulebook; the bare form needs corroboration and no stop context.,empact-followups-2026-10
+Crimsoni,crimsoni,writing-assistants,localization,low,SAFE,False,0,crimsoni.com,,"A coined name for Crimson Interactive, the company behind Enago, Trinka and Ulatus (Trinka has its own index row).",empact-followups-2026-10
+DemandFarm,demandfarm,crm,customer-success,low,SAFE,False,0,demandfarm.com,,A coined compound for key account management software.,empact-followups-2026-10
+Ditto Music,ditto-music,music-production,,low,SAFE,False,0,dittomusic.com,,The two-word name is product-specific; bare 'ditto' is an ordinary word and is disabled.,empact-followups-2026-10
+Dyspatch,dyspatch,email-marketing,,low,SAFE,False,0,dyspatch.io,,A coined spelling for an email template platform.,empact-followups-2026-10
+Ekster,ekster,ecommerce,,medium,AMBIGUOUS,True,1,ekster.com,magpie;ekster vogel,"A Dutch word (magpie) that is rare in English; the index has no accessories category, so the wallet brand sits in ecommerce as a direct-to-consumer store.",empact-followups-2026-10
+Funded Trading Plus,funded-trading-plus,crypto-trading,,low,SAFE,False,0,fundedtradingplus.com,,The three-word name is product-specific; a prop trading firm for forex and crypto traders.,empact-followups-2026-10
+EmailGenius,emailgenius,email-marketing,,low,SAFE,False,0,geniusemail.ai,,A coined compound for AI one-to-one email marketing (site geniusemail.ai).,empact-followups-2026-10
+HashLedger,hashledger,accounting,,low,SAFE,False,0,hashledger.xyz,,A coined compound for a crypto and Web3 accounting firm.,empact-followups-2026-10
+HumanFirst,humanfirst,llm-operations,ai-agent-platforms,low,SAFE,False,0,humanfirst.ai,,The one-word compound is the brand; the phrase 'human first' is not.,empact-followups-2026-10
+Idomoo,idomoo,ai-video,video-hosting,low,SAFE,False,0,idomoo.com,,A coined name for personalized video software.,empact-followups-2026-10
+Kore,kore,help-desk,crm;reputation-management;restaurant-pos,high,HOSTILE,True,2,kore.co,Kore.ai;Kore AI;KORE Wireless;KORE Power,"'Kore' is also Kore.ai (its own index brand), KORE Wireless, KORE Power and romanized Japanese; the bare word is disabled and the brand matches by kore.co.",empact-followups-2026-10
+Mailizio,mailizio,email-marketing,,low,SAFE,False,0,mailizio.com,,A coined name for an enterprise email builder.,empact-followups-2026-10
+brightwheel,brightwheel,lms,invoicing,low,SAFE,False,0,mybrightwheel.com,,"A coined compound for childcare management software; the index has no childcare category, so it sits in lms (early education) with invoicing beside it.",empact-followups-2026-10
+Personizely,personizely,feature-flags,ecommerce,low,SAFE,False,0,personizely.net,,A coined name for A/B testing and website personalization.,empact-followups-2026-10
+WorldRemit,worldremit,payment-processing,,low,SAFE,False,0,worldremit.com,,A coined compound for Zepz's international money transfer app.,empact-followups-2026-10
+Sendwave,sendwave,payment-processing,,low,SAFE,False,0,sendwave.com,,A coined compound for Zepz's mobile money transfer app.,empact-followups-2026-10
+PullFlow,pullflow,ai-coding,code-hosting,low,SAFE,False,0,pullflow.com,,"A coined compound for code review collaboration across GitHub, Slack and VS Code.",empact-followups-2026-10
+Reevo,reevo,crm,sales-engagement,low,SAFE,False,0,reevo.ai,,A coined name for an AI-native sales platform.,empact-followups-2026-10
+Sharadar,sharadar,investment-research,,low,SAFE,False,0,sharadar.com,,A coined name for a US fundamentals and prices data provider.,empact-followups-2026-10
+UXarmy,uxarmy,survey-tools,,low,SAFE,False,0,uxarmy.com,,A coined compound for a UX research platform.,empact-followups-2026-10
+Velaro,velaro,live-chat,,high,HOSTILE,True,2,velaro.com,Siemens;train;trains;high-speed;Eurostar;Renfe;ICE;railway,'Velaro' is also the Siemens high-speed train family; the bare form needs corroboration and no stop context.,empact-followups-2026-10
+Vinify,vinify,inventory,restaurant-pos,high,HOSTILE,True,2,vinify.app,grapes;fermentation;winemaking;winery;harvest;must;vintage,'Vinify' is also a winemaking verb; the bare form needs corroboration and no stop context.,empact-followups-2026-10
+Voiseed,voiseed,voice-ai,localization,low,SAFE,False,0,voiseed.com,,A coined name for AI dubbing and voice production.,empact-followups-2026-10
+Wonka,wonka,recruiting,,high,HOSTILE,True,2,wonka.work,Willy Wonka;chocolate;Charlie;Chocolate Factory;Timothee Chalamet,'Wonka' is the film character and the chocolate brand; the bare word is disabled and the brand matches by wonka.work and WonkaAI.,empact-followups-2026-10
+Yoti,yoti,identity,,medium,AMBIGUOUS,True,1,yoti.com,,A short name that is rare in English; the bare form needs one corroborating signal.,empact-followups-2026-10
+Zelt,zelt,hr,mdm;payroll,high,HOSTILE,True,2,zelt.app,camping;tent;Zelten;aufbauen,'Zelt' is the German word for tent; the bare form needs corroboration and no stop context.,empact-followups-2026-10
+Alpha Progression,alpha-progression,fitness-business-management,,low,SAFE,False,0,alphaprogression.com,,"The two-word name is the gym workout app; bare 'alpha' is disabled. The index has no consumer fitness app category, so it sits beside the coaching platforms.",empact-followups-2026-10
+Dedalus Labs,dedalus-labs,cloud-hosting,ai-agent-platforms,low,SAFE,False,0,dedaluslabs.ai;dedaluslabs.com,,"The two-word name is product-specific; bare 'dedalus' (the myth, a company name elsewhere) is disabled.",empact-followups-2026-10
+Vablet,vablet,sales-enablement,,low,SAFE,False,0,vablet.com,,"A coined name for mobile, offline sales enablement.",empact-followups-2026-10
 14.ai,14-ai,voice-ai,,low,SAFE,False,0,14.ai,,The punctuated numeric brand is highly distinctive when written in full.,roster-import-2026-08
 1mind,1mind,ai-agent-platforms,,low,SAFE,False,0,1mind.com,,The number-prefixed coinage is distinctive as a full token.,roster-import-2026-08
 1upHealth,1uphealth,healthcare-data-platforms,,low,SAFE,False,0,1up.health,,"The stylized healthcare brand is distinctive, including its spaced rendering.",roster-import-2026-08
