@@ -30920,6 +30920,147 @@ amazon-web-services,Amazon Lightsail,alias,SAFE,0,False
 linode-akamai-cloud,Linode (Akamai Cloud),canonical,SAFE,0,False
 linode-akamai-cloud,Linode,alias,SAFE,0,False
 linode-akamai-cloud,Akamai Cloud,alias,SAFE,0,False
+lasso-moderation,Lasso Moderation,canonical,SAFE,0,False
+lasso-moderation,LassoModeration,alias,SAFE,0,False
+lasso-moderation,lassomoderation.com,domain,SAFE,0,False
+testingbot,TestingBot,canonical,SAFE,0,False
+testingbot,testingbot.com,domain,SAFE,0,False
+aftershoot,Aftershoot,canonical,SAFE,0,False
+aftershoot,AfterShoot AI,alias,SAFE,0,False
+aftershoot,aftershoot.com,domain,SAFE,0,False
+botcopy,Botcopy,canonical,SAFE,0,False
+botcopy,botcopy.com,domain,SAFE,0,False
+fitbudd,FitBudd,canonical,SAFE,0,False
+fitbudd,Fit Budd,alias,SAFE,0,False
+fitbudd,fitbudd.com,domain,SAFE,0,False
+gleam,Gleam,canonical,HOSTILE,2,True
+gleam,Gleam.io,domain,SAFE,0,False
+gleam,Gleam competitions,alias,SAFE,0,False
+gleam,Gleam giveaway,alias,SAFE,0,False
+optimal-workshop,Optimal Workshop,canonical,SAFE,0,False
+optimal-workshop,OptimalSort,alias,SAFE,0,False
+optimal-workshop,Treejack,alias,SAFE,0,False
+optimal-workshop,optimalworkshop.com,domain,SAFE,0,False
+payhip,Payhip,canonical,SAFE,0,False
+payhip,payhip.com,domain,SAFE,0,False
+sentiment,Sentiment,canonical,HOSTILE,2,True
+sentiment,Sentiment.io,domain,SAFE,0,False
+spike-sh,Spike.sh,domain,SAFE,0,False
+sweetprocess,SweetProcess,canonical,SAFE,0,False
+sweetprocess,sweetprocess.com,domain,SAFE,0,False
+aiosell,Aiosell,canonical,SAFE,0,False
+aiosell,aiosell.com,domain,SAFE,0,False
+parafin,Parafin,canonical,HOSTILE,2,False
+parafin,Parafin Capital,alias,SAFE,0,False
+parafin,parafin.com,domain,SAFE,0,False
+plutio,Plutio,canonical,SAFE,0,False
+plutio,plutio.com,domain,SAFE,0,False
+synsona,Synsona,canonical,SAFE,0,False
+synsona,synsona.com,domain,SAFE,0,False
+testlify,Testlify,canonical,SAFE,0,False
+testlify,testlify.com,domain,SAFE,0,False
+togal,Togal,canonical,AMBIGUOUS,1,False
+togal,Togal.AI,domain,SAFE,0,False
+togal,TogalAI,alias,AMBIGUOUS,1,False
+adzact,Adzact,canonical,SAFE,0,False
+adzact,adzact.com,domain,SAFE,0,False
+affinity-crm,Affinity CRM,canonical,SAFE,0,False
+affinity-crm,Affinity relationship intelligence,alias,SAFE,0,False
+affinity-crm,affinity.co,domain,SAFE,0,False
+amlyze,Amlyze,canonical,SAFE,0,False
+amlyze,amlyze.com,domain,SAFE,0,False
+baabuk,Baabuk,canonical,SAFE,0,False
+baabuk,baabuk.com,domain,SAFE,0,False
+blended-tech,Blended Tech,canonical,SAFE,0,False
+blended-tech,blendedtech.com,domain,SAFE,0,False
+boompop,BoomPop,canonical,SAFE,0,False
+boompop,boompop.com,domain,SAFE,0,False
+cello,Cello,canonical,HOSTILE,2,True
+cello,Cello.so,domain,SAFE,0,False
+chamaileon,Chamaileon,canonical,SAFE,0,False
+chamaileon,chamaileon.io,domain,SAFE,0,False
+classlink,ClassLink,canonical,AMBIGUOUS,1,False
+classlink,ClassLink LaunchPad,alias,SAFE,0,False
+classlink,classlink.com,domain,SAFE,0,False
+corebook,Corebook,canonical,HOSTILE,2,False
+corebook,Corebook BAM,alias,SAFE,0,False
+corebook,corebook.io,domain,SAFE,0,False
+crimsoni,Crimsoni,canonical,SAFE,0,False
+crimsoni,Crimson Interactive,alias,SAFE,0,False
+crimsoni,crimsoni.com,domain,SAFE,0,False
+demandfarm,DemandFarm,canonical,SAFE,0,False
+demandfarm,demandfarm.com,domain,SAFE,0,False
+ditto-music,Ditto Music,canonical,SAFE,0,False
+ditto-music,DittoMusic,alias,SAFE,0,False
+ditto-music,dittomusic.com,domain,SAFE,0,False
+dyspatch,Dyspatch,canonical,SAFE,0,False
+dyspatch,dyspatch.io,domain,SAFE,0,False
+ekster,Ekster,canonical,AMBIGUOUS,1,False
+ekster,Ekster wallet,alias,SAFE,0,False
+ekster,Ekster cardholder,alias,SAFE,0,False
+ekster,ekster.com,domain,SAFE,0,False
+funded-trading-plus,Funded Trading Plus,canonical,SAFE,0,False
+funded-trading-plus,FundedTradingPlus,alias,SAFE,0,False
+funded-trading-plus,fundedtradingplus.com,domain,SAFE,0,False
+emailgenius,EmailGenius,canonical,SAFE,0,False
+emailgenius,GeniusEmail,alias,SAFE,0,False
+emailgenius,geniusemail.ai,domain,SAFE,0,False
+hashledger,HashLedger,canonical,SAFE,0,False
+hashledger,hashledger.xyz,domain,SAFE,0,False
+humanfirst,HumanFirst,canonical,SAFE,0,False
+humanfirst,humanfirst.ai,domain,SAFE,0,False
+idomoo,Idomoo,canonical,SAFE,0,False
+idomoo,idomoo.com,domain,SAFE,0,False
+kore,Kore,canonical,HOSTILE,2,True
+kore,Kore.co,domain,SAFE,0,False
+mailizio,Mailizio,canonical,SAFE,0,False
+mailizio,mailizio.com,domain,SAFE,0,False
+brightwheel,brightwheel,canonical,SAFE,0,False
+brightwheel,mybrightwheel.com,domain,SAFE,0,False
+personizely,Personizely,canonical,SAFE,0,False
+personizely,personizely.net,domain,SAFE,0,False
+worldremit,WorldRemit,canonical,SAFE,0,False
+worldremit,World Remit,alias,SAFE,0,False
+worldremit,worldremit.com,domain,SAFE,0,False
+sendwave,Sendwave,canonical,SAFE,0,False
+sendwave,sendwave.com,domain,SAFE,0,False
+pullflow,PullFlow,canonical,SAFE,0,False
+pullflow,pullflow.com,domain,SAFE,0,False
+reevo,Reevo,canonical,SAFE,0,False
+reevo,Reevo AI,alias,SAFE,0,False
+reevo,reevo.ai,domain,SAFE,0,False
+sharadar,Sharadar,canonical,SAFE,0,False
+sharadar,sharadar.com,domain,SAFE,0,False
+uxarmy,UXarmy,canonical,SAFE,0,False
+uxarmy,UX Army,alias,SAFE,0,False
+uxarmy,uxarmy.com,domain,SAFE,0,False
+velaro,Velaro,canonical,HOSTILE,2,False
+velaro,Velaro live chat,alias,SAFE,0,False
+velaro,velaro.com,domain,SAFE,0,False
+vinify,Vinify,canonical,HOSTILE,2,False
+vinify,Vinify app,alias,SAFE,0,False
+vinify,vinify.app,domain,SAFE,0,False
+voiseed,Voiseed,canonical,SAFE,0,False
+voiseed,voiseed.com,domain,SAFE,0,False
+wonka,Wonka,canonical,HOSTILE,2,True
+wonka,WonkaAI,alias,HOSTILE,2,False
+wonka,wonka.work,domain,SAFE,0,False
+yoti,Yoti,canonical,AMBIGUOUS,1,False
+yoti,Yoti app,alias,SAFE,0,False
+yoti,Yoti Digital ID,alias,SAFE,0,False
+yoti,yoti.com,domain,SAFE,0,False
+zelt,Zelt,canonical,HOSTILE,2,False
+zelt,Zelt HR,alias,SAFE,0,False
+zelt,zelt.app,domain,SAFE,0,False
+alpha-progression,Alpha Progression,canonical,SAFE,0,False
+alpha-progression,AlphaProgression,alias,SAFE,0,False
+alpha-progression,alphaprogression.com,domain,SAFE,0,False
+dedalus-labs,Dedalus Labs,canonical,SAFE,0,False
+dedalus-labs,Dedalus Machines,alias,SAFE,0,False
+dedalus-labs,dedaluslabs.ai,domain,SAFE,0,False
+dedalus-labs,dedaluslabs.com,domain,SAFE,0,False
+vablet,Vablet,canonical,SAFE,0,False
+vablet,vablet.com,domain,SAFE,0,False
 14-ai,14.ai,domain,SAFE,0,False
 1mind,1mind,canonical,SAFE,0,False
 1mind,1mind.com,domain,SAFE,0,False
