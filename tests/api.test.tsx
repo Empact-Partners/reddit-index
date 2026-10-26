@@ -160,6 +160,7 @@ describe("the page cap and the cursor", () => {
       "garbage", Buffer.from('{"a":1}').toString("base64url"),
       encodeCursor({ rank: 1, score: 1, created: "2026-01-01T00:00:00Z", doc: "t1_x' or 1=1--" }),
       Buffer.from(JSON.stringify([5, 1, "2026-01-01", "t1_abc"])).toString("base64url"),
+      Buffer.from(JSON.stringify([1, 2147483648, "2026-01-01T00:00:00Z", "t1_abc"])).toString("base64url"),
     ];
     for (const c of forged) expect((await call(`brand=contabo&cursor=${encodeURIComponent(c)}`)).status).toBe(400);
     expect(mThreads).not.toHaveBeenCalled();

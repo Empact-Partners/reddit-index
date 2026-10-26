@@ -152,8 +152,11 @@ if (fs.existsSync(apiDbPath)) {
     if (/\b(?:from|join)\b/i.test(q)) {
       problems.push(`${API_DB_MODULE}: a query reads a relation — the API only calls api.threads() and api.brands()`);
     }
-    if (!/^\s*select\s+api\.(?:threads|brands)\(/i.test(q)) {
-      problems.push(`${API_DB_MODULE}: a query is not one call of api.threads() or api.brands()`);
+    // The WHOLE statement: `select api.<fn>(<bound values, each with a cast>) as r`, and nothing before or after it.
+    const call = q.match(/^\s*select\s+api\.(?:threads|brands)\(([^()]*)\)\s+as\s+r\s*$/i);
+    const args = call ? call[1].replace(/\$\{[^{}]*\}/g, '') : null;
+    if (args === null || !/^(?:\s*::[a-z]+\s*,?)*\s*$/i.test(args)) {
+      problems.push(`${API_DB_MODULE}: a query is not exactly one call of api.threads() or api.brands() with bound values`);
     }
     if (/\b(?:public|published|site|archive|watch)\s*\./i.test(q)) {
       problems.push(`${API_DB_MODULE}: a query names a schema other than \`api\``);

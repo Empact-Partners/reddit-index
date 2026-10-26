@@ -51,7 +51,7 @@ export function decodeCursor(s: string): Cursor | null {
     if (!Array.isArray(v) || v.length !== 4) return null;
     const [rank, score, created, doc] = v;
     if (rank !== 0 && rank !== 1) return null;
-    if (!Number.isInteger(score) || Math.abs(score) > 2 ** 31) return null;
+    if (!Number.isInteger(score) || score < -(2 ** 31) || score > 2 ** 31 - 1) return null;   // a Postgres integer
     if (typeof created !== "string" || !Number.isFinite(Date.parse(created))) return null;
     if (typeof doc !== "string" || !DOC_ID.test(doc)) return null;
     return { rank, score, created, doc };

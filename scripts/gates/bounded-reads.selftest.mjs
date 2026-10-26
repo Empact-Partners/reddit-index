@@ -37,6 +37,8 @@ const CASES = [
   ['the publish endpoint reading data', (d) => edit(d, 'app/api/revalidate/route.ts', (s) => 'import { getMeta } from "@/lib/data/site-db";\n' + s)],
   ['the read API reading a table', (d) => edit(d, 'lib/data/api-db.ts', (s) => s.replace('${q}::text) as r`', '${q}::text) as r from public.mentions`'))],
   ['the read API calling something else', (d) => edit(d, 'lib/data/api-db.ts', (s) => s.replace('select api.brands(', 'select site.refresh_brand('))],
+  ['the read API adding an expression after its call', (d) => edit(d, 'lib/data/api-db.ts', (s) => s.replace('${q}::text) as r`', '${q}::text) as r, pg_catalog.pg_sleep(30)`'))],
+  ['the read API with a literal in place of a bound value', (d) => edit(d, 'lib/data/api-db.ts', (s) => s.replace('${q}::text) as r`', "'x'::text) as r`"))],
   ['the read API on the site role', (d) => edit(d, 'lib/data/api-db.ts', (s) => s.replaceAll('DATABASE_URL_API', 'DATABASE_URL_SITE'))],
   ['an API route importing the site data layer', (d) => edit(d, 'app/api/v1/threads/route.ts', (s) => 'import { getMeta } from "@/lib/data/site-db";\n' + s)],
   ['a page importing the API module', (d) => edit(d, 'app/page.tsx', (s) => 'import { brands } from "@/lib/data/api-db";\n' + s)],
