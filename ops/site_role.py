@@ -64,7 +64,7 @@ def rotate() -> str:
     return url
 
 
-def to_vercel(url: str) -> None:
+def to_vercel(url: str, key: str = "DATABASE_URL_SITE") -> None:
     tok = json.load(open(os.path.expanduser("~/.claude/.vercel-empact.json")))["token"]
 
     def call(method: str, path: str, body: dict | None = None) -> dict:
@@ -78,7 +78,7 @@ def to_vercel(url: str) -> None:
             raise SystemExit(f"vercel {method} {path}: HTTP {e.code} {e.read().decode()[:200].replace(url, '<redacted>')}")
 
     call("POST", f"/v10/projects/{VERCEL_PROJECT}/env?upsert=true",
-         {"key": "DATABASE_URL_SITE", "value": url, "type": "encrypted", "target": ["production", "preview"]})
+         {"key": key, "value": url, "type": "encrypted", "target": ["production", "preview"]})
     names = sorted({e["key"] for e in call("GET", f"/v9/projects/{VERCEL_PROJECT}/env").get("envs", [])})
     print("vercel env now has:", names)
 
