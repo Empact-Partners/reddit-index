@@ -15,9 +15,10 @@ WorldRemit and Sendwave, are. That makes 56 new brands.
 
 | | |
 |---|---|
-| Brands | 56 rows appended to `data/brand-seed-expand.csv`, `source = empact-followups-2026-10`; `gen_brands.py` adds 56 brands and 140 surface forms and changes no existing row |
+| Brands | 56 rows appended to `data/brand-seed-expand.csv`, `source = empact-followups-2026-10`; `gen_brands.py` adds 56 brands and 141 surface forms and changes no existing row |
 | Categories | none added: every brand sits in one of the 159 (0018: a 160th needs `parent_id`) |
 | Review | every row by hand, against each company's own site (the pages the batch's research read on 26 Oct); the changes and the hard calls in `data/phase-b/brand-review-log-0039.csv` |
+| Load | `worker/load.py --seed --only-changed origin/main` from the branch before the merge, 26 Oct 2026: 56 brands, 141 aliases; brands 10,745 in all; parity 56 of 56 by slug and primary category |
 | Backfill | `ops/schedule.json` `backfill.categories` gains the 42 primary categories of the new and the 7 page-less brands, ordered by the batch's send queue (earliest first). About 295 core subreddits that no earlier backfill swept; the 8 partner categories of 0018 stay first and are done |
 
 ## How the rows were made
