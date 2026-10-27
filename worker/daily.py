@@ -96,6 +96,14 @@ def ensure_partitions(cur):
             cur.execute(
                 f"CREATE TABLE IF NOT EXISTS {name} PARTITION OF mentions "
                 f"FOR VALUES FROM (%s) TO (%s)", (base, nxt))
+            # RLS is not inherited from the parent: without this the new month is
+            # readable and writable with the anon key (migration 0040). Only when
+            # it is off, so a role that does not own the table never trips on it.
+            cur.execute("SELECT relrowsecurity FROM pg_class WHERE oid = to_regclass(%s)",
+                        (f"public.{name}",))
+            row = cur.fetchone()
+            if row and not row[0]:
+                cur.execute(f"ALTER TABLE {name} ENABLE ROW LEVEL SECURITY")
         except Exception as e:
             print(f"  partition {name}: {e}", flush=True)
 
