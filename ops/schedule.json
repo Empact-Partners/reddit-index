@@ -20,6 +20,12 @@
  },
  "day_line_gb": 1.9,
  "day_line_note": "Decision 0035: the line is judged on the watchdog's day, 07:00 to 07:00 UTC (the Empact watchdog reads every project's node counter once a day at about 07:01 UTC and speaks over 2 GB a day). A daytime pass counts the day's backup and tonight's run as already sent while they are still to come (worker/meter.py ledger), reads the counter every 3 minutes and stops at the line (decision 0025). The night's run takes for collection and labelling only what the day has left once its publish and refresh are counted (night.publish_reserve_gb); takedowns, refresh and publish always run. Until 15 Oct the line was the 24 hours to now, which kept a weekly full backup in it for a whole day and never asked the night to make room.",
+ "day_line_overrides": {
+  "2026-10-29": 4.0,
+  "2026-10-30": 4.0,
+  "2026-10-31": 4.0
+ },
+ "day_line_overrides_note": "Decision 0041 (Vlad, 29 Oct 2026): the line is 4.0 GB for the watchdog's days that start at 07:00 UTC on 29, 30 and 31 Oct, so the follow-up batch's backfill (decision 0039) runs in one or two days. Keyed by the date the watchdog's day starts (worker/meter.py day_line_gb); the day that starts on 1 Nov is back on day_line_gb by itself. About 6 GB more over the three days, inside the org's 250 GB.",
  "watchdog_reads_utc": "07:00",
  "night": {
   "reserve_min_gb": 0.6,
@@ -39,6 +45,8 @@
   "min_room_gb": 0.15,
   "estimate_factor": 1.25,
   "why": "The daytime passes, requested on Railway by ops/day_tick.py every 30 minutes (decision 0026): a pass starts when nothing else runs and the watchdog's day (decision 0035) holds at least min_room_gb of room under day_line_gb once the day's backup and tonight's run are counted, capped at (room - 0.05) / estimate_factor on its own estimate. A pass ends by end_by_utc, 45 minutes before the night's run. Until 11 Oct a laptop requested them, and it slept.",
+  "laptop_quiet_minutes": 15,
+  "laptop_why": "Decision 0041: while ops/day_passes.py requests passes from the laptop (the backfill runner), it keeps a counter reading as 'day passes (laptop)' at least every three minutes; the tick starts no pass while the newest is younger than this, because two requesters collide on the sweep's lock and the loser's receipt reads skipped. If the laptop stops, the tick resumes on its own within this many minutes.",
   "peak_queue_max": 20000,
   "peak_why": "Decision 0032: in Z.ai's peak hours (06:00 to 10:00 UTC) GLM is not asked, so no pass starts while this many mentions or more already wait for a label (13 Oct: the 06:30 pass collected 23,958 and labelled none). Since 15 Oct Jev still labels its confident share in those hours and its residue waits for GLM after 10:00 (worker/classify_sweep.py).",
   "label_alongside": true,

@@ -3,8 +3,9 @@
 
 The second Railway service of the index (`reddit-index-day`) starts this every 30 minutes between 06:00 and 21:30
 UTC. A tick reads the database node's transmit counter, keeps the reading, and decides whether a daytime pass may
-start: inside the daytime window, nothing else running, and room under the day's line in the watchdog's day (07:00 to
-07:00 UTC, with the day's backup and tonight's run still to come counted as sent: decision 0035). If it
+start: inside the daytime window, nothing else running, no daytime passes being requested from the laptop
+(ops/day_passes.py, decision 0041), and room under the day's line in the watchdog's day (07:00 to 07:00 UTC, with the
+day's backup and tonight's run still to come counted as sent: decision 0035; the line is dated: 0041). If it
 may, the tick writes the request row (migration 0023) and becomes the pass: worker/run_daily.py in this same
 container. Railway does not start a cron execution while the one before it is still running, so a pass in progress
 is never doubled; the sweep's own lock covers the rest.
@@ -51,6 +52,25 @@ def effective_used(conn, now_bytes: float | None, now: dt.datetime, sched: dict)
     return led["used"], "; ".join(held)
 
 
+LAPTOP_SOURCE = "day passes (laptop)"   # what ops/day_passes.py writes beside each counter reading
+
+
+def laptop_minutes(conn) -> float | None:
+    """Minutes since ops/day_passes.py last read the node counter from the laptop (it keeps each reading in
+    public.egress_counter as LAPTOP_SOURCE, at least every few minutes while it runs), or None: never, or unreadable.
+    Two requesters of passes collide on the sweep's lock and the loser's receipt reads "skipped" (decision 0041)."""
+    try:
+        r = conn.execute("select extract(epoch from now() - max(at)) / 60 from public.egress_counter "
+                         "where source = %s and at > now() - interval '1 day'", (LAPTOP_SOURCE,)).fetchone()
+    except Exception:  # noqa: BLE001 - not known: the tick decides as it always has
+        try:
+            conn.rollback()
+        except Exception:  # noqa: BLE001
+            pass
+        return None
+    return float(r[0]) if r and r[0] is not None else None
+
+
 def glm_peak(now: dt.datetime) -> bool:
     """Z.ai's peak hours, 06:00 to 10:00 UTC: GLM is not asked then and only Jev labels, its confident share
     (worker/classify_sweep.py; decision 0032 amended)."""
@@ -58,15 +78,22 @@ def glm_peak(now: dt.datetime) -> bool:
 
 
 def decide(now: dt.datetime, running: int, used_gb: float | None, cfg: dict, line_gb: float,
-           queue: int | None = None) -> tuple[bool, str, float | None]:
+           queue: int | None = None, laptop_min: float | None = None) -> tuple[bool, str, float | None]:
     """(start a pass?, why in plain words, the pass's cap on its own egress estimate in GB). used_gb: the watchdog's
-    day so far with what is still to come in it (effective_used). queue: mentions waiting for a label; in GLM's peak
-    hours, when it is at least cfg peak_queue_max, no pass starts (decision 0032)."""
+    day so far with what is still to come in it (effective_used). line_gb: that day's line (meter.day_line_gb).
+    queue: mentions waiting for a label; in GLM's peak hours, when it is at least cfg peak_queue_max, no pass starts
+    (decision 0032). laptop_min: minutes since ops/day_passes.py last read the counter from the laptop; while it is
+    under cfg laptop_quiet_minutes the laptop is requesting its own passes and the tick stands aside (decision 0041)."""
     first, last = _t(cfg["window_utc"][0]), _t(cfg["window_utc"][1])
     if not (first <= now.time() <= last):
         return False, f"outside the daytime window {cfg['window_utc'][0]} to {cfg['window_utc'][1]} UTC", None
     if running:
         return False, "a run or a retention step is in progress", None
+    quiet = float(cfg.get("laptop_quiet_minutes", 15))
+    if laptop_min is not None and laptop_min < quiet:
+        return False, (f"the laptop's day passes (ops/day_passes.py) read the counter {laptop_min:.0f} minutes ago: "
+                       f"they request their own passes, and a pass from here would take the sweep's lock from "
+                       f"theirs (decision 0041); the tick starts again {quiet:.0f} minutes after their last reading"), None
     if queue is not None and glm_peak(now) and queue >= int(cfg.get("peak_queue_max", 20000)):
         return False, (f"{queue:,} mentions wait for a label, and in GLM's peak hours (06:00 to 10:00 UTC) only Jev "
                        f"labels, its confident share: a pass now would mostly add to them"), None
@@ -103,13 +130,21 @@ def main() -> int:
         running = conn.execute("select count(*) from public.pipeline_runs where finished_at is null and stage in "
                                "('sweep', 'retention') and started_at > now() - interval '6 hours'").fetchone()[0]
         b = meter.record(conn, "day tick")
-        used, held_why = effective_used(conn, b, dt.datetime.now(dt.timezone.utc), sched)
+        now = dt.datetime.now(dt.timezone.utc)
+        used, held_why = effective_used(conn, b, now, sched)
         if held_why:
             log(held_why)
         from classify_sweep import LABELLABLE_SQL   # entries tried five times wait for a person, not for GLM
         queue = conn.execute(LABELLABLE_SQL).fetchone()[0]
-        go, why, cap = decide(dt.datetime.now(dt.timezone.utc), running, None if used is None else used / 1e9,
-                              cfg, float(sched.get("day_line_gb", 1.9)), queue)
+        laptop_min = laptop_minutes(conn)
+        try:   # a request the laptop wrote is a pass starting on the other service: never delete it (decision 0041)
+            pending = conn.execute("select count(*) from public.day_run_request "
+                                   "where requested_at > now() - interval '20 minutes'").fetchone()[0]
+        except Exception:  # noqa: BLE001 - not known: decided as before
+            pending = 0
+        running += int(pending or 0)
+        go, why, cap = decide(now, running, None if used is None else used / 1e9,
+                              cfg, meter.day_line_gb(sched, now), queue, laptop_min)
         log(("a daytime pass starts: " if go else "no pass: ") + why)
         if not go or a.dry_run:
             return 0

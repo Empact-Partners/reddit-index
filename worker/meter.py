@@ -14,6 +14,7 @@ used_24h(...) bytes sent in the 24 hours before a reading, from the newest readi
               the readings makes the window longer, never shorter, so the figure can only read high.
 ledger(...)   the watchdog's day (decision 0035): what the node sent since the watchdog's last daily reading, the day's
               backup and the night's run still to come in it, and what that leaves a daytime pass and the night.
+day_line_gb() the line of the watchdog's day: schedule.json day_line_gb, or a dated override (decision 0041).
 """
 from __future__ import annotations
 
@@ -152,6 +153,15 @@ def watchdog_day_start(now, hhmm: str = "07:00"):
     return start if now >= start else start - _dt.timedelta(days=1)
 
 
+def day_line_gb(sched: dict, now) -> float:
+    """The line, in GB, of the watchdog's day that `now` falls in: its dated override when the schedule names that day
+    (decision 0041: `day_line_overrides`, keyed by the date on which the watchdog's day starts at 07:00 UTC), else
+    `day_line_gb`. A day the overrides do not name, before or after them, is back on the normal line by itself."""
+    start = watchdog_day_start(now, sched.get("watchdog_reads_utc", "07:00"))
+    over = (sched.get("day_line_overrides") or {}).get(start.date().isoformat())
+    return float(over) if over is not None else float(sched.get("day_line_gb", 1.9))
+
+
 def at_or_before(rs: list, t) -> tuple | None:
     """The newest reading (at, bytes) taken at or before t, from readings sorted by time."""
     best = None
@@ -214,7 +224,7 @@ def ledger_from(rs: list, now_bytes: float, now, sched: dict, db_bytes: float | 
     import datetime as _dt
     rs = [r for r in rs if r[0] <= now]   # a reading after `now` (clock skew, a replay) never counts (review, 15 Oct)
     bk, nt = sched.get("backup", {}), sched.get("night", {})
-    line = float(sched.get("day_line_gb", 1.9)) * 1e9
+    line = day_line_gb(sched, now) * 1e9   # the day's own line: a dated override (decision 0041) or day_line_gb
     start = watchdog_day_start(now, sched.get("watchdog_reads_utc", "07:00"))
     sent, since = sent_since(rs, start, now_bytes)
     out = {"day_start": start.isoformat(timespec="minutes"), "line": line, "sent": sent,
