@@ -70,10 +70,15 @@ def ledger_now() -> dict:
 
 
 def open_runs() -> int:
-    """Sweep runs or retention steps still running (receipts younger than 6 hours with no end), as the tick counts them."""
+    """Sweep runs or retention steps still running (receipts younger than 6 hours with no end), as the tick counts them,
+    and holders of the sweep's lock."""
     import watch_link as w
-    return int(w.query("select count(*) n from public.pipeline_runs where finished_at is null and stage in "
-                       "('sweep', 'retention') and started_at > now() - interval '6 hours'")[0]["n"])
+    # plus whatever holds the sweep's advisory lock without a receipt (the backlog classifier, a hand run): a pass
+    # requested then stands aside with "skipped" (review, 29 Oct). LOCK_KEY 0x52494458 sits in pg_locks' objid.
+    return int(w.query("select (select count(*) from public.pipeline_runs where finished_at is null and stage in "
+                       "('sweep', 'retention') and started_at > now() - interval '6 hours') + (select count(*) "
+                       "from pg_locks where locktype = 'advisory' and classid = 0 and objid = 1380533336 and granted) n"
+                       )[0]["n"])
 
 
 def sleep_alive(seconds: float, beat: float = GUARD_EVERY_S) -> None:
@@ -84,7 +89,7 @@ def sleep_alive(seconds: float, beat: float = GUARD_EVERY_S) -> None:
         if time.time() < end:
             try:
                 counter_now()
-            except Exception:  # noqa: BLE001 - a missed beat is one missed beat
+            except (Exception, SystemExit):  # noqa: BLE001 - a missed beat is one missed beat
                 pass
 
 
@@ -125,9 +130,19 @@ def request(stages: str, max_calls: int, end_by: str, egress_gb: float, workers:
 def switch(on: bool, reason: str) -> None:
     """The sweep's stop switch (public.sweep_control, read by a running pass before every stage and inside the long
     ones). Turned off only by the meter guard below, and back on as soon as that pass has ended."""
-    import watch_link as w
-    w.query("update public.sweep_control set enabled = " + ("true" if on else "false") + ", reason = '"
-            + reason.replace("'", "''") + "', updated_at = now()")
+    import urllib.request
+    import investigation_2026_10 as inv
+    # straight to the Management API, not watch_link.query: that one refuses inside the night window (00:00-05:30
+    # UTC), and a switch left off there would skip the night's run (review, 29 Oct)
+    sql = ("update public.sweep_control set enabled = " + ("true" if on else "false") + ", reason = '"
+           + reason.replace("'", "''") + "', updated_at = now()")
+    req = urllib.request.Request(f"https://api.supabase.com/v1/projects/{inv.REF}/database/query", method="POST",
+                                 data=json.dumps({"query": sql}).encode(),
+                                 headers={"Authorization": "Bearer " + inv._mgmt_token(),
+                                          "Content-Type": "application/json", "User-Agent": "Mozilla/5.0"})
+    out = json.loads(urllib.request.urlopen(req, timeout=120).read())
+    if isinstance(out, dict) and out.get("message"):
+        raise RuntimeError(out["message"][:300])
 
 
 def wait_for(t0: dt.datetime) -> dict | None:
@@ -145,30 +160,32 @@ def wait_for(t0: dt.datetime) -> dict | None:
                 last_guard = time.time()
                 try:
                     led = ledger_now()
-                except Exception:  # noqa: BLE001 - a missed reading is retried at the next guard
+                except (Exception, SystemExit):  # noqa: BLE001 - a missed reading is retried at the next guard
                     led = None
                 if led and led["used"] is not None and led["used"] >= led["line"]:
+                    tripped = True   # first: a call that landed but whose answer was lost still gets its restore
                     switch(False, f"day pass guard: the watchdog's day reached {led['used'] / 1e9:.2f} GB with what "
                                   f"is still to come in it (line {led['line'] / 1e9:g} GB, node counter)")
-                    tripped = True
                     log(f"the day reached {led['used'] / 1e9:.2f} GB of its {led['line'] / 1e9:g} GB line: stop "
                         f"switch off until this pass ends")
-            try:
-                r = w.query(f"select run_id, status, finished_at, notes from public.pipeline_runs where stage = 'sweep' "
+            try:   # the notes only once the receipt is finished: a running one's are read for nothing (egress)
+                r = w.query(f"select run_id, status, finished_at from public.pipeline_runs where stage = 'sweep' "
                             f"and started_at > '{t0.isoformat()}' order by started_at desc limit 1")
-            except Exception:  # noqa: BLE001 - a missed poll is a missed poll
+                if r and r[0]["finished_at"]:
+                    full = w.query(f"select run_id, status, finished_at, notes from public.pipeline_runs "
+                                   f"where run_id = '{r[0]['run_id']}'")
+                    return full[0] if full else r[0]
+            except (Exception, SystemExit):  # noqa: BLE001 - a missed poll is a missed poll
                 continue
-            if r and r[0]["finished_at"]:
-                return r[0]
         return None
     finally:
         if tripped:   # never leave the switch off: the night's run must start
-            for _ in range(5):
+            for _ in range(10):
                 try:
                     switch(True, "started by hand (day pass guard released)")
                     log("stop switch back on")
                     break
-                except Exception:  # noqa: BLE001
+                except (Exception, SystemExit):  # noqa: BLE001
                     time.sleep(30)
 
 
@@ -188,11 +205,11 @@ def main() -> int:
     ap.add_argument("--end-by", default="23:15", help="UTC: a pass ends by then (45 minutes before the night's run)")
     a = ap.parse_args()
     until = dt.datetime.strptime(a.until, "%H:%M").time()
-    failures = 0
+    failures = lock_skips = 0
     while dt.datetime.now(dt.timezone.utc).time() < until:
         try:
             led = ledger_now()
-        except Exception as e:  # noqa: BLE001
+        except (Exception, SystemExit) as e:  # noqa: BLE001 - SystemExit: watch_link inside the night window
             log(f"could not read the node counter ({str(e)[:120]}); waiting"); sleep_alive(300); continue
         if led["used"] is None:
             log("no counter reading before the watchdog's day began: the room is not known; waiting")
@@ -228,9 +245,12 @@ def main() -> int:
         n = run["notes"] if isinstance(run["notes"], dict) else json.loads(run["notes"] or "{}")
         if run["status"] == "skipped":
             why = str(n.get("skipped") or "")
-            if "lock" in why:   # another pass got there first: ask again once it ends (decision 0041)
-                log(f"the pass stood aside: {why}; asking again"); sleep_alive(120, beat=60); continue
+            if why == "another job held the sweep lock" and lock_skips < 5:   # ask again once it ends (decision 0041)
+                lock_skips += 1
+                log(f"the pass stood aside: {why}; asking again in {2 ** lock_skips} minutes")
+                sleep_alive(60 * 2 ** lock_skips, beat=60); continue
             log(f"the pass did not run: {why}; stopping"); break
+        lock_skips = 0
         st = n.get("stages") or {}
         bf, cl, co = st.get("backfill") or {}, st.get("classify") or {}, st.get("collect") or {}
         la = st.get("label_alongside") or {}   # decision 0037: labels made beside collection
@@ -262,9 +282,8 @@ def main() -> int:
                                          cl.get("labelled"), cl.get("rejected"), rf.get("brands_refreshed"),
                                          la.get("labelled"), la.get("rejected")))
         if work == 0:   # 9 Oct: 150 passes in a row did nothing, one a minute; an empty pass means wait, not retry
-            # no sign of life while it waits: the day tick may run its own passes meanwhile (decision 0041)
             log("the pass did nothing; next request in 30 minutes")
-            time.sleep(1800)
+            sleep_alive(1800)
     log("passes ended")
     return 0
 

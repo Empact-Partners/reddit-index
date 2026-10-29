@@ -137,6 +137,12 @@ def main() -> int:
         from classify_sweep import LABELLABLE_SQL   # entries tried five times wait for a person, not for GLM
         queue = conn.execute(LABELLABLE_SQL).fetchone()[0]
         laptop_min = laptop_minutes(conn)
+        try:   # a request the laptop wrote is a pass starting on the other service: never delete it (decision 0041)
+            pending = conn.execute("select count(*) from public.day_run_request "
+                                   "where requested_at > now() - interval '20 minutes'").fetchone()[0]
+        except Exception:  # noqa: BLE001 - not known: decided as before
+            pending = 0
+        running += int(pending or 0)
         go, why, cap = decide(now, running, None if used is None else used / 1e9,
                               cfg, meter.day_line_gb(sched, now), queue, laptop_min)
         log(("a daytime pass starts: " if go else "no pass: ") + why)
