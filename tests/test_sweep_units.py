@@ -662,6 +662,40 @@ check("day tick: the cap never passes 0.7 GB (the request table refuses more) an
 check("day tick: the first and the last minute of the window are inside it",
       _dtk.decide(_at(6, 15), 0, 0.5, _daycfg, 1.9)[0] and _dtk.decide(_at(21, 30), 0, 0.5, _daycfg, 1.9)[0])
 
+# decision 0041: the tick stands aside while the laptop's day passes are requesting their own
+check("day tick: a laptop reading 3 minutes old (ops/day_passes.py running) starts no pass, and says why",
+      not _dtk.decide(_at(9, 0), 0, 1.10, _daycfg, 1.9, None, 3.0)[0]
+      and "day_passes.py" in _dtk.decide(_at(9, 0), 0, 1.10, _daycfg, 1.9, None, 3.0)[1])
+check("day tick: a laptop reading older than laptop_quiet_minutes (15), or none, leaves the tick as it was",
+      _dtk.decide(_at(9, 0), 0, 1.10, _daycfg, 1.9, None, 15.5)[0] and _dtk.decide(_at(9, 0), 0, 1.10, _daycfg, 1.9)[0]
+      and not _dtk.decide(_at(9, 0), 0, 1.10, dict(_daycfg, laptop_quiet_minutes=30), 1.9, None, 20.0)[0])
+check("day tick: under a 4.0 GB line a day at 2.3 GB still has room (decision 0041); under 1.9 it has none",
+      _dtk.decide(_at(9, 0), 0, 2.3, _daycfg, 4.0)[0] and _dtk.decide(_at(9, 0), 0, 2.3, _daycfg, 4.0)[2] == 0.7
+      and not _dtk.decide(_at(9, 0), 0, 2.3, _daycfg, 1.9)[0])
+
+
+class _LaptopConn:
+    def __init__(self, minutes):
+        self.m = minutes
+
+    def execute(self, sql, params=None):
+        assert params == ("day passes (laptop)",), params
+        row = (self.m,)
+        return type("R", (), {"fetchone": lambda s: row})()
+
+
+class _BrokenConn:
+    def execute(self, sql, params=None):
+        raise RuntimeError("no table")
+
+    def rollback(self):
+        pass
+
+
+check("day tick: laptop_minutes reads the newest laptop reading's age; none or an error is not known (None)",
+      _dtk.laptop_minutes(_LaptopConn(4.0)) == 4.0 and _dtk.laptop_minutes(_LaptopConn(None)) is None
+      and _dtk.laptop_minutes(_BrokenConn()) is None)
+
 _pq = dict(_daycfg, peak_queue_max=20000)
 check("day tick: in GLM's peak hours (06:00 to 10:00 UTC) no pass starts while 20,000 or more mentions wait for a label",
       not _dtk.decide(_at(8, 30), 0, 1.10, _pq, 1.9, 23958)[0] and not _dtk.decide(_at(9, 59), 0, 1.10, _pq, 1.9, 20000)[0]
@@ -1481,6 +1515,20 @@ check("ledger: no backup seen by 14:00 UTC: none is held after it", _L["backup_h
 check("ledger: no reading before the day's start, or a counter that went back: 'not known' (used None)",
       _mt.ledger_from([], 5e9, _U(13, 9, 0), {}, None)["used"] is None
       and _mt.ledger_from([(_U(13, 6, 0), 9e9)], 5e9, _U(13, 9, 0), {}, None)["used"] is None)
+
+# decision 0041: the line of a watchdog's day is its dated override when the schedule names that day
+_s41 = {"day_line_gb": 1.9, "day_line_overrides": {"2026-10-29": 4.0, "2026-10-30": 4.0, "2026-10-31": 4.0}}
+_O = lambda d, h, m: _dt.datetime(2026, 10 if d > 1 else 11, d, h, m, tzinfo=_dt.timezone.utc)  # noqa: E731
+check("day line: 06:59 on 29 Oct is still 28 Oct's day (1.9); 07:00 on 29 Oct to 06:59 on 1 Nov is 4.0; "
+      "07:00 on 1 Nov is back on 1.9 by itself",
+      _mt.day_line_gb(_s41, _O(29, 6, 59)) == 1.9 and _mt.day_line_gb(_s41, _O(29, 7, 0)) == 4.0
+      and _mt.day_line_gb(_s41, _O(30, 23, 0)) == 4.0 and _mt.day_line_gb(_s41, _O(1, 6, 59)) == 4.0
+      and _mt.day_line_gb(_s41, _O(1, 7, 0)) == 1.9 and _mt.day_line_gb({}, _O(30, 9, 0)) == 1.9)
+_L = _mt.ledger_from([(_O(29, 6, 58), 1000e9)], 1001e9, _O(29, 15, 0), dict(_s41, backup={}), None)
+check("ledger: on an override day the line and the night's room follow it (4.0 - 1.0 sent - 0.35 publish)",
+      _L["line"] == 4.0e9 and abs(_L["night_room"] - 2.65e9) < 1e6, (_L["line"], _L["night_room"]))
+_L = _mt.ledger_from([(_O(1, 6, 58), 1000e9)], 1001e9, _O(1, 15, 0), dict(_s41, backup={}), None)
+check("ledger: the day after the overrides is on day_line_gb", _L["line"] == 1.9e9, _L["line"])
 
 # the tick figures the room on the same ledger (ops/day_tick.py effective_used)
 _u, _w = _dtk.effective_used(_LedgerConn(_morning13), 1_001_000_000_000, _U(13, 9, 0), {"backup": {"fraction": 0.3}})

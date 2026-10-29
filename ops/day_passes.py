@@ -1,18 +1,23 @@
 #!/usr/bin/env python3
-"""Daytime passes on Railway, one after another, inside the day's room under the 2 GB line (2026-10-06).
+"""Daytime passes on Railway, one after another, inside the day's room under its egress line (2026-10-06).
 
 Each pass is the sweep's own run (worker/run_daily.py) started on Railway with a request row (migration 0023) that names
 its stages and carries the day's remaining room as its egress cap (migration 0028). Before each pass this script reads
-the database's node counter (the egress watchdog's measure) and starts nothing when the room is gone. The laptop only
-polls over HTTPS (the Management API and Railway), so a sleeping or flaky laptop never breaks a pass; it only delays
-the next one.
+the database's node counter (the egress watchdog's measure) and judges the room as the pass and the day tick do: the
+watchdog's day, 07:00 to 07:00 UTC, with the day's backup and tonight's run counted as sent while they are still to
+come (decision 0035, worker/meter.py ledger), under that day's line (ops/schedule.json day_line_gb, or its dated
+override: decision 0041). The laptop only polls over HTTPS (the Management API and Railway), so a sleeping or flaky
+laptop never breaks a pass; it only delays the next one.
 
-  ops/day_passes.py --stages backfill,classify,refresh,score --until 21:00
+  ops/day_passes.py --stages backfill,classify --until 20:30
   ops/day_passes.py --stages classify,refresh,score --until 21:00 --max-calls 0
 
-The day's usage is the node counter now minus its reading at the start of the UTC day (the go-live gate meter's file
-for that day, docs/go-live/egress-<day>.json; or --day-start-gb). It stops when the room is under 0.06 GB, at --until,
-or when a pass fails.
+Every reading it takes is kept in public.egress_counter as "day passes (laptop)", at least every three minutes while it
+runs; the day tick on Railway (ops/day_tick.py) starts no pass of its own while such a reading is fresh, so the two
+never request a pass at once (decision 0041). It waits while another run is open, and a pass that stood aside because
+another job held the sweep's lock is asked again, not taken for a failure. When the day's room is used it waits for
+the next watchdog's day if that starts before --until, else it stops; it also stops at --until, when a pass fails, or
+when the stop switch is off.
 """
 from __future__ import annotations
 
@@ -25,36 +30,62 @@ import time
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path[:0] = [os.path.join(ROOT, d) for d in ("ops", "scripts", "worker")]
-LINE_GB = 1.90   # Vlad's 2 GB a day, less 0.1 GB for what moves after the last pass (6 Oct: the tail and normal reads took the day to 2.036 GB from 1.95)
+LAPTOP_SOURCE = "day passes (laptop)"   # ops/day_tick.py stands aside while a reading with this source is fresh
+GUARD_EVERY_S = 180                      # the guard's reading while a pass runs, as often as the pass reads its own
+MIN_ROOM_GB = 0.15                       # the day tick's min_room_gb: less is not worth a pass
 
 
 def log(*a):
     print(f"[{dt.datetime.now(dt.timezone.utc):%H:%M:%S}]", *a, flush=True)
 
 
-def used_today(start_bytes: float | None) -> float:
-    """GB the database node sent: the larger of the calendar day so far and the 24 hours to now. The watchdog judges
-    07:00 to 07:00 UTC, so the calendar day alone let a heavy afternoon and a heavy next morning add up (11 Oct:
-    2.24 GB at 07:04 with neither calendar day over the line). The 24 hours come from the readings kept in
-    public.egress_counter (migration 0033); this reading joins them."""
+def schedule() -> dict:
+    return json.load(open(os.path.join(ROOT, "ops", "schedule.json")))
+
+
+def counter_now() -> float:
+    """The node counter now, kept as a laptop reading (which is also this script's sign of life for the day tick)."""
     import investigation_2026_10 as inv
+    import watch_link as w
     now = inv._metrics()["transmit_bytes"]
-    day = dt.datetime.now(dt.timezone.utc).date()
-    if start_bytes is None:
-        g = json.load(open(os.path.join(ROOT, "docs", "go-live", f"egress-{day}.json")))
-        start_bytes = float(g["counter_before"]["bytes"])
-    used = (now - start_bytes) / 1e9
-    try:
-        import watch_link as w
-        w.query(f"insert into public.egress_counter (bytes, source) values ({now:.0f}, 'day passes (laptop)') "
-                f"on conflict (at) do nothing")
-        r = w.query("select bytes::text b from public.egress_counter where at <= now() - interval '24 hours' "
-                    "order by at desc limit 1")
-        if r and now >= float(r[0]["b"]):
-            used = max(used, (now - float(r[0]["b"])) / 1e9)
-    except Exception:  # noqa: BLE001 - the table or the link is unavailable: the calendar day stands
-        pass
-    return used
+    w.query(f"insert into public.egress_counter (bytes, source) values ({now:.0f}, '{LAPTOP_SOURCE}') "
+            f"on conflict (at) do nothing")
+    return now
+
+
+def ledger_now() -> dict:
+    """The watchdog's day as the pass judges it (worker/meter.py ledger_from, decision 0035) with the day's own line
+    (decision 0041): `line`, `sent`, `used` (sent plus what is held for the day's backup and tonight's run; None when
+    the day's start is not known), in bytes. Until 29 Oct this script judged the 24 hours to now, which the passes
+    stopped using on 15 Oct: the day after a full backup it read no room while the watchdog's day had plenty."""
+    import meter
+    import watch_link as w
+    b = counter_now()
+    now = dt.datetime.now(dt.timezone.utc)
+    rows = w.query("select extract(epoch from at)::text t, bytes::text b from public.egress_counter "
+                   "where at > now() - interval '4 days' order by at")
+    size = w.query("select pg_database_size(current_database())::text s")
+    rs = [(dt.datetime.fromtimestamp(float(r["t"]), dt.timezone.utc), float(r["b"])) for r in rows]
+    return meter.ledger_from(rs, b, now, schedule(), float(size[0]["s"]) if size else None)
+
+
+def open_runs() -> int:
+    """Sweep runs or retention steps still running (receipts younger than 6 hours with no end), as the tick counts them."""
+    import watch_link as w
+    return int(w.query("select count(*) n from public.pipeline_runs where finished_at is null and stage in "
+                       "('sweep', 'retention') and started_at > now() - interval '6 hours'")[0]["n"])
+
+
+def sleep_alive(seconds: float, beat: float = GUARD_EVERY_S) -> None:
+    """Sleep, reading the counter every `beat` seconds so the day tick keeps standing aside (decision 0041)."""
+    end = time.time() + seconds
+    while time.time() < end:
+        time.sleep(max(1.0, min(beat, end - time.time())))
+        if time.time() < end:
+            try:
+                counter_now()
+            except Exception:  # noqa: BLE001 - a missed beat is one missed beat
+                pass
 
 
 TREE_WORKERS_FILE = os.path.expanduser("~/Library/Logs/reddit-index/tree-workers")
@@ -99,24 +130,29 @@ def switch(on: bool, reason: str) -> None:
             + reason.replace("'", "''") + "', updated_at = now()")
 
 
-def wait_for(t0: dt.datetime, start_bytes: float | None) -> dict | None:
-    """Wait for the pass's receipt. Every minute, the node counter: a pass caps itself on its OWN estimate, and on
-    7 Oct a backfill pass capped at 0.69 GB moved the counter by about 1.5 GB, taking the day to 2.42 GB. When the
-    day reaches the line, the switch goes off (the pass stops at its next check) and comes back on when it ends."""
+def wait_for(t0: dt.datetime) -> dict | None:
+    """Wait for the pass's receipt. Every three minutes, the node counter judged on the watchdog's day: a pass caps
+    itself on its OWN estimate and stops itself at the line (decision 0025), but on 7 Oct a backfill pass capped at
+    0.69 GB moved the counter by about 1.5 GB. If the day reaches its line and the pass has not stopped, the switch
+    goes off (the pass stops at its next check) and comes back on when it ends."""
     import watch_link as w
     tripped = False
+    last_guard = 0.0
     try:
         for _ in range(330):   # a pass is at most 5.5 hours
             time.sleep(60)
-            if not tripped:
+            if not tripped and time.time() - last_guard >= GUARD_EVERY_S:
+                last_guard = time.time()
                 try:
-                    used = used_today(start_bytes)
-                except Exception:  # noqa: BLE001 - a missed reading is retried next minute
-                    used = None
-                if used is not None and used >= LINE_GB:
-                    switch(False, f"day pass guard: the day's egress reached {used:.2f} GB (node counter)")
+                    led = ledger_now()
+                except Exception:  # noqa: BLE001 - a missed reading is retried at the next guard
+                    led = None
+                if led and led["used"] is not None and led["used"] >= led["line"]:
+                    switch(False, f"day pass guard: the watchdog's day reached {led['used'] / 1e9:.2f} GB with what "
+                                  f"is still to come in it (line {led['line'] / 1e9:g} GB, node counter)")
                     tripped = True
-                    log(f"the day reached {used:.2f} GB on the node counter: stop switch off until this pass ends")
+                    log(f"the day reached {led['used'] / 1e9:.2f} GB of its {led['line'] / 1e9:g} GB line: stop "
+                        f"switch off until this pass ends")
             try:
                 r = w.query(f"select run_id, status, finished_at, notes from public.pipeline_runs where stage = 'sweep' "
                             f"and started_at > '{t0.isoformat()}' order by started_at desc limit 1")
@@ -136,6 +172,11 @@ def wait_for(t0: dt.datetime, start_bytes: float | None) -> dict | None:
                     time.sleep(30)
 
 
+def next_day_start(now: dt.datetime) -> dt.datetime:
+    import meter
+    return meter.watchdog_day_start(now, schedule().get("watchdog_reads_utc", "07:00")) + dt.timedelta(days=1)
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     # collect and label only: a page changes only when the night publishes it, and the night refreshes and scores
@@ -145,18 +186,31 @@ def main() -> int:
     ap.add_argument("--until", default="21:00", help="start no pass after this UTC time; each pass ends by 21:30")
     ap.add_argument("--max-calls", type=int, default=15000)
     ap.add_argument("--end-by", default="23:15", help="UTC: a pass ends by then (45 minutes before the night's run)")
-    ap.add_argument("--day-start-gb", type=float, default=None, help="the node counter at the day's start, in bytes/1e9")
     a = ap.parse_args()
     until = dt.datetime.strptime(a.until, "%H:%M").time()
-    start_bytes = a.day_start_gb * 1e9 if a.day_start_gb is not None else None
+    failures = 0
     while dt.datetime.now(dt.timezone.utc).time() < until:
         try:
-            room = LINE_GB - used_today(start_bytes)
+            led = ledger_now()
         except Exception as e:  # noqa: BLE001
-            log(f"could not read the node counter ({e}); waiting"); time.sleep(300); continue
-        if room < 0.06:
-            log(f"the day's room under the 2 GB line is used ({room:.2f} GB left); stopping")
+            log(f"could not read the node counter ({str(e)[:120]}); waiting"); sleep_alive(300); continue
+        if led["used"] is None:
+            log("no counter reading before the watchdog's day began: the room is not known; waiting")
+            sleep_alive(300); continue
+        line, room = led["line"] / 1e9, (led["line"] - led["used"]) / 1e9
+        if room < MIN_ROOM_GB:
+            now = dt.datetime.now(dt.timezone.utc)
+            nxt = next_day_start(now)
+            if nxt.date() == now.date() and nxt.time() < until:
+                log(f"the watchdog's day has {room:.2f} GB of room under its {line:g} GB line with what is still to "
+                    f"come in it ({led.get('backup_why')}; {led.get('night_why')}); waiting for the next day at "
+                    f"{nxt:%H:%M} UTC")
+                sleep_alive((nxt - now).total_seconds() + 120); continue
+            log(f"the day's room under its {line:g} GB line is used ({room:.2f} GB left); stopping")
             break
+        n_open = open_runs()
+        if n_open:   # the night's run, a retention step, or a pass the tick started before this script began
+            log(f"{n_open} run(s) open: waiting for them to end"); sleep_alive(120, beat=60); continue
         # the run's cap is its own ESTIMATE, which reads low: on 6 Oct a pass capped at 0.128 GB moved the node counter
         # by about 0.2 GB (day_egress.py uses the same x1.6 for the night). So the cap is the room divided by 1.6.
         cap = min(0.7, (room - 0.03) / (2.4 if "backfill" in a.stages else 1.6))   # 7 Oct: a backfill pass ~2.2x
@@ -165,13 +219,18 @@ def main() -> int:
         try:
             request(a.stages, a.max_calls, a.end_by, cap, width)
         except Exception as e:  # noqa: BLE001
-            log(f"could not start a pass: {e}"); time.sleep(120); continue
-        log(f"pass requested: stages {a.stages}, egress cap {cap:.2f} GB (room {room:.2f})"
+            log(f"could not start a pass: {e}"); sleep_alive(120); continue
+        log(f"pass requested: stages {a.stages}, egress cap {cap:.2f} GB (room {room:.2f} under {line:g})"
             + (f", comment trees {width} at a time" if width else ""))
-        run = wait_for(t0, start_bytes)
+        run = wait_for(t0)
         if not run:
             log("no finished receipt in 5.5 hours; stopping"); break
         n = run["notes"] if isinstance(run["notes"], dict) else json.loads(run["notes"] or "{}")
+        if run["status"] == "skipped":
+            why = str(n.get("skipped") or "")
+            if "lock" in why:   # another pass got there first: ask again once it ends (decision 0041)
+                log(f"the pass stood aside: {why}; asking again"); sleep_alive(120, beat=60); continue
+            log(f"the pass did not run: {why}; stopping"); break
         st = n.get("stages") or {}
         bf, cl, co = st.get("backfill") or {}, st.get("classify") or {}, st.get("collect") or {}
         la = st.get("label_alongside") or {}   # decision 0037: labels made beside collection
@@ -186,9 +245,15 @@ def main() -> int:
             f"{bf.get('mentions')} mentions, {bf.get('reddit_calls')} calls, stopped: {bf.get('stopped')}; "
             f"classify labelled {cl.get('labelled')}, rejected {cl.get('rejected')}, left {cl.get('left_in_queue')} "
             f"(beside collection: {la.get('labelled', 0)} labelled, {la.get('rejected', 0)} rejected); "
-            f"egress estimate {n.get('egress_estimate_gb')} GB; caps hit {n.get('caps_hit')}")
+            f"egress estimate {n.get('egress_estimate_gb')} GB, measured {n.get('egress_measured_gb')} GB; "
+            f"caps hit {n.get('caps_hit')}")
         if run["status"] not in ("ok", "capped") and "day pass guard" not in json.dumps(n):
-            log("the pass failed; stopping"); break
+            failures += 1
+            if failures >= 2:
+                log("a second pass in a row failed; stopping"); break
+            log(f"the pass failed ({'; '.join(n.get('problems') or [])[:300]}); one more try in 10 minutes")
+            sleep_alive(600); continue
+        failures = 0
         if "backfill" in a.stages and bf.get("note") == "every declared subreddit is done" and cl.get("left_in_queue") == 0:
             log("backfill and labels done"); break
         rf = st.get("refresh") or {}
@@ -197,6 +262,7 @@ def main() -> int:
                                          cl.get("labelled"), cl.get("rejected"), rf.get("brands_refreshed"),
                                          la.get("labelled"), la.get("rejected")))
         if work == 0:   # 9 Oct: 150 passes in a row did nothing, one a minute; an empty pass means wait, not retry
+            # no sign of life while it waits: the day tick may run its own passes meanwhile (decision 0041)
             log("the pass did nothing; next request in 30 minutes")
             time.sleep(1800)
     log("passes ended")
