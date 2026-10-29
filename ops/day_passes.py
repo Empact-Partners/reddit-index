@@ -174,7 +174,7 @@ def wait_for(t0: dt.datetime) -> dict | None:
                 if r and r[0]["finished_at"]:
                     full = w.query(f"select run_id, status, finished_at, notes from public.pipeline_runs "
                                    f"where run_id = '{r[0]['run_id']}'")
-                    return full[0] if full else r[0]
+                    return full[0] if full else {**r[0], "notes": None}
             except (Exception, SystemExit):  # noqa: BLE001 - a missed poll is a missed poll
                 continue
         return None
