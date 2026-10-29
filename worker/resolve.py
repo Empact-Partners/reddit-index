@@ -273,11 +273,14 @@ def _domain_identifies(domain, slug, all_domains):
     """
     global _dom_claims
     if _dom_claims is None:
-        _dom_claims = {}
+        # built whole, then published: the backfill resolves from several threads (decision 0042), and a half-built
+        # map would read a shared domain as one brand's own
+        claims = {}
         for s, doms in all_domains.items():
             for dd in doms:
                 if dd:
-                    _dom_claims.setdefault(dd.strip().lower(), set()).add(s)
+                    claims.setdefault(dd.strip().lower(), set()).add(s)
+        _dom_claims = claims
     d = domain.strip().lower()
     if len(_dom_claims.get(d, ())) > 1:
         return False

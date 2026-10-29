@@ -293,45 +293,89 @@ def backfill(run: "Run", cfg: dict, log) -> dict:
     until = min(run.deadline - 95 * 60, time.time() + float(cfg.get("max_minutes", 150)) * 60)
     ctx = sweep.prepare(int(cfg.get("days", 90)))
     known = {k.lower(): k for k in ctx["sub_ids"]}   # the name as the subreddits table spells it (the sweep's lookup is exact)
+    tree_cap = int(cfg.get("tree_cap", 150))
     calls0 = rc.stats()["calls"]
-    try:
-        for sub in subs:
+    # Decision 0042: up to `workers` subreddits at once. Each worker has its own database connection (a psycopg
+    # connection is one conversation at a time); the gazetteer, resolver and mapping are read-only and shared.
+    # reddit_client holds one request start per pace for every thread, so the width raises the pass's share of the
+    # app without raising the pace. The stop switch, the caps and `out` are read and written under one lock.
+    workers = max(1, min(int(cfg.get("workers", 1)), 4))
+    queue = list(subs)
+    lock = threading.Lock()
+    ctxs = [ctx] + [dict(ctx, conn=None) for _ in range(workers - 1)]
+
+    def stop() -> str | None:
+        with lock:
+            if out["stopped"]:
+                return out["stopped"]
             reason = run.stop_reason()
+            if not reason and time.time() >= until:
+                reason = "the pass's backfill time is used; the next pass continues"
+            if not reason and rc.stats()["calls"] - calls0 >= run.caps["reddit_calls"]:
+                reason = f"the pass's Reddit calls ({run.caps['reddit_calls']}) are used"
             if reason:
                 out["stopped"] = reason
-                break
-            if time.time() >= until:
-                out["stopped"] = "the pass's backfill time is used; the next pass continues"
-                break
-            if rc.stats()["calls"] - calls0 >= run.caps["reddit_calls"]:
-                out["stopped"] = f"the pass's Reddit calls ({run.caps['reddit_calls']}) are used"
-                break
+            return reason
+
+    def work(wctx: dict) -> None:
+        if wctx["conn"] is None:
+            wctx["conn"] = db.connect()
+        while not stop():
+            with lock:
+                if not queue:
+                    return
+                sub = queue.pop(0)
             real = known.get(sub)
             if real is None:   # not in the subreddits table yet: never marked done, so a later pass sweeps it once loaded
-                out.setdefault("unknown", []).append(sub)
+                with lock:
+                    out.setdefault("unknown", []).append(sub)
                 continue
-            trees, m = sweep.run_subs([real], ctx, int(cfg.get("tree_cap", 150)))
-            out["trees"] += trees
-            out["mentions"] += m
+            trees, m = sweep.run_subs([real], wctx, tree_cap)
             # the sweep's own test: a thread it gave up on (three failed fetches) counts as handled. Without that,
             # three subreddits whose last threads kept failing read "not finished" forever while every pass made
             # 0 calls on them, and the day runner re-requested an empty pass every minute (9 Oct: 150 of them).
-            finished = sweep.sub_complete(real, ctx["mode"], int(cfg.get("tree_cap", 150)))
-            if not finished and trees == 0 and not sweep.load_state(real, ctx["mode"]).get("listings_done"):
+            finished = sweep.sub_complete(real, wctx["mode"], tree_cap)
+            unreachable = None
+            if not finished and trees == 0 and not sweep.load_state(real, wctx["mode"]).get("listings_done"):
                 # the listing failed. A container's disk is new every pass, so the sweep's own retry count never
                 # passes 1 and it never gives up: ask Reddit whether the subreddit exists at all (9 Oct:
                 # bookingagent, salesmanagement and autismparenting answer 404, and 150 passes retried them).
                 about = rc.get(f"/r/{real}/about", {"raw_json": 1}, bucket="misc", use_cache=False)
                 if isinstance(about, dict) and about.get("_err") in (403, 404):
-                    out.setdefault("unreachable", []).append({"sub": sub, "http": about["_err"]})
+                    unreachable = {"sub": sub, "http": about["_err"]}
                     finished = True   # recorded in `done`: no later pass takes it again
-            (out["done"] if finished else out["unfinished"]).append(sub)
-            log(f"  backfill {sub}: {trees} trees, {m} mentions, {'done' if sub in out['done'] else 'not finished'}")
-    finally:
+            with lock:
+                out["trees"] += trees
+                out["mentions"] += m
+                if unreachable:
+                    out.setdefault("unreachable", []).append(unreachable)
+                (out["done"] if finished else out["unfinished"]).append(sub)
+            log(f"  backfill {sub}: {trees} trees, {m} mentions, {'done' if finished else 'not finished'}")
+
+    def guarded(wctx: dict) -> None:
         try:
-            ctx["conn"].close()
-        except Exception:  # noqa: BLE001
-            pass
+            work(wctx)
+        except Exception as e:  # noqa: BLE001 - one worker's failure ends that worker; the others go on
+            with lock:
+                out.setdefault("worker_errors", []).append(str(e).splitlines()[0][:160])
+
+    try:
+        if workers == 1:
+            work(ctx)
+        else:
+            threads = [threading.Thread(target=guarded, args=(c,), name=f"backfill-{i}") for i, c in enumerate(ctxs)]
+            for t in threads:
+                t.start()
+            for t in threads:
+                t.join()
+            out["workers"] = workers
+    finally:
+        for c in ctxs:
+            try:
+                if c["conn"] is not None:
+                    c["conn"].close()
+            except Exception:  # noqa: BLE001
+                pass
     out["reddit_calls"] = rc.stats()["calls"] - calls0
     out["left"] = len(subs) - len(out["done"])
     return out

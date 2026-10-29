@@ -1759,6 +1759,76 @@ try:
 finally:
     _rd.dm = _saved_dm
 
+# ---- three subreddits at once in the backfill (decision 0042: run_daily.backfill workers) ----------------------------
+import threading as _th  # noqa: E402
+import sweep as _sw  # noqa: E402
+
+
+class _FakeConn:
+    def __init__(self, rows=()):
+        self.rows = rows
+
+    def execute(self, *a, **k):
+        return self
+
+    def fetchall(self):
+        return self.rows
+
+    def close(self):
+        pass
+
+
+def _bf_run(stop_after=None):
+    calls = {"n": 0}
+
+    class R:
+        run_id = "t"
+        deadline = time.time() + 10 ** 6
+        caps = {"reddit_calls": 10 ** 9}
+        conn = _FakeConn()
+
+        def stop_reason(self):
+            calls["n"] += 1
+            return "stopped by the switch: test" if stop_after and calls["n"] > stop_after else None
+    return R()
+
+
+_saved = {k: getattr(_sw, k) for k in ("prepare", "run_subs", "sub_complete", "load_state")}
+_saved_bs, _saved_conn = _rd.backfill_subs, _rd.db.connect
+_seen, _threads = [], set()
+try:
+    _subs = [f"s{i}" for i in range(9)]
+    _rd.backfill_subs = lambda cats, path: list(_subs)
+    _rd.db.connect = lambda *a, **k: _FakeConn()
+    _sw.prepare = lambda days: {"sub_ids": {s: i for i, s in enumerate(_subs)}, "mode": {}, "conn": _FakeConn(),
+                                "mapping": {}}
+
+    def _fake_run_subs(subs, ctx, cap):
+        _seen.append((subs[0], cap)); _threads.add(_th.current_thread().name)
+        time.sleep(0.02)
+        return 2, 3
+    _sw.run_subs = _fake_run_subs
+    _sw.sub_complete = lambda sub, mode, cap: True
+    _sw.load_state = lambda sub, mode: {"listings_done": True}
+    import time  # noqa: E402
+    _o = _rd.backfill(_bf_run(), {"categories": ["x"], "tree_cap": 50, "workers": 3}, lambda *a: None)
+    check("backfill 0042: three workers take every subreddit once, at the declared tree cap",
+          sorted(s for s, _ in _seen) == _subs and {c for _, c in _seen} == {50} and len(_threads) == 3
+          and sorted(_o["done"]) == _subs and _o["trees"] == 18 and _o["mentions"] == 27 and _o["workers"] == 3, _o)
+    _seen.clear()
+    _o = _rd.backfill(_bf_run(stop_after=4), {"categories": ["x"], "tree_cap": 50, "workers": 3}, lambda *a: None)
+    check("backfill 0042: the stop switch ends every worker and is recorded once",
+          (_o["stopped"] or "").startswith("stopped by the switch") and len(_o["done"]) < len(_subs)
+          and len(_o["done"]) == len(_seen), _o)
+    _seen.clear()
+    _o = _rd.backfill(_bf_run(), {"categories": ["x"], "tree_cap": 50}, lambda *a: None)
+    check("backfill 0042: without workers the pass runs one subreddit at a time as before",
+          sorted(_o["done"]) == _subs and "workers" not in _o, _o)
+finally:
+    for _k, _v in _saved.items():
+        setattr(_sw, _k, _v)
+    _rd.backfill_subs, _rd.db.connect = _saved_bs, _saved_conn
+
 print(f"\ntest_sweep_units: {len(FAILS)} failure(s)" + (": " + "; ".join(FAILS) if FAILS else ""))
 sys.exit(bool(FAILS))
 
