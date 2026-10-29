@@ -283,14 +283,19 @@ def sweep_sub(sub, cat_slugs, ctx, tree_cap=10 ** 9):
         # either way) but it means every partial state — an interrupted sub,
         # a category stopped early, a run cut short — already holds the most
         # valuable threads rather than an arbitrary slice by post id.
+        # Decision 0042: under a tree cap, a thread whose title names a brand
+        # goes before a busier one that only matched a category noun, so a
+        # small cap never drops the threads a brand's standing rests on.
         def _order(c):
             with c.cursor() as cur:
-                cur.execute("SELECT id, num_comments FROM threads WHERE id = ANY(%s)",
+                cur.execute("SELECT id, num_comments, link_title FROM threads WHERE id = ANY(%s)",
                             ([f"t3_{p}" for p in todo],))
-                return {r[0][3:]: (r[1] or 0) for r in cur.fetchall()}
+                return {r[0][3:]: (r[1] or 0, r[2] or "") for r in cur.fetchall()}
         try:
             nc = db.run(ctx, _order, label=f"order {sub}")
-            todo.sort(key=lambda p: -nc.get(p, 0))
+            named = {p for p, (_, t) in nc.items()
+                     if tree_cap < 10 ** 9 and ctx["resolver"].has_alias(t.lower())}
+            todo.sort(key=lambda p: (p not in named, -nc.get(p, (0, ""))[0]))
         except Exception as e:
             print(f"  {sub}: could not order by comments ({str(e)[:70]}) — "
                   f"proceeding unordered", flush=True)

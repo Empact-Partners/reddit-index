@@ -91,8 +91,10 @@
  "classify_note": "GLM jobs at most 6 at once (was 8): the Z.ai plan is shared with other sessions, and on 2026-10-05 at 04:25 UTC the plan's request-rate limit refused both this run and another session's jobs. A refused batch is retried after 1, 2 and 4 minutes at half the width; a limit that holds ends classification for the night as a planned limit, never a fault.",
  "backfill": {
   "days": 90,
-  "tree_cap": 150,
+  "tree_cap": 50,
+  "workers": 3,
   "max_minutes": 150,
+  "speed_why": "Decision 0042 (Vlad, 29 Oct 2026: the batch's pages as soon as possible, smaller pages accepted): 50 comment trees a subreddit instead of 150, threads that name a brand in their title first and then the busiest; three subreddits at once, each with its own database connection, because one at a time a tree took 2.5 s (3,604 calls in 151 minutes on 29 Oct, 24 a minute) while the client's pace allows one start every reddit_pace_seconds. The shared app's window (1,000 calls in 10 minutes) still bounds every user of it; reddit_client paces all threads under one lock and spreads its calls when the window runs low.",
   "categories": [
    "recreation-entertainment-insurance",
    "commercial-insurance-brokerage",
