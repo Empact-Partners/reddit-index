@@ -45,11 +45,19 @@ Night of 30 Oct, run `3aa0b5d1`, 00:02 to 05:30 UTC, window end 05:30:
    what was used. On the receipts of 26, 29 and 30 Oct this is 66 and 105.
 2. **Publish order** (`worker/site_publish.py`): takedown pages, retired, home and category pages, sitemap, then the other
    company pages. `not_checked` now also counts the pages whose batch never started (30 Oct: 148 counted of 1,462).
-3. **A scheduled run always exits 0**, including the hard exit and errors outside the stages. A run by hand keeps its
-   exit code.
+3. **A scheduled run always exits 0**, including the hard exit and errors outside the stages, and so does the day tick
+   (`ops/day_tick.py`), which a database restart would otherwise crash. A run by hand keeps its exit code.
 4. **The sentinel reads the night's receipt** (`check_ri_night`, `~/.claude/sentinel`), because the crash mail that
    dispatched a fix session no longer comes. From 05:45 UTC: no receipt, a failed one, or one still open at 06:00 opens a
    fix session. It also sees a stalled cron, which no mail ever reported. A pause or a held lock is a receipt, not a fault.
+
+## The compute: Small, approved by Vlad on 30 Oct
+
+Vlad approved Micro to Small ($10 to $15 a month). A compute change restarts the node, and that has one consequence
+worth planning around: `node_network_transmit_bytes_total` goes back to about zero, so `meter.sent_since` reads the
+watchdog's day as not known, and `day_tick.decide` starts no pass until the next 07:00 UTC. So the change goes in after
+the day's last pass (no tick after 21:30 UTC, passes end by 23:15) and before the night, where it costs no pass. The
+night's room is then not known either, which leaves it `night_mentions`; that night is on the 4 GB line anyway.
 
 ## What it costs
 

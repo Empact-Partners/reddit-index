@@ -24,6 +24,7 @@ import datetime as dt
 import json
 import os
 import sys
+import traceback
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
@@ -156,7 +157,7 @@ def main() -> int:
                          (cfg["stages"], int(cfg["max_calls"]), cfg["end_by_utc"], cap, json.dumps(options)))
         except Exception as e:  # noqa: BLE001 - said plainly in the log; the next tick tries again
             log(f"the request could not be written, so no pass starts: {type(e).__name__}: {str(e)[:200]}")
-            return 1
+            return 0
     finally:
         conn.close()
     sys.stdout.flush()
@@ -165,5 +166,16 @@ def main() -> int:
     return 0   # not reached
 
 
+def scheduled_main() -> int:
+    """The tick exits 0 whatever happens (decision 0043): a failed exit marks the day service's deployment crashed, and
+    a crashed cron deployment can start nothing until the next deploy. A database restart is enough to do it: the tick
+    cannot connect, and the next tick says why in its log."""
+    try:
+        return main()
+    except (Exception, SystemExit):  # noqa: BLE001
+        traceback.print_exc()
+        return 0
+
+
 if __name__ == "__main__":
-    sys.exit(main())
+    sys.exit(scheduled_main())
