@@ -284,31 +284,36 @@ def run(conn, base: str, dry_run: bool = False, verify_n: int = 100, max_expire:
             receipt["refetched_stale"] = receipt.get("refetched_stale", 0) + len(stale)
         return res
 
-    ok_ids = []
-    for i in range(0, len(to_verify), 200):
-        # the run's deadline holds here too: what is left stays unproven and comes round tomorrow (takedown pages
-        # are first in the list)
-        if deadline is not None and time.time() > deadline:
-            receipt["verify_stopped"] = f"the run's time ended with {len(to_verify) - i} pages left to fetch"
-            break
-        chunk = to_verify[i:i + 200]
-        res = verify([(f"/{r[1]}/", r[2], 200) for r in chunk])
-        receipt["pages_fetched"] += sum(1 for v in res if v["status"])
-        good = [(r[0], r[2]) for r, v in zip(chunk, res) if v["ok"]]
-        receipt["site_bytes_fetched"] += sum(v["bytes"] for v in res)
-        receipt["failed"] += [{"path": v["path"], "status": v["status"], "hash": v["hash"], "takedown": bool(r[3])}
-                              for r, v in zip(chunk, res) if failed(v)]
-        receipt["not_checked"] += sum(1 for v in res if v.get("not_checked"))
-        if good and stamp:
-            # only where the row still holds the hash we verified: a refresh that landed meanwhile stays unserved
-            conn.execute("""update site.brand_stats s set served_hash = v.h, served_at = now()
-                              from unnest(%s::bigint[], %s::text[]) as v(id, h)
-                             where s.brand_id = v.id and s.page_hash = v.h""",
-                         ([g[0] for g in good], [g[1] for g in good]))
-        ok_ids += [g[0] for g in good]
-        log(f"    verified {len(ok_ids)}/{len(to_verify)} company pages", flush=True)
-    receipt["pages_verified"] = len(ok_ids)
-    receipt["verified_brand_ids"] = ok_ids
+    ok_ids, left = [], []
+
+    def prove_company_pages(pages: list) -> None:
+        for i in range(0, len(pages), 200):
+            # the run's deadline holds here too: what is left stays unproven and comes round tomorrow
+            if deadline is not None and time.time() > deadline:
+                left.extend(pages[i:])
+                break
+            chunk = pages[i:i + 200]
+            res = verify([(f"/{r[1]}/", r[2], 200) for r in chunk])
+            receipt["pages_fetched"] += sum(1 for v in res if v["status"])
+            good = [(r[0], r[2]) for r, v in zip(chunk, res) if v["ok"]]
+            receipt["site_bytes_fetched"] += sum(v["bytes"] for v in res)
+            receipt["failed"] += [{"path": v["path"], "status": v["status"], "hash": v["hash"], "takedown": bool(r[3])}
+                                  for r, v in zip(chunk, res) if failed(v)]
+            receipt["not_checked"] += sum(1 for v in res if v.get("not_checked"))
+            if good and stamp:
+                # only where the row still holds the hash we verified: a refresh that landed meanwhile stays unserved
+                conn.execute("""update site.brand_stats s set served_hash = v.h, served_at = now()
+                                  from unnest(%s::bigint[], %s::text[]) as v(id, h)
+                                 where s.brand_id = v.id and s.page_hash = v.h""",
+                             ([g[0] for g in good], [g[1] for g in good]))
+            ok_ids.extend(g[0] for g in good)
+            log(f"    verified {len(ok_ids)}/{len(to_verify)} company pages", flush=True)
+
+    # The order is what a run short of time keeps (decision 0043). Takedown pages first; then what a takedown's receipt
+    # waits on (retired pages) and what every visitor and crawler starts from (the home and category pages, the
+    # sitemap); the other company pages last. Until 30 Oct those 170 fetches queued behind every company page, so the
+    # night that ran out of time proved none of them, and every such night would have.
+    prove_company_pages(takedown)
 
     if retired:
         res = verify([(f"/{s}/", None, 404) for s in retired])
@@ -335,6 +340,13 @@ def run(conn, base: str, dry_run: bool = False, verify_n: int = 100, max_expire:
             receipt["failed"].append({"path": "/sitemap.xml", "status": v["status"], "note": "not a sitemap"})
         elif stamp:
             conn.execute("update site.meta set served_slugs_hash = %s where slugs_hash = %s", (meta[2], meta[2]))
+
+    prove_company_pages(expired_others[:verify_n])
+    receipt["pages_verified"] = len(ok_ids)
+    receipt["verified_brand_ids"] = ok_ids
+    if left:
+        receipt["verify_stopped"] = f"the run's time ended with {len(left)} pages left to fetch"
+        receipt["not_checked"] += len(left)
 
     receipt["failed"] = receipt["failed"][:100]
     log(f"  published: {receipt['pages_expired']} company pages expired, {receipt['pages_verified']} fetched and "
