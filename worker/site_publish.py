@@ -184,7 +184,7 @@ def failed(v: dict) -> bool:
 
 
 def run(conn, base: str, dry_run: bool = False, verify_n: int = 100, max_expire: int = 7000, deadline: float | None = None,
-        stamp: bool = True, log=print) -> dict:
+        stamp: bool = True, log=print, count_bad_permalinks: bool = True) -> dict:
     base = base.rstrip("/")
     DEADLINE[0] = deadline
     receipt = {"base": base, "pages_changed": 0, "pages_expired": 0, "pages_verified": 0, "pages_fetched": 0,
@@ -195,10 +195,14 @@ def run(conn, base: str, dry_run: bool = False, verify_n: int = 100, max_expire:
     clash = collisions(conn)
     if clash:
         raise RuntimeError(f"company slugs collide with a category or a reserved path: {clash[:10]}")
-    leaks = conn.execute("select count(*) from site.bad_permalinks").fetchone()[0]
-    if leaks:
-        log(f"  note: {leaks} stored permalinks are not Reddit comment links; their cards are left out")
-    receipt["bad_permalinks"] = leaks
+    # A note, not a gate: the cards are already left out by the rail. The count joins site.rail_key to every mentions
+    # partition, ~1.6 GB of disk reads a call, so the night's run takes it and the every-30-minutes daytime publish
+    # (decision 0042) does not: 15 calls in 13 h read 27 GB and opened a sentinel incident on 30 Oct.
+    if count_bad_permalinks:
+        leaks = conn.execute("select count(*) from site.bad_permalinks").fetchone()[0]
+        if leaks:
+            log(f"  note: {leaks} stored permalinks are not Reddit comment links; their cards are left out")
+        receipt["bad_permalinks"] = leaks
 
     # 1. what changed since the path was last expired. Takedown pages first: a brand named in a removal
     #    whose page has not been SEEN without the card. Those are fetched whatever the sample size.
@@ -348,11 +352,14 @@ def main() -> int:
     ap.add_argument("--max-expire", type=int, default=7000)
     ap.add_argument("--no-stamp", action="store_true",
                     help="expire and verify but record nothing (a preview or a local server)")
+    ap.add_argument("--skip-bad-permalinks", action="store_true",
+                    help="leave out the 1.6 GB bad_permalinks count (the daytime publish; the night's run takes it)")
     a = ap.parse_args()
     import db
     with db.connect() as conn:
         conn.autocommit = True
-        r = run(conn, a.base, a.dry_run, a.verify, a.max_expire, stamp=not a.no_stamp)
+        r = run(conn, a.base, a.dry_run, a.verify, a.max_expire, stamp=not a.no_stamp,
+                count_bad_permalinks=not a.skip_bad_permalinks)
     print(json.dumps({k: v for k, v in r.items() if k not in ("failed", "verified_brand_ids")}),
           "| failed:", len(r["failed"]))
     return 2 if r["failed"] else 0
