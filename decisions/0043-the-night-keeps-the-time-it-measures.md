@@ -23,11 +23,13 @@ Night of 30 Oct, run `3aa0b5d1`, 00:02 to 05:30 UTC, window end 05:30:
    11 Oct from refresh 18 minutes and publish 11 minutes at 9 pages a second. By 30 Oct refresh took 33 minutes and
    publish fetched under 5 pages a second, so the two need about 55. Every night since has fitted only because labelling
    finished early. The first night with a full labelling queue ran out of time.
-2. **Both slowed because the database outgrew its compute.** Micro: 1 GB of memory, 87 Mbit/s of baseline disk (about
-   11 MB/s), for a database that went from 3.0 GB to 4.6 GB and from 1.44 to 2.38 million mentions in a month.
-   `site.refresh_dirty` reads at about 12.5 MB/s, about that ceiling. This keeps getting worse as the index grows. It
-   is the one cause not fixed here: a larger compute costs money, which is Vlad's call (Small is 2 GB and 174 Mbit/s,
-   about $15 a month against $10).
+2. **Refresh slowed as the database outgrew its memory.** Micro compute: 1 GB of memory and a 256 MB cache, for a database
+   that went from 3.0 GB to 4.6 GB and from 1.44 to 2.38 million mentions in a month. A refresh chunk averages 15.6 s and
+   misses the cache on about 6% of its pages, about 1,700 reads a second, which is where its time appears to go. **Why
+   publish slowed is not established:** 469 pages a minute on 12 Oct, about 240 since 18 Oct, while the page's main query
+   still averages 67 ms and a page takes about 1.7 s across 8 fetchers. Neither is fixed here. A larger compute costs
+   money, which is Vlad's call, and its gain is not measured (Small is 2 GB, about $15 a month against $10). The measured
+   reserves below hold whichever way these move.
 3. **The publisher proved the site's front last.** Retired pages, the home and category pages and the sitemap queued
    behind every company page, so a run short of time proved none of them. A takedown's receipt waits on retired pages,
    and an unproven takedown older than 36 hours fails the night (decision 0002).

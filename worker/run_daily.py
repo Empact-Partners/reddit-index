@@ -924,7 +924,7 @@ def scheduled_main() -> int:
     26 Oct 20:38 UTC), and a night lost so is a takedown duty missed. A run by hand keeps its exit code."""
     try:
         return main()
-    except Exception:  # noqa: BLE001
+    except (Exception, SystemExit):  # noqa: BLE001 - SystemExit: an import that refuses (worker/resolve.py) inside a stage
         traceback.print_exc()
         return 1 if by_hand() else 0
 

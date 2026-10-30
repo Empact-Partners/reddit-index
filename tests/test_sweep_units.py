@@ -382,6 +382,13 @@ _err = sys.stderr
 sys.stderr = open(os.devnull, "w")
 check("exit: an error outside the stages still exits 0 on a schedule (a crashed cron deployment can stop its cron)",
       _rd.scheduled_main() == 0)
+def _refuse():
+    sys.exit(1)
+
+
+_rd.main = _refuse
+check("exit: an import that refuses with sys.exit inside a stage still exits 0 on a schedule", _rd.scheduled_main() == 0)
+_rd.main = _boom
 sys.argv = ["run_daily.py", "--manual"]
 check("exit: a run by hand keeps its exit code", _rd.scheduled_main() == 1)
 sys.stderr = _err
