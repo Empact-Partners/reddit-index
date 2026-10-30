@@ -783,6 +783,18 @@ finally:
 
 # ---- the daytime passes' tick on Railway (ops/day_tick.py decide) ----------------------------------------------
 import day_tick as _dtk  # noqa: E402
+_dtk_main, _dtk_err = _dtk.main, sys.stderr
+sys.stderr = open(os.devnull, "w")
+
+
+def _no_database():
+    raise RuntimeError("connection refused")
+
+
+_dtk.main = _no_database
+check("day tick: a database it cannot reach still exits 0 (a crashed cron deployment can stop its cron)",
+      _dtk.scheduled_main() == 0)
+_dtk.main, sys.stderr = _dtk_main, _dtk_err
 _daycfg = {"window_utc": ["06:15", "21:30"], "min_room_gb": 0.15, "estimate_factor": 1.25}
 
 
