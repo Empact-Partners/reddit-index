@@ -36,6 +36,7 @@ from __future__ import annotations
 import argparse
 import datetime as dt
 import json
+import math
 import os
 import sys
 import threading
@@ -394,6 +395,46 @@ def takedown_deadline(run_deadline: float, sched: dict) -> float:
     return run_deadline - sched.get("reserve_minutes_after_collect", 105) * 60
 
 
+def measured_reserves(nights: list[dict], sched: dict) -> dict:
+    """Decision 0043: the time kept for refresh and publish follows what the last nights measured. The schedule's two
+    reserves were fixed on 11 Oct (refresh 18 minutes, 9 pages a second). By 30 Oct refresh took 33 minutes and publish
+    fetched under 5 pages a second, so the first night whose labelling used all its time gave publish 12 of the 20
+    minutes it needed. The schedule's values stay as floors; with no nights to read they are the answer."""
+    cfg = sched.get("time_reserve", {})
+    refresh = max((n["refresh"] for n in nights), default=0.0)
+    index = max((n["index"] for n in nights), default=0)
+    # the slowest night's minutes a page (a hand run of a few pages says nothing), times the most pages a night changed
+    paced = [n["publish"] / (n["fetched"] + n["index"]) for n in nights
+             if n["fetched"] + n["index"] >= cfg.get("min_pages", 500)]
+    publish = max(paced, default=0.0) * (max((n["changed"] for n in nights), default=0) + index)
+    classify = max(sched.get("reserve_minutes_after_classify", 45),
+                   min(cfg.get("max_minutes", 150), math.ceil(refresh + publish + cfg.get("margin_minutes", 5))))
+    collect = max(sched.get("reserve_minutes_after_collect", 105), classify + cfg.get("min_classify_minutes", 30))
+    return {"after_classify": classify, "after_collect": collect, "refresh_minutes": round(refresh, 1),
+            "publish_minutes": round(publish, 1), "nights": len(nights)}
+
+
+def with_measured_reserves(conn, sched: dict, receipt: dict) -> dict:
+    """The schedule with its two reserves as the last nights measured them; as it is when they cannot be read."""
+    try:
+        rows = conn.execute("""
+            select (notes#>>'{stages,refresh,minutes}')::float, (notes#>>'{stages,publish,minutes}')::float,
+                   (notes#>>'{stages,publish,pages_changed}')::int, (notes#>>'{stages,publish,pages_fetched}')::int,
+                   coalesce((notes#>>'{stages,publish,index_pages_verified}')::int, 0)
+              from public.pipeline_runs
+             where stage = 'sweep' and notes->>'manual' = 'false'
+               and notes#>>'{stages,refresh,minutes}' is not null
+               and notes#>>'{stages,publish,pages_fetched}' is not null
+             order by started_at desc limit %s""", (sched.get("time_reserve", {}).get("nights", 3),)).fetchall()
+    except Exception as e:  # noqa: BLE001 - the schedule's own reserves still bound the run
+        receipt["time_reserve"] = {"error": str(e)[:200]}
+        return sched
+    r = measured_reserves([dict(zip(("refresh", "publish", "changed", "fetched", "index"), x)) for x in rows], sched)
+    receipt["time_reserve"] = r
+    return {**sched, "reserve_minutes_after_classify": r["after_classify"],
+            "reserve_minutes_after_collect": r["after_collect"]}
+
+
 def storage_notes(disk: tuple[float, float] | None, db_bytes: float | None, cfg: dict) -> tuple[dict, list[str]]:
     """Decision 0038: the data disk and the database's size for the night's receipt, and a warning when the disk is
     past `disk_warn_used_pct` (92): Supabase grows the disk by half at 90% used, so past that it did not, and at 95%
@@ -615,13 +656,18 @@ def main() -> int:
     # A run that hangs (a query waiting on a lock, a call that never answers) must not hold the sweep's lock into
     # the next run: a daytime pass stuck past 23:15 would make the night stand aside. Every stage ends by the
     # deadline or a few minutes after it; 20 minutes past it the process ends itself, which closes the session
-    # and frees the lock. The receipt stays 'running' and stops being believed after 6 hours (ops/day_tick.py).
+    # and frees the lock. The receipt stays 'running' and stops being believed after 6 hours (ops/day_tick.py). Exit 0,
+    # as every scheduled end (see scheduled_main): the sentinel reads the night's open receipt (decision 0043).
     def _hard_exit() -> None:
         log("the run is 20 minutes past its deadline and still alive: ending the process so the lock is freed")
-        os._exit(3)
+        os._exit(0)
     _t = threading.Timer(max(60.0, run.deadline + 20 * 60 - time.time()), _hard_exit)
     _t.daemon = True
     _t.start()
+
+    if "publish" in args.stages:
+        sched = with_measured_reserves(conn, sched, run.receipt)
+        log(f"time kept after collection and labelling: {run.receipt['time_reserve']}")
 
     import site_score
     import site_publish
@@ -864,11 +910,24 @@ def main() -> int:
     log(f"run {run.run_id[:8]} {status}: {json.dumps({k: v for k, v in run.receipt.items() if k != 'stages'}, default=str)[:600]}")
     if not args.no_dm and status != "stopped":   # a stop is someone's decision; they know
         tell_vlad(run)
-    # A daytime pass exits 0 even when it failed: the receipt and the DM carry the failure, and on Railway a failed
-    # exit marks the day service's deployment crashed, after which its cron started no tick for 53 hours (24 Oct
-    # 15:33 to 26 Oct 20:38 UTC, until the next deploy). The night keeps its exit code.
-    return 0 if status != "failed" or run.receipt["day_run"] else 1
+    return 1 if status == "failed" and by_hand() else 0
+
+
+def by_hand() -> bool:
+    return "--manual" in sys.argv   # args.manual is also set for a daytime pass; only a person types this
+
+
+def scheduled_main() -> int:
+    """A scheduled run exits 0 whatever happened, in a stage or outside them: the receipt, the DM and the sentinel's
+    night check (decision 0043) carry a failure. On Railway a failed exit marks the deployment crashed, and a crashed
+    cron deployment can start nothing until the next deploy: the day service lost 53 hours that way (24 Oct 15:33 to
+    26 Oct 20:38 UTC), and a night lost so is a takedown duty missed. A run by hand keeps its exit code."""
+    try:
+        return main()
+    except (Exception, SystemExit):  # noqa: BLE001 - SystemExit: an import that refuses (worker/resolve.py) inside a stage
+        traceback.print_exc()
+        return 1 if by_hand() else 0
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    sys.exit(scheduled_main())

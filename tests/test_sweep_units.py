@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import os
 import sys
+import types
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "worker"))
@@ -198,6 +199,76 @@ check("publish: a page that never answered in three tries is failed",
       site_publish.failed({"ok": False, "status": None, "hash": None, "error": "timed out"}) is True)
 site_publish.DEADLINE[0] = None
 
+
+class _PublishResult:
+    def __init__(self, rows):
+        self.rows = rows
+
+    def fetchall(self):
+        return self.rows
+
+    def fetchone(self):
+        return self.rows[0]
+
+    def __iter__(self):
+        return iter(self.rows)
+
+
+class _PublishConn:
+    """Two takedown pages, three ordinary ones, a retired page, changed boards and a changed page set."""
+    def execute(self, sql, params=None):
+        if "select s.brand_id" in sql:
+            return _PublishResult([(1, "td-a", "h1", True, True, True), (2, "td-b", "h2", True, True, True),
+                                   (3, "co-a", "h3", False, True, True), (4, "co-b", "h4", False, True, True),
+                                   (5, "co-c", "h5", False, True, True)])
+        if "site.retired_page where gone_at" in sql:
+            return _PublishResult([("old-brand",)])
+        if "boards_hash, served_boards_hash" in sql:
+            return _PublishResult([("b1", "b0", "s1", "s0")])
+        if "bad_permalinks" in sql:
+            return _PublishResult([(0,)])
+        return _PublishResult([])
+
+
+def _publish_run(deadline_after=None):
+    """site_publish.run with the network stubbed. deadline_after: the path whose fetch uses up the run's time."""
+    fetched, clock = [], [1000.0]
+    real = (site_publish.fetch, site_publish.expire, site_publish.category_slugs, site_publish.collisions,
+            site_publish.time)
+
+    def fake_fetch(base, path, want_hash, want_status=200, tries=3):
+        fetched.append(path)
+        if path == deadline_after:
+            clock[0] = 2000.0
+        return {"path": path, "ok": True, "status": want_status, "hash": want_hash, "bytes": 1, "is_sitemap": True}
+    site_publish.fetch, site_publish.expire = fake_fetch, lambda base, paths: None
+    site_publish.category_slugs, site_publish.collisions = (lambda: {"crm"}), (lambda conn: [])
+    site_publish.time = types.SimpleNamespace(time=lambda: clock[0], sleep=lambda s: None)
+    try:
+        rec = site_publish.run(_PublishConn(), "https://x.invalid", verify_n=100, max_expire=100, deadline=1500.0,
+                               log=lambda *a, **k: None)
+    finally:
+        (site_publish.fetch, site_publish.expire, site_publish.category_slugs, site_publish.collisions,
+         site_publish.time) = real
+        site_publish.DEADLINE[0] = None
+    return rec, fetched
+
+
+_rec, _order = _publish_run()
+check("publish: takedown pages, then retired, home, category and sitemap, then the other company pages",
+      sorted(_order[:2]) == ["/td-a/", "/td-b/"] and _order[2] == "/old-brand/" and sorted(_order[3:5]) == ["/", "/crm/"]
+      and _order[5] == "/sitemap.xml" and sorted(_order[6:]) == ["/co-a/", "/co-b/", "/co-c/"], _order)
+check("publish: with time for everything every page is proven and nothing is left",
+      _rec["pages_verified"] == 5 and _rec["index_pages_verified"] == 2 and _rec["retired_verified"] == 1
+      and _rec["not_checked"] == 0 and "verify_stopped" not in _rec, _rec)
+_rec, _order = _publish_run(deadline_after="/sitemap.xml")
+check("publish: a run out of time still proved takedowns, retired, index and sitemap",
+      _order[:6] and "/sitemap.xml" in _order and _rec["index_pages_verified"] == 2 and _rec["retired_verified"] == 1
+      and _rec["pages_verified"] == 2, _rec)
+check("publish: the company pages it had no time for are not checked, not failed, and counted",
+      not (set(_order) & {"/co-a/", "/co-b/", "/co-c/"}) and _rec["failed"] == [] and _rec["not_checked"] == 3
+      and _rec["verify_stopped"] == "the run's time ended with 3 pages left to fetch", _rec)
+
 check("collect: a due partner-priority subreddit goes before a more overdue ordinary one",
       collect.rank(1.2, True, False) < collect.rank(5.0, False, True))
 check("collect: a partner-priority subreddit not yet due waits behind a due one",
@@ -256,6 +327,73 @@ check("backfill: 05:30 UTC is outside the night", not bfr.in_night(_t.replace(ho
 # ---- the Railway backfill's queue (worker/run_daily.py backfill_subs, decision 0018) ----------------------------
 import tempfile as _tf  # noqa: E402
 import run_daily as _rd  # noqa: E402
+# ---- the night's time (decision 0043) and the exit code ---------------------------------------------------------
+_sc = {"reserve_minutes_after_classify": 45, "reserve_minutes_after_collect": 105}
+_oct = [{"refresh": 32.9, "publish": 12.1, "changed": 5062, "fetched": 3452, "index": 0},
+        {"refresh": 29.4, "publish": 10.5, "changed": 1860, "fetched": 1860, "index": 160},
+        {"refresh": 29.7, "publish": 12.6, "changed": 2940, "fetched": 2940, "index": 160}]
+_r = _rd.measured_reserves(_oct, _sc)
+check("reserve: the receipts of 26, 29 and 30 Oct keep 66 minutes after labelling, not 45", _r["after_classify"] == 66, _r)
+check("reserve: and collection keeps its floor while that leaves labelling its minimum", _r["after_collect"] == 105, _r)
+_r = _rd.measured_reserves([], _sc)
+check("reserve: with no nights to read the schedule's values stand",
+      (_r["after_classify"], _r["after_collect"]) == (45, 105), _r)
+_r = _rd.measured_reserves([{"refresh": 20.0, "publish": 1.0, "changed": 50, "fetched": 50, "index": 0}], _sc)
+check("reserve: a hand run of a few pages sets no pace, and quick nights do not cut under the floor",
+      (_r["after_classify"], _r["publish_minutes"]) == (45, 0.0), _r)
+_r = _rd.measured_reserves([{"refresh": 400.0, "publish": 60.0, "changed": 5000, "fetched": 5000, "index": 0}], _sc)
+check("reserve: a wild receipt cannot take the night: the cap holds, and labelling keeps its minimum",
+      (_r["after_classify"], _r["after_collect"]) == (150, 180), _r)
+_r = _rd.measured_reserves([{"refresh": 80.0, "publish": 20.0, "changed": 5000, "fetched": 5000, "index": 0}], _sc)
+check("reserve: when refresh and publish outgrow the floor collection stops earlier too",
+      (_r["after_classify"], _r["after_collect"]) == (105, 135), _r)
+
+
+class _BrokenConn:
+    def execute(self, *a):
+        raise RuntimeError("no receipts")
+
+
+_rc0 = {}
+check("reserve: receipts that cannot be read leave the schedule as it is, and the receipt says so",
+      _rd.with_measured_reserves(_BrokenConn(), _sc, _rc0) is _sc and "no receipts" in _rc0["time_reserve"]["error"])
+
+
+class _NightsConn:
+    def execute(self, sql, params=None):
+        return _PublishResult([(x["refresh"], x["publish"], x["changed"], x["fetched"], x["index"]) for x in _oct])
+
+
+_rc0 = {}
+_got = _rd.with_measured_reserves(_NightsConn(), _sc, _rc0)
+check("reserve: the run's schedule carries the measured reserves and the receipt records them",
+      _got["reserve_minutes_after_classify"] == 66 and _rc0["time_reserve"]["nights"] == 3 and _sc["reserve_minutes_after_classify"] == 45)
+check("reserve: the takedown check stops where the measured collection reserve says",
+      _rd.takedown_deadline(10_000.0, {"reserve_minutes_after_collect": 135}) == 10_000.0 - 135 * 60)
+
+
+def _boom():
+    raise RuntimeError("no database")
+
+
+_main, _argv = _rd.main, sys.argv
+_rd.main, sys.argv = _boom, ["run_daily.py"]
+_err = sys.stderr
+sys.stderr = open(os.devnull, "w")
+check("exit: an error outside the stages still exits 0 on a schedule (a crashed cron deployment can stop its cron)",
+      _rd.scheduled_main() == 0)
+def _refuse():
+    sys.exit(1)
+
+
+_rd.main = _refuse
+check("exit: an import that refuses with sys.exit inside a stage still exits 0 on a schedule", _rd.scheduled_main() == 0)
+_rd.main = _boom
+sys.argv = ["run_daily.py", "--manual"]
+check("exit: a run by hand keeps its exit code", _rd.scheduled_main() == 1)
+sys.stderr = _err
+_rd.main, sys.argv = _main, _argv
+
 _csv = _tf.NamedTemporaryFile("w", suffix=".csv", delete=False)
 _csv.write("category_slug,subreddit,is_core\nb,Zeta,True\na,beta,True\na,Alpha,True\nb,alpha,True\na,gamma,False\nc,x,True\n")
 _csv.close()
