@@ -190,6 +190,12 @@ import site_publish  # noqa: E402
 site_publish.DEADLINE[0] = _time.time() - 1
 _r = site_publish.fetch("https://example.invalid", "/x/", "h")
 check("publish: no request starts after the run's end", _r["ok"] is False and _r["status"] is None and "error" in _r)
+check("publish: a page the run's end kept us from fetching is not checked, not failed",
+      _r.get("not_checked") is True and site_publish.failed(_r) is False)
+check("publish: a page that answered at another fingerprint is failed",
+      site_publish.failed({"ok": False, "status": 200, "hash": "old"}) is True)
+check("publish: a page that never answered in three tries is failed",
+      site_publish.failed({"ok": False, "status": None, "hash": None, "error": "timed out"}) is True)
 site_publish.DEADLINE[0] = None
 
 check("collect: a due partner-priority subreddit goes before a more overdue ordinary one",

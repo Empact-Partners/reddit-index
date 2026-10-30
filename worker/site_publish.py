@@ -118,6 +118,7 @@ def fetch(base: str, path: str, want_hash: str | None, want_status: int = 200, t
     for attempt in range(tries):
         if DEADLINE[0] is not None and time.time() > DEADLINE[0]:
             out["error"] = "the run's time ended before this page was fetched"
+            out["not_checked"] = True   # unproven, not failed: it stays unserved and comes round next run (G29)
             return out
         try:
             # gzip: an index page is 1.4 MB of HTML and 152 of them are fetched whenever the boards change
@@ -174,13 +175,22 @@ def pick(others: list, slots: int, longest_share: float = 0.2) -> list:
     return chosen_own + chosen_rest
 
 
+def failed(v: dict) -> bool:
+    """A page that answered wrong, or never answered in three tries. A page the run's end kept us from fetching is
+    not failed: it was never checked, it stays unserved, and the next run expires and fetches it again (30 Oct: the
+    night ran out of time 148 pages into its last batch of 200, those pages plus the index pages queued after them
+    filled the receipt's 100 "failed", and the run ended "failed" with every fetched page proven)."""
+    return not v["ok"] and not v.get("not_checked")
+
+
 def run(conn, base: str, dry_run: bool = False, verify_n: int = 100, max_expire: int = 7000, deadline: float | None = None,
         stamp: bool = True, log=print) -> dict:
     base = base.rstrip("/")
     DEADLINE[0] = deadline
     receipt = {"base": base, "pages_changed": 0, "pages_expired": 0, "pages_verified": 0, "pages_fetched": 0,
                "takedown_pages": 0,
-               "index_pages_verified": 0, "retired_verified": 0, "site_bytes_fetched": 0, "failed": []}
+               "index_pages_verified": 0, "retired_verified": 0, "site_bytes_fetched": 0, "failed": [],
+               "not_checked": 0}
 
     clash = collisions(conn)
     if clash:
@@ -283,7 +293,8 @@ def run(conn, base: str, dry_run: bool = False, verify_n: int = 100, max_expire:
         good = [(r[0], r[2]) for r, v in zip(chunk, res) if v["ok"]]
         receipt["site_bytes_fetched"] += sum(v["bytes"] for v in res)
         receipt["failed"] += [{"path": v["path"], "status": v["status"], "hash": v["hash"], "takedown": bool(r[3])}
-                              for r, v in zip(chunk, res) if not v["ok"]]
+                              for r, v in zip(chunk, res) if failed(v)]
+        receipt["not_checked"] += sum(1 for v in res if v.get("not_checked"))
         if good and stamp:
             # only where the row still holds the hash we verified: a refresh that landed meanwhile stays unserved
             conn.execute("""update site.brand_stats s set served_hash = v.h, served_at = now()
@@ -301,18 +312,22 @@ def run(conn, base: str, dry_run: bool = False, verify_n: int = 100, max_expire:
         if gone and stamp:
             conn.execute("update site.retired_page set gone_at = now() where slug = any (%s)", (gone,))
         receipt["retired_verified"] = len(gone)
-        receipt["failed"] += [{"path": v["path"], "status": v["status"], "want": 404} for v in res if not v["ok"]]
+        receipt["failed"] += [{"path": v["path"], "status": v["status"], "want": 404} for v in res if failed(v)]
+        receipt["not_checked"] += sum(1 for v in res if v.get("not_checked"))
 
     if index_paths:
         res = verify([(p, meta[0], 200) for p in index_paths])
         receipt["index_pages_verified"] = sum(v["ok"] for v in res)
         receipt["site_bytes_fetched"] += sum(v["bytes"] for v in res)
-        receipt["failed"] += [{"path": v["path"], "status": v["status"], "hash": v["hash"]} for v in res if not v["ok"]]
+        receipt["failed"] += [{"path": v["path"], "status": v["status"], "hash": v["hash"]} for v in res if failed(v)]
+        receipt["not_checked"] += sum(1 for v in res if v.get("not_checked"))
         if all(v["ok"] for v in res) and stamp:
             conn.execute("update site.meta set served_boards_hash = %s where boards_hash = %s", (meta[0], meta[0]))
     if slugs_changed:
         v = fetch(base, "/sitemap.xml", None, 200)
-        if not v["ok"] or not v.get("is_sitemap", True):
+        if v.get("not_checked"):
+            receipt["not_checked"] += 1
+        elif not v["ok"] or not v.get("is_sitemap", True):
             receipt["failed"].append({"path": "/sitemap.xml", "status": v["status"], "note": "not a sitemap"})
         elif stamp:
             conn.execute("update site.meta set served_slugs_hash = %s where slugs_hash = %s", (meta[2], meta[2]))
@@ -320,7 +335,8 @@ def run(conn, base: str, dry_run: bool = False, verify_n: int = 100, max_expire:
     receipt["failed"] = receipt["failed"][:100]
     log(f"  published: {receipt['pages_expired']} company pages expired, {receipt['pages_verified']} fetched and "
         f"proven ({len(takedown)} takedown), {receipt['index_pages_verified']} index pages, "
-        f"{receipt['retired_verified']} retired; {len(receipt['failed'])} failed")
+        f"{receipt['retired_verified']} retired; {len(receipt['failed'])} failed, {receipt['not_checked']} not checked "
+        f"before the run's end")
     return receipt
 
 

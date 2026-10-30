@@ -788,6 +788,10 @@ def main() -> int:
         rec["render_estimate_gb"] = round(run.render_bytes / 1e9, 3)
         if rec.get("failed"):
             run.receipt["problems"].append(f"{len(rec['failed'])} pages failed verification")
+        if rec.get("verify_stopped") or rec.get("not_checked"):
+            # the run's time ended first: those pages stay unserved and the next run fetches them (not a failure)
+            rec["allowance_used"] = (rec.get("verify_stopped") or "the run's time ended") + \
+                f"; {rec.get('not_checked', 0)} pages not checked, they wait for the next run"
         rec.pop("verified_brand_ids", None)
         return rec
     stage(run, "publish", publish_stage)
