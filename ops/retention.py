@@ -81,31 +81,47 @@ def threads(conn) -> dict:
 def rejected(conn, limit: int | None = None) -> dict:
     """Rows judged "not this product" more than 30 days ago. A row that holds the text other rows point at first
     gives the text back to them. `limit` takes the oldest N rows (the nightly run's cap, so the first night after
-    2 November does not move 225 MB at once)."""
+    2 November does not move 225 MB at once).
+
+    The batch is chosen ONCE, into a temporary table that lives as long as the transaction, and the three statements
+    read their keys from it (sentinel incident 1110-2232, 2026-11-11): written inline, the choice (a hash join of
+    every mentions partition against the rejections, ~2 GB of disk reads) ran inside each of the three statements,
+    7.3 GB a night at ~1.4 GB/min. From the table, each statement finds its rows by the primary keys."""
     old = ("select m.brand_id, m.doc_id, m.created_utc from public.mentions m join public.mention_rejections x "
            "on x.doc_id = m.doc_id and x.brand_id = m.brand_id where x.rejected_at < now() - interval '30 days'"
            + (f" order by x.rejected_at, m.doc_id, m.brand_id limit {int(limit)}" if limit else ""))
     with conn.transaction():
+        conn.execute(f"create temporary table retention_batch on commit drop as {old}")
+        conn.execute("analyze retention_batch")   # the planner knows how many keys it holds, not a guess
+        # Even then it hashes all 49 partitions (2.8M rows) for 20,000 keys: it prices the run-time partition pruning
+        # of a keyed lookup at 49 probes a key. Measured 2026-11-11 with 20,000 live keys and hash joins off: the
+        # delete's lookups read 6,291 blocks (51 MB), the text hand-back's 2,691 (22 MB), every other partition
+        # "never executed". Off for these three statements only; the bookkeeping below plans as before.
+        conn.execute("set local enable_hashjoin = off")
+        conn.execute("set local enable_mergejoin = off")
+        d = "pg_temp.retention_batch"
         rehomed = conn.execute(f"""
             update public.mentions s set body = h.body, body_from = null
-              from public.mentions h, ({old}) d
+              from public.mentions h, {d} d
              where h.brand_id = d.brand_id and h.doc_id = d.doc_id and h.created_utc = d.created_utc
                and h.body is not null
                and s.doc_id = h.doc_id and s.created_utc = h.created_utc and s.body_from = h.brand_id""").rowcount
         sent = conn.execute(f"""
             with moved as (
-              delete from public.mention_sentiment s using ({old}) d
+              delete from public.mention_sentiment s using {d} d
                where s.doc_id = d.doc_id and s.brand_id = d.brand_id
               returning {", ".join("s." + c.strip() for c in SENTIMENT_COLS.split(","))})
             insert into archive.mention_sentiment ({SENTIMENT_COLS}, archived_at)
             select {SENTIMENT_COLS}, now() from moved""").rowcount
         n = conn.execute(f"""
             with moved as (
-              delete from public.mentions m using ({old}) d
+              delete from public.mentions m using {d} d
                where m.brand_id = d.brand_id and m.doc_id = d.doc_id and m.created_utc = d.created_utc
               returning {", ".join("m." + c.strip() for c in MENTION_COLS.split(","))})
             insert into archive.mentions ({MENTION_COLS}, archived_at)
             select {MENTION_COLS}, now() from moved""").rowcount
+        conn.execute("reset enable_hashjoin")
+        conn.execute("reset enable_mergejoin")
         # bookkeeping that pointed at the removed rows (review, 2026-10-03): a probe row for a document with no
         # mention left would wedge the takedown slow lap; a queue row would be re-selected forever
         conn.execute("delete from public.classify_queue q where not exists (select 1 from public.mentions m "
