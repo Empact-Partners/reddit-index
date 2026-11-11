@@ -870,6 +870,32 @@ import retention as _ret  # noqa: E402
 check("retention: the archived thread columns are the ten the archive table has",
       [c.strip() for c in _ret.THREAD_COLS.split(",")] == ["id", "subreddit_id", "link_title", "permalink", "created_utc",
                                                            "num_comments", "archived", "score", "first_seen_at", "tree_fetched_at"])
+
+
+class _SqlLog:
+    """Records the statements rejected() sends; every one reports 0 rows."""
+    def __init__(self):
+        self.sql = []
+
+    def execute(self, s, *a):
+        self.sql.append(" ".join(s.split()))
+        return type("R", (), {"rowcount": 0})()
+
+    def transaction(self):
+        import contextlib
+        return contextlib.nullcontext()
+
+
+_rl = _SqlLog()
+_ret.rejected(_rl, limit=20000)
+check("retention: the night's batch of rejected rows is chosen once, not inside each of the three statements "
+      "(incident 1110-2232: 3 x ~2 GB of reads a night)",
+      sum("join public.mention_rejections" in s for s in _rl.sql) == 1
+      and sum("pg_temp.retention_batch" in s for s in _rl.sql) == 3, str(_rl.sql)[:300])
+check("retention: hash and merge joins are off only for the three batch statements",
+      [s for s in _rl.sql if "enable_" in s] == ["set local enable_hashjoin = off", "set local enable_mergejoin = off",
+                                                  "reset enable_hashjoin", "reset enable_mergejoin"]
+      and _rl.sql.index("reset enable_mergejoin") < next(i for i, s in enumerate(_rl.sql) if "classify_queue" in s))
 # ---- the takedown check's slow lap by position (worker/takedown.py lap_next, lap_reached) -------------------------
 import takedown as _td  # noqa: E402
 
