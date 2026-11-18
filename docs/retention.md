@@ -32,6 +32,8 @@ names, columns and results.
 | 4 | Drop `mention_rail_mv` | 231 MB | after go-live | done 9 Oct (migration 0030): `published.mention_rail` reads `site.rail_card`; the database went from 3,774 to 3,554 MB |
 | 5 | Vacuum the touched partitions so new rows reuse the space | | after 2 and 3 | autovacuum did it as each partition was cleared (August to May partitions on 11 Oct 06:00-06:10 UTC, September on 9 Oct); nothing to run by hand |
 
+Step 1 since 18 Nov (sentinel incident 1118-0146): only the threads new since the last run are checked, those that crossed the 7-day line since the newest archived thread and those whose mentions step 2 archived since, each looked up in `mentions_thread_id_idx` (migration 0041). Checking every thread older than seven days again read the whole mentions table each night (2.6 GB in November, growing every month) to remove about 4,700 threads. A thread left without a mention by a takedown is not a candidate and stays.
+
 Why step 3 clears text in place rather than moving it to a new table: a new table would write 828 MB again (and
 ship that through the write-ahead log, which the egress counter bills); clearing a column writes only the new,
 small row version. The space is reused by new mentions rather than returned to the disk, which is what the index
