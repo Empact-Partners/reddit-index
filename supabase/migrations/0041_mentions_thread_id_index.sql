@@ -1,0 +1,23 @@
+-- mentions(thread_id) again, for retention step 1 (2026-11-18, applied live the same day; sentinel incident 1118-0146).
+--
+-- 0035 dropped this index on 11 Oct because nothing read it: the night's thread retention ran beside it and still
+-- hashed every mentions partition (0 scans). That statement, `delete from public.threads ... and not exists (select 1
+-- from public.mentions m where m.thread_id = t.id)`, checked all ~940,000 threads older than seven days every night,
+-- so it read the whole mentions table each time: 2 GB a call in October, 2.6 GB in November (pg_stat_statements,
+-- queryid 8585155972090870120, 38 calls, 74 GB read since 9 Oct), growing with every month of mentions, to remove
+-- about 4,700 threads a night.
+--
+-- ops/retention.py threads() now checks only the threads new since the last run (~5,000) and looks each one up here,
+-- with hash and merge joins off for that statement as rejected() does. The index costs every new mention one more
+-- index entry in the write-ahead log (about 1 KB of log a row by 0035's measure, some 40 MB a day at November's
+-- ~43,000 mentions a day) against ~2.6 GB of disk reads a night saved.
+--
+-- Created CONCURRENTLY against live traffic, which cannot run inside a transaction block, so this file has no
+-- begin/commit and uses IF NOT EXISTS throughout (the 0004 pattern): re-running it against production is a no-op.
+-- Recorded with `ops/migrate.py --adopt 0041`. A partition created later by worker/daily.py ensure_partitions()
+-- gets its own copy of the index automatically once the parent index is valid.
+create index if not exists mentions_thread_id_idx on only public.mentions (thread_id);
+-- then, per partition (smallest first, one quiet sentinel interval after each partition over 150 MB):
+--   create index concurrently if not exists mentions_<YYYY_MM>_thread_id_idx on public.mentions_<YYYY_MM> (thread_id);
+--   alter index public.mentions_thread_id_idx attach partition public.mentions_<YYYY_MM>_thread_id_idx;
+-- The parent index reports indisvalid only once all 49 are attached.

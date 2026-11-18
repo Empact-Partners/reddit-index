@@ -896,6 +896,17 @@ check("retention: hash and merge joins are off only for the three batch statemen
       [s for s in _rl.sql if "enable_" in s] == ["set local enable_hashjoin = off", "set local enable_mergejoin = off",
                                                   "reset enable_hashjoin", "reset enable_mergejoin"]
       and _rl.sql.index("reset enable_mergejoin") < next(i for i, s in enumerate(_rl.sql) if "classify_queue" in s))
+_rt = _SqlLog()
+_ret.threads(_rt)
+check("retention: step 1 checks only the threads new since the last run, not all ~940,000 again (incident 1118-0146: "
+      "~2.6 GB of reads a night)",
+      sum("create temporary table retention_threads" in s for s in _rt.sql) == 1
+      and "max(archived_at)" in _rt.sql[0] and "from archive.threads" in _rt.sql[0] and "archive.mentions" in _rt.sql[0]
+      and sum("pg_temp.retention_threads" in s and "not exists" in s for s in _rt.sql) == 1, str(_rt.sql)[:300])
+check("retention: step 1 turns hash and merge joins off for its delete only",
+      [s for s in _rt.sql if "enable_" in s] == ["set local enable_hashjoin = off", "set local enable_mergejoin = off",
+                                                  "reset enable_hashjoin", "reset enable_mergejoin"]
+      and _rt.sql.index("set local enable_hashjoin = off") > next(i for i, s in enumerate(_rt.sql) if "create temporary" in s))
 # ---- the takedown check's slow lap by position (worker/takedown.py lap_next, lap_reached) -------------------------
 import takedown as _td  # noqa: E402
 

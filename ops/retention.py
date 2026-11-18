@@ -2,7 +2,7 @@
 """Apply the retention policy (docs/retention.md). Every step is safe to repeat and resumes from the data.
 
   ops/retention.py status                       # sizes, what each step would remove, archive contents
-  ops/retention.py threads                      # step 1: threads with no mention, older than 7 days
+  ops/retention.py threads                      # step 1: threads with no mention, older than 7 days (new since the last run)
   ops/retention.py rejected                     # step 2: rows judged "not this product" over 30 days ago
   ops/retention.py one-copy mentions_2026_09    # step 3, one monthly partition (or: one-copy all)
   ops/retention.py expire-archive               # drop archived copies older than 14 days
@@ -68,13 +68,39 @@ MENTION_COLS = ("brand_id, doc_id, created_utc, doc_type, thread_id, subreddit_i
 
 
 def threads(conn) -> dict:
-    n = conn.execute(f"""
-        with moved as (
-          delete from public.threads t
-           where t.first_seen_at < now() - interval '7 days'
-             and not exists (select 1 from public.mentions m where m.thread_id = t.id)
-          returning {THREAD_COLS})
-        insert into archive.threads ({THREAD_COLS}, archived_at) select {THREAD_COLS}, now() from moved""").rowcount
+    """Step 1: threads with no mention, first seen more than 7 days ago, archived and removed.
+
+    Only threads that could have become removable since the last run are checked (sentinel incident 1118-0146,
+    2026-11-18): those that crossed the 7-day line since then, and those whose mentions step 2 archived since. Every
+    older thread was checked on an earlier night and kept because a mention names it; checking all ~940,000 of them
+    again hashed every mentions partition each night, ~2.6 GB of disk reads to remove ~4,700 threads. The last run is
+    the newest archived thread (archive.threads keeps 14 days); with none, every thread is a candidate again. A thread
+    left without a mention by a takedown is not a candidate: it stays, as every thread did before 4 October.
+
+    The candidates go into a temporary table and each is looked up in mentions_thread_id_idx (migration 0041), with
+    hash and merge joins off for that one statement, as in rejected(): priced as 49 probes a key, the planner would
+    otherwise hash every partition again."""
+    with conn.transaction():
+        conn.execute("""
+            create temporary table retention_threads on commit drop as
+            with last as materialized (select coalesce(max(archived_at), '-infinity') at from archive.threads)
+            select t.id from public.threads t
+             where t.first_seen_at < now() - interval '7 days'
+               and (t.first_seen_at >= (select at from last) - interval '8 days'
+                    or t.id in (select a.thread_id from archive.mentions a
+                                 where a.archived_at >= (select at from last) - interval '1 day'))""")
+        conn.execute("analyze retention_threads")
+        conn.execute("set local enable_hashjoin = off")
+        conn.execute("set local enable_mergejoin = off")
+        n = conn.execute(f"""
+            with moved as (
+              delete from public.threads t using pg_temp.retention_threads c
+               where t.id = c.id
+                 and not exists (select 1 from public.mentions m where m.thread_id = t.id)
+              returning {", ".join("t." + c.strip() for c in THREAD_COLS.split(","))})
+            insert into archive.threads ({THREAD_COLS}, archived_at) select {THREAD_COLS}, now() from moved""").rowcount
+        conn.execute("reset enable_hashjoin")
+        conn.execute("reset enable_mergejoin")
     return {"threads_archived_and_removed": n}
 
 
