@@ -31,6 +31,8 @@ inside its credits): it is written on the receipt as `allowances_used` and alert
 ```bash
 python3 ops/ri.py status            # switch, login, last runs, queue, next run
 python3 scripts/schedule_check.py   # Railway manifests vs ops/schedule.json, a receipt per night, no stray writes
+#   ^ reads ~1.4 GB of disk a run (mentions has no loaded_at index, by 0035's rule): run it ONCE, keep the output
+#     (> /tmp/sched.json) and read that. Four runs in three minutes on 18 Nov tripped the sentinel's 60 MB/min line.
 python3 ops/classify_backlog.py --status
 python3 ops/retention.py status
 ```

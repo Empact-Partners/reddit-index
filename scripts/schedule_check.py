@@ -16,6 +16,10 @@ alone:
 
   scripts/schedule_check.py              # print the verdict; exit 1 on any finding
   scripts/schedule_check.py --dm         # also DM Vlad, only when there is a finding
+
+Cost: the "writes" check scans every mentions partition (no loaded_at index, by migration 0035's rule that an
+index only an occasional reader uses costs every new mention log bytes): about 1.4 GB of disk reads and 10 s a run.
+Run it once and save the output; re-running it in a loop trips the sentinel's disk-read line (incident 1118-0300).
 """
 from __future__ import annotations
 
