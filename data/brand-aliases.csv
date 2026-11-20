@@ -12349,7 +12349,7 @@ stereum,Stereum Node,alias,SAFE,0,False
 stereum,Stereum Launcher,alias,SAFE,0,False
 stereum,stereum.com,domain,SAFE,0,False
 stereum,stereum.net,domain,SAFE,0,False
-stock-analysis,Stock Analysis,canonical,SAFE,0,False
+stock-analysis,Stock Analysis,canonical,SAFE,0,True
 stock-analysis,StockAnalysis.com,domain,SAFE,0,False
 stockcharts,StockCharts,canonical,HOSTILE,2,False
 stockcharts,StockCharts.com,domain,SAFE,0,False

@@ -437,6 +437,27 @@ def check_stop_context(text, pos, brand_slug, stops):
 
 # ── the pipeline ────────────────────────────────────────────────────────────
 
+_LINK_TOKEN = re.compile(r'https?://\S+|www\.\S+|\b[a-z0-9-]+(?:\.[a-z0-9-]+)+/\S*')
+
+
+def load_link_citation_brands():
+    """Brands whose web address is pasted as a data source (data/link-citation-brands.csv, issue 106).
+
+    For these, a domain that appears ONLY inside a link (a chart URL in a thread about another stock) is a
+    citation, not a mention: the document counts only when its text names the site outside the link."""
+    path = os.path.join(REPO, "data", "link-citation-brands.csv")
+    if not os.path.exists(path):
+        return set()
+    with open(path, newline="", encoding="utf-8") as f:
+        return {r["brand_slug"].strip() for r in csv.DictReader(f) if (r.get("brand_slug") or "").strip()}
+
+
+def names_outside_links(norm, forms):
+    """True when one of `forms` (lowercase) appears in the text once every link token is taken out."""
+    bare = _LINK_TOKEN.sub(" ", norm)
+    return any(f and f in bare for f in forms)
+
+
 class Resolver:
     def __init__(self):
         self.aliases = load_aliases()
@@ -454,6 +475,7 @@ class Resolver:
         # 6,040 brands used to run inside resolve() on every comment.
         self._canonical = {b["slug"]: b["brand"].lower()
                            for b in self.brands.values() if isinstance(b, dict)}
+        self.link_citation = load_link_citation_brands()
         self._domain_ac = None
         pairs = [(d.lower(), slug) for slug, doms in self.domains.items()
                  for d in doms if d and _domain_identifies(d, slug, self.domains)]
@@ -495,10 +517,20 @@ class Resolver:
             for _end, slugs in self._domain_ac.iter(norm):
                 domain_hits.update(slugs)
 
+        # A citation-only brand found only inside links is dropped whole: no domain accept, no name hits
+        # (its bare name is disabled; a domain-only document is a pasted data source). Issue 106.
+        cited_only = set()
+        for slug in domain_hits & self.link_citation:
+            if not names_outside_links(norm, [d.lower() for d in self.domains.get(slug, [])]):
+                cited_only.add(slug)
+        domain_hits -= cited_only
+
         # Phase 2: Aho-Corasick
         raw_hits = []
         for end_idx, matches in self.automaton.iter(norm):
             for (alias, brand_slug, cls, min_c) in matches:
+                if brand_slug in cited_only:
+                    continue
                 start = end_idx - len(alias) + 1
                 if not is_word_boundary(norm, start, end_idx + 1):
                     continue

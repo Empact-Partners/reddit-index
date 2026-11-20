@@ -198,11 +198,14 @@ Reddit Love Score = round(100 · Q₀.₁₀(posterior))`}</Pre>
         </ul>
         <p>
           Every company carrying at least one positive or negative mention is
-          scored and ranked in its category. The published number is computed
-          over every opinionated mention collected for that company, which is
-          the same corpus as the Positive and Negative counts printed beside
-          it, and it is the number its category board ranks it by, so a page
-          and a board can never disagree. Thin evidence is handled by the
+          scored and ranked in its category. The published number counts{" "}
+          <strong>each Reddit account once</strong>: an account whose mentions
+          of the company are mostly positive is one positive voice, mostly
+          negative one negative voice, however many times it posted. One
+          prolific account, a vendor&apos;s own staff included, cannot carry a
+          company up a board. The Positive and Negative counts printed beside
+          the score still count every mention. The score is the number its
+          category board ranks it by, so a page and a board can never disagree. Thin evidence is handled by the
           estimator rather than by hiding the company: because the published
           score is the lower bound and not the mean, a company with one
           opinion lands near its category&apos;s baseline, never at the top.

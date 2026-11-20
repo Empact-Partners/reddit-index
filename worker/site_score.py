@@ -5,7 +5,9 @@ This is the arithmetic the site's build used to do in lib/data/snapshot.ts and l
 where it can run once a day instead of once per build worker. The rules are the build's, unchanged
 (decisions/0011):
 
-  * the score uses EVERY opinionated mention collected for the brand (positive and negative, all time);
+  * the score uses every ACCOUNT with an opinion of the brand, each counted once (decision 0044, issue 107:
+    one account posting 170 times was 170 opinions): positive when most of its mentions are positive, negative
+    when most are negative, from site.brand_stats.voice_pos / voice_neg (all time);
   * the prior is the brand's primary category's pooled positive rate, leaving the brand itself out;
   * a brand with at least one mention gets a score (with no opinions it is the category baseline);
   * a brand is ranked on its primary category's board when that category is published:
@@ -31,8 +33,11 @@ from numerics import fit_prior_pooled, page_score  # noqa: E402
 
 
 def score_rows(rows: list[dict]) -> dict[int, dict]:
-    """rows: brand_id, slug, primary_category_id, primary_category_slug, pos, neg, neu, total_mentions.
-    Returns brand_id -> {page_score, page_n_op, board_rank, board_size}."""
+    """rows: brand_id, slug, primary_category_id, primary_category_slug, pos, neg, neu, total_mentions,
+    voice_pos, voice_neg. Returns brand_id -> {page_score, page_n_op, board_rank, board_size}.
+    page_n_op is the number of accounts with an opinion (the pooled board's bar of 10 is ten accounts)."""
+    rows = [{**r, "pos": r["voice_pos"], "neg": r["voice_neg"]} if r.get("voice_pos") is not None else r
+            for r in rows]
     by_cat: dict[object, list[dict]] = defaultdict(list)
     for r in rows:
         # the build keyed the prior on the raw category id, published or not
@@ -66,7 +71,7 @@ def score_rows(rows: list[dict]) -> dict[int, dict]:
 
 
 READ = """select brand_id, slug, primary_category_id, primary_category_slug, pos, neg, neu, total_mentions,
-                 page_score, page_n_op, board_rank, board_size
+                 voice_pos, voice_neg, page_score, page_n_op, board_rank, board_size
           from site.brand_stats"""
 
 WRITE = """
