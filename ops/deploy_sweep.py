@@ -52,7 +52,7 @@ DAY_NAME = "reddit-index-day"                               # the daytime passes
 DAY_START = "python3 -u /app/ops/day_tick.py"
 REGION = "us-east4-eqdc4a"                                  # Virginia, next to the database (aws us-east-1)
 DATA = ["categories.csv", "category-subreddits.csv", "brands.csv", "brand-aliases.csv", "alias-blocklist.csv",
-        "alias-hostile.csv", "english-words.txt"]
+        "alias-hostile.csv", "english-words.txt", "link-citation-brands.csv"]
 OPS = ["schedule.json", "classify_thresholds.json", "retention.py",   # retention.py: the nightly retention stage
        "day_tick.py"]                                                  # the day service's start command
 

@@ -79,6 +79,10 @@ forms. `p_tilde` (the mean) is still computed and published as evidence.
 
 Two different bars, deliberately, and neither one is the other.
 
+**One account, one voice** (decision 0044, 2026-11-20). The score and the boards count each Reddit account once:
+an account whose opinionated mentions of a brand are mostly positive is one positive voice, mostly negative one
+negative voice, a tie neither. `page_n_op` is that count of accounts. The tiles still count every mention.
+
 **Display floor** — what it takes to appear on a board. Each category
 publishes at its OWN **median `n_op`, clamped to [3, 30]**: a brand must
 carry at least as much opinionated evidence as the typical brand it is being

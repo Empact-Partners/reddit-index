@@ -62,8 +62,9 @@ not in the denominator. Methodology version ${METHODOLOGY_VERSION}.
 A company is ranked in a category once it carries at least ONE opinionated
 mention. There is no separate visibility threshold: thin evidence is handled
 by the estimator, which shrinks a company with little evidence toward its
-category's baseline rather than hiding it. The pooled all-categories board
-additionally requires 10 opinionated mentions.
+category's baseline rather than hiding it. The score counts each Reddit account
+once (its mostly positive or mostly negative view), however many times it posted.
+The pooled all-categories board additionally requires 10 accounts with an opinion.
 
 ## Key pages
 
